@@ -184,6 +184,10 @@ How to compile exes:
 6. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.03.09**
+* damoldavskiy: Fixes for Modular Attachment System (https://github.com/themrdemonized/xray-monolith/pull/136)
+* ZoulKrystal: Pregenerated gasmask rain noise (https://github.com/themrdemonized/xray-monolith/pull/137)
+
 **2025.03.07**
 * damoldavskiy: Modular Attachment System (https://github.com/themrdemonized/xray-monolith/pull/135)
 
