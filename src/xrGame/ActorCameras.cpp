@@ -248,7 +248,7 @@ bool CActor::CanUseFreelook()
 				return false;
 
 			u32 state = wep->GetState();
-			if (state == CWeapon::eFire || state == CWeapon::eFire2 || state == CWeapon::eReload || state == CWeapon::eSwitch || state == CWeapon::eSwitchMode)
+			if (state == CWeapon::eFire || state == CWeapon::eFire2 || state == CWeapon::eSwitch || state == CWeapon::eSwitchMode)
 				return false;
 		}
 	}
