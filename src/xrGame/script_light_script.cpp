@@ -4,7 +4,7 @@
 using namespace luabind;
 
 #pragma optimize("s",on)
-void CScriptLight::script_register(lua_State *L)
+void ScriptLight::script_register(lua_State *L)
 {
 	module(L)
 		[
@@ -30,6 +30,13 @@ void CScriptLight::script_register(lua_State *L)
 			.property("hud_mode", &ScriptLight::GetHudMode, &ScriptLight::SetHudMode)
 			,
 			
+			class_<AttachmentScriptLight, ScriptLight>("attachment_script_light")
+			.def(constructor<>())
+			.def("set_position", &AttachmentScriptLight::SetPosition)
+			.def("set_direction", (void (AttachmentScriptLight::*)(Fvector))(&AttachmentScriptLight::SetDirection))
+			.def("set_direction", (void (AttachmentScriptLight::*)(Fvector, Fvector))(&AttachmentScriptLight::SetDirection))
+			,
+
 			class_<ScriptGlow>("script_glow")
 			.def(constructor<>())
 			.def("set_position", &ScriptGlow::SetPosition)
