@@ -606,11 +606,52 @@ void R_dsgraph_structure::r_dsgraph_render_hud(bool NoPS)
 		}
 		mapScopeHUD.clear();
 #endif
+
+		if (mapCamAttached.size())
+		{
+			rmNear();
+
+			// Change projection
+			Fmatrix camproj;
+			camproj.build_projection(
+				deg2rad(83.f),
+				Device.fASPECT, R_VIEWPORT_NEAR,
+				g_pGamePersistent->Environment().CurrentEnv->far_plane);
+
+			Device.mFullTransform.mul(camproj, Device.mView);
+			RCache.set_xform_project(camproj);
+
+			// Rendering
+			mapCamAttached.traverseLR(sorted_L1);
+			mapCamAttached.clear();
+
+			rmNormal();
+		}
 	}
 	else
 	{
 		HUDMask.traverseLR(hud_node);
 		HUDMask.clear();
+
+		if (HUDMaskCamAttached.size())
+		{
+			rmNear();
+
+			// Change projection
+			Fmatrix camproj;
+			camproj.build_projection(
+				deg2rad(83.f),
+				Device.fASPECT, R_VIEWPORT_NEAR,
+				g_pGamePersistent->Environment().CurrentEnv->far_plane);
+
+			Device.mFullTransform.mul(camproj, Device.mView);
+			RCache.set_xform_project(camproj);
+
+			// Rendering
+			HUDMaskCamAttached.traverseLR(hud_node);
+			HUDMaskCamAttached.clear();
+		}
+
 		rmNormal();
 	}
 
@@ -637,6 +678,30 @@ void R_dsgraph_structure::r_dsgraph_render_hud_ui()
 	RCache.set_xform_project(Device.mProject);
 }
 
+void R_dsgraph_structure::r_dsgraph_render_cam_ui()
+{
+	// Change projection
+	Fmatrix FTold = Device.mFullTransform;
+
+	Fmatrix camproj;
+	camproj.build_projection(
+		deg2rad(83.f),
+		Device.fASPECT, R_VIEWPORT_NEAR,
+		g_pGamePersistent->Environment().CurrentEnv->far_plane);
+
+	Device.mFullTransform.mul(camproj, Device.mView);
+	RCache.set_xform_project(camproj);
+
+	// Rendering
+	rmNear();
+	g_hud->RenderCamAttachedUI();
+	rmNormal();
+
+	// Restore projection
+	Device.mFullTransform = FTold;
+	RCache.set_xform_project(Device.mProject);
+}
+
 //////////////////////////////////////////////////////////////////////////
 // strict-sorted render
 void R_dsgraph_structure::r_dsgraph_render_sorted()
@@ -655,6 +720,25 @@ void R_dsgraph_structure::r_dsgraph_render_sorted()
 	rmNear();
 	mapHUDSorted.traverseRL(sorted_L1);
 	mapHUDSorted.clear();
+
+	// Camera Script Attachments
+	if (mapCamAttachedSorted.size())
+	{
+		// Change projection
+		Fmatrix camproj;
+		camproj.build_projection(
+			deg2rad(83.f),
+			Device.fASPECT, R_VIEWPORT_NEAR,
+			g_pGamePersistent->Environment().CurrentEnv->far_plane);
+
+		Device.mFullTransform.mul(camproj, Device.mView);
+		RCache.set_xform_project(camproj);
+
+		// Rendering
+		mapCamAttachedSorted.traverseRL(sorted_L1);
+		mapCamAttachedSorted.clear();
+	}
+
 	rmNormal();
 
 	// Restore projection

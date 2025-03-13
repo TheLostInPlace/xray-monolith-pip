@@ -88,6 +88,7 @@ using namespace luabind;
 //Rezy
 #include "xrEngine\x_ray.h"
 #include "ui/UIHudStatesWnd.h"
+#include "script_attachment_manager.h"
 
 const u32 patch_frames = 50;
 const float respawn_delay = 1.f;
@@ -1896,6 +1897,35 @@ void CActor::shedule_Update(u32 DT)
 	m_pPhysics_support->in_shedule_Update(DT);
 	Check_for_AutoPickUp();
 };
+
+void CActor::RenderCamAttached()
+{
+	if (cam_active == eacFirstEye && ::Render->active_phase() == 0)
+	{
+		if (GetAttachments()->size())
+		{
+			::Render->set_HUD(TRUE);
+			::Render->set_CamAttached(TRUE);
+			::Render->set_Object(this);
+
+			Fmatrix cam = Fidentity;
+			Cameras().camera_Matrix(cam);
+
+			xr_map<u16, script_attachment*>::iterator it = GetAttachments()->begin();
+			xr_map<u16, script_attachment*>::iterator it_e = GetAttachments()->end();
+			for (; it != it_e; ++it)
+			{
+				script_attachment* att = (*it).second;
+
+				if (att->GetFFlags().test(eSA_CamAttached))
+					att->Render(nullptr, &cam, true);
+			}
+
+			::Render->set_CamAttached(FALSE);
+			::Render->set_HUD(FALSE);
+		}
+	}
+}
 
 extern Flags32 ps_actor_shadow_flags;
 

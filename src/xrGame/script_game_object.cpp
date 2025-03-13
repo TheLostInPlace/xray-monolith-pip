@@ -47,6 +47,7 @@
 #include "InventoryBox.h"
 #include "Pda.h"
 #include "player_hud.h"
+#include "script_attachment_manager.h"
 
 class CScriptBinderObject;
 
@@ -1028,6 +1029,24 @@ void CScriptGameObject::StartUpgrade(CScriptGameObject* obj)
 	CUIGameSP* pGameSP = smart_cast<CUIGameSP*>(CurrentGameUI());
 	if (pGameSP)
 		pGameSP->StartUpgrade(pActorInv, pOtherOwner);
+}
+
+script_attachment* CScriptGameObject::AddAttachment(u16 slot, LPCSTR model_name)
+{
+	script_attachment* att = xr_new<script_attachment>(slot, model_name);
+	R_ASSERT(att);
+	att->SetParent(&object());
+	return att;
+}
+
+script_attachment* CScriptGameObject::GetAttachment(u16 slot)
+{
+	return object().get_attachment(slot);
+}
+
+void CScriptGameObject::RemoveAttachment(u16 slot)
+{
+	object().remove_attachment(slot, true);
 }
 
 CGameObject& CScriptGameObject::object() const

@@ -107,6 +107,7 @@ public:
 public:
 
 	virtual void Load(LPCSTR section);
+	virtual void RenderCamAttached();
 
 	virtual void shedule_Update(u32 T);
 	virtual void UpdateCL();

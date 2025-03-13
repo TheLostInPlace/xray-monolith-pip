@@ -20,6 +20,8 @@
 #include "Flashlight.h"
 #include "Inventory.h"
 #include "map_manager.h"
+#include "player_hud.h"
+#include "script_attachment_manager.h"
 
 extern CUIGameCustom* CurrentGameUI()
 {
@@ -201,6 +203,7 @@ bool need_render_hud()
 void CHUDManager::Render_Last()
 {
 	if (0 == pUIGame) return;
+	if (g_actor) g_actor->RenderCamAttached();
 	if (!psHUD_Flags.is(HUD_WEAPON | HUD_WEAPON_RT | HUD_WEAPON_RT2 | HUD_DRAW_RT2))return;
 	if (!need_render_hud()) return;
 
@@ -211,6 +214,15 @@ void CHUDManager::Render_Last()
 	O->OnHUDDraw(this);
 	::Render->set_HUD(FALSE);
 }
+
+void CHUDManager::Render_R1_Attachment_UI()
+{
+	for (auto att : g_pGamePersistent->AttachmentUIsToRender)
+		att->RenderUI();
+
+	g_pGamePersistent->AttachmentUIsToRender.clear_not_free();
+}
+
 
 bool CHUDManager::RenderActiveItemUIQuery()
 {
@@ -224,12 +236,39 @@ bool CHUDManager::RenderActiveItemUIQuery()
 	return (g_player_hud && g_player_hud->render_item_ui_query());
 }
 
+bool CHUDManager::RenderCamAttachedUIQuery()
+{
+	if (!g_actor) return false;
+
+	xr_map<u16, script_attachment*>::iterator it = g_actor->GetAttachments()->begin();
+	xr_map<u16, script_attachment*>::iterator it_e = g_actor->GetAttachments()->end();
+	for (; it != it_e; ++it)
+	{
+		script_attachment* att = (*it).second;
+		if (att->GetFFlags().test(eSA_CamAttached))
+			return true;
+	}
+	return false;
+}
+
 void CHUDManager::RenderActiveItemUI()
 {
 	if (!psHUD_Flags.is(HUD_DRAW_RT2))
 		return;
 
 	g_player_hud->render_item_ui();
+}
+
+void CHUDManager::RenderCamAttachedUI()
+{
+	xr_map<u16, script_attachment*>::iterator it = g_actor->GetAttachments()->begin();
+	xr_map<u16, script_attachment*>::iterator it_e = g_actor->GetAttachments()->end();
+	for (; it != it_e; ++it)
+	{
+		script_attachment* att = (*it).second;
+		if (att->GetFFlags().test(eSA_CamAttached))
+			att->RenderUI(false);
+	}
 }
 
 extern ENGINE_API BOOL bShowPauseString;
