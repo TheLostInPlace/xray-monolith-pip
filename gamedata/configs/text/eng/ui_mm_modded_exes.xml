@@ -168,6 +168,9 @@
   <string id="ui_mm_modded_exes_qol_aimmode_remember">
     <text>Aimmode remember (aimmode_remember)</text>
   </string>
+  <string id="ui_mm_modded_exes_qol_freelook_while_reloading">
+    <text>Allows freelook during reload animations (freelook_while_reloading)</text>
+  </string>
 	
 	
 	<!-- Sounds -->
