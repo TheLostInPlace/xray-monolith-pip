@@ -165,6 +165,9 @@
   <string id="ui_mm_modded_exes_qol_aimmode_remember">
     <text>Режим прицеливания запомнить (aimmode_remember)</text>
   </string>
+  <string id="ui_mm_modded_exes_qol_freelook_while_reloading">
+    <text>Свободныйвзгляд при перезарядке (freelook_while_reloading)</text>
+  </string>
 
 	<!-- Sounds -->
 	<string id="ui_mm_menu_sounds">

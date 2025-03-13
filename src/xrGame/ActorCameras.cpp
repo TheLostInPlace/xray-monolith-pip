@@ -33,6 +33,7 @@ class CFPCamEffector;
 
 ENGINE_API extern float psHUD_FOV;
 ENGINE_API extern float psHUD_FOV_def;
+BOOL g_freelook_while_reloading = 1;
 
 void CActor::cam_Set(EActorCameras style)
 {
@@ -248,8 +249,16 @@ bool CActor::CanUseFreelook()
 				return false;
 
 			u32 state = wep->GetState();
-			if (state == CWeapon::eFire || state == CWeapon::eFire2 || state == CWeapon::eReload || state == CWeapon::eSwitch || state == CWeapon::eSwitchMode)
-				return false;
+
+			switch (state)
+			{
+				case CWeapon::eFire:
+				case CWeapon::eFire2:
+				case CWeapon::eSwitch:
+				case CWeapon::eSwitchMode: return false;
+				case CWeapon::eReload: return g_freelook_while_reloading;
+				default: return true; // If it's none of the states mentioned above it would return true on line 278 anyways.
+			}
 		}
 	}
 
