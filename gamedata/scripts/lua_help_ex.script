@@ -51,6 +51,7 @@
         smooth_ads_transition // Smoothly applies the ADS accuracy bonus instead of only being applied when fully ADS
         allow_silencer_hide_tracer // Controls wether or not silencers can hide tracers at all
         aimmode_remember // When switching to UBGL the weapon will remember what mode you switched from and will put you back in that mode
+        freelook_while_reloading // // Allows freelook during reload animations
 		
 		viewport_near [0.0, 1.0] // Adjust the camera near value
 

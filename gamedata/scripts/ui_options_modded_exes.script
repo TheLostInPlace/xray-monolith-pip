@@ -427,6 +427,14 @@ function init_opt_base()
 						content = {function() return {{"1", "ON"}, {"0", "OFF"}} end},
 						cmd = "aimmode_remember",
 					},
+					{
+						id = "freelook_while_reloading",
+						type = "list",
+						val = 1,
+						curr = {function() return get_console_cmd(0, "freelook_while_reloading") end},
+						content = {function() return {{"1", "ON"}, {"0", "OFF"}} end},
+						cmd = "freelook_while_reloading",
+					},
 				}
 			},
 
