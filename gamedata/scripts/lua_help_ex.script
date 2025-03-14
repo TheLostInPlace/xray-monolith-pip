@@ -50,6 +50,7 @@
         apply_pdm_to_ads // Enables PDM (handling) values to be applied properly during ADS
         smooth_ads_transition // Smoothly applies the ADS accuracy bonus instead of only being applied when fully ADS
         allow_silencer_hide_tracer // Controls wether or not silencers can hide tracers at all
+        use_separate_ubgl_keybind // Use separate keybind for switching to UBGL, or use vanilla system
         aimmode_remember // When switching to UBGL the weapon will remember what mode you switched from and will put you back in that mode
         freelook_while_reloading // // Allows freelook during reload animations
 		

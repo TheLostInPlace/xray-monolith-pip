@@ -421,23 +421,41 @@ void CWeapon::SetUIScope(LPCSTR scope_texture)
 	CUIXmlInit::InitWindow(*pWpnScopeXml, scope_texture, 0, m_UIScope);
 }
 
+BOOL useSeparateUBGLKeybind = TRUE;
 void CWeapon::SwitchZoomType()
 {
-	if (isGrenadeLauncherActive) // The IsGrenadeLauncherAttached() check is handled by ToggleGrenadeLauncher
-	{
-		ToggleGrenadeLauncher();
-	}
+	if (!useSeparateUBGLKeybind) {
+		if (m_zoomtype == 0 && (m_altAimPos || g_player_hud->m_adjust_mode))
+		{
+			SetZoomType(1);
+			m_zoom_params.m_bUseDynamicZoom = m_zoom_params.m_bUseDynamicZoom_Alt || READ_IF_EXISTS(pSettings, r_bool, cNameSect(), "scope_dynamic_zoom_alt", false);
+		} else if (IsGrenadeLauncherAttached())
+		{
+			SwitchState(eSwitch);
+			return;
+		} else if (m_zoomtype != 0)
+		{
+			SetZoomType(0);
+			m_zoom_params.m_bUseDynamicZoom = m_zoom_params.m_bUseDynamicZoom_Primary || READ_IF_EXISTS(pSettings, r_bool, cNameSect(), "scope_dynamic_zoom", false);
+		}
 
-	if (m_zoomtype == 0 && (m_altAimPos || g_player_hud->m_adjust_mode))
-	{
-		SetZoomTypeAndParams(1);
-	}
-	else if (m_zoomtype == 1)
-	{
-		SetZoomTypeAndParams(0);
-	}
+		UpdateUIScope();
+	} else {
+		if (isGrenadeLauncherActive) // The IsGrenadeLauncherAttached() check is handled by ToggleGrenadeLauncher
+		{
+			ToggleGrenadeLauncher();
+		}
 
-	UpdateUIScope();
+		if (m_zoomtype == 0 && (m_altAimPos || g_player_hud->m_adjust_mode))
+		{
+			SetZoomTypeAndParams(1);
+		} else if (m_zoomtype == 1)
+		{
+			SetZoomTypeAndParams(0);
+		}
+
+		UpdateUIScope();
+	}
 }
 
 void CWeapon::ToggleGrenadeLauncher()
@@ -1514,7 +1532,7 @@ bool CWeapon::Action(u16 cmd, u32 flags)
 			return true;
 		}
 	case kCUSTOM16:
-		if (flags & CMD_START && !IsPending())
+		if (useSeparateUBGLKeybind && flags & CMD_START && !IsPending())
 		{
 			if (pActor && pActor->is_safemode())
 				pActor->set_safemode(false);
