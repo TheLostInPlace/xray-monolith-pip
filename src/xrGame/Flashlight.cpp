@@ -60,13 +60,13 @@ BOOL CFlashlight::net_Spawn(CSE_Abstract* DC)
 	float range = pSettings->r_float(m_light_section, (b_r2) ? "range_r2" : "range");
 	light_render->set_color(clr);
 	light_render->set_range(range);
-	light_render->set_hud_mode(true);
+	light_render->set_hud_mode(READ_IF_EXISTS(pSettings, r_bool, m_light_section, "hud_mode", false));
 
 	Fcolor clr_o = pSettings->r_fcolor(m_light_section, (b_r2) ? "omni_color_r2" : "omni_color");
 	float range_o = pSettings->r_float(m_light_section, (b_r2) ? "omni_range_r2" : "omni_range");
 	light_omni->set_color(clr_o);
 	light_omni->set_range(range_o);
-	light_omni->set_hud_mode(true);
+	light_omni->set_hud_mode(READ_IF_EXISTS(pSettings, r_bool, m_light_section, "hud_mode", false));
 
 	light_render->set_cone(deg2rad(pSettings->r_float(m_light_section, "spot_angle")));
 	light_render->set_texture(READ_IF_EXISTS(pSettings, r_string, m_light_section, "spot_texture", (0)));
