@@ -119,6 +119,7 @@ protected:
 	void AddShotEffector();
 	void RemoveShotEffector();
 	void SetDesiredDir(float h, float p);
+	void ClampRotationHorz(float &tgt_val, const float &cur_val, const float &lim_min, const float &lim_max);
 	virtual bool IsHudModeNow() { return false; };
 
 	//HolderCustom

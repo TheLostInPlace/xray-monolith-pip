@@ -105,11 +105,11 @@ void CWeaponStatMgun::SetBoneCallbacks()
 {
 	//m_pPhysicsShell->EnabledCallbacks(FALSE);
 #ifdef STATIONARYMGUN_NEW
-	/* After attaching, make the gun start at current horizontal rotation but set vertical to 0. */
 	Fvector vec;
 	Visual()->dcast_PKinematics()->LL_GetTransform(m_rotate_y_bone).getHPB(vec);
 	m_cur_x_rot = 0.0F;
 	m_cur_y_rot = -vec.x;
+	ClampRotationHorz(m_cur_y_rot, -vec.x, -m_lim_y_rot.y, -m_lim_y_rot.x);
 #endif
 
 	CBoneInstance& biX = smart_cast<IKinematics*>(Visual())->LL_GetBoneInstance(m_rotate_x_bone);
@@ -136,7 +136,7 @@ void CWeaponStatMgun::ResetBoneCallbacks()
 
 #ifdef STATIONARYMGUN_NEW
 	biX.mTransform.mulB_43(Fmatrix().rotateX(m_cur_x_rot));
-	biY.mTransform.mulB_43(Fmatrix().rotateX(m_cur_y_rot));
+	biY.mTransform.mulB_43(Fmatrix().rotateY(m_cur_y_rot));
 #endif
 
 	//m_pPhysicsShell->EnabledCallbacks(TRUE);
@@ -552,23 +552,7 @@ void CWeaponStatMgun::UpdateBarrelDir()
 		m_i_bind_y_xform.transform_dir(dep);
 		dep.normalize();
 		m_tgt_y_rot = angle_normalize_signed(m_bind_y_rot - dep.getH());
-
-		if (abs(m_lim_y_rot.x) < PI || abs(m_lim_y_rot.y) < PI)
-		{
-			/* Target is outside of rotating limit. Decide which limit to head toward. */
-			if (m_tgt_y_rot < -m_lim_y_rot.y || m_tgt_y_rot > -m_lim_y_rot.x)
-			{
-				if (angle_difference(m_tgt_y_rot, -m_lim_y_rot.y) < angle_difference(m_tgt_y_rot, -m_lim_y_rot.x))
-					m_tgt_y_rot = -m_lim_y_rot.y;
-				else
-					m_tgt_y_rot = -m_lim_y_rot.x;
-			}
-			/* If horizontal rotation crosses 180 degrees in the back, make it swings around 0. */
-			if (abs(m_tgt_y_rot - m_cur_y_rot) >= PI)
-			{
-				m_tgt_y_rot = 0.0F;
-			}
-		}
+		ClampRotationHorz(m_tgt_y_rot, m_cur_y_rot, -m_lim_y_rot.y, -m_lim_y_rot.x);
 	}
 
 	m_cur_x_rot = angle_inertion_var(m_cur_x_rot, m_tgt_x_rot, m_min_gun_speed, m_max_gun_speed, PI, Device.fTimeDelta);
@@ -689,6 +673,27 @@ void CWeaponStatMgun::SetDesiredDir(float h, float p)
 	m_destEnemyDir.setHP(h, p);
 }
 
+void CWeaponStatMgun::ClampRotationHorz(float &tgt_val, const float &cur_val, const float &lim_min, const float &lim_max)
+{
+	/* Rotating limit must be lesser than 180 in both direction. */
+	if (abs(lim_min) < PI || abs(lim_max) < PI)
+	{
+		/* Target is outside of rotating limit. Clamp to the closest limit. */
+		if (tgt_val < lim_min || tgt_val > lim_max)
+		{
+			if (angle_difference(tgt_val, lim_min) < angle_difference(tgt_val, lim_max))
+				tgt_val = lim_min;
+			else
+				tgt_val = lim_max;
+		}
+		/* If the rotation to reach tgt_val from cur_val crosses 180 degrees in the back, make it swings around 0. */
+		if (abs(tgt_val - cur_val) >= PI)
+		{
+			tgt_val = 0.0F;
+		}
+	}
+}
+
 void CWeaponStatMgun::Action(u16 id, u32 flags)
 {
 	inheritedHolder::Action(id, flags);
@@ -792,7 +797,7 @@ bool CWeaponStatMgun::attach_Actor(CGameObject* actor)
 	{
 		OnCameraChange(eCamFirst);
 		Camera()->pitch = 0.0F;
-		Camera()->yaw = m_cur_y_rot;
+		Camera()->yaw = -m_cur_y_rot;
 	}
 	return true;
 #else
