@@ -654,6 +654,16 @@ SERVER_ENTITY_DECLARE_BEGIN(CSE_ALifeStationaryMgun, CSE_ALifeDynamicObjectVisua
 #ifdef STATIONARYMGUN_NEW
 	u8 ammo_type;
 	u16 a_elapsed;
+
+	struct SBarrel
+	{
+		SBarrel();
+		~SBarrel() {};
+		void read(NET_Packet &P);
+		void write(NET_Packet &P);
+		u16 a_elapsed;
+	};
+	xr_vector<SBarrel> m_barrels;
 #endif
 
 	CSE_ALifeStationaryMgun(LPCSTR caSection);
@@ -663,6 +673,8 @@ SERVER_ENTITY_DECLARE_BEGIN(CSE_ALifeStationaryMgun, CSE_ALifeDynamicObjectVisua
 	u16 get_ammo_elapsed();
 	void set_ammo_elapsed(u16 count);
 	u16 get_ammo_magsize();
+
+	virtual bool used_ai_locations() const;
 	virtual void load(NET_Packet& tNetPacket);
 	virtual bool can_save() const;
 	virtual CSE_Abstract* cast_abstract() { return this; }

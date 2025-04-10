@@ -41,7 +41,7 @@ struct SStmBarrel
 
 	float fShotTimeCounter;
 	float fOneShotTime;
-	int iShotElapsed;
+	int iAmmoElapsed;
 
 	shared_str m_sShellParticles;
 	shared_str m_sFlameParticles;
@@ -64,6 +64,9 @@ struct SStmBarrel
 	~SStmBarrel();
 	void reinit();
 	void Load(LPCSTR section);
+	BOOL net_Spawn(CSE_Abstract* DC);
+	void net_Export(NET_Packet& P);
+	void net_Import(NET_Packet& P);
 	LPCSTR Name() { return m_name.c_str(); };
 	void UpdateEx();
 	void StartParticles(CParticlesObject *&pParticles, LPCSTR particles_name, const Fvector &pos, const Fvector &vel = zero_vel, bool auto_remove_flag = false);
@@ -84,6 +87,7 @@ struct SStmBarrel
 	void UpdateLight();
 	void StopLight();
 	void OnShellDrop(const Fvector &play_pos, const Fvector &parent_vel);
+	void SetAmmoElapsed(int num);
 };
 #endif
 
@@ -236,7 +240,7 @@ private:
 
 	SStmAnimation m_animation;
 
-	float fireDispOwnerFactor;
+	float fireDispersionOwnerScale;
 	LPCSTR m_on_before_use_callback;
 
 	void CreateSkeleton(CSE_Abstract *po);
@@ -248,12 +252,13 @@ private:
 
 	xr_vector<SStmBarrel> m_barrels;
 	bool BarrelAllowFire(SStmBarrel &B);
+	int BarrelAmmoElapsed();
+	void BarrelAmmoElapsedCorrecting();
 
 protected:
 	virtual void SpawnInitPhysics(CSE_Abstract *D);
 	virtual void net_Save(NET_Packet &P);
 	virtual BOOL net_SaveRelevant();
-	void SaveNetState(NET_Packet &P);
 
 public:
 	enum
@@ -280,8 +285,11 @@ public:
 	Fvector GetFireDir() { return m_fire_dir; }
 	float FireDispersionBase() { return fireDispersionBase; }
 	bool IsCameraZoom() { return m_zoom_status; }
-	void PlayAnimation();
-	bool InFieldOfView(Fvector pos);
+	void UpdateAnimation();
+	Fvector2 GetTraverseLimitHorz();
+	void SetTraverseLimitHorz(Fvector2 vec);
+	Fvector2 GetTraverseLimitVert();
+	void SetTraverseLimitVert(Fvector2 vec);
 
 	/* Barrels APIs */
 	SStmBarrel *Barrel(LPCSTR name);
@@ -317,6 +325,7 @@ protected:
 	virtual void switch2_Reload();
 	virtual void switch2_Unload();
 
+	virtual void UpdateState();
 	virtual void UpdateReload();
 	virtual void UpdateUnload();
 
@@ -348,7 +357,7 @@ protected:
 	int GetAmmoCount(u8 ammo_type);
 	int GetAmmoCount_allType();
 	virtual u16 AddCartridge(u16 cnt);
-	void SpawnAmmo(u32 boxCurr = 0xffffffff, LPCSTR ammoSect = NULL);
+	void SpawnAmmo(u32 boxCurr = 0xffffffff, LPCSTR ammoSect = NULL, u32 ParentID = 0xffffffff);
 
 	float GetBaseDispersion(float cartridge_k);
 	float GetFireDispersion(bool with_cartridge, bool for_crosshair = false);

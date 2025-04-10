@@ -1505,7 +1505,7 @@ bool CActor::attach_Vehicle(CHolderCustom *object, bool bForce)
 			CWeaponStatMgun *stm = smart_cast<CWeaponStatMgun *>(object);
 			if (stm)
 			{
-				stm->PlayAnimation();
+				stm->UpdateAnimation();
 			}
 #endif
 
@@ -1559,11 +1559,6 @@ void CActor::detach_Vehicle(bool bForce)
 		R_ASSERT(V);
 		V->PlayCycle(m_anims->m_normal.legs_idle);
 		V->PlayCycle(m_anims->m_normal.m_torso_idle);
-
-		IKinematics *K = smart_cast<IKinematics *>(Visual());
-		K->LL_GetBoneInstance(K->LL_BoneID("bip01_spine")).set_callback(bctCustom, Spin0Callback, this);
-		K->LL_GetBoneInstance(K->LL_BoneID("bip01_spine1")).set_callback(bctCustom, Spin1Callback, this);
-		K->LL_GetBoneInstance(K->LL_BoneID("bip01_spine2")).set_callback(bctCustom, ShoulderCallback, this);
 
 		if (GO)
 		{

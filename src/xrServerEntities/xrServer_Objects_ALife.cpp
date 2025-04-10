@@ -2138,6 +2138,20 @@ void CSE_ALifeStationaryMgun::UPDATE_Read(NET_Packet& tNetPacket)
 #ifdef STATIONARYMGUN_NEW
 	ammo_type = tNetPacket.r_u8();
 	a_elapsed = tNetPacket.r_u16();
+
+	u16 num = tNetPacket.r_u16();
+	if (m_barrels.size() != num)
+	{
+		m_barrels.clear();
+		for (int idx = 0; idx < num; idx++)
+		{
+			m_barrels.push_back(SBarrel());
+		}
+	}
+	for (int idx = 0; idx < num; idx++)
+	{
+		m_barrels.at(idx).read(tNetPacket);
+	}
 #endif
 }
 
@@ -2155,25 +2169,17 @@ void CSE_ALifeStationaryMgun::UPDATE_Write(NET_Packet& tNetPacket)
 #ifdef STATIONARYMGUN_NEW
 	tNetPacket.w_u8(ammo_type);
 	tNetPacket.w_u16(a_elapsed);
+
+	u16 num = m_barrels.size();
+	tNetPacket.w_u16(num);
+	for (int idx = 0; idx < num; idx++)
+	{
+		m_barrels.at(idx).write(tNetPacket);
+	}
 #endif
 }
 
 #ifdef STATIONARYMGUN_NEW
-u16 CSE_ALifeStationaryMgun::get_ammo_elapsed()
-{
-	return ((u16)a_elapsed);
-}
-
-void CSE_ALifeStationaryMgun::set_ammo_elapsed(u16 count)
-{
-	a_elapsed = count;
-}
-
-u16 CSE_ALifeStationaryMgun::get_ammo_magsize()
-{
-	return READ_IF_EXISTS(pSettings, r_u16, s_name.c_str(), "ammo_mag_size", 0);
-}
-
 bool CSE_ALifeStationaryMgun::can_save() const
 {
 	return CSE_PHSkeleton::need_save();
@@ -2205,6 +2211,23 @@ void CSE_ALifeStationaryMgun::STATE_Read(NET_Packet& tNetPacket, u16 size)
 #ifdef STATIONARYMGUN_NEW
 	inherited1::STATE_Read(tNetPacket, size);
 	inherited2::STATE_Read(tNetPacket, size);
+
+	ammo_type = tNetPacket.r_u8();
+	a_elapsed = tNetPacket.r_u16();
+
+	u16 num = tNetPacket.r_u16();
+	if (m_barrels.size() != num)
+	{
+		m_barrels.clear();
+		for (int idx = 0; idx < num; idx++)
+		{
+			m_barrels.push_back(SBarrel());
+		}
+	}
+	for (int idx = 0; idx < num; idx++)
+	{
+		m_barrels.at(idx).read(tNetPacket);
+	}
 #else
 	inherited::STATE_Read(tNetPacket, size);
 #endif
@@ -2215,6 +2238,16 @@ void CSE_ALifeStationaryMgun::STATE_Write(NET_Packet& tNetPacket)
 #ifdef STATIONARYMGUN_NEW
 	inherited1::STATE_Write(tNetPacket);
 	inherited2::STATE_Write(tNetPacket);
+
+	tNetPacket.w_u8(ammo_type);
+	tNetPacket.w_u16(a_elapsed);
+
+	u16 num = m_barrels.size();
+	tNetPacket.w_u16(num);
+	for (int idx = 0; idx < num; idx++)
+	{
+		m_barrels.at(idx).write(tNetPacket);
+	}
 #else
 	inherited::STATE_Write(tNetPacket);
 #endif
@@ -2231,6 +2264,43 @@ void CSE_ALifeStationaryMgun::FillProps			(LPCSTR pref, PropItemVec& values)
 #endif
 }
 #endif // #ifndef XRGAME_EXPORTS
+
+#ifdef STATIONARYMGUN_NEW
+bool CSE_ALifeStationaryMgun::used_ai_locations() const
+{
+	return false;
+}
+
+u16 CSE_ALifeStationaryMgun::get_ammo_elapsed()
+{
+	return ((u16)a_elapsed);
+}
+
+void CSE_ALifeStationaryMgun::set_ammo_elapsed(u16 count)
+{
+	a_elapsed = count;
+}
+
+u16 CSE_ALifeStationaryMgun::get_ammo_magsize()
+{
+	return READ_IF_EXISTS(pSettings, r_u16, s_name.c_str(), "ammo_mag_size", 0);
+}
+
+CSE_ALifeStationaryMgun::SBarrel::SBarrel()
+{
+	a_elapsed = 0;
+}
+
+void CSE_ALifeStationaryMgun::SBarrel::read(NET_Packet &P)
+{
+	a_elapsed = P.r_u16();
+}
+
+void CSE_ALifeStationaryMgun::SBarrel::write(NET_Packet &P)
+{
+	P.w_u16(a_elapsed);
+}
+#endif
 
 ////////////////////////////////////////////////////////////////////////////
 // CSE_ALifeTeamBaseZone

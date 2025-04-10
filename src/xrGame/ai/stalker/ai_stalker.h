@@ -13,7 +13,10 @@
 #include "../../AI_PhraseDialogManager.h"
 #include "../../step_manager.h"
 #include "../../../xrServerEntities/script_export_space.h"
+
+#ifdef STATIONARYMGUN_NEW
 #include "../../WeaponStatMgun.h"
+#endif
 
 #ifdef DEBUG
 	template <typename _object_type>

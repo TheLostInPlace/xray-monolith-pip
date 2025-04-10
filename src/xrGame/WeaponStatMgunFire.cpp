@@ -196,7 +196,7 @@ void CWeaponStatMgun::OnShot()
 #ifdef STATIONARYMGUN_NEW
 	CGameObject *owner = (Owner()) ? Owner() : cast_game_object();
 	CCartridge &l_cartridge = (m_magazine.size() > 0) ? m_magazine.back() : m_DefaultCartridge;
-	FireBullet(m_fire_pos, m_fire_dir, GetFireDispersion(true), l_cartridge, owner->ID(), ID(), SendHitAllowed(owner), iAmmoElapsed);
+	FireBullet(m_fire_pos, m_fire_dir, GetFireDispersion(true), l_cartridge, owner->ID(), ID(), true, iMagazineSize - iAmmoElapsed);
 	++m_iShotNum;
 
 	m_lastCartridge = l_cartridge;
@@ -248,8 +248,7 @@ void CWeaponStatMgun::OnShot(SStmBarrel &B)
 {
 	CGameObject *owner = (Owner()) ? Owner() : cast_game_object();
 	CCartridge &l_cartridge = (m_magazine.size() > 0) ? m_magazine.back() : m_DefaultCartridge;
-	FireBullet(B.m_fire_pos, B.m_fire_dir, GetFireDispersion(true), l_cartridge, owner->ID(), ID(), SendHitAllowed(owner), B.iShotElapsed);
-	++B.iShotElapsed;
+	FireBullet(B.m_fire_pos, B.m_fire_dir, GetFireDispersion(true), l_cartridge, owner->ID(), ID(), true, iMagazineSize - B.iAmmoElapsed);
 
 	m_lastCartridge = l_cartridge;
 	if (!IsUnlimitedAmmo())
@@ -257,6 +256,8 @@ void CWeaponStatMgun::OnShot(SStmBarrel &B)
 		m_magazine.pop_back();
 		--iAmmoElapsed;
 		VERIFY((u32)iAmmoElapsed == m_magazine.size());
+		B.SetAmmoElapsed(B.iAmmoElapsed - 1);
+		BarrelAmmoElapsedCorrecting();
 	}
 
 	if (B.m_bLightShotEnabled)
@@ -276,6 +277,16 @@ void CWeaponStatMgun::OnShot(SStmBarrel &B)
 	m_dAngle.set(::Random.randF(-fireDispersionBase, fireDispersionBase), ::Random.randF(-fireDispersionBase, fireDispersionBase));
 }
 
+int CWeaponStatMgun::BarrelAmmoElapsed()
+{
+	int num = 0;
+	for (auto &B : m_barrels)
+	{
+		num += B.iAmmoElapsed;
+	}
+	return num;
+}
+
 bool CWeaponStatMgun::BarrelAllowFire(SStmBarrel &B)
 {
 	/*
@@ -285,16 +296,34 @@ bool CWeaponStatMgun::BarrelAllowFire(SStmBarrel &B)
 	*/
 	if (IsUnlimitedAmmo())
 		return true;
-	/* Hasn't reached ammo size for each barrel yet. */
-	if (B.iShotElapsed * m_barrels.size() < iMagazineSize)
+	/* Barrel is out of ammo. */
+	if (B.iAmmoElapsed > 0)
 		return true;
-	/* Rounds being shot in all barrels must be synchronized with ammo elapsed. */
-	int num = 0;
-	for (auto i : m_barrels)
+	/* If ammo elapsed matches, stop this barrel from firing as intended. If doesn't, there is issue but let it fires. Not a big deal. */
+	return (iAmmoElapsed == BarrelAmmoElapsed()) ? false : true;
+}
+
+void CWeaponStatMgun::BarrelAmmoElapsedCorrecting()
+{
+	/* Call after setting ammo elapsed for the gun. Correct new ammo elapsed for each barrel. */
+	if (m_barrels.size() == 0)
+		return;
+	if (iAmmoElapsed == BarrelAmmoElapsed())
+		return;
+	int evn = iAmmoElapsed / m_barrels.size();
+	int odd = iAmmoElapsed % m_barrels.size();
+	int idx = 0;
+	for (auto &B : m_barrels)
 	{
-		num += i.iShotElapsed;
+		idx++;
+		if (idx <= odd)
+			B.iAmmoElapsed = evn + 1;
+		else
+			B.iAmmoElapsed = evn;
+#if 0
+		Msg("%s:%d evn:%d odd:%d [%d]iAmmoElapsed:%d", __FUNCTION__, __LINE__, evn, odd, idx, B.iAmmoElapsed);
+#endif
 	}
-	return num != iMagazineSize - iAmmoElapsed;
 }
 #endif
 
@@ -345,7 +374,7 @@ float CWeaponStatMgun::GetFireDispersion(float cartridge_k, bool for_crosshair)
 	float fire_disp = GetBaseDispersion(cartridge_k);
 	if (Owner())
 	{
-		fire_disp += (Owner()->cast_inventory_owner()->GetWeaponAccuracy() * fireDispOwnerFactor);
+		fire_disp += (Owner()->cast_inventory_owner()->GetWeaponAccuracy() * fireDispersionOwnerScale);
 	}
 	return fire_disp;
 }
@@ -434,6 +463,24 @@ void CWeaponStatMgun::switch2_Unload()
 	}
 }
 
+void CWeaponStatMgun::UpdateState()
+{
+	switch (m_state_index)
+	{
+	case eStateIdle:
+	case eStateFire:
+		break;
+	case eStateReload:
+		UpdateReload();
+		return;
+	case eStateUnload:
+		UpdateUnload();
+		return;
+	default:
+		break;
+	}
+}
+
 void CWeaponStatMgun::UpdateReload()
 {
 	Fmatrix xfm = Fmatrix().mul_43(XFORM(), Visual()->dcast_PKinematics()->LL_GetTransform(m_rotate_x_bone));
@@ -459,13 +506,8 @@ void CWeaponStatMgun::UpdateUnload()
 	{
 		m_state_index = eStateIdle;
 		m_state_delay = 0;
-		UnloadMagazine(true);
+		UnloadMagazine(!IsUnlimitedAmmo());
 		m_sounds.StopSound("sndUnload");
-
-		for (auto &B : m_barrels)
-		{
-			B.iShotElapsed = 0;
-		}
 	}
 }
 
@@ -495,7 +537,7 @@ bool CWeaponStatMgun::IsReloadConsume()
 
 CInventory *CWeaponStatMgun::GetInventory()
 {
-	return (Owner()) ? const_cast<CInventory *>(&Owner()->cast_inventory_owner()->inventory()) : NULL;
+	return (Owner() && Owner()->cast_inventory_owner()) ? &Owner()->cast_inventory_owner()->inventory() : nullptr;
 }
 
 void CWeaponStatMgun::SetAmmoElapsed(int ammo_count)
@@ -519,12 +561,14 @@ void CWeaponStatMgun::SetAmmoElapsed(int ammo_count)
 				m_magazine.pop_back();
 		}
 	}
+
+	BarrelAmmoElapsedCorrecting();
 }
 
 void CWeaponStatMgun::SetAmmoType(u8 type)
 {
 	m_ammoType = type;
-	UnloadMagazine(true);
+	UnloadMagazine(!IsUnlimitedAmmo() && IsReloadConsume());
 	m_bLockType = true;
 	ReloadMagazine();
 	m_bLockType = false;
@@ -536,16 +580,22 @@ void CWeaponStatMgun::ReloadMagazine()
 
 	if (!m_bLockType)
 	{
-		m_pCurrentAmmo = NULL;
+		m_pCurrentAmmo = nullptr;
 	}
 
 	if (is_consume_ammo)
 	{
 		if (m_ammoTypes.size() <= m_ammoType)
+		{
+			BarrelAmmoElapsedCorrecting();
 			return;
+		}
 		LPCSTR tmp_sect_name = m_ammoTypes[m_ammoType].c_str();
 		if (!tmp_sect_name)
+		{
+			BarrelAmmoElapsedCorrecting();
 			return;
+		}
 		m_pCurrentAmmo = smart_cast<CWeaponAmmo *>(GetInventory()->GetAny(tmp_sect_name));
 		if (!m_pCurrentAmmo && !m_bLockType && iAmmoElapsed == 0)
 		{
@@ -562,16 +612,22 @@ void CWeaponStatMgun::ReloadMagazine()
 	}
 
 	if (!m_pCurrentAmmo && is_consume_ammo)
+	{
+		BarrelAmmoElapsedCorrecting();
 		return;
-	if (!m_bLockType && !m_magazine.empty() && (!m_pCurrentAmmo || xr_strcmp(m_pCurrentAmmo->cNameSect(), m_magazine.back().m_ammoSect.c_str())))
-		UnloadMagazine(is_consume_ammo);
+	}
 
+	if (!m_bLockType && !m_magazine.empty() && (!m_pCurrentAmmo || xr_strcmp(m_pCurrentAmmo->cNameSect(), m_magazine.back().m_ammoSect.c_str())))
+	{
+		UnloadMagazine(is_consume_ammo);
+	}
 	VERIFY((u32)iAmmoElapsed == m_magazine.size());
 
 	if (m_DefaultCartridge.m_LocalAmmoType != m_ammoType)
+	{
 		m_DefaultCartridge.Load(m_ammoTypes[m_ammoType].c_str(), m_ammoType);
+	}
 	CCartridge l_cartridge = m_DefaultCartridge;
-
 	while (iAmmoElapsed < iMagazineSize)
 	{
 		if (is_consume_ammo)
@@ -597,8 +653,9 @@ void CWeaponStatMgun::ReloadMagazine()
 		ReloadMagazine();
 		m_bLockType = false;
 	}
-
 	VERIFY((u32)iAmmoElapsed == m_magazine.size());
+
+	BarrelAmmoElapsedCorrecting();
 }
 
 void CWeaponStatMgun::UnloadMagazine(bool spawn_ammo)
@@ -625,25 +682,25 @@ void CWeaponStatMgun::UnloadMagazine(bool spawn_ammo)
 
 	VERIFY((u32)iAmmoElapsed == m_magazine.size());
 
-	if (spawn_ammo)
+	CInventory *inv = GetInventory();
+	if (spawn_ammo && inv)
 	{
 		xr_map<LPCSTR, u16>::iterator l_it;
 		for (l_it = l_ammo.begin(); l_ammo.end() != l_it; ++l_it)
 		{
-			if (GetInventory())
+			CWeaponAmmo *l_pA = smart_cast<CWeaponAmmo *>(inv->GetAny(l_it->first));
+			if (l_pA)
 			{
-				CWeaponAmmo *l_pA = smart_cast<CWeaponAmmo *>(GetInventory()->GetAny(l_it->first));
-				if (l_pA)
-				{
-					u16 l_free = l_pA->m_boxSize - l_pA->m_boxCurr;
-					l_pA->m_boxCurr = l_pA->m_boxCurr + (l_free < l_it->second ? l_free : l_it->second);
-					l_it->second = l_it->second - (l_free < l_it->second ? l_free : l_it->second);
-				}
+				u16 l_free = l_pA->m_boxSize - l_pA->m_boxCurr;
+				l_pA->m_boxCurr = l_pA->m_boxCurr + (l_free < l_it->second ? l_free : l_it->second);
+				l_it->second = l_it->second - (l_free < l_it->second ? l_free : l_it->second);
 			}
 			if (l_it->second)
-				SpawnAmmo(l_it->second, l_it->first);
+				SpawnAmmo(l_it->second, l_it->first, Owner()->ID());
 		}
 	}
+
+	BarrelAmmoElapsedCorrecting();
 }
 
 u16 CWeaponStatMgun::AddCartridge(u16 cnt)
@@ -670,16 +727,26 @@ u16 CWeaponStatMgun::AddCartridge(u16 cnt)
 	return cnt;
 }
 
-void CWeaponStatMgun::SpawnAmmo(u32 boxCurr, LPCSTR ammoSect)
+void CWeaponStatMgun::SpawnAmmo(u32 boxCurr, LPCSTR ammoSect, u32 ParentID)
 {
+	if (ParentID >= 0xffff)
+		return;
 	if (OnClient())
 		return;
-	if (m_ammoTypes.size() == 0)
+	if (!m_ammoTypes.size())
 		return;
-	if (ammoSect == NULL)
-		ammoSect = m_ammoTypes[0].c_str();
+
+	int l_type = 0;
+	l_type %= m_ammoTypes.size();
+
+	if (ammoSect == nullptr)
+		ammoSect = m_ammoTypes[l_type].c_str();
+
+	++l_type;
+	l_type %= m_ammoTypes.size();
 
 	CSE_Abstract *D = F_entity_Create(ammoSect);
+
 	{
 		CSE_ALifeItemAmmo *l_pA = smart_cast<CSE_ALifeItemAmmo *>(D);
 		R_ASSERT(l_pA);
@@ -688,7 +755,7 @@ void CWeaponStatMgun::SpawnAmmo(u32 boxCurr, LPCSTR ammoSect)
 		D->set_name_replace("");
 		D->s_RP = 0xff;
 		D->ID = 0xffff;
-		D->ID_Parent = (u16)ID();
+		D->ID_Parent = (u16)ParentID;
 		D->ID_Phantom = 0xffff;
 		D->s_flags.assign(M_SPAWN_OBJECT_LOCAL);
 		D->RespawnTime = 0;

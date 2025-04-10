@@ -1604,8 +1604,11 @@ bool CAI_Stalker::attach_Holder(CHolderCustom *holder)
 		{
 			m_holder = holder;
 
-			character_physics_support()->movement()->DestroyCharacter();
-			stm->PlayAnimation();
+			animation().clear_script_animations();
+			movement().set_movement_type(eMovementTypeStand);
+			movement().set_mental_state(eMentalStateFree);
+			movement().set_body_state(eBodyStateStand);
+			stm->UpdateAnimation();
 			return true;
 		}
 		return false;
@@ -1623,12 +1626,10 @@ void CAI_Stalker::detach_Holder()
 	if (stm)
 	{
 		ForceTransform(Fmatrix().set(XFORM()).translate_over(stm->ExitPosition()));
-		stm->detach_Actor();
-		m_holder = nullptr;
-
-		character_physics_support()->movement()->CreateCharacter();
-		return;
 	}
+
+	m_holder->detach_Actor();
+	m_holder = nullptr;
 }
 
 bool CAI_Stalker::use_HolderEx(CHolderCustom *object)

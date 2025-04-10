@@ -140,7 +140,10 @@ void CWeaponStatMgun::script_register(lua_State* L)
 		.def("GetFirePos", &CWeaponStatMgun::GetFirePos)
 		.def("GetFireDir", &CWeaponStatMgun::GetFireDir)
 		.def("ExitPosition", &CWeaponStatMgun::ExitPosition)
-		.def("InFieldOfView", &CWeaponStatMgun::InFieldOfView)
+		.def("GetTraverseLimitHorz", &CWeaponStatMgun::GetTraverseLimitHorz)
+		.def("SetTraverseLimitHorz", &CWeaponStatMgun::SetTraverseLimitHorz)
+		.def("GetTraverseLimitVert", &CWeaponStatMgun::GetTraverseLimitVert)
+		.def("SetTraverseLimitVert", &CWeaponStatMgun::SetTraverseLimitVert)
 		.def(constructor<>())
 	];
 }
