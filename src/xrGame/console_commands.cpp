@@ -2475,6 +2475,7 @@ void CCC_RegisterCommands()
 		CMD3(CCC_Mask, "log_missing_ini", &FS.m_Flags, FS.flPrintLTX);
 		CMD3(CCC_Mask, "g_firepos", &psActorFlags, AF_FIREPOS);
 		CMD3(CCC_Mask, "g_firepos_zoom", &psActorFlags, AF_FIREPOS_ZOOM);
+		CMD3(CCC_Mask, "g_gunsnd_indoor", &psActorFlags, AF_GUNSND_INDOOR);
 		CMD4(CCC_Float, "g_end_modif", &g_end_modif, 0.f, 10.f);
 	}
 #endif // MASTER_GOLD

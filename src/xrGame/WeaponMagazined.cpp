@@ -106,8 +106,10 @@ void CWeaponMagazined::Load(LPCSTR section)
 	m_sounds.LoadSound(section, "snd_shoot", "sndShot", false, m_eSoundShot);
 	if (WeaponSoundExist(section, "snd_shoot_actor"))
 		m_sounds.LoadSound(section, "snd_shoot_actor", "sndShotActor", false, m_eSoundShot);
+	// Indoor
+	if (WeaponSoundExist(section, "snd_shoot_indoor"))
+		m_sounds.LoadSound(section, "snd_shoot_indoor", "sndShotIndoor", false, m_eSoundShot);
 	//-Alundaio
-
 	// Cyclic fire sounds
 	if (WeaponSoundExist(section, "snd_shoot_actor_first"))
 		m_sounds.LoadSound(section, "snd_shoot_actor_first", "sndShotActorFirst", false, m_eSoundShot);
@@ -721,6 +723,8 @@ void CWeaponMagazined::UpdateSounds()
 		m_sounds.SetPosition("sndShotMisfireActor", P);
 	if (m_sounds.FindSoundItem("sndShotActorFirst", false))
 		m_sounds.SetPosition("sndShotActorFirst", P);
+	if (m_sounds.FindSoundItem("sndShotIndoor", false))
+		m_sounds.SetPosition("sndShotIndoor", P);
 }
 
 // demonized: check if cycle_down is enabled and shot num below max possible burst. Adds support for arbitrary burst shot at rpm_mode_2 with cycling down to rpm after maxBurstAmount
@@ -857,6 +861,17 @@ void CWeaponMagazined::PlaySoundShot()
 			if (m_sounds.FindSoundItem(sndNameMisfire, false))
 			{
 				m_sounds.PlaySound(sndNameMisfire, get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1);
+				return;
+			}
+		}
+
+		if psActorFlags.test(AF_GUNSND_INDOOR)
+		{
+			string128 sndNameIndoor;
+			strconcat(sizeof(sndNameIndoor), sndNameIndoor, m_sSndShotCurrent.c_str(), "Indoor");
+			if (m_sounds.FindSoundItem(sndNameIndoor, false))
+			{
+				m_sounds.PlaySound(sndNameIndoor, get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1);
 				return;
 			}
 		}
