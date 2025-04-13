@@ -2849,5 +2849,5 @@ void CCC_RegisterCommands()
 	CMD4(CCC_Integer, "freelook_while_reloading", &g_freelook_while_reloading, 0, 1);
 	// Indoor weapon sounds
 	CMD4(CCC_Float, "g_gunsnd_indoor", &g_gunsnd_indoor, 0.0f, 1.0f);
-	CMD4(CCC_Float, "g_gunsnd_indoor_volume", &vol_g_gunsnd_indoor, 0.0f, 5.0f);
+	CMD4(CCC_Float, "g_gunsnd_indoor_volume", &g_gunsnd_indoor_volume, 0.0f, 5.0f);
 }
