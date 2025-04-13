@@ -2848,6 +2848,6 @@ void CCC_RegisterCommands()
 	// Allows freelook during reload animations
 	CMD4(CCC_Integer, "freelook_while_reloading", &g_freelook_while_reloading, 0, 1);
 	// Indoor weapon sounds
-	CMD3(CCC_Float, "g_gunsnd_indoor", &g_gunsnd_indoor, 0.0f, 1.0f);
-	CMD3(CCC_Float, "g_gunsnd_indoor_volume", &g_gunsnd_indoor_volume, 0.0f, 5.0f);
+	CMD4(CCC_Float, "g_gunsnd_indoor", &g_gunsnd_indoor, 0.0f, 1.0f);
+	CMD4(CCC_Float, "g_gunsnd_indoor_volume", &g_gunsnd_indoor_volume, 0.0f, 5.0f);
 }
