@@ -24,7 +24,8 @@ struct HUD_SOUND_ITEM
 	                      const CObject* parent,
 	                      bool hud_mode,
 	                      bool looped = false,
-	                      u8 index = u8(-1));
+	                      u8 index = u8(-1),
+						  float volume_mult = 1.f);
 
 	static void StopSound(HUD_SOUND_ITEM& snd);
 
@@ -47,8 +48,8 @@ struct HUD_SOUND_ITEM
 	struct SSnd
 	{
 		ref_sound snd;
-		float delay; //задержка перед проигрыванием
-		float volume; //громкость
+		float delay; //Р·Р°РґРµСЂР¶РєР° РїРµСЂРµРґ РїСЂРѕРёРіСЂС‹РІР°РЅРёРµРј
+		float volume; //РіСЂРѕРјРєРѕСЃС‚СЊ
 	};
 
 	shared_str m_alias;
@@ -71,7 +72,7 @@ public:
 
 	HUD_SOUND_ITEM* FindSoundItem(LPCSTR alias, bool b_assert); //AVO: made public to check if sound is loaded
 	void PlaySound(LPCSTR alias, const Fvector& position, const CObject* parent, bool hud_mode, bool looped = false,
-	               u8 index = u8(-1));
+	               u8 index = u8(-1), float volume_mult = 1.f);
 
 	void StopSound(LPCSTR alias);
 
@@ -89,7 +90,7 @@ public:
 	~HUD_SOUND_COLLECTION_LAYERED();
 	HUD_SOUND_ITEM* FindSoundItem(LPCSTR alias, bool b_assert);
 	void PlaySound(LPCSTR alias, const Fvector& position, const CObject* parent, bool hud_mode, bool looped = false,
-	               u8 index = u8(-1));
+	               u8 index = u8(-1), float volume_mult = 1.f);
 	void StopSound(LPCSTR alias);
 	void StopAllSounds();
 	void LoadSound(LPCSTR section, LPCSTR line, LPCSTR alias, bool exclusive = false, int type = sg_SourceType);
