@@ -1147,7 +1147,7 @@ luabind::object CScriptGameObject::GetShaders(bool bHud)
 	return table;
 }
 
-void set_shader_tex(IRenderVisual* vis, int id, char* shader, LPCSTR texture)
+void set_shader_tex(IRenderVisual* vis, int id, LPCSTR shader, LPCSTR texture)
 {
 	xr_vector<IRenderVisual*>* children = vis->get_children();
 
@@ -1184,8 +1184,8 @@ void CScriptGameObject::SetShaderTexture(int id, LPCSTR shader, LPCSTR texture, 
 			k = itm->HudItemData()->m_model;
 		else if (act)
 		{
-			set_shader_tex(g_player_hud->m_model->dcast_RenderVisual(), id, xr_strdup(shader), texture);
-			set_shader_tex(g_player_hud->m_model_2->dcast_RenderVisual(), id, xr_strdup(shader), texture);
+			set_shader_tex(g_player_hud->m_model->dcast_RenderVisual(), id, shader, texture);
+			set_shader_tex(g_player_hud->m_model_2->dcast_RenderVisual(), id, shader, texture);
 			return;
 		}
 	}
@@ -1195,5 +1195,5 @@ void CScriptGameObject::SetShaderTexture(int id, LPCSTR shader, LPCSTR texture, 
 
 	if (!k) return;
 
-	set_shader_tex(k->dcast_RenderVisual(), id, xr_strdup(shader), texture);
+	set_shader_tex(k->dcast_RenderVisual(), id, shader, texture);
 }
