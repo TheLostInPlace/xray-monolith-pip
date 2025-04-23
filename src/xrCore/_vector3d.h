@@ -637,6 +637,19 @@ public:
 		return mad(dir, norm, -dir.dotproduct(norm));
 	}
 
+	// demonized: Calculate the projection of the vector onto the vector
+	IC SelfRef project(const Self& v, const Self& other)
+	{
+		auto dot = v.dotproduct(other);
+		auto other_len_sq = other.square_magnitude();
+		return set(other).mul(dot / other_len_sq);
+	}
+
+	IC SelfRef project(const Self& other)
+	{
+		return project(*this, other);
+	}
+
 	IC static void generate_orthonormal_basis(const _vector3<T>& dir, _vector3<T>& up, _vector3<T>& right)
 	{
 		T fInvLength;
@@ -693,6 +706,7 @@ public:
 		}
 	}
 
+	// demonized: Adjust pos.z for Device.ViewportNear, add world_to_hud
 	IC static void hud_to_world(Self& pos)
 	{
 		Device.mView.transform_tiny(pos);
@@ -731,6 +745,7 @@ public:
 		Device.mView.transform_dir(dir);
 	}
 
+	// Self functions for Lua
 	IC SelfRef hud_to_world_self()
 	{
 		hud_to_world(*this);
