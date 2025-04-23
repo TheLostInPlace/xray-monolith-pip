@@ -697,6 +697,7 @@ public:
 	{
 		Device.mView.transform_tiny(pos);
 		Device.mProjectHud.transform_tiny(pos);
+		pos.z -= Device.ViewportNear;
 
 		Device.mInvProject.transform_tiny(pos);
 		Device.mInvView.transform_tiny(pos);
@@ -707,6 +708,7 @@ public:
 		Device.mInvView.transform_tiny(pos);
 		Device.mInvProject.transform_tiny(pos);
 
+		pos.z += Device.ViewportNear;
 		Device.mProjectHud.transform_tiny(pos);
 		Device.mView.transform_tiny(pos);
 	}
