@@ -731,45 +731,25 @@ public:
 
 	IC SelfRef hud_to_world_self()
 	{
-		SelfRef tmp = *this;
-		Device.mView.transform_tiny(tmp);
-		Device.mProjectHud.transform_tiny(tmp);
-
-		Device.mInvProject.transform_tiny(tmp);
-		Device.mInvView.transform_tiny(tmp);
+		hud_to_world(*this);
 		return *this;
 	}
 
 	IC SelfRef world_to_hud_self()
 	{
-		SelfRef tmp = *this;
-		Device.mInvView.transform_tiny(tmp);
-		Device.mInvProject.transform_tiny(tmp);
-
-		Device.mProjectHud.transform_tiny(tmp);
-		Device.mView.transform_tiny(tmp);
+		world_to_hud(*this);
 		return *this;
 	}
 
 	IC SelfRef hud_to_world_dir_self()
 	{
-		SelfRef tmp = *this;
-		Device.mView.transform_dir(tmp);
-		Device.mProjectHud.transform_dir(tmp);
-
-		Device.mInvProject.transform_dir(tmp);
-		Device.mInvView.transform_dir(tmp);
+		hud_to_world_dir(*this);
 		return *this;
 	}
 
 	IC SelfRef world_to_hud_dir_self()
 	{
-		SelfRef tmp = *this;
-		Device.mInvView.transform_dir(tmp);
-		Device.mInvProject.transform_dir(tmp);
-
-		Device.mProjectHud.transform_dir(tmp);
-		Device.mView.transform_dir(tmp);
+		world_to_hud_dir(*this);
 		return *this;
 	}
 };
