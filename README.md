@@ -12,6 +12,8 @@ Here is list of exe files for Anomaly 1.5.3 that contains all engine patches by 
 * Delete shader cache in launcher before first launch of the game with new exes. You only have to do it once.
 
 # TROUBLESHOOTING
+* **If you are updating from version older than 2025.04.21 and use Reshade, you need to update Reshade as well**
+
 * Q: How to reinstall modded exes from scratch?
 * A: 
   * Delete everything in `db/mods` folders
@@ -196,7 +198,7 @@ How to compile exes:
 
 **2025.04.21**
 * NLTP_Ashes: Add support for distortion on HUD geometry (https://github.com/themrdemonized/xray-monolith/pull/174)
-* Lucy: Updated ReShade Support (https://github.com/themrdemonized/xray-monolith/pull/175)
+* Lucy: Updated ReShade Support (https://github.com/themrdemonized/xray-monolith/pull/175). **If you are updating from version older than 2025.04.21 and use Reshade, you need to update Reshade as well**
 
 **2025.04.19**
 * Lucy: (https://github.com/themrdemonized/xray-monolith/pull/171)
