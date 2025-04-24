@@ -706,15 +706,15 @@ public:
 		}
 	}
 
-	IC SelfRef hud_to_world(bool tiny = false)
+	IC SelfRef hud_to_world()
 	{
-		Device.hud_to_world(*this, tiny);
+		Device.hud_to_world(*this);
 		return *this;
 	}
 
-	IC SelfRef world_to_hud(bool tiny = false)
+	IC SelfRef world_to_hud()
 	{
-		Device.world_to_hud(*this, tiny);
+		Device.world_to_hud(*this);
 		return *this;
 	}
 

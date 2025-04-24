@@ -312,32 +312,22 @@ public:
 		return (Timer.time_factor());
 	}
 
-	Fvector& hud_to_world(Fvector& v, const Fmatrix& p, bool tiny = false)
+	Fvector& hud_to_world(Fvector& v, const Fmatrix& p)
 	{
-		if (tiny) {
-			mView.transform_tiny(v);
-			p.transform_tiny(v);
+		mView.transform(v);
+		p.transform(v);
 
-			v.z -= ViewportNear;
+		v.z -= ViewportNear;
 
-			mInvProject.transform_tiny(v);
-			mInvView.transform_tiny(v);
-		} else {
-			mView.transform(v);
-			p.transform(v);
-
-			v.z -= ViewportNear;
-
-			mInvProject.transform(v);
-			mInvView.transform(v);
-		}
+		mInvProject.transform(v);
+		mInvView.transform(v);
 
 		return v;
 	}
 
-	Fvector& hud_to_world(Fvector& v, bool tiny = false)
+	Fvector& hud_to_world(Fvector& v)
 	{
-		return hud_to_world(v, mProjectHud, tiny);
+		return hud_to_world(v, mProjectHud);
 	}
 
 	Fvector& hud_to_world_dir(Fvector& v, const Fmatrix& p)
@@ -356,45 +346,35 @@ public:
 		return hud_to_world_dir(v, mProjectHud);
 	}
 
-	Fmatrix& hud_to_world(Fmatrix& m, const Fmatrix& p, bool tiny = false)
+	Fmatrix& hud_to_world(Fmatrix& m, const Fmatrix& p)
 	{
-		hud_to_world(m.c, p, tiny);
+		hud_to_world(m.c, p);
 		hud_to_world_dir(m.i, p).normalize();
 		hud_to_world_dir(m.j, p).normalize();
 		hud_to_world_dir(m.k, p).normalize();
 		return m;
 	}
 
-	Fmatrix& hud_to_world(Fmatrix& m, bool tiny = false)
+	Fmatrix& hud_to_world(Fmatrix& m)
 	{
-		return hud_to_world(m, mProjectHud, tiny);
+		return hud_to_world(m, mProjectHud);
 	}
 
-	Fvector& world_to_hud(Fvector& v, const Fmatrix& p, bool tiny = false)
+	Fvector& world_to_hud(Fvector& v, const Fmatrix& p)
 	{
-		if (tiny) {
-			mInvView.transform_tiny(v);
-			mInvProject.transform_tiny(v);
+		mInvView.transform(v);
+		mInvProject.transform(v);
 
-			v.z += ViewportNear;
+		v.z += ViewportNear;
 
-			p.transform_tiny(v);
-			mView.transform_tiny(v);
-		} else {
-			mInvView.transform(v);
-			mInvProject.transform(v);
-
-			v.z += ViewportNear;
-
-			p.transform(v);
-			mView.transform(v);
-		}
+		p.transform(v);
+		mView.transform(v);
 		return v;
 	}
 
-	Fvector& world_to_hud(Fvector& v, bool tiny = false)
+	Fvector& world_to_hud(Fvector& v)
 	{
-		return world_to_hud(v, mProjectHud, tiny);
+		return world_to_hud(v, mProjectHud);
 	}
 
 	Fvector& world_to_hud_dir(Fvector& v, const Fmatrix& p)
@@ -413,18 +393,18 @@ public:
 		return world_to_hud_dir(v, mProjectHud);
 	}
 
-	Fmatrix& world_to_hud(Fmatrix& m, const Fmatrix& p, bool tiny = false)
+	Fmatrix& world_to_hud(Fmatrix& m, const Fmatrix& p)
 	{
-		world_to_hud(m.c, p, tiny);
+		world_to_hud(m.c, p);
 		world_to_hud_dir(m.i, p).normalize();
 		world_to_hud_dir(m.j, p).normalize();
 		world_to_hud_dir(m.k, p).normalize();
 		return m;
 	}
 
-	Fmatrix& world_to_hud(Fmatrix& m, bool tiny = false)
+	Fmatrix& world_to_hud(Fmatrix& m)
 	{
-		return world_to_hud(m, mProjectHud, tiny);
+		return world_to_hud(m, mProjectHud);
 	}
 
 	// Multi-threading
