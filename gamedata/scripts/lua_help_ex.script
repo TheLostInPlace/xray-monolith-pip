@@ -97,6 +97,7 @@
     namespace game {
         Fvector2 world2ui(Fvector pos, bool hud = false, bool allow_offscreen = false)
         function ui2world(Fvector2 pos) -> Fvector result, u16 object_id
+        function ui2world_offscreen(Fvector2 pos) -> Fvector result, u16 object_id
         change_game_news_show_time(CUIWindow* UIWindow, float show_time)
         update_pda_news_from_uiwindow(CUIWindow* UIWindow)
     }
@@ -224,15 +225,27 @@
     }
 
     class Fvector {
+        static functions:
+            vector.generate_orthonormal_basis(Fvector dir, Fvector up, Fvector right)
+            vector.generate_orthonormal_basis_normalized(Fvector dir, Fvector up, Fvector right)
+
         function add(float x, float y, float z)
         function sub(float x, float y, float z)
         function mul(float x, float y, float z)
         function div(float x, float y, float z)
         function distance_to_xz_sqr(Fvector)
+        function project(Fvector u, Fvector v)
+        function project(Fvector v)
+
         function hud_to_world()
         function world_to_hud()
+
         function hud_to_world_dir()
         function world_to_hud_dir()
+    }
+
+    class Fvector2 {
+        function normalize()
     }
 
     class Fmatrix {
@@ -281,6 +294,15 @@
         function setXYZi(float x, float y, float z)
         function setXYZi(Fvector)
         Fvector getHPB()
+        function transform(Fvector, Fvector)
+        function transform(Fvector)
+        function transform_tiny(Fvector, Fvector)
+        function transform_tiny(Fvector)
+        function transform_dir(Fvector, Fvector)
+        function transform_dir(Fvector)
+
+        function hud_to_world()
+        function world_to_hud()
     }
 
     class particle_object {
@@ -357,6 +379,11 @@
         string bone_name(u16 id)
         string bone_name(u16 id, bool bHud)
 
+        Fmatrix bone_transform(u16 id)
+        Fmatrix bone_transform(u16 id, bool bHud)
+        Fmatrix bone_transform(string)
+        Fmatrix bone_transform(string, bool bHud)
+
         Fvector bone_position(u16 id)
         Fvector bone_position(u16 id, bool bHud)
         Fvector bone_position(string)
@@ -366,11 +393,6 @@
         Fvector bone_direction(u16 id, bool bHud)
         Fvector bone_direction(string)
         Fvector bone_direction(string, bool bHud)
-
-        Fmatrix bone_transform(u16 id)
-        Fmatrix bone_transform(u16 id, bool bHud)
-        Fmatrix bone_transform(string)
-        Fmatrix bone_transform(string, bool bHud)
 
         u16 bone_parent(u16 id)
         u16 bone_parent(u16 id, bool bHud)
@@ -529,7 +551,7 @@
         function GetZoomRotateTime()
         function SetZoomRotateTime(float)
     }
-
+	
     enum rq_target { (sum them up to target multiple types)
         rqtNone     = 0,
         rqtObject   = 1,
