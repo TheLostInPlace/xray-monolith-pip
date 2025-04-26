@@ -63,6 +63,8 @@ void CHUDCrosshair::DeinitShaderCrosshair()
 	if (shaderCrosshair->inited())
 	{
 		shaderCrosshair->destroy();
+		strcpy(lastCrosshairShader, "");
+		strcpy(lastCrosshairTexture, "");
 	}
 }
 
@@ -73,7 +75,6 @@ bool CHUDCrosshair::InitShaderCrosshair()
 		DeinitShaderCrosshair();
 
 		shaderCrosshair->create(crosshair_shader, crosshair_texture);
-
 		strcpy(lastCrosshairShader, crosshair_shader);
 		strcpy(lastCrosshairTexture, crosshair_texture);
 	}
