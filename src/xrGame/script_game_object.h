@@ -178,6 +178,7 @@ public:
 	void play_cycle(LPCSTR anim);
 	Fvector Center(bool bHud = false);
 	Fmatrix Xform(bool bHud = false);
+	Fbox bounding_box(bool bHud);
 	_DECLARE_FUNCTION10(Position, Fvector);
 	_DECLARE_FUNCTION10(Direction, Fvector);
 	_DECLARE_FUNCTION10(Mass, float);

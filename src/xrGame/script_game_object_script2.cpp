@@ -88,8 +88,12 @@ class_<CScriptGameObject>& script_register_game_object1(class_<CScriptGameObject
 		.def("change_morale", &CScriptGameObject::ChangeMorale)
 	
 		//		.def("get_bleeding",				&CScriptGameObject::GetBleeding)
-		.def("center", &CScriptGameObject::Center)
+		
+		// demonized: exports
 		.def("xform", &CScriptGameObject::Xform)
+		.def("bounding_box", &CScriptGameObject::bounding_box)
+
+		.def("center", &CScriptGameObject::Center)
 		.def("position", &CScriptGameObject::Position)
 		.def("direction", &CScriptGameObject::Direction)
 		.def("clsid", &CScriptGameObject::clsid)

@@ -91,6 +91,18 @@ Fmatrix CScriptGameObject::Xform(bool bHud)
 	return *xform;
 }
 
+Fbox CScriptGameObject::bounding_box(bool bHud)
+{	
+	if (bHud)
+	{
+		CHudItem* itm = smart_cast<CHudItem*>(&object());
+		if (itm)
+			return itm->HudItemData()->m_model->dcast_RenderVisual()->getVisData().box;
+	}
+
+	return object().BoundingBox();
+}
+
 BIND_FUNCTION10(&object(), CScriptGameObject::Position, CGameObject, Position, Fvector, Fvector());
 BIND_FUNCTION10(&object(), CScriptGameObject::Direction, CGameObject, Direction, Fvector, Fvector());
 BIND_FUNCTION10(&object(), CScriptGameObject::Mass, CPhysicsShellHolder, GetMass, float, float(-1));
