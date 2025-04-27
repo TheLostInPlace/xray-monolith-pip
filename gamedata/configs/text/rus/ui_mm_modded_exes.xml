@@ -21,6 +21,17 @@
 	<string id="ui_mm_modded_exes_misc_mouse_sens_vertical">
 		<text>Коэф. вертикальной чувствительности мыши (mouse_sens_vertical)</text>
 	</string>
+	
+	<!-- HUD -->
+	<string id="ui_mm_hud_modded_exes">
+		<text>HUD</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_crosshair_near_size">
+		<text>Размер перекрестия вблизи камеры (g_crosshair_near_size)</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_use_shader_crosshair">
+		<text>Использовать шейдерное перекрестие (g_use_shader_crosshair)</text>
+	</string>
 
 	<!-- Particles -->
 	<string id="ui_mm_particles_modded_exes">
@@ -228,6 +239,16 @@
 	</string>
 	<string id="ui_mm_modded_exes_gameplay_g_firepos_zoom">
 		<text>Пули вылетают из ствола во время прицеливания (g_firepos_zoom)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_g_nearwall">
+		<text>Поведение оружия при смещении вблизи стены (g_nearwall)</text>
+	</string>
+
+	<string id="ui_mm_lst_nearwall_hud_fov">
+		<text>HUD FOV</text>
+	</string>
+	<string id="ui_mm_lst_nearwall_position">
+		<text>Положение</text>
 	</string>
 
 	<!-- HDR10 -->
