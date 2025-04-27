@@ -324,6 +324,7 @@
     class game_object {
         // General
         Fmatrix xform(bool bHud)
+        Fbox bounding_box(bool bHud)
 
         // Player
         function get_actor_walk_accel()

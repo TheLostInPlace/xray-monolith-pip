@@ -186,6 +186,13 @@ How to compile exes:
 6. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.04.27**
+* Removed duplicate stack traces on Lua-related CTD
+* `obj:bounding_box(bool bHud)` method to get bounding box of an object
+* ProfLander:
+  * Shader-Based Crosshair (https://github.com/themrdemonized/xray-monolith/pull/183)
+  * Positional Near-Wall Offset (https://github.com/themrdemonized/xray-monolith/pull/186)
+
 **2025.04.25**
 * `game.ui2world_offscreen(pos)` function for unprojecting from ui coordinates outside of screen
 * Additional vector exports:
