@@ -164,6 +164,9 @@
 	<string id="ui_mm_qol_modded_exes">
 		<text>Quality of Life</text>
 	</string>
+	<string id="ui_mm_modded_exes_qol_g_draw_pickup_item_names">
+		<text>Draw pickup item names (g_draw_pickup_item_names)</text>
+	</string>
 	<string id="ui_mm_modded_exes_qol_freelook_cam_limit">
 		<text>Freelook angle limit (freelook_cam_limit)</text>
 	</string>

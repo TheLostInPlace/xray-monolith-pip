@@ -417,7 +417,15 @@ function init_opt_base()
 					},
 					
 					{ id = "divider", type = "line" },
-					
+
+					{
+						id = "g_draw_pickup_item_names",
+						type = "list",
+						val = 0,
+						curr = {function() return get_console_cmd(0, "g_draw_pickup_item_names") end},
+						content = {function() return {{"1", "ON"}, {"0", "OFF"}} end},
+						cmd = "g_draw_pickup_item_names",
+					},	
 					{
 						id = "monster_stuck_fix",
 						type = "list",

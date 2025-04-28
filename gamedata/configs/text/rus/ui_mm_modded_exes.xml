@@ -161,6 +161,9 @@
 	<string id="ui_mm_qol_modded_exes">
 		<text>Quality of Life</text>
 	</string>
+	<string id="ui_mm_modded_exes_qol_g_draw_pickup_item_names">
+		<text>Отрисовывать имена предметов при подъеме (g_draw_pickup_item_names)</text>
+	</string>
 	<string id="ui_mm_modded_exes_qol_freelook_cam_limit">
 		<text>Угол свободного обзора (freelook_cam_limit)</text>
 	</string>
