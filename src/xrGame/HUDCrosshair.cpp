@@ -12,6 +12,7 @@
 string32 crosshair_shader = "hud\\cursor";
 string32 crosshair_texture = "ui\\cursor";
 float crosshair_near_size = 1.f;
+float crosshair_far_size = 1.f;
 
 CHUDCrosshair::CHUDCrosshair()
 {
@@ -122,7 +123,7 @@ void CHUDCrosshair::RenderShaderCrosshair()
 	float zNear = Device.ViewportNear;
 	float zFar = g_pGamePersistent->Environment().CurrentEnv->far_plane;
 	float t = (pos_.z - zNear - 1) / (zFar - zNear);
-	float size = lerp(crosshair_near_size, zFar, t);
+	float size = lerp(crosshair_near_size, crosshair_far_size * zFar, t);
 
 	// Transform and push vertices
 	for (int i = 0; i < 4; i++)
@@ -179,7 +180,7 @@ void CHUDCrosshair::RenderWireCrosshair()
 	float zNear = Device.ViewportNear;
 	float zFar = g_pGamePersistent->Environment().CurrentEnv->far_plane;
 	float t = (pos_.z - zNear - 1) / (zFar - zNear);
-	float size = lerp(crosshair_near_size, zFar, t);
+	float size = lerp(crosshair_near_size, crosshair_far_size * zFar, t);
 
 	// Project into NDC with W-divide
 	Device.mProject.transform(pos);
