@@ -1846,10 +1846,6 @@ void player_hud::OnFrame()
 	if (m_attached_items[1])
 		m_attached_items[1]->m_parent_hud_item->OnFrame();
 
-	if (m_attached_items[SCOPE_ATTACH_IDX])
-		m_attached_items[SCOPE_ATTACH_IDX]->m_parent_hud_item->OnFrame();
-
-
 	// If near-wall is in position mode...
 	if (g_nearwall == NW_POS)
 	{
@@ -1882,6 +1878,12 @@ void player_hud::OnFrame()
 			}
 			m_transform_2.translate_add(nearwall_1);
 			m_attached_items[1]->m_item_transform.translate_add(nearwall_1);
+		}
+
+		if (m_attached_items[SCOPE_ATTACH_IDX])
+		{
+			CHudItem* parent = m_attached_items[SCOPE_ATTACH_IDX]->m_parent_hud_item;
+			m_attached_items[SCOPE_ATTACH_IDX]->m_item_transform.translate_add(nearwall_0);
 		}
 	}
 }
