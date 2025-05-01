@@ -26,6 +26,9 @@
 	<string id="ui_mm_hud_modded_exes">
 		<text>HUD</text>
 	</string>
+	<string id="ui_mm_modded_exes_misc_g_crosshair_show_always">
+		<text>Всегда показывать перекрестие (g_crosshair_show_always)</text>
+	</string>
 	<string id="ui_mm_modded_exes_misc_g_use_shader_crosshair">
 		<text>Использовать шейдерное перекрестие (g_use_shader_crosshair)</text>
 	</string>

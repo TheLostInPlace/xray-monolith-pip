@@ -1764,6 +1764,7 @@ enum ETraceTarget {
 	TT_CAMERA = 0,
 	TT_WEAPON,
 	TT_DEVICE,
+	TT_ACTOR,
 	TT_MAX
 };
 
@@ -1782,6 +1783,8 @@ static collide::rq_result* get_rq(ETraceTarget tt)
 	case TT_DEVICE:
 		item = g_player_hud->attached_item(1);
 		break;
+	case TT_ACTOR:
+		return &Actor()->GetPick().result;
 	}
 
 	if (!item)
@@ -2195,6 +2198,7 @@ void CLevel::script_register(lua_State* L)
 			class_<enum_exporter<ETraceTarget>>("ETraceTarget")
 				.enum_("trace_targets")
 				[
+					value("Actor", int(ETraceTarget::TT_ACTOR)),
 					value("Camera", int(ETraceTarget::TT_CAMERA)),
 					value("Weapon", int(ETraceTarget::TT_WEAPON)),
 					value("Device", int(ETraceTarget::TT_DEVICE))
