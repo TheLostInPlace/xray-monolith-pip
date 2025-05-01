@@ -38,6 +38,13 @@ function init_opt_base()
 						size = { 512, 50 },
 					},
 					{
+						id = "g_crosshair_show_always",
+						type = "check",
+						val = 1,
+						def = false,
+						cmd = "g_crosshair_show_always",
+					},
+					{
 						id = "g_use_shader_crosshair",
 						type = "check",
 						val = 1,
