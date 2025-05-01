@@ -166,8 +166,10 @@ void CHUDTarget::IntegrateOpacity()
 
 void CHUDTarget::Render()
 {
-	BOOL b_do_rendering = (psHUD_Flags.is(HUD_CROSSHAIR | HUD_CROSSHAIR_RT | HUD_CROSSHAIR_RT2));
+	IntegratePosition();
+	IntegrateOpacity();
 
+	BOOL b_do_rendering = (psHUD_Flags.is(HUD_CROSSHAIR | HUD_CROSSHAIR_RT | HUD_CROSSHAIR_RT2));
 	if (!b_do_rendering)
 		return;
 
@@ -177,9 +179,6 @@ void CHUDTarget::Render()
 	if (0 == O) return;
 	CEntity* E = smart_cast<CEntity*>(O);
 	if (0 == E) return;
-
-	IntegratePosition();
-	IntegrateOpacity();
 
 	const SPickParam& pp = Actor()->GetPick();
 

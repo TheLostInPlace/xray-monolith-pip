@@ -2497,6 +2497,7 @@ void CCC_RegisterCommands()
 	CMD3(CCC_Mask, "g_firedir_third_person", &psActorFlags, AF_FIREDIR_THIRD_PERSON);
 	CMD4(CCC_Integer, "g_nearwall", &g_nearwall, 0, 2);
 	CMD4(CCC_Integer, "g_nearwall_trace", &g_nearwall_trace, 0, 1);
+	CMD3(CCC_Mask, "g_crosshair_show_always", &psHUD_Flags, HUD_CROSSHAIR_SHOW_ALWAYS);
 	CMD4(CCC_Float, "g_crosshair_near_size", &crosshair_near_size, 1.f, 16.f);
 	CMD4(CCC_Float, "g_crosshair_distance_lerp_rate", &crosshair_distance_lerp_rate, 1.f, 100.f);
 	CMD4(CCC_Float, "g_crosshair_occluded_opacity", &crosshair_occluded_opacity, 0.f, 1.f);
