@@ -25,6 +25,7 @@
 
 #include "ai/stalker/ai_stalker.h"
 #include "stalker_decision_space.h"
+#include "script_game_object.h"
 using namespace StalkerDecisionSpace;
 #endif
 
