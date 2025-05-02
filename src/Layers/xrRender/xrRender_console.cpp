@@ -364,6 +364,8 @@ Fvector4 ps_dev_param_6 = { .0f, .0f, .0f, .0f };
 Fvector4 ps_dev_param_7 = { .0f, .0f, .0f, .0f };
 Fvector4 ps_dev_param_8 = { .0f, .0f, .0f, .0f };
 
+Fvector4 ps_vignette_control = {.0f, .0f, .0f, .0f};
+
 float ps_particle_update_coeff = 1.f;
 
 /////////////////////////////////
@@ -1542,6 +1544,7 @@ void xrRender_initconsole()
 	CMD3(CCC_Mask, "r3_volumetric_smoke", &ps_r2_ls_flags, R3FLAG_VOLUMETRIC_SMOKE);
 	CMD1(CCC_memory_stats, "render_memory_stats");
 
+	CMD4(CCC_Vector4, "vignette_control", &ps_vignette_control, Fvector4().set(0.0f, 0.0f, 0.0f, 0.0f), Fvector4().set(1.0f, 1.0f, 1.0f, 1.0f));
 
 	//	CMD3(CCC_Mask,		"r2_sun_ignore_portals",		&ps_r2_ls_flags,			R2FLAG_SUN_IGNORE_PORTALS);
 }
