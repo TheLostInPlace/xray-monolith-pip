@@ -128,8 +128,10 @@ CWeaponStatMgun::~CWeaponStatMgun()
 {
 	delete_data(m_Ammo);
 #ifdef STATIONARYMGUN_NEW
-	xr_delete(camera[eCamFirst]);
-	xr_delete(camera[eCamChase]);
+	for (int i = 0; i < eCamSize; i++)
+	{
+		xr_delete(camera[i]);
+	}
 #else
 	xr_delete(camera);
 #endif
@@ -1230,9 +1232,9 @@ void CWeaponStatMgun::UpdateSound()
 	{
 		m_sound_mgr.RotatePlay(true);
 		bool play = false;
-		if (m_sound_mgr.m_rotating_x && !fsimilar(m_cur_x_rot, m_tgt_x_rot))
+		if (m_sound_mgr.m_rotating_x && !fsimilar(m_cur_x_rot, m_tgt_x_rot, EPS_L))
 			play = true;
-		if (m_sound_mgr.m_rotating_y && !fsimilar(m_cur_y_rot, m_tgt_y_rot))
+		if (m_sound_mgr.m_rotating_y && !fsimilar(m_cur_y_rot, m_tgt_y_rot, EPS_L))
 			play = true;
 		m_sound_mgr.RotateVolume((play) ? 1.0F : 0.0F);
 	}
@@ -1330,19 +1332,13 @@ void CWeaponStatMgun::UpdateAnimation()
 				stalker->CStepManager::on_animation_start(MotionID(), nullptr);
 			}
 		}
-
+		stalker->movement().set_desired_direction(0);
 		SBoneRotation &body = stalker->movement().m_body;
 		SBoneRotation &head = stalker->movement().m_head;
 		body.target.yaw = 0.0F;
 		body.target.pitch = 0.0F;
 		head.target.yaw = 0.0F;
 		head.target.pitch = 0.0F;
-
-		stalker->movement().set_desired_direction(0);
-		if (stalker->inventory().ActiveItem())
-		{
-			stalker->inventory().Activate(NO_ACTIVE_SLOT);
-		}
 	}
 }
 
