@@ -20,6 +20,14 @@
 #	include "detail_path_manager_space.h"
 #endif // #ifdef DEBUG
 
+#ifndef COMBAT_BODY_STATE_OVERRIDE
+#define COMBAT_BODY_STATE_OVERRIDE
+
+#include "ai/stalker/ai_stalker.h"
+#include "stalker_decision_space.h"
+using namespace StalkerDecisionSpace;
+#endif
+
 using namespace MonsterSpace;
 
 class CAI_Stalker;
@@ -60,6 +68,9 @@ public:
 	void set_desired_position(const Fvector* desired_position);
 	IC void set_desired_direction(const Fvector* desired_direction);
 	IC void set_body_state(EBodyState body_state);
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+	IC EBodyState body_state_combat_override(EWorldOperators wo, EBodyState body_state);
+#endif
 	IC void set_movement_type(EMovementType movement_type);
 	IC void set_mental_state(EMentalState mental_state);
 	IC void set_path_type(EPathType path_type);

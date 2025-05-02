@@ -1,3 +1,4 @@
+#include "stalker_movement_manager_base.h"
 ////////////////////////////////////////////////////////////////////////////
 //	Module 		: stalker_movement_manager_base_inline.h
 //	Created 	: 27.12.2003
@@ -6,9 +7,6 @@
 //	Description : stalker movement manager base class inline functions
 ////////////////////////////////////////////////////////////////////////////
 
-#include "script_game_object.h"
-#include "ai/stalker/ai_stalker.h"
-using namespace luabind;
 #ifndef STALKER_MOVEMENT_MANAGER_BASE_INLINE_H_INCLUDED
 #define STALKER_MOVEMENT_MANAGER_BASE_INLINE_H_INCLUDED
 
@@ -46,13 +44,20 @@ IC void stalker_movement_manager_base::set_body_state(EBodyState body_state)
 		make_string("object %s", object().cName().c_str()).c_str()
 	);
 #endif
-	luabind::functor<EBodyState> funct;
-	if (ai().script_engine().functor("_G.CAI_Stalker__SetBodyState", funct))
-	{
-		body_state = funct(m_object->lua_game_object(), body_state);
-	}
 	m_target.m_body_state = body_state;
 }
+
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+IC EBodyState stalker_movement_manager_base::body_state_combat_override(EWorldOperators wo, EBodyState body_state)
+{
+	luabind::functor<EBodyState> lua_function;
+	if (ai().script_engine().functor("_G.CAI_Stalker__CombatSetBodyState", lua_function))
+	{
+		body_state = lua_function(m_object->lua_game_object(), wo, body_state);
+	}
+	return body_state;
+}
+#endif
 
 IC void stalker_movement_manager_base::set_movement_type(EMovementType movement_type)
 {
