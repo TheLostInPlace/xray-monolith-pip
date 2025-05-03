@@ -186,6 +186,13 @@ How to compile exes:
 6. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.05.03**
+* `ray_pick:query()` will clear previous query result
+* GhenTuong: Merge force-body-state, axr_beh improvements, vignette_control (https://github.com/themrdemonized/xray-monolith/pull/209)
+* ProfLander:
+  * Improved reticle interpolation (https://github.com/themrdemonized/xray-monolith/pull/206)
+  * Crosshair Sizing Fixes Again (https://github.com/themrdemonized/xray-monolith/pull/210)
+
 **2025.05.01**
 * `g_draw_pickup_item_names` cvar for disabling item names on holding key (https://github.com/themrdemonized/xray-monolith/issues/191)
 * ProfLander: 

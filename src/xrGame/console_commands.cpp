@@ -2506,7 +2506,7 @@ void CCC_RegisterCommands()
 	CMD4(CCC_Float, "g_crosshair_far_size", &crosshair_far_size, 1.f, 64.f);
 	CMD4(CCC_Float, "g_crosshair_depth_begin", &crosshair_depth_begin, 0.f, 300.f);
 	CMD4(CCC_Float, "g_crosshair_depth_end", &crosshair_depth_end, 0.f, 300.f);
-  CMD3(CCC_Mask, "g_crosshair_distance_lerp", &psHUD_Flags, HUD_CROSSHAIR_DISTANCE_LERP);
+	CMD3(CCC_Mask, "g_crosshair_distance_lerp", &psHUD_Flags, HUD_CROSSHAIR_DISTANCE_LERP);
 	CMD4(CCC_Float, "g_crosshair_distance_lerp_rate", &crosshair_distance_lerp_rate, 1.f, 100.f);
 	CMD4(CCC_Float, "g_crosshair_occluded_opacity", &crosshair_occluded_opacity, 0.f, 1.f);
 	CMD4(CCC_Float, "g_crosshair_occlusion_fade_rate", &crosshair_occlusion_fade_rate, 1.f, 100.f);
