@@ -12,6 +12,8 @@
 #include "script_attachment_manager.h"
 #include "../xrEngine/CameraBase.h"
 
+extern int g_nearwall;
+
 player_hud* g_player_hud = NULL;
 Fvector _ancor_pos;
 Fvector _wpn_root_pos;
@@ -1031,7 +1033,6 @@ const Fvector& player_hud::attach_pos(u8 part) const
 	return Fvector().set(0.f, 0.f, 0.f);
 }
 
-#include "../xrEngine/CameraBase.h"
 #include "Inventory.h"
 extern float g_freelook_z_offset;
 extern float psHUD_FOV;
@@ -1165,7 +1166,7 @@ void player_hud::update(const Fmatrix& cam_trans)
 
 	m_transform.mul(trans, m_attach_offset);
 	m_transform_2.mul(trans_2, m_attach_offset_2);
-	
+
 	m_model->UpdateTracks();
 	m_model->dcast_PKinematics()->CalculateBones_Invalidate();
 	m_model->dcast_PKinematics()->CalculateBones(TRUE);
@@ -1835,4 +1836,138 @@ void player_hud::OnMovementChanged(ACTOR_DEFS::EMoveCommand cmd)
 	}
 
 	updateMovementLayerState();
+}
+
+bool nearwall_callback(int target, float ofs, const Fvector& dir, Fmatrix& mat)
+{
+	luabind::functor<void> on_nearwall;
+	if (!ai().script_engine().functor("_G.CActorHudOnNearWall", on_nearwall))
+	{
+		return false;
+	}
+
+	luabind::object table = luabind::newtable(ai().script_engine().lua());
+	table["target"] = target;
+	table["offset"] = ofs;
+	table["direction"] = dir;
+	table["matrix"] = mat;
+	table["override"] = false;
+	on_nearwall(table);
+	mat = luabind::object_cast<Fmatrix>(table["matrix"]);
+	return luabind::object_cast<bool>(table["override"]);
+}
+
+void update_nearwall(int target, const attachable_hud_item* item, Fmatrix& nearwall)
+{
+	CHudItem* parent = item->m_parent_hud_item;
+	const SPickParam& pp = parent->GetPick();
+	float ofs = parent->GetNearWallOffset();
+	nearwall = Fmatrix().identity();
+	Fvector dir = Fvector().mul(pp.barrel_matrix.k, -1);
+	Device.mView.transform_dir(dir);
+
+	if (!nearwall_callback(target, ofs, dir, nearwall))
+	{
+		dir.mul(ofs);
+		nearwall.translate_add(dir);
+	}
+}
+
+void apply_nearwall(Fmatrix& transform, Fmatrix& nearwall, attachable_hud_item* item)
+{
+	transform.mulB_43(nearwall);
+
+	Fmatrix mInv = transform;
+	mInv.invert();
+
+	Fmatrix delta = mInv;
+	delta.mulB_43(item->m_item_transform);
+	Fmatrix deltaInv = delta;
+	deltaInv.invert();
+
+	nearwall.mulA_43(deltaInv);
+	nearwall.mulB_43(delta);
+	item->m_item_transform.mulB_43(nearwall);
+	item->m_parent_hud_item->UpdatePick();
+}
+
+void player_hud::OnFrame()
+{
+	// If we have a main-hand item...
+	if (m_attached_items[0])
+		// Delegate control
+		m_attached_items[0]->m_parent_hud_item->OnFrame();
+
+	// If we have an off-hand item...
+	if (m_attached_items[1])
+		// Delegate control
+		m_attached_items[1]->m_parent_hud_item->OnFrame();
+
+	// If near-wall is in position mode...
+	if (g_nearwall == NW_POS)
+	{
+		Fmatrix nearwall_0;
+
+		// If we have a main-hand item...
+		if (m_attached_items[0])
+		{
+			update_nearwall(1, m_attached_items[0], nearwall_0);
+
+			// If we have no off-hand item
+			if (!m_attached_items[1])
+			{
+				// Apply the main hand item's nearwall to the left arm
+				m_transform_2.mulB_43(nearwall_0);
+			}
+
+			apply_nearwall(m_transform, nearwall_0, m_attached_items[0]);
+		}
+
+		// If we have an off-hand item...
+		if (m_attached_items[1])
+		{
+			Fmatrix nearwall_1 = Fmatrix().identity();
+			update_nearwall(2, m_attached_items[1], nearwall_1);
+
+			// If we have a main-hand item...
+			if (m_attached_items[0])
+			{
+				// And it is a weapon...
+				CWeapon* pWeapon = smart_cast<CWeapon*>(m_attached_items[0]->m_parent_hud_item);
+				if (pWeapon)
+				{
+					// Interpolate between main and off -hand transforms based on aim factor
+					float fac = pWeapon->GetZRotatingFactor();
+					nearwall_1.i.lerp(nearwall_1.i, nearwall_0.i, fac);
+					nearwall_1.i.normalize();
+					nearwall_1.j.lerp(nearwall_1.j, nearwall_0.j, fac);
+					nearwall_1.j.normalize();
+					nearwall_1.k.lerp(nearwall_1.k, nearwall_0.k, fac);
+					nearwall_1.k.normalize();
+					nearwall_1.c.lerp(nearwall_1.c, nearwall_0.c, fac);
+				}
+			}
+
+			// Apply nearwall to left arm
+			apply_nearwall(m_transform_2, nearwall_1, m_attached_items[1]);
+		}
+
+		if (m_attached_items[SCOPE_ATTACH_IDX])
+		{
+			CHudItem* parent = m_attached_items[SCOPE_ATTACH_IDX]->m_parent_hud_item;
+			m_attached_items[SCOPE_ATTACH_IDX]->m_item_transform.mulB_43(nearwall_0);
+		}
+	}
+}
+
+void player_hud::net_Relcase(CObject* obj)
+{
+	if (m_attached_items[0])
+		m_attached_items[0]->m_parent_hud_item->net_Relcase(obj);
+
+	if (m_attached_items[1])
+		m_attached_items[1]->m_parent_hud_item->net_Relcase(obj);
+
+	if (m_attached_items[SCOPE_ATTACH_IDX])
+		m_attached_items[SCOPE_ATTACH_IDX]->m_parent_hud_item->net_Relcase(obj);
 }

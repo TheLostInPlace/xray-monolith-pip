@@ -518,12 +518,8 @@ public:
 
 private:
 	firedeps m_current_firedeps;
-	//collide::rq_results RQS;
-	//PickParam PP;
 
 public:
-	//virtual collide::rq_result& GetRQ() { return PP.RQ; }
-	//virtual void net_Relcase(CObject* object);
 	Fmatrix m_shoot_shake_mat;
 	void UpdateZoomParams();
 
@@ -532,6 +528,17 @@ public:
 	shared_str m_primary_scope_tex_name;
 	shared_str m_secondary_scope_tex_name;
 
+private:
+	float m_nearwall_zoomed_range;
+
+public:
+	float GetTargetNearWallOffset();
+	float GetTargetHudFov();
+
+public:
+	Fmatrix RayTransform();
+	void g_fireParams(SPickParam& pp);
+
 protected:
 	virtual void UpdateFireDependencies_internal();
 	void UpdateUIScope();
@@ -539,7 +546,6 @@ protected:
 	void ToggleGrenadeLauncher();
     void SetZoomType(u8 new_zoom_type);
 	void SetZoomTypeAndParams(u8 zoomType);
-	float GetHudFov();
 	virtual void UpdatePosition(const Fmatrix& transform); //.
 	virtual void UpdateXForm();
 	void InterpolateOffset(Fvector& current, const Fvector& target, const float factor) const;

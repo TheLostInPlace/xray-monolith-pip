@@ -22,6 +22,32 @@
 		<text>Vertical Mouse Sensitivity Factor (mouse_sens_vertical)</text>
 	</string>
 	
+	<!-- HUD -->
+	<string id="ui_mm_hud_modded_exes">
+		<text>HUD</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_crosshair_show_always">
+		<text>Always show crosshair (g_crosshair_show_always)</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_use_shader_crosshair">
+		<text>Use shader crosshair (g_use_shader_crosshair)</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_crosshair_near_size">
+		<text>Crosshair size near the camera (g_crosshair_near_size)</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_crosshair_far_size">
+		<text>Crosshair size at the horizon (g_crosshair_far_size)</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_crosshair_distance_lerp_rate">
+		<text>Crosshair range animation speed (g_crosshair_distance_lerp_rate)</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_crosshair_occluded_opacity">
+		<text>Crosshair opacity when obscured by an object (g_crosshair_occluded_opacity)</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_crosshair_occlusion_fade_rate">
+		<text>Crosshair opacity animation speed (g_crosshair_occlusion_fade_rate)</text>
+	</string>
+	
 	<!-- Particles -->
 	<string id="ui_mm_particles_modded_exes">
 		<text>Particles</text>
@@ -144,6 +170,9 @@
 	<string id="ui_mm_qol_modded_exes">
 		<text>Quality of Life</text>
 	</string>
+	<string id="ui_mm_modded_exes_qol_g_draw_pickup_item_names">
+		<text>Draw pickup item names (g_draw_pickup_item_names)</text>
+	</string>
 	<string id="ui_mm_modded_exes_qol_freelook_cam_limit">
 		<text>Freelook angle limit (freelook_cam_limit)</text>
 	</string>
@@ -231,8 +260,33 @@
 	<string id="ui_mm_modded_exes_gameplay_smooth_ads_transition">
 		<text>Smoothly apply the ADS accuracy bonus (smooth_ads_transition)</text>
 	</string>
+	<string id="ui_mm_modded_exes_gameplay_g_firepos">
+		<text>Enable bullets firing from gun barrel while unaimed (g_firepos)</text>
+	</string>
 	<string id="ui_mm_modded_exes_gameplay_g_firepos_zoom">
 		<text>Enable bullets firing from gun barrel while aiming (g_firepos_zoom)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_g_firedir_third_person">
+		<text>Use first-person firing direction when in third-person (g_firedir_third_person)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_g_nearwall">
+		<text>Weapon near-wall offset behaviour (g_nearwall)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_g_nearwall_trace">
+		<text>Near-wall trace origin (g_nearwall_trace)</text>
+	</string>
+
+	<string id="ui_mm_lst_nearwall_hud_fov">
+		<text>HUD FOV</text>
+	</string>
+	<string id="ui_mm_lst_nearwall_position">
+		<text>Position</text>
+	</string>
+	<string id="ui_mm_lst_nearwall_camera">
+		<text>Camera</text>
+	</string>
+	<string id="ui_mm_lst_nearwall_item">
+		<text>Item</text>
 	</string>
 
 

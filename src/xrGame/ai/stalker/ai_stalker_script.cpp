@@ -95,6 +95,7 @@ void CAI_Stalker::script_register(lua_State* L)
 			luabind::value("action_get_distance", StalkerDecisionSpace::eWorldOperatorGetDistance),
 			luabind::value("action_detour_enemy", StalkerDecisionSpace::eWorldOperatorDetourEnemy),
 			luabind::value("action_search_enemy", StalkerDecisionSpace::eWorldOperatorSearchEnemy),
+			luabind::value("action_hide_from_grenade", StalkerDecisionSpace::eWorldOperatorHideFromGrenade),
 			luabind::value("action_sudden_attack", StalkerDecisionSpace::eWorldOperatorSuddenAttack),
 			luabind::value("action_kill_enemy_if_not_visible",
 			               StalkerDecisionSpace::eWorldOperatorKillEnemyIfNotVisible),
@@ -106,6 +107,7 @@ void CAI_Stalker::script_register(lua_State* L)
 			luabind::value("action_critically_wounded", StalkerDecisionSpace::eWorldOperatorCriticallyWounded),
 			luabind::value("action_kill_if_enemy_critically_wounded",
 			               StalkerDecisionSpace::eWorldOperatorKillEnemyIfCriticallyWounded),
+			luabind::value("action_throw_grenade", StalkerDecisionSpace::eWorldOperatorThrowGrenade),
 
 			luabind::value("action_danger_unknown_planner", StalkerDecisionSpace::eWorldOperatorDangerUnknownPlanner),
 			luabind::value("action_danger_in_direction_planner",

@@ -28,6 +28,79 @@ function init_opt_base()
 						step = 0.01,
 						cmd = "mouse_sens_vertical",
 					},
+
+					-- HUD
+					{
+						id = "slide_modded_exes_hud",
+						type = "slide",
+						-- link = "ui_options_slider_other",
+						text = "ui_mm_hud_modded_exes",
+						size = { 512, 50 },
+					},
+					{
+						id = "g_crosshair_show_always",
+						type = "check",
+						val = 1,
+						def = false,
+						cmd = "g_crosshair_show_always",
+					},
+					{
+						id = "g_use_shader_crosshair",
+						type = "check",
+						val = 1,
+						def = false,
+						cmd = "g_use_shader_crosshair",
+					},
+					{
+						id = "g_crosshair_near_size",
+						type = "track",
+						val = 2,
+						def = 1,
+						min = 1,
+						max = 16,
+						step = 0.1,
+						cmd = "g_crosshair_near_size",
+					},
+					{
+						id = "g_crosshair_far_size",
+						type = "track",
+						val = 2,
+						def = 1,
+						min = 1,
+						max = 16,
+						step = 0.1,
+						cmd = "g_crosshair_far_size",
+					},
+					{
+						id = "g_crosshair_distance_lerp_rate",
+						type = "track",
+						val = 2,
+						def = 20,
+						min = 1,
+						max = 100,
+						step = 1,
+						cmd = "g_crosshair_distance_lerp_rate",
+					},
+					{
+						id = "g_crosshair_occluded_opacity",
+						type = "track",
+						val = 2,
+						def = 0.6,
+						min = 0,
+						max = 1,
+						step = 0.05,
+						cmd = "g_crosshair_occluded_opacity",
+					},
+					{
+						id = "g_crosshair_occlusion_fade_rate",
+						type = "track",
+						val = 2,
+						def = 20,
+						min = 1,
+						max = 100,
+						step = 1,
+						cmd = "g_crosshair_occlusion_fade_rate",
+					},
 					
 					-- Particles
 					{
@@ -361,7 +434,15 @@ function init_opt_base()
 					},
 					
 					{ id = "divider", type = "line" },
-					
+
+					{
+						id = "g_draw_pickup_item_names",
+						type = "list",
+						val = 0,
+						curr = {function() return get_console_cmd(0, "g_draw_pickup_item_names") end},
+						content = {function() return {{"1", "ON"}, {"0", "OFF"}} end},
+						cmd = "g_draw_pickup_item_names",
+					},	
 					{
 						id = "monster_stuck_fix",
 						type = "list",
@@ -591,12 +672,45 @@ function init_opt_base()
 						content = {function() return {{"1", "ON"}, {"0", "OFF"}} end},
 						cmd = "smooth_ads_transition",
 					},
+					
+					{ id = "divider", type = "line" },
+					
+					{
+						id = "g_firepos",
+						type = "check",
+						val = 1,
+						def = false,
+						cmd = "g_firepos",
+					},
 					{
 						id = "g_firepos_zoom",
 						type = "check",
 						val = 1,
-						def = true,
+						def = false,
 						cmd = "g_firepos_zoom",
+					},
+					{
+						id = "g_firedir_third_person",
+						type = "check",
+						val = 1,
+						def = false,
+						cmd = "g_firedir_third_person",
+					},
+					{
+						id = "g_nearwall",
+						type = "list",
+						val = 1,
+						curr = {function() return get_console_cmd(0, "g_nearwall") end},
+						content = {function() return {{"0", "OFF"}, {"1", "nearwall_hud_fov"}, {"2", "nearwall_position"}} end},
+						cmd = "g_nearwall",
+					},
+					{
+						id = "g_nearwall_trace",
+						type = "list",
+						val = 1,
+						curr = {function() return get_console_cmd(0, "g_nearwall_trace") end},
+						content = {function() return {{"0", "nearwall_camera"}, {"1", "nearwall_item"}} end},
+						cmd = "g_nearwall_trace",
 					},
 				}
 			},

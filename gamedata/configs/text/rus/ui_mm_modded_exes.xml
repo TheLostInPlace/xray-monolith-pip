@@ -21,6 +21,32 @@
 	<string id="ui_mm_modded_exes_misc_mouse_sens_vertical">
 		<text>Коэф. вертикальной чувствительности мыши (mouse_sens_vertical)</text>
 	</string>
+	
+	<!-- HUD -->
+	<string id="ui_mm_hud_modded_exes">
+		<text>HUD</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_crosshair_show_always">
+		<text>Всегда показывать перекрестие (g_crosshair_show_always)</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_use_shader_crosshair">
+		<text>Использовать шейдерное перекрестие (g_use_shader_crosshair)</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_crosshair_near_size">
+		<text>Размер перекрестия вблизи камеры (g_crosshair_near_size)</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_crosshair_far_size">
+		<text>Размер перекрестия на горизонте (g_crosshair_far_size)</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_crosshair_distance_lerp_rate">
+		<text>Скорость анимации дальности перекрестия (g_crosshair_distance_lerp_rate)</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_crosshair_occluded_opacity">
+		<text>Непрозрачность перекрестия при заслонении объектом (g_crosshair_occluded_opacity)</text>
+	</string>
+	<string id="ui_mm_modded_exes_misc_g_crosshair_occlusion_fade_rate">
+		<text>Скорость анимации непрозрачности перекрестия (g_crosshair_occlusion_fade_rate)</text>
+	</string>
 
 	<!-- Particles -->
 	<string id="ui_mm_particles_modded_exes">
@@ -141,6 +167,9 @@
 	<string id="ui_mm_qol_modded_exes">
 		<text>Quality of Life</text>
 	</string>
+	<string id="ui_mm_modded_exes_qol_g_draw_pickup_item_names">
+		<text>Отрисовывать имена предметов при подъеме (g_draw_pickup_item_names)</text>
+	</string>
 	<string id="ui_mm_modded_exes_qol_freelook_cam_limit">
 		<text>Угол свободного обзора (freelook_cam_limit)</text>
 	</string>
@@ -226,8 +255,33 @@
 	<string id="ui_mm_modded_exes_gameplay_smooth_ads_transition">
 		<text>Плавно применить PDM значения (smooth_ads_transition)</text>
 	</string>
+	<string id="ui_mm_modded_exes_gameplay_g_firepos">
+		<text>Пули вылетают из ствола, если не целиться (g_firepos)</text>
+	</string>
 	<string id="ui_mm_modded_exes_gameplay_g_firepos_zoom">
 		<text>Пули вылетают из ствола во время прицеливания (g_firepos_zoom)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_g_firedir_third_person">
+		<text>Используйте направление стрельбы от первого лица в третьем лице (g_firedir_third_person)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_g_nearwall">
+		<text>Поведение оружия при смещении вблизи стены (g_nearwall)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_g_nearwall_trace">
+		<text>Происхождение следов вблизи стенки (g_nearwall_trace)</text>
+	</string>
+
+	<string id="ui_mm_lst_nearwall_hud_fov">
+		<text>HUD FOV</text>
+	</string>
+	<string id="ui_mm_lst_nearwall_position">
+		<text>Положение</text>
+	</string>
+	<string id="ui_mm_lst_nearwall_camera">
+		<text>Камера</text>
+	</string>
+	<string id="ui_mm_lst_nearwall_item">
+		<text>Артикул</text>
 	</string>
 
 	<!-- HDR10 -->
