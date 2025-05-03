@@ -257,6 +257,35 @@ function _G.CAI_Stalker__SetBodyState(npc, state)
 	return flags.ret_value
 end
 
+--[[
+GhenTuong:
+Force stalkers to play a body state during combat by changing csbs_flags.body_state.
+world_operator = {
+	stalker_ids.action_get_item_to_kill,
+	stalker_ids.action_make_item_killing,
+	stalker_ids.action_retreat_from_enemy,
+	stalker_ids.action_get_ready_to_kill,
+	stalker_ids.action_take_cover,
+	stalker_ids.action_look_out,
+	stalker_ids.action_hold_position,
+	stalker_ids.action_detour_enemy,
+	stalker_ids.action_hide_from_grenade,
+	stalker_ids.action_sudden_attack,
+	stalker_ids.action_throw_grenade,
+}
+body_state = {
+	move.crouch,
+	move.stand,
+}
+--]]
+local csbs_flags = {}
+AddScriptCallback("npc_on_combat_set_body_state")
+function _G.CAI_Stalker__CombatSetBodyState(npc,world_operator,body_state)
+	csbs_flags.body_state = body_state
+	SendScriptCallback("npc_on_combat_set_body_state",npc,world_operator,body_state,csbs_flags)
+	return csbs_flags.body_state
+end
+
 -- actor_on_task_callback
 AddScriptCallback("actor_on_task_callback")
 task_callback = task_manager.task_callback

@@ -1269,6 +1269,15 @@ DECL_BINDER4F( binder_hdr10_parameters10,
 );
 /* --- HDR10 Parameters --- */
 
+extern Fvector4 ps_vignette_control;
+static class vignette_control : public R_constant_setup
+{
+	virtual void setup(R_constant *C)
+	{
+		RCache.set_c(C, ps_vignette_control.x, ps_vignette_control.y, ps_vignette_control.z, ps_vignette_control.w);
+	}
+} vignette_control;
+
 // Standart constant-binding
 void CBlender_Compile::SetMapping()
 {
@@ -1450,4 +1459,6 @@ void CBlender_Compile::SetMapping()
 	r_Constant("hdr10_parameters8",  &binder_hdr10_parameters8);
 	r_Constant("hdr10_parameters9",  &binder_hdr10_parameters9);
 	r_Constant("hdr10_parameters10", &binder_hdr10_parameters10);
+
+	r_Constant("vignette_control", &vignette_control);
 }
