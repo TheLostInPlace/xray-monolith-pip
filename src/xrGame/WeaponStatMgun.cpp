@@ -1204,9 +1204,9 @@ void CWeaponStatMgun::UpdateCamera()
 	{
 		Fvector pos = Camera()->Position();
 		Fvector dir = Camera()->Direction();
-		collide::rq_result &R = HUD().GetCurrentRayQuery();
-		Fvector vec = Fvector().mad(pos, dir, (R.range > 3.f) ? R.range : 30.f);
-		SetParam(eWpnDesiredDir, Fvector().sub(vec, m_fire_pos).normalize());
+		collide::rq_result &R = HUD().GetRQ();
+		Fvector vec = Fvector().mad(pos, dir, max(R.range, 30.0F));
+		SetParam(eWpnDesiredDir, Fvector().sub(vec, pos).normalize());
 	}
 }
 
