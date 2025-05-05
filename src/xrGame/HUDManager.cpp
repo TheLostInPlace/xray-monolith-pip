@@ -167,13 +167,15 @@ void CHUDManager::OnFrame()
 
 	g_player_hud->OnFrame();
 
-	// If aim position is not enabled
+	// If aim position is enabled
 	bool aimpos = psActorFlags.test(AF_AIMPOS);
 	if (aimpos)
 	{
+		// Ensure we have a HUD item
 		CHudItem* pItem = smart_cast<CHudItem*>(Actor()->inventory().ActiveItem());
 		if (pItem)
 		{
+			// Aim along barrel rotation
 			attachable_hud_item* hi = pItem->HudItemData();
 			hud_item_measures measures = hi->m_measures;
 			Fmatrix matrix = hi->m_item_transform;
