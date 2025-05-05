@@ -1,3 +1,12 @@
+-- Type checking
+function is_table(arg)
+	return type(arg) == "table"
+end
+
+function is_string(arg)
+	return type(arg) == "string"
+end
+
 -- Divider line
 function line()
 	return {
@@ -8,7 +17,9 @@ end
 
 -- Image with text
 function slide(args)
+	assert(is_table(args), "Slide argument is not a table")
 	local id = args.id
+	assert(is_string(id), "Slide ID is not a string")
 	args.id = "slide_modded_exes_" .. id
 	args.type = "slide"
 	args.link = args.link or "ui_options_slider_other"
@@ -19,6 +30,7 @@ end
 
 -- Boolean checkbox
 function check(args)
+	assert(is_table(args), "Checkbox argument is not a table")
     args.type = "check"
 	args.val = 1
 	args.def = args.def or false
@@ -28,6 +40,7 @@ end
 
 -- Numeric slider
 function track(args)
+	assert(is_table(args), "Track argument is not a table")
 	args.type = "track"
 	args.val = 2
 	args.cmd = args.cmd or args.id
@@ -36,6 +49,7 @@ end
 
 -- Multiple-choice key-value list
 function list(args)
+	assert(is_table(args), "List argument is not a table")
 	args.type = "list"
 	args.curr = args.curr or
 		{function()
@@ -52,8 +66,10 @@ end
 
 -- Integer-indexed key list
 function list_enum(args)
+	assert(is_table(args), "Enum List argument is not a table")
 	args.val = 0
 	local content = args.content
+	assert(is_table(content), "Enum List content is not a table")
 	args.content = {}
 	for i,c in ipairs(content) do
 		args.content[i] = {tostring(i - 1), c}
@@ -63,6 +79,7 @@ end
 
 -- Binary choice list
 function list_bool(args)
+	assert(is_table(args), "Boolean List argument is not a table")
 	args.val = 0
 	args.content = {
 		{"1", "ON"},
@@ -73,7 +90,9 @@ end
 
 -- Settings page
 function page(args)
+	assert(is_table(args), "Page argument is not a table")
 	local head = table.remove(args, 1)
+	assert(is_table(head), "Page header is not a table")
 	head.sh = head.sh or true
 	head.gr = args
 	table.insert(head.gr, 1, slide { id = head.id })
@@ -82,7 +101,9 @@ end
 
 -- Page group
 function group(args)
+	assert(is_table(args), "Group argument is not a table")
 	local head = table.remove(args, 1)
+	assert(is_table(head), "Group header is not a table")
 	head.gr = args
 	return head
 end
