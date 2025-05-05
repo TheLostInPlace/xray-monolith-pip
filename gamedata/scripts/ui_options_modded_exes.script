@@ -33,7 +33,6 @@ end
 
 function list(args)
 	args.type = "list"
-	args.val = 1
 	args.curr = args.curr or
 		{function()
 			return get_console_cmd(0, args.id)
@@ -48,20 +47,22 @@ function list(args)
 end
 
 function list_enum(args)
+	args.val = 0
 	local content = args.content
 	args.content = {}
 	for i,c in ipairs(content) do
-		args.content[i] = {i - 1, c}
+		args.content[i] = {tostring(i - 1), c}
 	end
 	return list(args)
 end
 
 function list_bool(args)
+	args.val = 0
 	args.content = {
-		"ON",
-		"OFF"
+		{"1", "ON"},
+		{"0", "OFF"}
 	}
-	return list_enum(args)
+	return list(args)
 end
 
 function line()
