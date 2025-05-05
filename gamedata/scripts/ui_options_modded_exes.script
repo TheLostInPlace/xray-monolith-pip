@@ -1,9 +1,12 @@
-function group(arg)
-	local head = table.remove(arg, 1)
-	head.gr = arg
-	return head
+-- Divider line
+function line()
+	return {
+		id = "divider",
+		type = "line"
+	}
 end
 
+-- Image with text
 function slide(id)
 	return {
 		id = "slide_modded_exes_" .. id,
@@ -14,6 +17,7 @@ function slide(id)
 	}
 end
 
+-- Boolean checkbox
 function check(args)
     args.type = "check"
 	args.val = 1
@@ -22,6 +26,7 @@ function check(args)
 	return args
 end
 
+-- Numeric slider
 function track(args)
 	args.type = "track"
 	args.val = 2
@@ -29,6 +34,7 @@ function track(args)
 	return args
 end
 
+-- Multiple-choice key-value list
 function list(args)
 	args.type = "list"
 	args.curr = args.curr or
@@ -44,6 +50,7 @@ function list(args)
 	return args
 end
 
+-- Integer-indexed key list
 function list_enum(args)
 	args.val = 0
 	local content = args.content
@@ -54,6 +61,7 @@ function list_enum(args)
 	return list(args)
 end
 
+-- Binary choice list
 function list_bool(args)
 	args.val = 0
 	args.content = {
@@ -63,13 +71,7 @@ function list_bool(args)
 	return list(args)
 end
 
-function line()
-	return {
-		id = "divider",
-		type = "line"
-	}
-end
-
+-- Settings page
 function page(id, ...)
 	return {
 		id = id,
@@ -81,6 +83,14 @@ function page(id, ...)
 	}
 end
 
+-- Page group
+function group(arg)
+	local head = table.remove(arg, 1)
+	head.gr = arg
+	return head
+end
+
+-- Settings tree
 local options = group {
 	{ id = "modded_exes" },
 	group {
@@ -806,6 +816,7 @@ local options = group {
 	},
 }
 
+-- Entrypoint
 function init_opt_base()
 	-- printf("working?")
 
