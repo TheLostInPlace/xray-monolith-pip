@@ -15,14 +15,12 @@ function slide(id)
 	}
 end
 
-function check(id, def)
-	return {
-		id = id,
-		type = "check",
-		val = 1,
-		def = def or false,
-		cmd = id,
-	}
+function check(args)
+    args.type = "check"
+	args.val = 1
+	args.def = args.def or false
+	args.cmd = args.cmd or args.id
+	return args
 end
 
 function track(args)
@@ -103,8 +101,8 @@ local options = group(
 		page(
 		  "crosshair",
 		  
-			check("g_crosshair_show_always"),
-			check("g_use_shader_crosshair"),
+			check { id = "g_crosshair_show_always" },
+			check { id = "g_use_shader_crosshair" },
 			track {
 				id = "g_crosshair_near_size",
 				def = 1,
@@ -133,7 +131,7 @@ local options = group(
 				max = 300,
 				step = 1,
 			},
-			check("g_crosshair_distance_lerp"),
+			check { id = "g_crosshair_distance_lerp" },
 			track {
 				id = "g_crosshair_distance_lerp_rate",
 				def = 40,
@@ -164,10 +162,19 @@ local options = group(
 			list_bool { id = "r__3Dfakescope" },
 
 			slide("2d_scopes"),
-			check("sds_enable", true),
-			check("sds_speed_enable", true),
-			check("sds_zoom_enable", true),
-			check("new_zoom_enable", true),
+			check{id = "sds_enable", def = true},
+			check {
+				id = "sds_speed_enable",
+				def = true
+			},
+			check {
+				id = "sds_zoom_enable",
+				def = true
+			},
+			check {
+				id = "new_zoom_enable",
+				def = true
+			},
 			list_bool { id = "new_zoom_delta_algorithm" },
 			track {
 				id = "zoom_step_count",
@@ -692,9 +699,9 @@ local options = group(
 		-- 3D Ballistics
 		page(
 			"3d_ballistics",					
-			check("g_firepos"),
-			check("g_firepos_zoom"),
-			check("g_firedir_third_person"),
+			check { id = "g_firepos" },
+			check { id = "g_firepos_zoom" },
+			check { id = "g_firedir_third_person" },
 			list_enum {
 				id = "g_nearwall",
 				content = {
