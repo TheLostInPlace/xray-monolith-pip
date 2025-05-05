@@ -169,6 +169,8 @@ protected:
 	virtual bool IsHudModeNow();
 	virtual bool SOParentIsActor() { return ParentIsActor(); }
 	u8 last_idx;
+
+	CAnonHudItem* m_scopeItem = NULL;
 public:
 	void signal_HideComplete();
 	virtual bool Action(u16 cmd, u32 flags);

@@ -37,8 +37,6 @@ protected:
 	// General
 	//кадр момента пересчета UpdateSounds
 	u32 dwUpdateSounds_Frame;
-
-	CAnonHudItem* m_scopeItem = NULL;
 protected:
 	virtual void OnMagazineEmpty();
 

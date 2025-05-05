@@ -985,6 +985,19 @@ BOOL CWeapon::net_Spawn(CSE_Abstract* DC)
 	
 	iAmmoElapsed = E->a_elapsed;
 	m_flagsAddOnState = E->m_addon_flags.get();
+	
+	if (m_modular_attachments && (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonScope) != 0 && m_scopes.size() > 1)
+	{
+		m_cur_scope = ::Random.randI(1, m_scopes.size());
+		CWeaponMagazined* wm = smart_cast<CWeaponMagazined*>(this);
+		if (wm)
+		{
+			wm->LoadScopeKoeffs();
+			m_scopeItem = xr_new<CAnonHudItem>();
+			m_scopeItem->Load(m_scopes[m_cur_scope].c_str());
+		}
+	}
+
 	m_ammoType = E->ammo_type;
 	SetState(E->wpn_state);
 	SetNextState(E->wpn_state);
