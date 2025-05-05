@@ -72,21 +72,18 @@ function list_bool(args)
 end
 
 -- Settings page
-function page(id, ...)
-	return {
-		id = id,
-		sh = true,
-		gr = {
-			slide { id = id },
-			...
-		}
-	}
+function page(args)
+	local head = table.remove(args, 1)
+	head.sh = head.sh or true
+	head.gr = args
+	table.insert(head.gr, 1, slide { id = head.id })
+	return head
 end
 
 -- Page group
-function group(arg)
-	local head = table.remove(arg, 1)
-	head.gr = arg
+function group(args)
+	local head = table.remove(args, 1)
+	head.gr = args
 	return head
 end
 
@@ -97,18 +94,18 @@ local options = group {
 		{ id = "visual" },
 
 		-- UI / HUD
-		page(
-			"ui_hud",
+		page {
+			{ id = "ui_hud" },
 			list_bool {id = "g_draw_pickup_item_names"},
 			list_bool {
 				id = "use_english_text_for_missing_translations",
 				restart = true,
-			}
-		),
+			},
+		},
 
 		-- Crosshair
-		page(
-			"crosshair",
+		page {
+			{ id = "crosshair" },
 
 			check { id = "g_crosshair_show_always" },
 			check { id = "g_use_shader_crosshair" },
@@ -161,12 +158,12 @@ local options = group {
 				min = 1,
 				max = 100,
 				step = 1,
-			}
-		),
+			},
+		},
 
 		-- Shader scopes
-		page(
-			"3d_scopes",
+		page {
+			{ id = "3d_scopes" },
 			
 			list_bool { id = "r__3Dfakescope" },
 
@@ -268,11 +265,11 @@ local options = group {
 				max = 2,
 				step = 0.1,
 			}
-		),
+		},
 
 		-- Particles
-		page(
-			"particles",
+		page {
+			{ id = "particles" },
 			track {
 				id = "particle_update_mod",
 				def = 1,
@@ -282,11 +279,11 @@ local options = group {
 			},
 			list_bool { id = "render_short_tracers" },
 			list_bool { id = "allow_silencer_hide_tracer" }
-		),
+		},
 		
 		-- HDR10
-		page(
-			"hdr10",
+		page {
+			{ id = "hdr10" },
 			list_bool {
 				id = "enabled",
 				curr = {function() return get_console_cmd(0, "r4_hdr10_on") end},
@@ -623,15 +620,15 @@ local options = group {
 				max = 1.0,
 				step = 0.01,
 				cmd = "r4_hdr10_sun_outer_radius",
-			}
-		),
+			},
+		},
 	},
 
 	-- Sound
 	group {
 		{ id = "sound" },
-		page(
-			"doppler",			
+		page {
+			{ id = "doppler" },
 			track {
 				id = "snd_doppler_power",
 				def = 1.8,
@@ -645,8 +642,8 @@ local options = group {
 				min = 1,
 				max = 100,
 				step = 1,
-			}
-		),
+			},
+		},
 	},
 
 	-- Control
@@ -654,14 +651,14 @@ local options = group {
 		{ id = "control" },
 
 		-- Keyboard
-		page(
-			"keyboard",
-			list_bool { id = "use_separate_ubgl_keybind" }
-		),
+		page {
+			{ id = "keyboard" },
+			list_bool { id = "use_separate_ubgl_keybind" },
+		},
 
 		-- Mouse
-		page(
-			"mouse",
+		page {
+			{ id = "mouse" },
 			track {
 				id = "mouse_sens_vertical",
 				def = 1,
@@ -670,12 +667,12 @@ local options = group {
 				step = 0.01,
 			},
 			list_bool { id = "mouse_wheel_change_weapon" },
-			list_bool { id = "mouse_wheel_invert_zoom" }
-		),
+			list_bool { id = "mouse_wheel_invert_zoom" },
+		},
 
 		-- Camera
-		page(
-			"camera",			
+		page{
+			{ id = "camera" },
 			track {
 				id = "freelook_cam_limit",
 				def = 1.57,
@@ -683,34 +680,34 @@ local options = group {
 				max = 3.14,
 				step = 0.01,
 			},
-			list_bool { id = "freelook_while_reloading" }
-		),
+			list_bool { id = "freelook_while_reloading" },
+		},
 
 		-- PDA
-		page(
-			"pda",
+		page {
+			{ id = "pda" },
 			list_bool { id = "pda_map_zoom_in_to_mouse"},
-			list_bool { id = "pda_map_zoom_out_to_mouse" }
-		),
+			list_bool { id = "pda_map_zoom_out_to_mouse" },
+		},
 	},
 
 	-- Gameplay
 	group {
 		{ id = "gameplay" },
 					
-		page(
-			"aim",
+		page {
+			{ id = "aim" },
 			list_bool { id = "aimmode_remember"	},
 			list_bool { id = "allow_outfit_control_inertion_factor" },
 			list_bool { id = "allow_weapon_control_inertion_factor" },
 			list_bool { id = "fix_avelocity_spread" },
 			list_bool { id = "apply_pdm_to_ads" },
 			list_bool { id = "smooth_ads_transition" }
-		),
+		},
 
 		-- 3D Ballistics
-		page(
-			"3d_ballistics",					
+		page {
+			{ id = "3d_ballistics" },
 			check { id = "g_firepos" },
 			check { id = "g_firepos_zoom" },
 			check { id = "g_firedir_third_person" },
@@ -728,12 +725,12 @@ local options = group {
 					"nearwall_camera",
 					"nearwall_item"
 				},
-			}
-		),
+			},
+		},
 
 		-- First-person Death
-		page(
-			"first_person_death",
+		page {
+			{ id = "first_person_death" },
 			list_bool { id = "first_person_death" },
 			track {
 				id = "first_person_death_position_smoothing",
@@ -748,27 +745,27 @@ local options = group {
 				min = 1,
 				max = 30,
 				step = 1,
-			}
-		),
+			},
+		},
 		
 		-- Monsters
-		page(
-			"monsters",			
+		page {
+			{ id = "monsters" },
 			list_bool { id = "heat_vision_zombie_cold" },
 			list_bool { id = "pseudogiant_can_damage_objects_on_stomp" },
 			list_bool { id = "telekinetic_objects_include_corpses" },
 			list_bool {
 				id = "monster_stuck_fix",
 				restart = true,
-			}
-		),
+			},
+		},
 	},
 
 	-- Saves
 	group {
 		{ id = "saves" },
-		page(
-			"crash_saves",
+		page {
+			{ id = "crash_saves" },
 			list_bool { id = "crash_save" },
 			track {
 				id = "crash_save_count",
@@ -776,21 +773,21 @@ local options = group {
 				min = 1,
 				max = 20,
 				step = 1,
-			}
-		),
+			},
+		},
 	},
 
 	-- Debug
 	group {
 		{ id = "debug" },
-		page(
-			"logging",
+		page {
+			{ id = "logging" },
 			list_bool { id = "string_table_error_msg" },
 			list_bool { id = "log_timestamps" },
-			list_bool { id = "print_bone_warnings" }
-		),
-		page(
-			"metrics",
+			list_bool { id = "print_bone_warnings" },
+		},
+		page {
+			{ id = "metrics" },
 			track {
 				id = "lua_gcstep",
 				def = 400,
@@ -811,12 +808,11 @@ local options = group {
 				min = 64,
 				max = 512,
 				step = 32,
-			}
-		),
+			},
+		},
 	},
 }
 
--- Entrypoint
 function init_opt_base()
 	-- printf("working?")
 
