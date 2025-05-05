@@ -30,6 +30,14 @@ function slide(args)
 	return args
 end
 
+-- Button
+function button(args)
+	args.type = "button"
+	args.functor_ui = {args.functor_ui}
+	args.precondition = {args.precondition}
+	return args
+end
+
 -- Boolean checkbox
 function check(args)
 	assert(is_table(args), "Checkbox argument is not a table")

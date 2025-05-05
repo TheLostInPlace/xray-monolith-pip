@@ -12,19 +12,14 @@ PAGE = page {
 		cmd = "r4_hdr10_on",
 		restart = true,
 	},
-	{
+	button {
 		id = "live_editing",
-		type = "button",
-		functor_ui = {
-			function(self)
-				return this.start_hdr_live_editing_ui(self)
-			end
-		},
-		precondition = {
-			function()
-				return this.level_present() and get_console_cmd(1, "r4_hdr10_on")
-			end
-		}
+		functor_ui = function(self)
+			return this.start_hdr_live_editing_ui(self)
+		end,
+		precondition = function()
+			return this.level_present() and get_console_cmd(1, "r4_hdr10_on")
+		end,
 	},
 	track {
 		id = "whitepoint_nits",
