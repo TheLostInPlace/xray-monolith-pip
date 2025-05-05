@@ -8,7 +8,9 @@ PAGE = page {
 	{ id = "hdr10" },
 	list_bool {
 		id = "enabled",
-		curr = {function() return get_console_cmd(0, "r4_hdr10_on") end},
+		curr = function()
+			return get_console_cmd(0, "r4_hdr10_on")
+		end,
 		cmd = "r4_hdr10_on",
 		restart = true,
 	},
@@ -51,7 +53,9 @@ PAGE = page {
 	list_enum {
 		id = "colorspace",
 		tag = "hdr10",
-		curr = {function() return get_console_cmd(0, "r4_hdr10_colorspace") end},
+		curr = function()
+			return get_console_cmd(0, "r4_hdr10_colorspace")
+		end,
 		content = {
 			"hdr10_colorspace_rec709",
 			"hdr10_colorspace_p3d65",
@@ -62,7 +66,9 @@ PAGE = page {
 	list_enum {
 		id = "tonemapper",
 		tag = "hdr10",
-		curr = {function() return get_console_cmd(0, "r4_hdr10_tonemapper") end},
+		curr = function()
+			return get_console_cmd(0, "r4_hdr10_tonemapper")
+		end,
 		content = {
 			"hdr10_tonemapper_aces_narkowicz",
 			"hdr10_tonemapper_aces_hill",
@@ -79,7 +85,9 @@ PAGE = page {
 	list_enum {
 		id = "tonemap_mode",
 		tag = "hdr10",
-		curr = {function() return get_console_cmd(0, "r4_hdr10_tonemap_mode") end},
+		curr = function()
+			return get_console_cmd(0, "r4_hdr10_tonemap_mode")
+		end,
 		content = {
 			"hdr10_tonemap_mode_luminance",
 			"hdr10_tonemap_mode_color"
@@ -155,7 +163,9 @@ PAGE = page {
 	list_bool {
 		id = "bloom_on",
 		tag = "hdr10",
-		curr = {function() return get_console_cmd(0, "r4_hdr10_bloom_on") end},
+		curr = function()
+			return get_console_cmd(0, "r4_hdr10_bloom_on")
+		end,
 		cmd = "r4_hdr10_bloom_on",
 	},
 	track {
@@ -191,7 +201,9 @@ PAGE = page {
 	list_bool {
 		id = "flare_on",
 		tag = "hdr10",
-		curr = {function() return get_console_cmd(0, "r4_hdr10_flare_on") end},
+		curr = function()
+			return get_console_cmd(0, "r4_hdr10_flare_on")
+		end,
 		cmd = "r4_hdr10_flare_on",
 	},
 	track {
@@ -308,7 +320,9 @@ PAGE = page {
 	list_bool {
 		id = "sun_on",
 		tag = "hdr10",
-		curr = {function() return get_console_cmd(0, "r4_hdr10_sun_on") end},
+		curr = function()
+			return get_console_cmd(0, "r4_hdr10_sun_on")
+		end,
 		cmd = "r4_hdr10_sun_on",
 	},
 	track {

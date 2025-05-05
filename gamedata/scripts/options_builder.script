@@ -60,7 +60,7 @@ end
 function list(args)
 	assert(is_table(args), "List argument is not a table")
 	args.type = "list"
-	args.curr = args.curr or
+	args.curr = (args.curr and {args.curr}) or
 		{function()
 			return get_console_cmd(0, args.id)
 		end}
