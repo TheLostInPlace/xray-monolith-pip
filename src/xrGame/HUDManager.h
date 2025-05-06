@@ -44,6 +44,7 @@ struct SPickParam
 		InitPick();
 		defs.start = Device.vCameraPosition;
 		defs.dir = Device.vCameraDirection;
+		barrel_matrix = Device.mInvView;
 	}
 };
 
