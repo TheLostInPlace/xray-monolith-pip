@@ -9,8 +9,6 @@ PAGE = page {
 	track {
 		id = "particle_update_mod",
 		def = 1,
-		min = 0.04,
-		max = 1,
 		step = 0.01,
 	},
 	list_bool { id = "render_short_tracers" },

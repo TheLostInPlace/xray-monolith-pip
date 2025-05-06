@@ -53,6 +53,18 @@ function track(args)
 	args.type = "track"
 	args.val = 2
 	args.cmd = args.cmd or args.id
+
+	-- Get bounds of console variable
+	local bounds = get_console():get_variable_bounds(args.cmd)
+	if bounds.min and bounds.max then
+		args.min = args.min or bounds.min
+		args.max = args.max or bounds.max
+	end
+
+	if args.min > args.max then
+		args.min, args.max = args.max, args.min
+	end
+
 	return args
 end
 
