@@ -49,14 +49,16 @@ luabind::object get_console_bounds(CConsole* c, LPCSTR cmd)
 			float_command->GetBounds(min, max);
 			table["min"] = min;
 			table["max"] = max;
-		} else {
-			CCC_Integer* integer_command = smart_cast<CCC_Integer*>(command);
-			if (integer_command) {
-				int min, max;
-				integer_command->GetBounds(min, max);
-				table["min"] = min;
-				table["max"] = max;
-			}
+			return table;
+		}
+
+		CCC_Integer* integer_command = smart_cast<CCC_Integer*>(command);
+		if (integer_command) {
+			int min, max;
+			integer_command->GetBounds(min, max);
+			table["min"] = min;
+			table["max"] = max;
+			return table;
 		}
 	}
 	return table;
