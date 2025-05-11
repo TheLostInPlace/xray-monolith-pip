@@ -10,7 +10,9 @@ function append(dest, ...)
 end
 
 function crosshair_base_commands(args)
-	return 
+	local out = {}
+	append(
+		out,
 		slide {
 			id = args.prefix,
 			text = args.text,
@@ -61,6 +63,16 @@ function crosshair_base_commands(args)
 			hint = "modded_exes_visual_crosshair_g_crosshair_depth",
 			def = args.defs.depth or 0,
 		}
+	)
+	
+	append(
+		out,
+		color {
+			id = "g_crosshair_" .. args.prefix .. "_color"
+		}
+	)
+
+	return unpack(out)
 end
 
 function crosshair_distance_commands(args)
