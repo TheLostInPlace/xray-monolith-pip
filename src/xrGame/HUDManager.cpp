@@ -168,8 +168,7 @@ void CHUDManager::OnFrame()
 	g_player_hud->OnFrame();
 
 	// If aim position is enabled...
-	bool aimpos = psActorFlags.test(AF_AIMPOS);
-	if (aimpos)
+	if (!FireposActive() && AimposActive())
 	{
 		// And we have a valid actor...
 		CActor* pActor = Actor();
@@ -360,6 +359,11 @@ bool CHUDManager::FireposActive()
 	float zFac = pWeapon->GetZRotatingFactor();
 	return (psActorFlags.test(AF_FIREPOS) && zFac < 1.f)
 		|| (psActorFlags.test(AF_FIREPOS_ZOOM) && zFac >= 1.f);
+}
+
+bool CHUDManager::AimposActive()
+{
+	return psActorFlags.test(AF_AIMPOS);
 }
 
 ICF static BOOL pick_trace_callback(collide::rq_result& result, LPVOID params)
