@@ -188,7 +188,7 @@ void TargetCrosshair::Update(const SPickParam& pp, bool is_far)
 
 	// Use the crosshair color unless the readout color is non-default
 	u32 color_readout = recon.GetColor();
-	u32 color_crosshair = color_readout == C_WHITE ? g_crosshair_color : color_readout;
+	u32 color_crosshair = (color_readout & color_rgba(0xff, 0xff, 0xff, 0)) == (C_WHITE & color_rgba(0xff, 0xff, 0xff, 0)) ? g_crosshair_color : color_readout;
 
 	// Modulate color alpha
 	DWORD alpha_mask = 0xff000000;
