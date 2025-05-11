@@ -185,6 +185,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unlocalizers", "unlocalizer
 		..\gamedata\configs\unlocalizers\unlocalizer_modded_exes_utils_item.ltx = ..\gamedata\configs\unlocalizers\unlocalizer_modded_exes_utils_item.ltx
 		..\gamedata\configs\unlocalizers\unlocalizer_modded_exes_xrs_facer_script_fixes.ltx = ..\gamedata\configs\unlocalizers\unlocalizer_modded_exes_xrs_facer_script_fixes.ltx
 		..\gamedata\configs\unlocalizers\unlocalizer_test.ltx = ..\gamedata\configs\unlocalizers\unlocalizer_test.ltx
+		..\gamedata\configs\unlocalizers\unlocalizer_ui_options.ltx = ..\gamedata\configs\unlocalizers\unlocalizer_ui_options.ltx
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shaders", "shaders", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
