@@ -134,6 +134,11 @@ void TargetCrosshair::IntegratePosition(const SPickParam& pp, float dist, bool i
 	
 	Fmatrix mat = pp.barrel_matrix;
 	Device.hud_to_world(mat);
+
+	// Ensure no NaNs creep into interpolation
+	if (!_valid(mat))
+		return;
+
 	p = mat.c;
 	d = mat.k;
 	Device.mView.transform_tiny(p);
