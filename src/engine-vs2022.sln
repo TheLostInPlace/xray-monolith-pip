@@ -239,7 +239,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "textures", "textures", "{44
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ui", "ui", "{91413BC1-731E-470B-AA8C-8C1F6290D8D7}"
 	ProjectSection(SolutionItems) = preProject
-		..\gamedata\textures\ui\cursor.dds = ..\gamedata\textures\ui\cursor.dds
+		..\gamedata\textures\ui\cursor_cross.dds = ..\gamedata\textures\ui\cursor_cross.dds
+		..\gamedata\textures\ui\cursor_dot.dds = ..\gamedata\textures\ui\cursor_dot.dds
+		..\gamedata\textures\ui\cursor_plus.dds = ..\gamedata\textures\ui\cursor_plus.dds
 	EndProjectSection
 EndProject
 Global
