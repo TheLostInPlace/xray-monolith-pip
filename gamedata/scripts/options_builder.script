@@ -50,17 +50,31 @@ end
 -- Numeric slider
 function track(args)
 	assert(is_table(args), "Track argument is not a table")
+
+	-- Populate typing information
 	args.type = "track"
 	args.val = 2
 	args.cmd = args.cmd or args.id
 
+	-- Use ID as command unless specified explicitly
+	if args.cmd == nil then
+		args.cmd = args.id
+	end
+
+	-- If a valid command is specified...
+	if type(args.cmd) == "string" then
 	-- Get bounds of console variable
 	local bounds = get_console():get_variable_bounds(args.cmd)
 	if bounds.min and bounds.max then
 		args.min = args.min or bounds.min
 		args.max = args.max or bounds.max
 	end
+	else
+		-- Otherwise, nil it to ensure data sanity
+		args.cmd = nil
+	end
 
+	-- Ensure provided range is valid
 	if args.min > args.max then
 		args.min, args.max = args.max, args.min
 	end
