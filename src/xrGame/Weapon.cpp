@@ -3010,7 +3010,7 @@ float CWeapon::Weight() const
 
 bool CWeapon::show_crosshair()
 {
-	if (psHUD_Flags.is(HUD_CROSSHAIR_SHOW_ALWAYS))
+	if (psCrosshair_Flags.is(CROSSHAIR_SHOW_ALWAYS))
 		return true;
 
 	return !IsPending() && (!IsZoomed() || !ZoomHideCrosshair());
