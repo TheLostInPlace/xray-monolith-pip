@@ -121,7 +121,7 @@ static bool is_occluded(Fvector pos)
 	op.defs.dir = dir;
 	op.defs.range = dist * 0.99f;
 	return HUD().DoPick(op);
-	}
+}
 
 void TargetCrosshair::IntegratePosition(const SPickParam& pp, float dist, bool is_far)
 {
@@ -129,7 +129,9 @@ void TargetCrosshair::IntegratePosition(const SPickParam& pp, float dist, bool i
 	Fvector p, d;
 	
 	Fmatrix mat = pp.barrel_matrix;
-	Device.hud_to_world(mat);
+	CActor* actor = Actor();
+	if (actor && actor->HUDview())
+		Device.hud_to_world(mat);
 
 	// Ensure no NaNs creep into interpolation
 	if (!_valid(mat))
@@ -277,12 +279,17 @@ void CrosshairPair::RenderAimLine(
 
 	UIRender->StartPrimitive(verts, IUIRender::ptLineStrip, UI().m_currentPointType);
 
-	Device.hud_to_world(va);
+	CActor* actor = Actor();
+	if (actor && actor->HUDview())
+		Device.hud_to_world(va);
+
 	Device.mFullTransform.transform(va);
 	va.x = (va.x + 1.f) * 0.5f * scr_size.x;
 	va.y = (-va.y + 1.f) * 0.5f * scr_size.y;
 
-	Device.hud_to_world(vb);
+	if (actor && actor->HUDview())
+		Device.hud_to_world(vb);
+
 	Device.mFullTransform.transform(vb);
 	vb.x = (vb.x + 1.f) * 0.5f * scr_size.x;
 	vb.y = (-vb.y + 1.f) * 0.5f * scr_size.y;
