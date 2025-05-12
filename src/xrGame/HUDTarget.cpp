@@ -116,18 +116,12 @@ static bool is_occluded(Fvector pos)
 	Fvector dir = Fvector().sub(pos, Device.vCameraPosition);
 	float dist = dir.magnitude();
 	dir.normalize();
-	SPickParam op = SPickParam();
+	SPickParam op = SPickParam(CDB::OPT_CULL | CDB::OPT_ONLYFIRST);
 	op.defs.start = Device.vCameraPosition;
 	op.defs.dir = dir;
 	op.defs.range = dist * 0.99f;
-	if (!HUD().DoPick(op))
-	{
-		return false;
+	return HUD().DoPick(op);
 	}
-
-	// If it is, apply fade
-	return true;
-}
 
 void TargetCrosshair::IntegratePosition(const SPickParam& pp, float dist, bool is_far)
 {
