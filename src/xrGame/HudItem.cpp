@@ -1098,6 +1098,7 @@ void CHudItem::Ray(SPickParam& pp)
 			pp.defs.dir.sub(matrix.c, pp.defs.start);
 			pp.defs.range = pp.defs.dir.magnitude();
 			pp.defs.dir.normalize();
+			pp.barrel_dist = pp.defs.range;
 		}
 
 		return;
