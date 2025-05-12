@@ -368,16 +368,19 @@ void CHUDTarget::ShowCrosshair(bool b)
 
 void CHUDTarget::Render()
 {
-	CObject* O = Level().CurrentEntity();
-	if (0 == O) return;
-	CEntity* E = smart_cast<CEntity*>(O);
-	if (0 == E) return;
+	CActor* pActor = Actor();
+	if (!pActor)
+		return;
+
+	CHUDManager& hud = HUD();
+	bool firepos_active = hud.FireposActive();
+	bool aimpos_active = hud.AimposActive();
 
 	if (psCrosshair_Flags.is(CROSSHAIR_INDEPENDENT))
 	{
 		const SPickParam& pick_hud = HUD().GetPick();
-		m_camera.crosshair_near.recon.SetDoTransform(!HUD().FireposActive() && HUD().AimposActive());
-		m_camera.crosshair_far.recon.SetDoTransform(!HUD().FireposActive() && HUD().AimposActive());
+		m_camera.crosshair_near.recon.SetDoTransform(!firepos_active && aimpos_active);
+		m_camera.crosshair_far.recon.SetDoTransform(!firepos_active && aimpos_active);
 		m_camera.Update(pick_hud);
 
 		if (m_bShowCrosshair)
@@ -397,7 +400,7 @@ void CHUDTarget::Render()
 		}
 
 		attachable_hud_item* pDevice = g_player_hud->attached_item(1);
-		if (pDevice)
+		if (pActor->HUDview() && pDevice)
 		{
 			CHudItem* pItem = pDevice->m_parent_hud_item;
 			if (pItem)
@@ -411,9 +414,9 @@ void CHUDTarget::Render()
 	}
 	else
 	{
-		SPickParam& pick = Actor()->GetPick();
-		m_camera.crosshair_near.recon.SetDoTransform(HUD().FireposActive() || HUD().AimposActive());
-		m_camera.crosshair_far.recon.SetDoTransform(!HUD().FireposActive() && HUD().AimposActive());
+		SPickParam& pick = pActor->GetPick();
+		m_camera.crosshair_near.recon.SetDoTransform(firepos_active || aimpos_active);
+		m_camera.crosshair_far.recon.SetDoTransform(!firepos_active && aimpos_active);
 		m_camera.Update(pick);
 		if (m_bShowCrosshair)
 			m_camera.Render(pick);
