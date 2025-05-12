@@ -130,6 +130,10 @@
         void reset_hands()
     }
 
+    class CUIProgressBar {
+        CUIStatic GetProgressStatic()
+    }
+
     // Debug shapes
     enum DebugRenderType {
         line,
