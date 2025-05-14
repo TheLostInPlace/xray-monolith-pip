@@ -717,9 +717,10 @@
         function set_ui_bone(number);
         function set_ui_position(vector);
         function set_ui_position(number, number, number);
-        function set_ui_position();
+        function get_ui_position();
         function set_ui_rotation(vector);
         function set_ui_rotation(number, number, number);
+        function get_ui_rotation();
 		function get_shaders()
 		function get_default_shaders()
 		function set_shader(number, string, string)
