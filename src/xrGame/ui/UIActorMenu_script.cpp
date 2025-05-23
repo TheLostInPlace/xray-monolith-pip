@@ -29,6 +29,7 @@
 #include "UIZoneMap.h"
 #include "UIMotionIcon.h"
 #include "UIHudStatesWnd.h"
+#include "UIMessagesWindow.h"
 
 using namespace luabind;
 
@@ -45,6 +46,13 @@ CUIPdaWnd* GetPDAMenu()
 CUIMainIngameWnd* GetMainGameMenu()
 {
 	return CurrentGameUI()->UIMainIngameWnd;
+}
+
+CUIWindow* GetMessagesMenu()
+{
+	CUIMessagesWindow* messagesWnd = CurrentGameUI()->m_pMessagesWnd;
+	CUIWindow* window = smart_cast<CUIWindow*>(messagesWnd);
+	return window;
 }
 
 u8 GrabMenuMode()
@@ -395,6 +403,9 @@ void CUIActorMenu::script_register(lua_State* L)
 		def("get_pda_menu", &GetPDAMenu),
 		def("get_actor_menu", &GetActorMenu),
 		def("get_menu_mode", &GrabMenuMode),
-		def("get_maingame", &GetMainGameMenu)
+		def("get_maingame", &GetMainGameMenu),
+
+		// NLTP_ASHES
+		def("get_messages_menu", &GetMessagesMenu)
 	];
 }
