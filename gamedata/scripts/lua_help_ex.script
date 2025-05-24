@@ -244,6 +244,10 @@
         //    level.add_bullet(t)
     }
 
+    class CUIMessagesWindow : CUIWindow {
+        // no extra exports yet
+    }
+
     namespace ActorMenu {
         function get_messages_menu()
     }
