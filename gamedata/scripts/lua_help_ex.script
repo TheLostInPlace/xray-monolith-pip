@@ -244,6 +244,10 @@
         //    level.add_bullet(t)
     }
 
+    namespace ActorMenu {
+        function get_messages_menu()
+    }
+
     // obj:get_physics_shell()
     class PHShell {
         void apply_torque(float roll, float yaw, float pitch)
