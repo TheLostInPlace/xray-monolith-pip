@@ -14,6 +14,19 @@
 		<text>ВЫКЛ</text>
 	</string>
 
+	<string id="ui_mm_modded_exes_color_a">
+		<text>Непрозрачность</text>
+	</string>
+	<string id="ui_mm_modded_exes_color_r">
+		<text>Красный</text>
+	</string>
+	<string id="ui_mm_modded_exes_color_g">
+		<text>Зеленый</text>
+	</string>
+	<string id="ui_mm_modded_exes_color_b">
+		<text>Синий</text>
+	</string>
+
 	<!-- Visual -->
 	<string id="ui_mm_menu_visual">
 		<text>Визуальный</text>

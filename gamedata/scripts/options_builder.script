@@ -83,10 +83,10 @@ end
 
 -- RGBA color sliders
 function curr_crosshair_clr(id, n)
-	printf("curr_crosshair_clr(%s, %s)", id, n)
+	-- printf("curr_crosshair_clr(%s, %s)", id, n)
 	local curr = get_console_cmd(nil, id)
 	curr = tostring(curr)
-	printf("  curr: %s", curr)
+	-- printf("  curr: %s", curr)
 	local r,g,b,a = string.match(curr,"(%d+), (%d+), (%d+), (%d+)")
 	if n == "a" then
 		return tonumber(a)
@@ -124,10 +124,11 @@ function func_crosshair_clr(id, n)
 	exec_console_cmd(strformat(id .. " (%s, %s, %s, %s)", r, g, b, a))
 end
 
-function color(args)
+function crosshair_color(args)
 	return
 		track {
 			id = args.id .. "_a",
+			hint = "modded_exes_color_a",
 			min = 0,
 			max = 255,
 			def = 255,
@@ -138,6 +139,7 @@ function color(args)
 		},
 		track {
 			id = args.id .. "_r",
+			hint = "modded_exes_color_r",
 			min = 0,
 			max = 255,
 			def = 255,
@@ -148,6 +150,7 @@ function color(args)
 		},
 		track {
 			id = args.id .. "_g",
+			hint = "modded_exes_color_g",
 			min = 0,
 			max = 255,
 			def = 255,
@@ -158,6 +161,7 @@ function color(args)
 		},
 		track {
 			id = args.id .. "_b",
+			hint = "modded_exes_color_b",
 			min = 0,
 			max = 255,
 			def = 255,

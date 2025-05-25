@@ -7,11 +7,25 @@
 	<string id="ui_mm_menu_modded_exes">
 		<text>Modded Exes</text>
 	</string>
+
 	<string id="ui_mm_lst_ON">
 		<text>ON</text>
 	</string>
 	<string id="ui_mm_lst_OFF">
 		<text>OFF</text>
+	</string>
+
+	<string id="ui_mm_modded_exes_color_a">
+		<text>Opacity</text>
+	</string>
+	<string id="ui_mm_modded_exes_color_r">
+		<text>Red</text>
+	</string>
+	<string id="ui_mm_modded_exes_color_g">
+		<text>Green</text>
+	</string>
+	<string id="ui_mm_modded_exes_color_b">
+		<text>Blue</text>
 	</string>
 
 	<!-- Visual -->
