@@ -927,25 +927,16 @@ void CUIMapWnd::ShowHintTask(CGameTask* task, CUIWindow* owner)
 	{
 		m_map_location_hint->SetInfoTask(task);
 		m_map_location_hint->SetOwner(owner);
-		ShowHint(true);
+		ShowHint();
 		return;
 	}
 	HideCurHint();
 }
 
-void CUIMapWnd::ShowHint(bool extra)
+void CUIMapWnd::ShowHint()
 {
-	Frect vis_rect;
-	if (extra)
-	{
-		vis_rect.set(Frect().set(0.0f, 0.0f, UI_BASE_WIDTH, UI_BASE_HEIGHT));
-	}
-	else
-	{
-		vis_rect = ActiveMapRect();
-	}
-
-	bool is_visible = fit_in_rect(m_map_location_hint, vis_rect);
+	Frect vis_rect = ActiveMapRect();
+	bool is_visible = fit_in_rect2(m_map_location_hint, vis_rect);
 	if (!is_visible)
 	{
 		HideCurHint();

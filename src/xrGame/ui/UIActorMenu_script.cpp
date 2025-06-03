@@ -48,11 +48,9 @@ CUIMainIngameWnd* GetMainGameMenu()
 	return CurrentGameUI()->UIMainIngameWnd;
 }
 
-CUIWindow* GetMessagesMenu()
+CUIMessagesWindow* GetMessagesMenu()
 {
-	CUIMessagesWindow* messagesWnd = CurrentGameUI()->m_pMessagesWnd;
-	CUIWindow* window = smart_cast<CUIWindow*>(messagesWnd);
-	return window;
+	return CurrentGameUI()->m_pMessagesWnd;
 }
 
 u8 GrabMenuMode()
@@ -373,6 +371,9 @@ void CUIActorMenu::script_register(lua_State* L)
 		.def("Background", &CUIZoneMap::Background),
 
 		class_<CUIMotionIcon, CUIWindow>("CUIMotionIcon")
+		.def(constructor<>()),
+
+		class_<CUIMessagesWindow, CUIWindow>("CUIMessagesWindow")
 		.def(constructor<>()),
 
 		class_<CUIHudStatesWnd, CUIWindow>("CUIHudStatesWnd")

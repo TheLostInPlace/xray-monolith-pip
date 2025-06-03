@@ -67,7 +67,7 @@ function crosshair_base_commands(args)
 	
 	append(
 		out,
-		color {
+		crosshair_color {
 			id = "g_crosshair_" .. args.prefix .. "_color"
 		}
 	)

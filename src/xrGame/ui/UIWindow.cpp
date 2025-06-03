@@ -641,6 +641,8 @@ static bool is_in(Frect const& a, Frect const& b) //b in a
 	return (a.x1 < b.x1) && (a.x2 > b.x2) && (a.y1 < b.y1) && (a.y2 > b.y2);
 }
 
+
+
 bool fit_in_rect(CUIWindow* w, Frect const& vis_rect, float border, float dx16pos) //this = hint wnd
 {
 	float const cursor_height = 43.0f;
@@ -667,6 +669,69 @@ bool fit_in_rect(CUIWindow* w, Frect const& vis_rect, float border, float dx16po
 	float yn = rect.top - vis_rect.height() + rect.height() - border + cursor_height;
 	if (!is_in(vis_rect, rect)) { rect.sub(0.0f, yn); }
 	if (!is_in(vis_rect, rect)) { rect.sub(rect.width() - border, 0.0f); }
+
+	w->SetWndPos(rect.lt);
+	return true;
+}
+
+bool fit_in_rect2(CUIWindow* w, Frect const& vis_rect, float border, float dx16pos) //this = hint wnd
+{
+	float const cursor_size = 21.0f;
+	Fvector2 cursor_pos = GetUICursor().GetCursorPosition();
+	if (UI().is_widescreen())
+	{
+		cursor_pos.x -= dx16pos;
+	}
+
+	if (!vis_rect.in(cursor_pos))
+	{
+		return false;
+	}
+
+	Frect rect;
+	rect.set(-border, -border, w->GetWidth() - 2.0f * border, w->GetHeight() - 2.0f * border);
+
+	float const cursor_x_in_vis_rect = cursor_pos.x - vis_rect.x1;
+	bool const cursor_is_left_of_center = cursor_x_in_vis_rect < (vis_rect.width() / 2) - cursor_size;
+	if (cursor_is_left_of_center)
+	{
+		// show hint window to the right of the cursor
+		rect.add(cursor_pos.x + cursor_size, 0.0f);
+	}
+	else
+	{
+		// show hint window to the left of the cursor
+		rect.add(cursor_pos.x - w->GetWidth() - border, 0.0f);
+	}
+
+	float const cursor_y_in_vis_rect = cursor_pos.y - vis_rect.y1;
+	bool const cursor_is_top_of_center = cursor_y_in_vis_rect < (vis_rect.height() / 2) - cursor_size;
+	if (cursor_is_top_of_center)
+	{
+		// show hint window under the cursor
+		rect.add(0.0f, cursor_pos.y + cursor_size);
+	}
+	else
+	{
+		// show hint window over the cursor
+		rect.add(0.0f, cursor_pos.y - w->GetHeight() - border);
+	}
+
+	if (rect.top < vis_rect.top)
+	{
+		// hint window sticks out of parent at the top, correct that by moving it down
+		float const y_correction = vis_rect.top - rect.top;
+		rect.add(0.0f, y_correction);
+	}
+
+	if (rect.bottom > vis_rect.bottom)
+	{
+		// hint window sticks out of parent at the bottom, correct that by moving it up
+		float const y_correction = vis_rect.bottom - rect.bottom;
+		rect.add(0.0f, y_correction);
+	}
+	// TODO: #1 if hint window taller than parent, consider increasing width by const step and the looping the logic until hint_window_width >= vis_rect.width
+	// TODO: #2 correct horizontally (only important if first todo implemented)
 
 	w->SetWndPos(rect.lt);
 	return true;
