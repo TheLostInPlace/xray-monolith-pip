@@ -186,6 +186,9 @@ How to compile exes:
 6. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.06.03**
+* NLTP_ASHES: Export color animation functions & implemented RemoveColorAnimation (https://github.com/themrdemonized/xray-monolith/pull/241)
+
 **2025.05.29**
 * lulnope: Fix popup positioning for tall popups in tasks/map tab of PDA (https://github.com/themrdemonized/xray-monolith/pull/237)
 
