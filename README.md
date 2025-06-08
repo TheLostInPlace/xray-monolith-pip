@@ -25,7 +25,7 @@ Here is list of exe files for Anomaly 1.5.3 that contains all engine patches by 
   * Install modded exes following the instructions above
 
 * Q: The game crashes on DX11 Fullscreen on Linux
-* A: You need to add `--dxgi-old` parameter into `commandline.txt` file or via making a shotcut to exe and adding argument there
+* A: You need to add `--dxgi-old` parameter into `commandline.txt` file or via making a shortcut to exe and adding argument there
 
 * Q: I have conflicts, crashes and bugs with shaders when i use Beef NVG, SSS, or Enhanced Shaders
 * A: If you are using those mods, install this package via MO2, and put it higher priority than those mods: https://github.com/deggua/xray-hdr10-shaders/releases/latest
@@ -46,7 +46,7 @@ The original engine is used in S.T.A.L.K.E.R. Call of Pripyat game released by G
   * Attempting to override sections no longer crash the game, but prints the message into the log. All sections that triggers that error will be printed
   * Duplicate section errors now prints the root file where the error happened for easier checking mod_... ltxes
   * DLTX received possibility to create section if it doesn't exists and override section if it does with the same symbol `@`.
-  Below is the example for `newsection` that wasn't defined. Firstly its created with one param `override = false`, then its overriden with `override = true`
+  Below is the example for `newsection` that wasn't defined. Firstly its created with one param `override = false`, then its overridden with `override = true`
 
   ```
   @[newsection]
