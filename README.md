@@ -186,7 +186,7 @@ How to compile exes:
 6. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
-**2025.06.08**
+**2025.06.09**
 * NLTP_ASHES: Exported `_keyboard`'s `key_name` and `key_local_name` to Lua (https://github.com/themrdemonized/xray-monolith/pull/248)
 
 **2025.06.08**
