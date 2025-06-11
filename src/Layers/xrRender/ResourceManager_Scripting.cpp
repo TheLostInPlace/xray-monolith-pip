@@ -3,7 +3,7 @@
 
 //AVO: lua re-org
 #ifdef USE_LUAJIT_ONE //defined in project props
-#pragma comment(lib, "LuaJIT-1.1.8.lib")
+#pragma comment(lib, "lua51.lib")
 #else
 #pragma comment(lib, "lua51.lib" )
 #endif

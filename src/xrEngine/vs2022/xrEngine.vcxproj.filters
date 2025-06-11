@@ -781,16 +781,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="resource.rc">
-      <Filter>General\Resources</Filter>
-    </ResourceCompile>
+    <ResourceCompile Include="..\resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="splash_xrcs_en.bmp">
-      <Filter>General\Resources</Filter>
-    </Image>
-    <Image Include="stalker_cs.ico">
-      <Filter>General\Resources</Filter>
-    </Image>
+    <Image Include="..\splash_xrcs_en.bmp" />
+    <Image Include="..\stalker_cs.ico" />
   </ItemGroup>
 </Project>
