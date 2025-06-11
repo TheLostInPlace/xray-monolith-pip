@@ -427,6 +427,8 @@ void CScriptStorage::reinit()
     luajit::open_lib(lua(), LUA_MATHLIBNAME, luaopen_math);
     luajit::open_lib(lua(), LUA_STRLIBNAME, luaopen_string);
     luajit::open_lib(lua(), LUA_JITLIBNAME, luaopen_jit);
+	luajit::open_lib(lua(), LUA_BITLIBNAME, luaopen_bit);
+	luajit::open_lib(lua(), LUA_FFILIBNAME, luaopen_ffi);
 
 #ifdef DEBUG
     luajit::open_lib(lua(), LUA_DBLIBNAME, luaopen_debug);
@@ -972,10 +974,10 @@ bool CScriptStorage::do_file(LPCSTR caScriptName, LPCSTR caNameSpaceName)
 
 	bool bufferLoaded = false;
 	if (unlocalPerformed) {
-		bufferLoaded = load_buffer(lua(), scriptContents, scriptLength, l_caLuaFileName, caNameSpaceName);
+		bufferLoaded = load_buffer(lua(), scriptContents, scriptLength, caNameSpaceName, caNameSpaceName);
 	} else {
 		l_tpFileReader->rewind();
-		bufferLoaded = load_buffer(lua(), static_cast<LPCSTR>(l_tpFileReader->pointer()), (size_t)l_tpFileReader->length(), l_caLuaFileName, caNameSpaceName);
+		bufferLoaded = load_buffer(lua(), static_cast<LPCSTR>(l_tpFileReader->pointer()), (size_t)l_tpFileReader->length(), caNameSpaceName, caNameSpaceName);
 	}
 
 	if (!bufferLoaded)
