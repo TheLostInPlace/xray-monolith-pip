@@ -327,7 +327,6 @@ CScriptStorage::~CScriptStorage()
 extern int luaopen_lua_extensions(lua_State* L);
 extern lua_CFunction luaopen_socket_core_init();
 extern void pdebug_init_init(lua_State* L);
-void DebbugerAttach();
 
 void disable_os_funcs(lua_State* L)
 {
@@ -348,10 +347,11 @@ void disable_os_funcs(lua_State* L)
 	lua_pop(L, 1);
 }
 
-bool LoadScriptToGlobal(lua_State* L, const char* name)
+bool LoadKernelScriptToGlobal(lua_State* L, const char* name)
 {
 	string_path FileName;
 	xr_string FixedFileName = name;
+	//FixedFileName = "kernel\\" + FixedFileName; //When this line is enabled all lua files are not being loaded after loading a game
 
 	if (FS.exist(FileName, "$game_scripts$", FixedFileName.data()))
 	{
@@ -443,18 +443,18 @@ void CScriptStorage::reinit()
 	disable_os_funcs(lua());
 	//loadjitmodule(lua(), "jit not found");
 
-	LoadScriptToGlobal(lua(), "global.lua");
-	LoadScriptToGlobal(lua(), "dynamic_callbacks.lua");
+	LoadKernelScriptToGlobal(lua(), "global.lua");
+	LoadKernelScriptToGlobal(lua(), "dynamic_callbacks.lua");
 
 	// Sockets
 	luajit::open_lib(lua(), "socket.core", luaopen_socket_core_init());
-	bool SocketTest = LoadScriptToGlobal(lua(), "socket.lua");
+	bool SocketTest = LoadKernelScriptToGlobal(lua(), "socket.lua");
 
 	// Panda
 	if (SocketTest)
 	{
 		pdebug_init_init(lua());
-		LoadScriptToGlobal(lua(), "LuaPanda.lua");
+		LoadKernelScriptToGlobal(lua(), "LuaPanda.lua");
 	}
 
 	if (strstr(Core.Params, "-_g"))

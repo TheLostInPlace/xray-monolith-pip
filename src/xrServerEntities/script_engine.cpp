@@ -16,6 +16,7 @@
 #include <unordered_map>
 #include <set>
 #include <xrCore/string_concatenations.h>
+#include "script_engine_debugger.h"
 
 #ifdef USE_DEBUGGER
 #	ifndef USE_LUA_STUDIO
@@ -316,28 +317,14 @@ void CScriptEngine::lua_hook_call		(lua_State *L, lua_Debug *dbg)
 
 int auto_load(lua_State* L)
 {
-	int StackSize = lua_gettop(L);
-	bool IsTable = lua_istable(L, 1);
-
-	if ((StackSize < 2) || !IsTable || !lua_isstring(L, 2)) {
-		lua_pushnil(L);
-		return		(1);
-	}
-
-	string_path S = {};
-	string128 FullName = {};
-	FS.update_path(S, "$game_scripts$", xr_strconcat(FullName, lua_tostring(L, 2), ".script"));
-
-	if (FS.exist(S))
-	{
-		ai().script_engine().process_file_if_exists(lua_tostring(L, 2), false);
-		lua_rawget(L, 1);
-	}
-	else
+	if ((lua_gettop(L) < 2) || !lua_istable(L, 1) || !lua_isstring(L, 2))
 	{
 		lua_pushnil(L);
+		return (1);
 	}
 
+	ai().script_engine().process_file_if_exists(lua_tostring(L, 2), false);
+	lua_rawget(L, 1);
 	return (1);
 }
 
@@ -418,6 +405,11 @@ void CScriptEngine::init()
 	load_common_scripts();
 #endif
 	m_stack_level = lua_gettop(lua());
+
+	if (ShouldAttachDebugger())
+	{
+		//AttachDebugger(); //Getting crash in ljtab.c after executing this function: Unhandled exception thrown: read access violation.
+	}
 }
 
 void CScriptEngine::remove_script_process(const EScriptProcessors& process_id)
