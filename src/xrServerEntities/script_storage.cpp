@@ -225,7 +225,7 @@ static int report(lua_State *L, int status)
 
 static int loadjitmodule(lua_State *L, const char *notfound)
 {
-    lua_getglobal(L, "require"); 
+    lua_getglobal(L, "require");
     lua_pushliteral(L, "jit.");
     lua_pushvalue(L, -3);
     lua_concat(L, 2);
@@ -438,10 +438,9 @@ void CScriptStorage::reinit()
         luajit::open_lib(lua(), LUA_DBLIBNAME, luaopen_debug);
 #endif //-DEBUG
 #endif //!USE_LUAJIT_ONE
-	
+
 	luaopen_lua_extensions(lua());
 	disable_os_funcs(lua());
-	//loadjitmodule(lua(), "jit not found");
 
 	LoadKernelScriptToGlobal(lua(), "global.lua");
 	LoadKernelScriptToGlobal(lua(), "dynamic_callbacks.lua");
