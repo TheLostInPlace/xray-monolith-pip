@@ -489,7 +489,7 @@
     <ClInclude Include="..\imgui_helper.h">
       <Filter>Interfaces\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="imgui_tools.h" />
+    <ClInclude Include="..\imgui_tools.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\defines.cpp">

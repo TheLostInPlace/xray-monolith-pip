@@ -437,6 +437,17 @@ void CScriptStorage::reinit()
     if (strstr(Core.Params, "-dbg"))
         luajit::open_lib(lua(), LUA_DBLIBNAME, luaopen_debug);
 #endif //-DEBUG
+	
+	if (!strstr(Core.Params, "-nojit"))
+	{
+		//luajit::open_lib(lua(), LUA_JITLIBNAME, luaopen_jit);
+#ifndef DEBUG
+		put_function(lua(), opt_lua_binary, sizeof(opt_lua_binary), "jit.opt");
+		put_function(lua(), opt_inline_lua_binary, sizeof(opt_lua_binary), "jit.opt_inline");
+		dojitopt(lua(), "2");
+#endif //!DEBUG
+	}
+
 #endif //!USE_LUAJIT_ONE
 
 	luaopen_lua_extensions(lua());

@@ -72,7 +72,7 @@ extern ENGINE_API CInifile* pGameIni;
 
 //AVO: lua re-org
 #ifdef USE_LUAJIT_ONE //defined in project props
-#pragma comment(lib, "lua51.lib" )
+#pragma comment(lib, "LuaJIT-1.1.8.lib")
 #else
 #pragma comment(lib, "lua51.lib" )
 #endif
