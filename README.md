@@ -164,6 +164,14 @@ The original engine is used in S.T.A.L.K.E.R. Call of Pripyat game released by G
     * The step of zoom adjustment is more precise. Also, it's possible to adjust the step of zoom with the console command zoom_step_count [1.0, 10.0], this option is also applicable to the binoculars.
   * In the new version all implementations from fakelens.script have moved directly to the engine. fakelens.script remained as a layer between the engine and scopeRadii.script
 
+* Debug scripts with VSCode and LuaPanda support
+  * To use it, you need to install VSCode and LuaPanda extension: https://marketplace.visualstudio.com/items?itemName=stuartwang.luapanda
+  * Then you need to copy `.vscode` folder from the archive into your Anomaly `gamedata/scripts` folder: https://github.com/themrdemonized/xray-monolith/tree/all-in-one-vs2022-wpo/gamedata/scripts/.vscode
+  * Open the `gamedata/scripts` folder in VSCode, go to `Run and Debug` section and start debugging or press F5 key
+  * To start debugging, open in-game console with `~` key and type `run_string debugger_attach()`. If you do everything correctly and engine is working properly too, you will get an entry breakpoint at `global.lua` file in VSCode.
+  * You have to re-enable the debugger every time you start a new game or load a save, so you have to type `run_string debugger_attach()` in console again.
+  * Debugger is working dynamically, so you can add/remove files from your VSCode folder and it will automatically update the list of files available for debugging.
+
 * All settings can be edited from the game options in "Modded Exes" tab
 ![image](http://puu.sh/JC40Y/9315119150.jpg)
 
