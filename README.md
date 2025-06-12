@@ -166,9 +166,10 @@ The original engine is used in S.T.A.L.K.E.R. Call of Pripyat game released by G
 
 * Debug scripts with VSCode and LuaPanda support by IXRay Platform
   * To use it, you need to install VSCode and LuaPanda extension: https://marketplace.visualstudio.com/items?itemName=stuartwang.luapanda
-  * Then you need to copy `.vscode` folder from the archive into your Anomaly `gamedata/scripts` folder: https://github.com/themrdemonized/xray-monolith/tree/all-in-one-vs2022-wpo/gamedata/scripts/.vscode
-  * Open the `gamedata/scripts` folder in VSCode, go to `Run and Debug` section and start debugging or press F5 key
-  * To start debugging, open in-game console with `~` key and type `run_string debugger_attach()`. If you do everything correctly and engine is working properly too, you will get an entry breakpoint at `global.lua` file in VSCode.
+  * Open your `gamedata/scripts` folder in VSCode
+  * Copy `.vscode` folder from the archive into your `gamedata/scripts` folder: https://github.com/themrdemonized/xray-monolith/tree/all-in-one-vs2022-wpo/gamedata/scripts/.vscode
+  * Return to VSCode, go to `Run and Debug` section and start debugging or press F5 key
+  * Open in-game console with `~` key and type `run_string debugger_attach()`. If you do everything correctly and engine is working properly too, you will get an entry breakpoint at `global.lua` file in VSCode.
   * You have to re-enable the debugger every time you start a new game or load a save, so you have to type `run_string debugger_attach()` in console again.
   * Debugger is working dynamically, so you can add/remove files from your VSCode folder and it will automatically update the list of files available for debugging.
 
