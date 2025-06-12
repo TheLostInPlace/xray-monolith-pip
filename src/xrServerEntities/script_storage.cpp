@@ -17,21 +17,18 @@
 #include <regex>
 
 #if !defined(DEBUG) && defined(USE_LUAJIT_ONE)
-#	include "../xrServerEntities/opt.lua.h"
-#	include "../xrServerEntities/opt_inline.lua.h"
+#	include "opt.lua.h"
+#	include "opt_inline.lua.h"
 #endif //!DEBUG && USE_LUAJIT_ONE
 #ifndef USE_LUAJIT_ONE
 #include "lua.hpp"
 #endif
 
-#ifdef USE_LUAJIT_ONE
 extern "C"
 {
 #include <lua.h>
 	int luaopen_marshal(lua_State* L);
-	int luaopen_LuaXML_lib(lua_State* L);
-	int luaopen_utf8(lua_State* L);
-	
+
 }
 struct luajit
 {
@@ -42,7 +39,6 @@ struct luajit
 		lua_call(L, 1, 0);
 	}
 };
-#endif
 
 LPCSTR file_header_old =
 	"\
@@ -324,7 +320,7 @@ CScriptStorage::~CScriptStorage()
 		lua_close(m_virtual_machine);
 }
 
-extern int luaopen_lua_extensions(lua_State* L);
+extern int luaopen_lua_extensions(lua_State* L, bool IsDebug = false);
 extern lua_CFunction luaopen_socket_core_init();
 extern void pdebug_init_init(lua_State* L);
 
@@ -449,8 +445,8 @@ void CScriptStorage::reinit()
 	}
 
 #endif //!USE_LUAJIT_ONE
-
-	luaopen_lua_extensions(lua());
+	bool isDebugEnabled = strstr(Core.Params, "-dbg") != nullptr;
+	luaopen_lua_extensions(lua(), isDebugEnabled);
 	disable_os_funcs(lua());
 
 	LoadKernelScriptToGlobal(lua(), "global.lua");
