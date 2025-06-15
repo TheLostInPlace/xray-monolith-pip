@@ -188,8 +188,13 @@ void CWeaponMagazined::Load(LPCSTR section)
 			m_sounds.LoadSound(section, "snd_silncer_shot_misfire_actor", "sndSilencerShotMisfireActor", false, m_eSoundShot);
 
 		// Indoor
-		if (WeaponSoundExist(section, "snd_silncer_shoot_indoor"))
-			m_sounds.LoadSound(section, "snd_silncer_shoot_indoor", "sndSilencerShotIndoor", false, m_eSoundShot);
+		if (WeaponSoundExist(section, "snd_silncer_shot_indoor")) {
+			m_sounds.LoadSound(section, "snd_silncer_shot_indoor", "sndSilencerShotIndoor", false, m_eSoundShot);
+		} else {
+			if (WeaponSoundExist(section, "snd_silncer_shoot_indoor")) 
+				m_sounds.LoadSound(section, "snd_silncer_shoot_indoor", "sndSilencerShotIndoor", false, m_eSoundShot);
+		} // Change section name from "shoot" to "shot" for consistency while keeping the old one for compatibility
+		
 		if (WeaponSoundExist(section, "snd_silncer_shot_actor_indoor"))
 			m_sounds.LoadSound(section, "snd_silncer_shot_actor_indoor", "sndSilencerShotActorIndoor", false, m_eSoundShot);
 		if (WeaponSoundExist(section, "snd_silncer_shoot_actor_first_indoor"))
@@ -962,16 +967,6 @@ void CWeaponMagazined::PlaySoundShot()
 
 	if (bMisfire)
 	{
-		if (g_gunsnd_indoor>0.75f) {
-			string128 sndNameMisfireIndoor;
-			strconcat(sizeof(sndNameMisfireIndoor), sndNameMisfireIndoor, m_sSndShotCurrent.c_str(), "MisfireIndoor");
-			if (m_sounds.FindSoundItem(sndNameMisfireIndoor, false))
-			{
-				m_sounds.PlaySound(sndNameMisfireIndoor, get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1, g_gunsnd_indoor_volume);
-				return;
-			}
-		}
-
 		string128 sndNameMisfire;
 		strconcat(sizeof(sndNameMisfire), sndNameMisfire, m_sSndShotCurrent.c_str(), "Misfire");
 		if (m_sounds.FindSoundItem(sndNameMisfire, false))
@@ -980,18 +975,7 @@ void CWeaponMagazined::PlaySoundShot()
 			return;
 		}
 	}
-
-	if (g_gunsnd_indoor>0.75f)
-	{
-		string128 sndNameIndoor;
-		strconcat(sizeof(sndNameIndoor), sndNameIndoor, m_sSndShotCurrent.c_str(), "Indoor");
-		if (m_sounds.FindSoundItem(sndNameIndoor, false))
-		{
-			m_sounds.PlaySound(sndNameIndoor, get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1, g_gunsnd_indoor_volume);
-			return;
-		}
-	}
-
+	
 	m_sounds.PlaySound(m_sSndShotCurrent.c_str(), get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1);
 }
 
