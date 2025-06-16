@@ -15,7 +15,6 @@
 #include "script_storage.h"
 #include <unordered_map>
 #include <set>
-#include <xrCore/string_concatenations.h>
 
 #ifdef USE_DEBUGGER
 #	ifndef USE_LUA_STUDIO
@@ -304,7 +303,6 @@ void CScriptEngine::setup_callbacks()
 
 #ifdef DEBUG
 #	include "script_thread.h"
-#include <xrCore/string_concatenations.cpp>
 void CScriptEngine::lua_hook_call		(lua_State *L, lua_Debug *dbg)
 {
     if (ai().script_engine().current_thread())
