@@ -4,7 +4,6 @@
 #include <imgui/IconsFontAwesome6.h>
 #include "device.h"
 #include "IGame_Persistent.h"
-#include "imgui_tools.h"
 
 static const char* GetCustomCompressedFontDataTTF(int* out_size);
 static const char* GetIconCompressedFontDataTTF(int* out_size);
@@ -212,12 +211,6 @@ namespace xr_imgui
             }
 
             g_pGamePersistent->ImGui_OnRender("MenuBar");
-
-            if (ImGui::BeginMenu("Tools"))
-            {
-                InitImguiTools();
-                ImGui::EndMenu();
-            }
 
             if (ImGui::BeginMenu("About"))
             {

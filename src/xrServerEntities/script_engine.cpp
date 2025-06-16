@@ -16,7 +16,6 @@
 #include <unordered_map>
 #include <set>
 #include <xrCore/string_concatenations.h>
-#include "script_engine_debugger.h"
 
 #ifdef USE_DEBUGGER
 #	ifndef USE_LUA_STUDIO
@@ -405,11 +404,6 @@ void CScriptEngine::init()
 	load_common_scripts();
 #endif
 	m_stack_level = lua_gettop(lua());
-
-	if (ShouldAttachDebugger())
-	{
-		//AttachDebugger(); //Getting crash in ljtab.c after executing this function: Unhandled exception thrown: read access violation.
-	}
 }
 
 void CScriptEngine::remove_script_process(const EScriptProcessors& process_id)

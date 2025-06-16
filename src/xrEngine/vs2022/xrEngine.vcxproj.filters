@@ -489,7 +489,6 @@
     <ClInclude Include="..\imgui_helper.h">
       <Filter>Interfaces\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="..\imgui_tools.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\defines.cpp">
@@ -792,7 +791,6 @@
     <ClCompile Include="..\imgui_base.cpp" />
     <ClCompile Include="..\imgui_base_input.cpp" />
     <ClCompile Include="..\imgui_helper.cpp" />
-    <ClCompile Include="..\imgui_tools.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\splash_xrcs_en.bmp">

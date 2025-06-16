@@ -7404,9 +7404,6 @@
     <ClInclude Include="..\script_imgui_inline.h">
       <Filter>UI\Common\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\xrServerEntities\script_engine_debugger.h">
-      <Filter>AI\AScript\ScriptEngine</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\damage_manager.cpp">
@@ -11104,9 +11101,6 @@
     </ClCompile>
     <ClCompile Include="..\script_imgui_script.cpp">
       <Filter>UI\Common\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\xrServerEntities\script_engine_debugger.cpp">
-      <Filter>AI\AScript\ScriptEngine</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

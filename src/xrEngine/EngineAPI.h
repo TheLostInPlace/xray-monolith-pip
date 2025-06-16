@@ -4,8 +4,6 @@
 // Support for extension DLLs
 //****************************************************************************
 
-#include <array>
-
 #if !defined(AFX_ENGINEAPI_H__CF21372B_C8B8_4891_82FC_D872C84E1DD4__INCLUDED_)
 #define AFX_ENGINEAPI_H__CF21372B_C8B8_4891_82FC_D872C84E1DD4__INCLUDED_
 #pragma once
@@ -37,12 +35,6 @@ typedef void __cdecl VTPause(void);
 typedef void __cdecl VTResume(void);
 };
 
-enum class EditorUI : uint8_t
-{
-	LuaDebug,
-	Count
-};
-
 class ENGINE_API CEngineAPI
 {
 private:
@@ -56,8 +48,6 @@ public:
 	BOOL tune_enabled;
 	VTPause* tune_pause;
 	VTResume* tune_resume;
-
-	std::array<bool, static_cast<uint8_t>(EditorUI::Count)> EditorStates = { };
 
 	void Initialize();
 
