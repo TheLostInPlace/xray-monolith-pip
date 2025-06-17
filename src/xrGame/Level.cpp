@@ -713,7 +713,7 @@ void CLevel::OnFrame()
 #ifdef SPAWN_ANTIFREEZE
 	if (!spawn_events->queue.empty())
 	{
-		if (spawn_antifreeze_verbose) Msg("[CLevel::OnFrame()] spawn_queue has new spawn event");
+		//if (spawn_antifreeze_verbose) Msg("[CLevel::OnFrame()] spawn_queue has new spawn event");
 		if (std::find(Device.seqParallel.begin(), Device.seqParallel.end(), ProcessSpawnEventsDelegate) != Device.seqParallel.end())
 		{
 			Msg("[CLevel::OnFrame()] ProcessSpawnEventsDelegate is in seqParallel already, do nothing");
@@ -722,7 +722,7 @@ void CLevel::OnFrame()
 		{
 			SortSpawnEventsQueue();
 			Device.seqParallel.push_back(ProcessSpawnEventsDelegate);
-			if (spawn_antifreeze_verbose) Msg("[CLevel::OnFrame()] ProcessSpawnEventsDelegate added to seqParallel");
+			//if (spawn_antifreeze_verbose) Msg("[CLevel::OnFrame()] ProcessSpawnEventsDelegate added to seqParallel");
 		}
 	}
 #endif
