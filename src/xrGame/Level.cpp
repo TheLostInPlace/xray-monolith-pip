@@ -428,57 +428,62 @@ void CLevel::cl_Process_Event(u16 dest, u16 type, NET_Packet& P)
 
 //AVO: used by SPAWN_ANTIFREEZE (by alpet, edited by demonized)
 #ifdef SPAWN_ANTIFREEZE
+bool CLevel::PostponedSpawnFind(u16 id, const NET_Event& E) const
+{
+	if (E.ID != M_SPAWN)
+		return false;
+
+	NET_Packet P;
+	E.implication(P);
+	u16 parent_id;
+	shared_str section;
+	return id == GetSpawnInfo(P, parent_id, section);
+}
+
 bool CLevel::PostponedSpawn(u16 id)
 {
-    for (auto it = spawn_events->queue.begin(); it != spawn_events->queue.end(); ++it)
-    {
-        const NET_Event& E = *it;
-        NET_Packet P;
-        if (M_SPAWN != E.ID) continue;
-        E.implication(P);
-        u16 parent_id;
-		shared_str section;
-        if (id == GetSpawnInfo(P, parent_id, section))
-            return true;
-    }
+	auto& queue = spawn_events->queue;
+	auto it = std::find_if(queue.begin(), queue.end(), [id, this](const NET_Event& E) { return PostponedSpawnFind(id, E); });
+	return it != queue.end();
+}
 
-    return false;
+int CLevel::GetSpawnEventPriority(const NET_Event& e) const
+{
+	if (e.ID == M_EVENT)
+		return 0;
+
+	if (e.ID == M_SPAWN) {
+		NET_Packet P;
+		e.implication(P);
+
+		u16 parent_id = 0;
+		shared_str section;
+		GetSpawnInfo(P, parent_id, section);
+		if (parent_id < 0xFFFF)
+			return 1;
+
+		return 2;
+	}
+
+	return 0;
+}
+
+bool CLevel::SpawnEventCompare(const NET_Event& a, const NET_Event& b) const
+{
+	return GetSpawnEventPriority(a) > GetSpawnEventPriority(b);
 }
 
 void CLevel::SortSpawnEventsQueue()
 {
 	auto& queue = spawn_events->queue;
-	std::sort(queue.begin(), queue.end(), [this](const NET_Event& a, const NET_Event& b) {
-		// Helper to get priority
-		static auto get_priority = [this](const NET_Event& e) -> int {
-			if (e.ID == M_EVENT)
-				return 0;
-
-			if (e.ID == M_SPAWN) {
-				NET_Packet P;
-				e.implication(P);
-
-				u16 parent_id = 0xFFFF;
-				shared_str section;
-				GetSpawnInfo(P, parent_id, section);
-				if (parent_id < 0xFFFF)
-					return 1;
-			}
-
-			return 2;
-		};
-
-		int pa = get_priority(a);
-		int pb = get_priority(b);
-		return pa > pb;
-	});
+	std::sort(queue.begin(), queue.end(), [this](const NET_Event& a, const NET_Event& b) { return SpawnEventCompare(a, b); });
 }
 
 void CLevel::ProcessSpawnEvents()
 {
 	currentEventNum = 0;
 	maxEventsPerBatch = spawn_antifreeze_batch;
-	for (auto it = spawn_events->queue.begin(); it != spawn_events->queue.end(); /* no ++it here */)
+	for (auto it = spawn_events->queue.begin(); it != spawn_events->queue.end();)
 	{
 		const NET_Event& E = *it;
 		u16 ID, dest, type;
@@ -492,13 +497,13 @@ void CLevel::ProcessSpawnEvents()
 			u16 dummy16;
 			P.r_begin(dummy16);
 			cl_Process_Spawn(P);
-			it = spawn_events->queue.erase(it); // use returned iterator
+			it = spawn_events->queue.erase(it); 
 			currentEventNum++;
 		}
 		else if (M_EVENT == ID && !PostponedSpawn(dest))
 		{
 			cl_Process_Event(dest, type, P);
-			it = spawn_events->queue.erase(it); // use returned iterator
+			it = spawn_events->queue.erase(it); 
 			currentEventNum++;
 		}
 		else
@@ -552,6 +557,7 @@ void CLevel::ProcessGameEvents()
 				if (g_bootComplete && M_EVENT == ID && PostponedSpawn(dest))
 				{
 					spawn_events->insert(P);
+					needToSortSpawnQueue = true;
 					Msg("[ProcessGameEvents] added M_EVENT to spawn_events (postponed spawn): section %s, obj_id %d parent_id %d event_id %d", section.c_str(), obj_id, parent_id, dest);
 					continue;
 				}
@@ -560,6 +566,7 @@ void CLevel::ProcessGameEvents()
 				if (g_bootComplete && M_SPAWN == ID)
 				{
 					spawn_events->insert(P);
+					needToSortSpawnQueue = true;
 					if (spawn_antifreeze_verbose) Msg("[ProcessGameEvents] added M_SPAWN to spawn_events: section %s, obj_id %d, parent_id %d, event_id %d", section.c_str(), obj_id, parent_id, dest);
 					continue;
 				}
@@ -720,7 +727,11 @@ void CLevel::OnFrame()
 		}
 		else
 		{
-			SortSpawnEventsQueue();
+			if (needToSortSpawnQueue)
+			{
+				SortSpawnEventsQueue();
+				needToSortSpawnQueue = false;
+			}
 			Device.seqParallel.push_back(ProcessSpawnEventsDelegate);
 			//if (spawn_antifreeze_verbose) Msg("[CLevel::OnFrame()] ProcessSpawnEventsDelegate added to seqParallel");
 		}

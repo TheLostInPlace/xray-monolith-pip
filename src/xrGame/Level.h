@@ -3,6 +3,7 @@
 #include "xrEngine/IGame_Level.h"
 #include "xrEngine/IGame_Persistent.h"
 #include "xrNetServer/NET_Client.h"
+#include "NET_Queue.h"
 #include "script_export_space.h"
 #include "xrEngine/StatGraph.h"
 #include "xrMessages.h"
@@ -232,13 +233,18 @@ public:
 
 //AVO: used by SPAWN_ANTIFREEZE (by alpet)
 #ifdef SPAWN_ANTIFREEZE
+public:
 	NET_Queue_Event* spawn_events = nullptr;
     bool PostponedSpawn(u16 id);
 	void ProcessSpawnEvents();
 	void SortSpawnEventsQueue();
 private:
+	int GetSpawnEventPriority(const NET_Event& e) const;
+	bool PostponedSpawnFind(u16 id, const NET_Event& E) const;
+	bool SpawnEventCompare(const NET_Event& a, const NET_Event& b) const;
 	u16 maxEventsPerBatch = 2;
 	u16 currentEventNum = 0;
+	bool needToSortSpawnQueue = false;
 	fastdelegate::FastDelegate0<> ProcessSpawnEventsDelegate;
 #endif	
 
