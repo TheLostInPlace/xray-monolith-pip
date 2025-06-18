@@ -72,7 +72,7 @@ extern CUISequencer* g_tutorial2;
 float g_cl_lvInterp = 0.1;
 u32 lvInterpSteps = 0;
 BOOL spawn_antifreeze = FALSE;
-int spawn_antifreeze_batch = 2;
+int spawn_antifreeze_batch = 3;
 BOOL spawn_antifreeze_verbose = FALSE;
 
 //AVO: get object ID from spawn data (used by SPAWN_ANTIFREEZE by alpet, edited by demonized)
