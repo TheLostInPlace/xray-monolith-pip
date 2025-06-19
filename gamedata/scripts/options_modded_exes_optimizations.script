@@ -8,12 +8,6 @@ PAGE = page {
 	{ id = "optimizations" },
 	list_bool { id = "spawn_antifreeze" },
 	track {
-		id = "spawn_antifreeze_batch",
-		def = 2,
-		step = 1,
-		max = 50,
-	},
-	track {
 		id = "lua_gcstep",
 		def = 400,
 		step = 10,

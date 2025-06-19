@@ -512,13 +512,6 @@ void CLevel::ProcessPrefetchEvents(void* args)
 				return;
 			}
 
-			if (!prefetch_events)
-			{
-				if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] called, but prefetch_events is non existent");
-				delete events;
-				return;
-			}
-
 			if (prefetch_events->queue.empty())
 			{
 				//if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] called, but prefetch_events queue is empty");
@@ -653,7 +646,7 @@ void CLevel::ProcessGameEvents()
 #ifdef SPAWN_ANTIFREEZE
 			if (spawn_antifreeze && g_bootComplete)
 			{
-				// add to spawn_events queue if its an event to an object not yet spawned
+				// Postpone M_EVENT for postponed spawns
 				if (M_EVENT == ID && PostponedSpawn(dest))
 				{
 					game_events->insert(P);
