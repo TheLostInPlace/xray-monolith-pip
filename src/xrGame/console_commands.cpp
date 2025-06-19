@@ -154,7 +154,6 @@ extern BOOL drawPickupItemNames;
 
 extern BOOL spawn_antifreeze;
 extern BOOL spawn_antifreeze_verbose;
-extern int spawn_antifreeze_batch;
 
 extern CrosshairSettings g_crosshair_camera_near;
 extern CrosshairSettings g_crosshair_camera_far;
@@ -2817,7 +2816,6 @@ void CCC_RegisterCommands()
 
 	CMD4(CCC_Integer, "spawn_antifreeze", &spawn_antifreeze, 0, 1);
 	CMD4(CCC_Integer, "spawn_antifreeze_verbose", &spawn_antifreeze_verbose, 0, 1);
-	CMD4(CCC_Integer, "spawn_antifreeze_batch", &spawn_antifreeze_batch, 1, 65535);
 
 #ifdef DEBUG
 	//extern BOOL g_use_new_ballistics;

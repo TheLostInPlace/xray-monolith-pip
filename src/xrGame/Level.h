@@ -235,17 +235,16 @@ public:
 #ifdef SPAWN_ANTIFREEZE
 public:
 	NET_Queue_Event* spawn_events = nullptr;
+	NET_Queue_Event* prefetch_events = nullptr;
+	xr_unordered_set<xr_string> prefetched_models;
     bool PostponedSpawn(u16 id);
 	void ProcessSpawnEvents();
+	static void ProcessPrefetchEvents(void* args);
 	void SortSpawnEventsQueue();
 private:
 	int GetSpawnEventPriority(const NET_Event& e) const;
 	bool PostponedSpawnFind(u16 id, const NET_Event& E) const;
 	bool SpawnEventCompare(const NET_Event& a, const NET_Event& b) const;
-	u16 maxEventsPerBatch = 2;
-	u16 currentEventNum = 0;
-	bool needToSortSpawnQueue = false;
-	fastdelegate::FastDelegate0<> ProcessSpawnEventsDelegate;
 #endif	
 
 public:
