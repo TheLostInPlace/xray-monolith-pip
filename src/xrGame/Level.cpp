@@ -82,6 +82,7 @@ struct spawn_and_prefetch_events
 {
 	NET_Queue_Event* spawn_events = nullptr;
 	NET_Queue_Event* prefetch_events = nullptr;
+	bool* prefetchInProcess;
 };
 
 u16	GetSpawnInfo(NET_Packet &P, u16 &parent_id, shared_str& section)
@@ -225,9 +226,6 @@ CLevel::CLevel() :
 #ifdef SPAWN_ANTIFREEZE
 	spawn_events = xr_new<NET_Queue_Event>();
 	prefetch_events = xr_new<NET_Queue_Event>();
-	auto events = new spawn_and_prefetch_events({ spawn_events, prefetch_events });
-	thread_spawn(ProcessPrefetchEvents, "Pre-Spawn Prefetcher Thread", 0, events);
-	Msg("CLevel::CLevel() thread_spawn ProcessPrefetchEvents");
 #endif
 
 	Msg("%s", Core.Params);
@@ -495,88 +493,88 @@ void CLevel::SortSpawnEventsQueue()
 void CLevel::ProcessPrefetchEvents(void* args)
 {
 	auto events = reinterpret_cast<spawn_and_prefetch_events*>(args);
+
+	if (!g_pGameLevel)
+	{
+		if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] Level is not initialized, destroying thread");
+		delete events;
+		return;
+	}
+
 	auto spawn_events = events->spawn_events;
 	auto prefetch_events = events->prefetch_events;
+	auto prefetchInProcess = events->prefetchInProcess;
+	*prefetchInProcess = true;
 
-	u32 update = 0;
-	while (true)
+	if (prefetch_events->queue.empty())
 	{
-		if (Device.dwTimeGlobal != update)
-		{
-			update = Device.dwTimeGlobal;
-
-			if (!g_pGameLevel)
-			{
-				if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] Level is not initialized, destroying thread");
-				delete events;
-				return;
-			}
-
-			if (prefetch_events->queue.empty())
-			{
-				//if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] called, but prefetch_events queue is empty");
-				continue;
-			}
-
-			if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] started, queue size %d", prefetch_events->queue.size());
-
-			NET_Queue_Event saved_prefetch_events, temp_events;
-			
-			prefetch_cs.Enter();
-			while (!prefetch_events->queue.empty())
-			{
-				u16 ID, dest, type;
-				NET_Packet P;
-				prefetch_events->get(ID, dest, type, P);
-				saved_prefetch_events.insert(P); // save the event to temp queue, for prefetch_events to continue to be populated in the main thread
-			}
-			prefetch_cs.Leave();
-
-			xr_unordered_set<xr_string> prefetched_models;
-			for (const auto& E : saved_prefetch_events.queue)
-			{
-				u16 ID, dest, type;
-				NET_Packet P;
-				ID = E.ID;
-				dest = E.destination;
-				type = E.type;
-				E.implication(P);
-
-				u16 parent_id;
-				shared_str section;
-				u16 obj_id = GetSpawnInfo(P, parent_id, section);
-
-				LPCSTR model = pSettings->r_string(section, "visual");
-
-				if (prefetched_models.find(model) != prefetched_models.end())
-				{
-					if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] Prefetching model '%s' for spawn event: section %s, obj_id %d, parent_id %d, event_id %d (already prefetched)", model, section.c_str(), obj_id, parent_id, dest);
-					temp_events.insert(P);
-					continue; // already prefetched
-				}
-
-				if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] Prefetching model '%s' for spawn event: section %s, obj_id %d, parent_id %d, event_id %d", model, section.c_str(), obj_id, parent_id, dest);
-				::Render->models_PrefetchOne(model);
-				prefetched_models.insert(model); // add model to prefetched models set to avoid double prefetching
-
-				temp_events.insert(P);
-			}
-
-			prefetch_cs.Enter();
-			for (const auto& E : temp_events.queue)
-			{
-				u16 ID, dest, type;
-				NET_Packet P;
-				ID = E.ID;
-				dest = E.destination;
-				type = E.type;
-				E.implication(P);
-
-				spawn_events->insert(P); // reinsert the event to spawn_events queue for further processing
-			}
-			prefetch_cs.Leave();
-		}
+		if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] called, but prefetch_events queue is empty");
+		*prefetchInProcess = false; // mark prefetch as finished
+		delete events;
+		return;
 	}
+
+	if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] started, queue size %d", prefetch_events->queue.size());
+
+	NET_Queue_Event saved_prefetch_events, temp_events;
+
+	prefetch_cs.Enter();
+	while (!prefetch_events->queue.empty())
+	{
+		u16 ID, dest, type;
+		NET_Packet P;
+		prefetch_events->get(ID, dest, type, P);
+		saved_prefetch_events.insert(P); // save the event to temp queue, for prefetch_events to continue to be populated in the main thread
+	}
+	prefetch_cs.Leave();
+
+	xr_unordered_set<xr_string> prefetched_models;
+	for (const auto& E : saved_prefetch_events.queue)
+	{
+		u16 ID, dest, type;
+		NET_Packet P;
+		ID = E.ID;
+		dest = E.destination;
+		type = E.type;
+		E.implication(P);
+
+		u16 parent_id;
+		shared_str section;
+		u16 obj_id = GetSpawnInfo(P, parent_id, section);
+
+		LPCSTR model = pSettings->r_string(section, "visual");
+
+		if (prefetched_models.find(model) != prefetched_models.end())
+		{
+			if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] Prefetching model '%s' for spawn event: section %s, obj_id %d, parent_id %d, event_id %d (already prefetched)", model, section.c_str(), obj_id, parent_id, dest);
+			temp_events.insert(P);
+			continue; // already prefetched
+		}
+
+		if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] Prefetching model '%s' for spawn event: section %s, obj_id %d, parent_id %d, event_id %d", model, section.c_str(), obj_id, parent_id, dest);
+		::Render->models_PrefetchOne(model);
+		prefetched_models.insert(model); // add model to prefetched models set to avoid double prefetching
+
+		temp_events.insert(P);
+	}
+
+	prefetch_cs.Enter();
+	for (const auto& E : temp_events.queue)
+	{
+		u16 ID, dest, type;
+		NET_Packet P;
+		ID = E.ID;
+		dest = E.destination;
+		type = E.type;
+		E.implication(P);
+
+		spawn_events->insert(P); // reinsert the event to spawn_events queue for further processing
+	}
+	prefetch_cs.Leave();
+
+	if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] finished, spawn_events queue size %d", spawn_events->queue.size());
+	delete events;
+	*prefetchInProcess = false; // mark prefetch as finished
 }
 
 // demonized: If called manually, be aware of ProcessPrefetchEvents thread, which may modify spawn_events queue at the same time, maybe fix later
@@ -659,7 +657,7 @@ void CLevel::ProcessGameEvents()
 
 					if (model)
 					{
-						prefetched_models.insert(model);
+						//prefetched_models.insert(model);
 
 						prefetch_cs.Enter();
 						prefetch_events->insert(P);
@@ -732,6 +730,16 @@ void CLevel::ProcessGameEvents()
 			}
 		}
 	}
+
+#ifdef SPAWN_ANTIFREEZE
+	if (!prefetchInProcess && !prefetch_events->queue.empty())
+	{
+		auto events = new spawn_and_prefetch_events({ spawn_events, prefetch_events, &prefetchInProcess });
+		thread_spawn(ProcessPrefetchEvents, "Pre-Spawn Prefetcher Thread", 0, events);
+		if (spawn_antifreeze_verbose) Msg("[ProcessGameEvents] thread_spawn ProcessPrefetchEvents");
+	}
+#endif
+
 	if (OnServer() && GameID() != eGameIDSingle)
 		Game().m_WeaponUsageStatistic->Send_Check_Respond();
 }
