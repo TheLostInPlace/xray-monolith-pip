@@ -186,6 +186,9 @@ How to compile exes:
 6. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.06.18**
+* Lucy: Script Attachment 3D UI Scale/Origin (https://github.com/themrdemonized/xray-monolith/pull/258)
+
 **2025.06.15**
 * Lucy: Some more changes (https://github.com/themrdemonized/xray-monolith/pull/254)
 
