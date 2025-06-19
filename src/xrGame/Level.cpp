@@ -596,13 +596,6 @@ void CLevel::ProcessSpawnEvents()
 		shared_str section;
 		u16 obj_id = GetSpawnInfo(P, parent_id, section);
 
-		if (parent_id < 0xffff && !Objects.net_Find(parent_id))
-		{
-			if (spawn_antifreeze_verbose) Msg("[ProcessSpawnEvents] skipping M_SPAWN for section %s, obj_id %d, parent_id %d, event_id %d: parent object not found", section.c_str(), obj_id, parent_id, dest);
-			++it;
-			continue; // skip spawn if parent object is not found
-		}
-
 		if (spawn_antifreeze_verbose) Msg("[ProcessSpawnEvents] spawning section %s, obj_id %d, parent_id %d, event_id %d", section.c_str(), obj_id, parent_id, dest);
 
 		u16 dummy16;
