@@ -14,6 +14,8 @@
 #include "../xrRenderDX10/3DFluid/dx103DFluidManager.h"
 #include "../xrRender/ShaderResourceTraits.h"
 
+#include "../../xrCore/profiler.h"
+
 #include "D3DX10Core.h"
 
 CRender RImplementation;
@@ -647,6 +649,7 @@ fastdelegate::FastDelegate0<>(&HOM,&CHOM::MT_RENDER));
 }*/
 void CRender::OnFrame()
 {
+	PROF_EVENT("CRender::OnFrame()");
 	Models->DeleteQueue();
 	if (ps_r2_ls_flags.test(R2FLAG_EXP_MT_CALC))
 	{

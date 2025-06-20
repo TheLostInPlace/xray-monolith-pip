@@ -457,6 +457,7 @@ bool CLevel::PostponedSpawnFind(u16 id, const NET_Event& E) const
 
 bool CLevel::PostponedSpawn(u16 id)
 {
+	PROF_EVENT("ProcessGameEvents PostponedSpawn");
 	prefetch_cs.Enter();
 	auto& queue = prefetch_events->queue;
 	auto it = std::find_if(queue.begin(), queue.end(), [id, this](const NET_Event& E) { return PostponedSpawnFind(id, E); });
@@ -527,6 +528,8 @@ void CLevel::ProcessPrefetchEvents(void* args)
 			continue;
 		}
 
+		PROF_EVENT("ProcessPrefetchEvents");
+
 		if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] started, queue size %d", prefetch_events->queue.size());
 
 		NET_Queue_Event saved_prefetch_events, temp_events;
@@ -592,6 +595,7 @@ void CLevel::ProcessPrefetchEvents(void* args)
 // demonized: If called manually, be aware of ProcessPrefetchEvents thread, which may modify spawn_events queue at the same time, maybe fix later
 void CLevel::ProcessSpawnEvents()
 {
+	PROF_EVENT("ProcessSpawnEvents");
 	for (auto it = spawn_events->queue.begin(); it != spawn_events->queue.end();)
 	{
 		const NET_Event& E = *it;
@@ -618,32 +622,40 @@ void CLevel::ProcessSpawnEvents()
 
 void CLevel::ProcessGameEvents()
 {
+	PROF_EVENT("ProcessGameEvents");
+
 	// Game events
 	{
+		if (!game_events->queue.empty())
+		{
+			Msg("game_events size %d", game_events->queue.size());
+		}
 		for (auto it = game_events->queue.begin(); it != game_events->queue.end(); )
 		{
+			PROF_EVENT("ProcessGameEvents game_events queue");
 			u16 ID = it->ID;
 			u16 dest = it->destination;
 			u16 type = it->type;
 			NET_Packet P;
-			it->implication(P);
+			it->implication(P); // Move into thread
 
 //AVO: spawn antifreeze implementation, originally by alpet, reritten by demonized
 #ifdef SPAWN_ANTIFREEZE
 			if (spawn_antifreeze && g_bootComplete)
 			{
 				// Postpone M_EVENT for postponed spawns
-				if (M_EVENT == ID && PostponedSpawn(dest))
-				{
-					game_events->insert(P);
-					Msg("[ProcessGameEvents] postponed M_EVENT, object in prefetch queue: obj_id %d", dest);
-					it = game_events->queue.erase(it); // remove current event
-					continue;
-				}
+				//if (M_EVENT == ID && PostponedSpawn(dest))
+				//{
+				//	game_events->insert(P);
+				//	Msg("[ProcessGameEvents] postponed M_EVENT, object in prefetch queue: obj_id %d", dest);
+				//	it = game_events->queue.erase(it); // remove current event
+				//	continue;
+				//}
 
 				// add to prefetch_events queue for postponed spawn
 				if (M_SPAWN == ID)
 				{
+					PROF_EVENT("ProcessGameEvents M_SPAWN");
 					u16 parent_id;
 					shared_str section;
 					u16 obj_id = GetSpawnInfo(P, parent_id, section);
@@ -778,6 +790,8 @@ void CLevel::MakeReconnect()
 
 void CLevel::OnFrame()
 {
+	PROF_EVENT("CLevel::OnFrame()");
+
 #ifdef DEBUG_MEMORY_MANAGER
     debug_memory_guard __guard__;
 #endif
