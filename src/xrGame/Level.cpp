@@ -72,7 +72,6 @@ extern CUISequencer* g_tutorial2;
 float g_cl_lvInterp = 0.1;
 u32 lvInterpSteps = 0;
 
-//AVO: get object ID from spawn data (used by SPAWN_ANTIFREEZE by alpet, edited by demonized)
 #ifdef SPAWN_ANTIFREEZE
 BOOL spawn_antifreeze = FALSE;
 BOOL spawn_antifreeze_verbose = FALSE;
@@ -82,7 +81,7 @@ struct spawn_and_prefetch_events
 {
 	NET_Queue_Event* spawn_events = nullptr;
 	NET_Queue_Event* prefetch_events = nullptr;
-	bool* prefetchInProcess;
+	bool* prefetchInProcess = nullptr;
 };
 
 u16	GetSpawnInfo(NET_Packet &P, u16 &parent_id, shared_str& section)
@@ -90,7 +89,7 @@ u16	GetSpawnInfo(NET_Packet &P, u16 &parent_id, shared_str& section)
     u16 dummy16, id;
     P.r_begin(dummy16);
 
-    shared_str	s_name;
+    shared_str s_name;
     P.r_stringZ(s_name);
 	section = s_name;
 
@@ -611,20 +610,6 @@ void CLevel::ProcessGameEvents()
 		NET_Packet P;
 		u32 svT = timeServer() - NET_Latency;
 
-//AVO: spawn antifreeze implementation by alpet, edited by demonized
-#ifdef SPAWN_ANTIFREEZE
-        /*while (spawn_events->available(svT))
-        {
-            u16 ID, dest, type;
-            spawn_events->get(ID, dest, type, P);
-            game_events->insert(P);
-        }
-        u32 avail_time = 5;
-        u32 elps = Device.frame_elapsed();
-        if (elps < 30) avail_time = 33 - elps;
-        u32 work_limit = elps + avail_time;*/
-#endif
-
 		for (auto it = game_events->queue.begin(); it != game_events->queue.end(); )
 		{
 			u16 ID = it->ID;
@@ -633,7 +618,7 @@ void CLevel::ProcessGameEvents()
 			NET_Packet P;
 			it->implication(P);
 
-//AVO: spawn antifreeze implementation by alpet, edited by demonized
+//AVO: spawn antifreeze implementation, originally by alpet, reritten by demonized
 #ifdef SPAWN_ANTIFREEZE
 			if (spawn_antifreeze && g_bootComplete)
 			{
