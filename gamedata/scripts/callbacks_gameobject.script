@@ -404,11 +404,26 @@ end
 
 -- NLTP_ASHES & demonized : Actor on death callback
 AddScriptCallback("actor_on_death")
-
 function actor_on_first_update()
 	db.actor:set_callback(callback.death, function()
 		SendScriptCallback("actor_on_death")
 	end)
+
+	-- Prefetch current items
+	db.actor:iterate_inventory(function(npc, item)
+		local ui_texture = SYS_GetParam(0, item:section(), "icons_texture", "ui\\ui_icon_equipment")
+		game.prefetch_texture(ui_texture)
+
+		if item_backpack.is_in_slot(item) then
+			local hudSec = SYS_GetParam(0, item:section(), "hud")
+			if hudSec then
+				local visual = SYS_GetParam(0, hudSec, "item_visual")
+				if visual then
+					game.prefetch_model(visual)
+				end
+			end
+		end
+	end, db.actor)
 end
 
 -- ImGui callback (can be used to inject your own tabs into the menu bar and for drawing your UIs)
