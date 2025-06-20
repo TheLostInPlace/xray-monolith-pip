@@ -1042,7 +1042,9 @@ Global
 		{4DDC8F7A-3B57-4250-9404-D2EE1991BE78}.Release-AVX|x64.ActiveCfg = Release-AVX|x64
 		{4DDC8F7A-3B57-4250-9404-D2EE1991BE78}.Release-AVX|x64.Build.0 = Release-AVX|x64
 		{4DDC8F7A-3B57-4250-9404-D2EE1991BE78}.Verified|x64.ActiveCfg = Verified|x64
+		{4DDC8F7A-3B57-4250-9404-D2EE1991BE78}.Verified|x64.Build.0 = Verified|x64
 		{4DDC8F7A-3B57-4250-9404-D2EE1991BE78}.VerifiedDX11|x64.ActiveCfg = Verified|x64
+		{4DDC8F7A-3B57-4250-9404-D2EE1991BE78}.VerifiedDX11|x64.Build.0 = Verified|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
