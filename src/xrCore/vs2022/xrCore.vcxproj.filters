@@ -79,6 +79,9 @@
     <Filter Include="Threading">
       <UniqueIdentifier>{174aeeed-7a9a-4510-853f-081b4ce9cbc9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Profiling">
+      <UniqueIdentifier>{e9143689-02a9-4cce-90da-0630f2b61420}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\FTimer.cpp">
@@ -602,6 +605,9 @@
     </ClInclude>
     <ClInclude Include="..\mezz_stringbuffer.h">
       <Filter>shared memory/string library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\profiler.h">
+      <Filter>Profiling</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
