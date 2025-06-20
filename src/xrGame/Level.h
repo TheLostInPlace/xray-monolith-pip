@@ -242,7 +242,7 @@ public:
 	static void ProcessPrefetchEvents(void* args);
 	void SortSpawnEventsQueue();
 private:
-	bool prefetchInProcess = false;
+	bool closeSignal = false;
 	int GetSpawnEventPriority(const NET_Event& e) const;
 	bool PostponedSpawnFind(u16 id, const NET_Event& E) const;
 	bool SpawnEventCompare(const NET_Event& a, const NET_Event& b) const;
