@@ -6165,9 +6165,6 @@
     <ClInclude Include="..\..\xrServerEntities\object_item_single_inline.h">
       <Filter>Core\Common\ObjectFactory\object_item_single</Filter>
     </ClInclude>
-    <ClInclude Include="..\profiler.h">
-      <Filter>Core\Common\Profiler</Filter>
-    </ClInclude>
     <ClInclude Include="..\profiler_inline.h">
       <Filter>Core\Common\Profiler</Filter>
     </ClInclude>

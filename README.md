@@ -180,12 +180,22 @@ The original engine is used in S.T.A.L.K.E.R. Call of Pripyat game released by G
 How to compile exes:
 1. Fork this xray-monolith
 2. Clone the fork onto your pc
-3. Select all-in-one-vs2022-wpo branch
-4. Compile the engine-vs2022.sln solution with VS2022
-5. For batch builds of all configurations use `batch_build.bat` in xray-monolith repo
-6. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
+3. Run `git submodule update --init --recursive` to pull git submodules
+4. Select all-in-one-vs2022-wpo branch
+5. Compile the engine-vs2022.sln solution with VS2022
+6. For batch builds of all configurations use `batch_build.bat` in xray-monolith repo
+7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.06.20**
+* Updated Github Action to use `softprops/action-gh-release`
+* [Feature Request] Added an option to invert Mouse Wheel when changing weapons (https://github.com/themrdemonized/xray-monolith/issues/261)
+* ProfLander: 3D Ballistics Fixes (https://github.com/themrdemonized/xray-monolith/pull/259)
+* Kutez: Update v3 Indoor Gunsound Framework (https://github.com/themrdemonized/xray-monolith/pull/260)
+
+**2025.06.18**
+* Lucy: Script Attachment 3D UI Scale/Origin (https://github.com/themrdemonized/xray-monolith/pull/258)
+
 **2025.06.15**
 * Lucy: Some more changes (https://github.com/themrdemonized/xray-monolith/pull/254)
 
