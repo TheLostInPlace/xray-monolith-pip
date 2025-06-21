@@ -25,7 +25,8 @@ _G.CGameObject_NetDestroy = function(obj)
 end
 
 -- Game objects registry
-_G.gameobjects_registry = {}
+gameobjects_registry = {}
+_G.gameobjects_registry = gameobjects_registry -- backwards compatibility
 function game_object_on_net_spawn(obj)
 	gameobjects_registry[obj:id()] = obj
 end

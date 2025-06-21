@@ -79,7 +79,31 @@ u32 lvInterpSteps = 0;
 BOOL spawn_antifreeze = FALSE;
 BOOL spawn_antifreeze_verbose = FALSE;
 static xrCriticalSection prefetch_cs;
-static HANDLE prefetch_queue_signal;
+static HANDLE prefetch_thread_signal;
+
+static void unpausePrefetchThreadSignal()
+{
+	if (spawn_antifreeze_verbose) Msg("prefetch_thread_signal Set");
+	SetEvent(prefetch_thread_signal);
+}
+
+static void pausePrefetchThreadSignal()
+{
+	if (spawn_antifreeze_verbose) Msg("prefetch_thread_signal Reset");
+	ResetEvent(prefetch_thread_signal);
+}
+
+static void closePrefetchThreadSignal()
+{
+	if (spawn_antifreeze_verbose) Msg("prefetch_thread_signal Close");
+	CloseHandle(prefetch_thread_signal);
+}
+
+static void createPrefetchThreadSignal()
+{
+	if (spawn_antifreeze_verbose) Msg("prefetch_thread_signal CreateEvent");
+	prefetch_thread_signal = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+}
 
 struct spawn_and_prefetch_events
 {
@@ -232,8 +256,7 @@ CLevel::CLevel() :
 	prefetch_events = xr_new<prefetch_event_queue>();
 	prefetched_models = xr_new<models_set>();
 	auto events = new spawn_and_prefetch_events({ spawn_events, prefetch_events, prefetched_models, &closeSignal });
-	prefetch_queue_signal = CreateEvent(nullptr, TRUE, FALSE, nullptr); // create prefetch queue event
-	ResetEvent(prefetch_queue_signal); // reset prefetch queue event
+	createPrefetchThreadSignal();
 	thread_spawn(ProcessPrefetchEvents, "Pre-Spawn Prefetcher Thread", 0, events);
 	Msg("CLevel::CLevel() Spawn Antifreeze initialized");
 #endif
@@ -292,7 +315,7 @@ CLevel::~CLevel()
 	xr_delete(prefetch_events);
 	xr_delete(prefetched_models);
 	closeSignal = true; // signal ProcessPrefetchEvents thread to exit
-	SetEvent(prefetch_queue_signal);
+	unpausePrefetchThreadSignal();
 #endif
 
 	xr_delete(m_pBulletManager);
@@ -519,12 +542,12 @@ void CLevel::ProcessPrefetchEvents(void* args)
 
 	while (true)
 	{
-		WaitForSingleObject(prefetch_queue_signal, INFINITE); // wait for prefetch queue event to be signaled
+		WaitForSingleObject(prefetch_thread_signal, INFINITE); // wait for prefetch queue event to be signaled
 
 		if (*closeSignal == true)
 		{
 			if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] closeSignal received, destroying thread");
-			CloseHandle(prefetch_queue_signal);
+			closePrefetchThreadSignal();
 			delete events;
 			return;
 		}
@@ -532,7 +555,7 @@ void CLevel::ProcessPrefetchEvents(void* args)
 		if (prefetch_events->empty())
 		{
 			if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] called, but prefetch_events queue is empty");
-			ResetEvent(prefetch_queue_signal); // reset prefetch queue event
+			pausePrefetchThreadSignal();
 			continue;
 		}
 
@@ -544,7 +567,7 @@ void CLevel::ProcessPrefetchEvents(void* args)
 
 		prefetch_cs.Enter();
 		saved_prefetch_events = std::move(*prefetch_events); // move the events to temp queue, so we can continue processing prefetch_events in the main thread
-		ResetEvent(prefetch_queue_signal); // reset prefetch queue event
+		pausePrefetchThreadSignal();
 		prefetch_cs.Leave();
 
 		for (const auto& E : saved_prefetch_events)
@@ -640,7 +663,9 @@ void CLevel::ProcessGameEvents()
 
 					static auto safe_insert = [](models_set& models, LPCSTR model) {
 						if (model) {
-							models.insert(model);
+							LPCSTR modelWithoutExtension = model;
+							if (strext(modelWithoutExtension)) *strext(modelWithoutExtension) = 0;
+							models.insert(modelWithoutExtension);
 						}
 					};
 
@@ -762,7 +787,7 @@ void CLevel::ProcessGameEvents()
 #ifdef SPAWN_ANTIFREEZE
 	if (!prefetch_events->empty())
 	{
-		SetEvent(prefetch_queue_signal); // signal prefetch queue event to wake up ProcessPrefetchEvents thread
+		unpausePrefetchThreadSignal(); // signal ProcessPrefetchEvents thread to process prefetch_events queue
 	}
 #endif
 
