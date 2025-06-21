@@ -32,6 +32,17 @@ function game_object_on_net_spawn(obj)
 end
 function game_object_on_net_destroy(obj)
 	gameobjects_registry[obj:id()] = nil
+
+	-- Fix dynamic_news_manager loot table
+	local instance = dynamic_news_manager and dynamic_news_manager.get_dynamic_news and dynamic_news_manager.get_dynamic_news()
+	if instance and instance.loot then
+		for i = #instance.loot, 1, -1 do
+			local item = instance.loot[i]
+			if item:id() == obj:id() then
+				table.remove(instance.loot, i)
+			end
+		end
+	end
 end
 
 -- Game objects iterator
@@ -472,8 +483,20 @@ function ActorMenu_on_item_after_move(npc_id, obj, mode, bag_from)
     end
 end
 
+-- Prefetch HUD visual when moving item to slot
+function actor_item_to_slot(item)
+	local hudSec = SYS_GetParam(0, item:section(), "hud")
+	if hudSec then
+		local visual = SYS_GetParam(0, hudSec, "item_visual")
+		if visual then
+			game.prefetch_model(visual)
+		end
+	end
+end
+
 function on_game_start()
 	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
+	RegisterScriptCallback("actor_item_to_slot", actor_item_to_slot)
 	RegisterScriptCallback("ActorMenu_on_item_after_move", ActorMenu_on_item_after_move)
 	RegisterScriptCallback("anomaly_on_before_activate", anomaly_on_before_activate)
 	RegisterScriptCallback("game_object_on_net_spawn", game_object_on_net_spawn)
