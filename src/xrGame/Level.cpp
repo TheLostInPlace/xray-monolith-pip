@@ -642,11 +642,22 @@ void CLevel::ProcessGameEvents()
 
 					models_set models;
 
-					LPCSTR model = !pSettings->line_exist("spawn_antifreeze_ignore", section) && pSettings->line_exist(section, "visual") ? pSettings->r_string(section, "visual") : nullptr;
-
-					if (model && !pSettings->line_exist("spawn_antifreeze_ignore", model) && prefetched_models->find(model) == prefetched_models->end())
+					// Insert visual
+					if (pSettings->line_exist(section, "visual"))
 					{
-						models.insert(model);
+						models.insert(pSettings->r_string(section, "visual"));
+					}
+
+					// Corpse visual
+					if (pSettings->line_exist(section, "corpse_visual"))
+					{
+						models.insert(pSettings->r_string(section, "corpse_visual"));
+					}
+
+					// Bloodsucker visual
+					if (pSettings->line_exist(section, "Predator_Visual"))
+					{
+						models.insert(pSettings->r_string(section, "Predator_Visual"));
 					}
 
 					if (!models.empty())
