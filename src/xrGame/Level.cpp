@@ -1036,7 +1036,7 @@ void CLevel::OnFrame()
 	}
 }
 
-int psLUA_GCSTEP = 50;
+int psLUA_GCSTEP = 160;
 
 void CLevel::script_gc()
 {
