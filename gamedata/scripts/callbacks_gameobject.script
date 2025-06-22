@@ -129,9 +129,9 @@ end
 
 -- function on_game_start()
 -- 	RegisterScriptCallback("rocket_on_update", function(rocket)
--- 		printf("rocket is flying")
+-- 		printf_me("rocket is flying")
 -- 		local speed = rocket.speed
--- 		printf("speed %s", speed)
+-- 		printf_me("speed %s", speed)
 -- 		-- rocket.engine_active = true
 -- 		if rocket.engine_active then
 -- 			rocket.speed = 15
