@@ -55,4 +55,20 @@ public:
 	bool IsValid() { return pmutex != nullptr; }
 };
 
+class xrCriticalSectionGuard
+{
+private:
+	xrCriticalSection* critical_section;
+
+public:
+	xrCriticalSectionGuard(xrCriticalSection* cs) : critical_section(cs)
+	{
+		critical_section->Enter();
+	}
+	~xrCriticalSectionGuard()
+	{
+		critical_section->Leave();
+	}
+};
+
 #endif // xrSyncronizeH
