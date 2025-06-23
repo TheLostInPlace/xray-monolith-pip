@@ -267,20 +267,12 @@ public:
 	void Render();
 
 	/// MT stuff
-	xrCriticalSection MT;
 	volatile u32 m_frame_calc;
 	volatile u32 m_frame_rendered;
 
 	void __stdcall MT_CALC();
-	ICF void MT_SYNC()
-	{
-		if (m_frame_calc == RDEVICE.dwFrame)
-			return;
-
-		MT_CALC();
-	}
-
-	bool bWait;
+	
+	volatile bool bWait;
 
 	CDetailManager();
 	virtual ~CDetailManager();

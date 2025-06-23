@@ -8,6 +8,8 @@
 #include "DetailManager.h"
 #include "cl_intersect.h"
 
+#include "../../xrCore/profiler.h"
+
 #ifdef _EDITOR
 #	include "ESceneClassList.h"
 #	include "Scene.h"
@@ -421,13 +423,18 @@ void CDetailManager::UpdateVisibleM()
 
 void CDetailManager::Render()
 {
+	PROF_EVENT("Render details");
+
 #ifndef _EDITOR
 	if (0 == dtFS) return;
 	if (!psDeviceFlags.is(rsDetails)) return;
 #endif
 
-	// MT
-	MT_SYNC();
+	while (bWait)
+	{
+		PROF_EVENT("Wait details");
+		Sleep(0);
+	}
 
 	RDEVICE.Statistic->RenderDUMP_DT_Render.Begin();
 	g_pGamePersistent->m_pGShaderConstants->m_blender_mode.w = 1.0f; //--#SM+#-- Ôëaa ía÷aëa ?aíäa?a o?aâu [begin of grass render]
@@ -453,6 +460,7 @@ void CDetailManager::Render()
 
 void __stdcall CDetailManager::MT_CALC()
 {
+	PROF_EVENT("MT_CALC details");
 
 #ifndef _EDITOR
 	if (0 == RImplementation.Details) return; // possibly deleted
