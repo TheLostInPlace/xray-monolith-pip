@@ -2,6 +2,8 @@
 #include "xrSheduler.h"
 #include "xr_object.h"
 
+#include "../xrCore/profiler.h"
+
 float psShedulerCurrent = 10.f;
 float psShedulerTarget = 10.f;
 const float psShedulerReaction = 0.1f;
@@ -316,11 +318,9 @@ void CSheduler::ProcessStep()
 		Pop();
 
 		// Real update call
-		// Msg ("------- %d:",Device.dwFrame);
 #ifdef DEBUG
         T.Object->dbg_startframe = Device.dwFrame;
         eTimer.Start();
-        // LPCSTR _obj_name = T.Object->shedule_Name().c_str();
 #endif // DEBUG
 
 		// Calc next update interval
@@ -394,18 +394,9 @@ void CSheduler::ProcessStep()
 	psShedulerTarget -= psShedulerReaction;
 }
 
-/*
-void CSheduler::Switch ()
-{
-if (fibered)
-{
-fibered = FALSE;
-SwitchToFiber (fiber_main);
-}
-}
-*/
 void CSheduler::Update()
 {
+	PROF_EVENT();
 	R_ASSERT(Device.Statistic);
 	// Initialize
 	Device.Statistic->Sheduler.Begin();
