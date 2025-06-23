@@ -76,7 +76,7 @@ float g_cl_lvInterp = 0.1;
 u32 lvInterpSteps = 0;
 
 #ifdef SPAWN_ANTIFREEZE
-BOOL spawn_antifreeze = FALSE;
+BOOL spawn_antifreeze = TRUE;
 BOOL spawn_antifreeze_verbose = FALSE;
 static xrCriticalSection prefetch_cs;
 static HANDLE prefetch_thread_signal;
