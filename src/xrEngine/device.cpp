@@ -523,7 +523,7 @@ void mt_DiscordThread(void*)
 
 static void mt_TaskThread(void*)
 {
-	PROF_THREAD("3rd Thread");
+	PROF_THREAD("mt_TaskThread");
 	while (FALSE == Device.mt_bMustExit)
 	{
 		WaitForSingleObject(RenderEventMT, INFINITE);
