@@ -577,7 +577,7 @@ void CLevel::ProcessPrefetchEvents(void* args)
 				if (prefetched_models->find(model) == prefetched_models->end())
 				{
 					if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] Prefetching model '%s' for spawn event", model.c_str());
-					::Render->models_PrefetchOne(model.c_str());
+					::Render->models_PrefetchOne(model.c_str(), false);
 					prefetched_models->insert(model); // add model to prefetched models set to avoid double prefetching
 				}
 			}
@@ -665,7 +665,8 @@ void CLevel::ProcessGameEvents()
 						if (model) {
 							LPCSTR modelWithoutExtension = model;
 							if (strext(modelWithoutExtension)) *strext(modelWithoutExtension) = 0;
-							models.insert(modelWithoutExtension);
+							if (xr_strcmp(modelWithoutExtension, "") && xr_strcmp(modelWithoutExtension, ".ogf"))
+								models.insert(modelWithoutExtension);
 						}
 					};
 
