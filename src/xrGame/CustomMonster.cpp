@@ -330,7 +330,7 @@ void CCustomMonster::shedule_Update(u32 DT)
 	// *** general stuff
 	if (g_Alive())
 	{
-		if (false && g_mt_config.test(mtAiVision))
+		if (g_mt_config.test(mtAiVision))
 #ifndef DEBUG
 			Device.seqParallel.push_back(fastdelegate::FastDelegate0<>(this, &CCustomMonster::Exec_Visibility));
 #else // DEBUG
@@ -680,6 +680,8 @@ void CCustomMonster::Exec_Visibility()
 {
 	//if (0==Sector())				return;
 	if (!g_Alive()) return;
+
+	PROF_EVENT("stalker/schedule_update/vision/Exec_Visibility")
 
 	Device.Statistic->AI_Vis.Begin();
 	switch (eye_pp_stage % 2)
