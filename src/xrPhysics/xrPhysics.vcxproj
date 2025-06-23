@@ -133,6 +133,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <AdditionalOptions>/Ob3 %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(xrSdkDir)libraries;$(xrLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -262,6 +263,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <AdditionalOptions>/Ob3 %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(xrSdkDir)libraries;$(xrLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

@@ -132,6 +132,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <AdditionalOptions>/Ob3 %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <AdditionalDependencies>d3dx9.lib;nvapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -269,6 +270,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <AdditionalOptions>/Ob3 %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <AdditionalDependencies>d3dx9.lib;nvapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
