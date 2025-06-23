@@ -61,14 +61,18 @@ private:
 	xrCriticalSection* critical_section;
 
 public:
-	xrCriticalSectionGuard(xrCriticalSection* cs) : critical_section(cs)
+	void Enter()
 	{
 		critical_section->Enter();
 	}
-	~xrCriticalSectionGuard()
+	void Leave()
 	{
 		critical_section->Leave();
 	}
+	xrCriticalSectionGuard(xrCriticalSection* cs) : critical_section(cs) { Enter(); }
+	xrCriticalSectionGuard(xrCriticalSection& cs) : critical_section(&cs) { Enter(); }
+	xrCriticalSectionGuard(xrCriticalSectionGuard const& copy) = delete; //noncopyable
+	~xrCriticalSectionGuard() { Leave(); }
 };
 
 #endif // xrSyncronizeH
