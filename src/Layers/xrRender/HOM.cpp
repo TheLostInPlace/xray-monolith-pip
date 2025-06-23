@@ -128,6 +128,8 @@ void CHOM::Load()
 	bEnabled = TRUE;
 	S->close();
 	FS.r_close(fs);
+
+	Device.seqParallelRender.push_back(fastdelegate::FastDelegate0<>(this, &CHOM::MT_RENDER));
 }
 
 void CHOM::Unload()

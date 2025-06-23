@@ -280,6 +280,8 @@ public:
 		MT_CALC();
 	}
 
+	bool bWait;
+
 	CDetailManager();
 	virtual ~CDetailManager();
 };

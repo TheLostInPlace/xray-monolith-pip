@@ -528,6 +528,27 @@ void mt_DiscordThread(void*)
 	}
 }
 
+static HANDLE RenderEventMT = nullptr;
+void mt_TaskThread(void*)
+{
+	while (true)
+	{
+		if (!pApp)
+		{
+			return;
+		}
+
+		WaitForSingleObject(RenderEventMT, INFINITE);
+
+		START_PROFILE("seqParallelRender");
+		for (const auto& it : Device.seqParallelRender)
+			it();
+		STOP_PROFILE;
+
+		ResetEvent(RenderEventMT);
+	}
+}
+
 void CRenderDevice::Run()
 {
 	// DUMP_PHASE;
@@ -552,6 +573,7 @@ void CRenderDevice::Run()
 	thread_spawn(mt_FreezeThread, "Freeze detecting thread", 0, 0);
 	thread_spawn(mt_Thread, "X-RAY Secondary thread", 0, this);
 	thread_spawn(mt_DiscordThread, "X-RAY Discord thread", 0, 0);
+	thread_spawn(mt_TaskThread, "X-RAY Task thread", 0, 0);
 	// Message cycle
 	seqAppStart.Process(rp_AppStart);
 

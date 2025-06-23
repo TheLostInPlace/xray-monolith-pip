@@ -209,6 +209,9 @@ public:
 	CRegistrator<pureDeviceReset> seqDeviceReset;
 	xr_vector<fastdelegate::FastDelegate0<>> seqParallel;
 
+	// demonized: Pre-Render sequence
+	xr_vector<fastdelegate::FastDelegate0<>> seqParallelRender;
+
 	// Dependent classes
 	//CResourceManager* Resources;
 
