@@ -369,6 +369,8 @@ void CRenderDevice::on_idle()
 	mFullTransform_saved = mFullTransform;
 	mView_saved = mView;
 	mProject_saved = mProject;
+
+	SetEvent(RenderEventMT);
 	STOP_PROFILE;
 
 	// *** Resume threads
@@ -438,9 +440,10 @@ void CRenderDevice::on_idle()
 	if (dwFrame != mt_Thread_marker)
 	{
 		PROF_EVENT("Execute second thread");
-		for (u32 pit = 0; pit < Device.seqParallel.size(); pit++)
-			Device.seqParallel[pit]();
-		Device.seqParallel.clear_not_free();
+		for (u32 pit = 0; pit < seqParallel.size(); pit++)
+			seqParallel[pit]();
+		seqParallel.clear_not_free();
+
 		seqFrameMT.Process(rp_Frame);
 	}
 
@@ -554,6 +557,7 @@ void CRenderDevice::Run()
 	// InitializeCriticalSection (&mt_csLeave);
 	mt_csEnter.Enter();
 	mt_bMustExit = FALSE;
+	RenderEventMT = CreateEvent(nullptr, true, false, "Render Helper Event");
 	thread_spawn(mt_FreezeThread, "Freeze detecting thread", 0, 0);
 	thread_spawn(mt_Thread, "X-RAY Secondary thread", 0, this);
 	thread_spawn(mt_DiscordThread, "X-RAY Discord thread", 0, 0);
@@ -566,6 +570,7 @@ void CRenderDevice::Run()
 	seqAppEnd.Process(rp_AppEnd);
 	// Stop Balance-Thread
 	mt_bMustExit = TRUE;
+	SetEvent(RenderEventMT); // Important for correct thread closing!!!
 	mt_csEnter.Leave();
 	while (mt_bMustExit) Sleep(0);
 	// DeleteCriticalSection (&mt_csEnter);
@@ -619,16 +624,16 @@ void CRenderDevice::FrameMove()
 		dwTimeGlobal = TimerGlobal.GetElapsed_ms();
 		dwTimeDelta = dwTimeGlobal - _old_global;
 	}
+
 	// Frame move
 	Statistic->EngineTOTAL.Begin();
-	// TODO: HACK to test loading screen.
-	//if(!g_bLoaded)
+
 	START_PROFILE("Process seqFrame");
 	Device.seqFrame.Process(rp_Frame);
 	STOP_PROFILE;
+	
 	g_bLoaded = TRUE;
-	//else
-	// seqFrame.Process(rp_Frame);
+	
 	Statistic->EngineTOTAL.End();
 }
 
