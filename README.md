@@ -187,6 +187,16 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.06.23**
+* Optimization pass:
+  * Spawn Antifreeze: put offloading model and texture resources into separate thread before spawning entities. Enabled by default. If you notice some issues, please report them and turn it off in console `spawn_antifreeze 0` (https://github.com/themrdemonized/xray-monolith/pull/257)
+  * Move Discord update into separate thread
+  * Fixed `trans_outfit.transparent_gg()` function having whole alife loop, now using only game objects
+  * Fix Dynamic News Manager loot table containing possible destroyed objects, leading to busy hands
+  * Changed Lua garbage collection step 400 -> 160
+* Moved project files outside of vs2022 folder, refactor solution file. Should fix broken precompiled headers
+* ProfLander: Integrate optick profiler (https://github.com/themrdemonized/xray-monolith/pull/262)
+
 **2025.06.20**
 * Updated Github Action to use `softprops/action-gh-release`
 * [Feature Request] Added an option to invert Mouse Wheel when changing weapons (https://github.com/themrdemonized/xray-monolith/issues/261)
