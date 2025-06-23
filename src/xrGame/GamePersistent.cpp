@@ -740,11 +740,12 @@ void CGamePersistent::OnFrame()
 	__super::OnFrame();
 
 	if (!Device.Paused())
+	{
 		Engine.Sheduler.Update();
 
-	// update weathers ambient
-	if (!Device.Paused())
+		// update weathers ambient
 		WeathersUpdate();
+	}
 
 	if (0 != pDemoFile)
 	{
@@ -987,6 +988,8 @@ void CGamePersistent::RestoreEffectorDOF()
 //	m_dof		[4];	// 0-dest 1-current 2-from 3-original
 void CGamePersistent::UpdateDof()
 {
+	PROF_EVENT("CGamePersistent UpdateDof");
+
 	static float diff_far = pSettings->r_float("zone_pick_dof", "far"); //70.0f;
 	static float diff_near = pSettings->r_float("zone_pick_dof", "near"); //-70.0f;
 
