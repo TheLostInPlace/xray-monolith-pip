@@ -180,12 +180,23 @@ The original engine is used in S.T.A.L.K.E.R. Call of Pripyat game released by G
 How to compile exes:
 1. Fork this xray-monolith
 2. Clone the fork onto your pc
-3. Select all-in-one-vs2022-wpo branch
-4. Compile the engine-vs2022.sln solution with VS2022
-5. For batch builds of all configurations use `batch_build.bat` in xray-monolith repo
-6. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
+3. Run `git submodule update --init --recursive` to pull git submodules
+4. Select all-in-one-vs2022-wpo branch
+5. Compile the engine-vs2022.sln solution with VS2022
+6. For batch builds of all configurations use `batch_build.bat` in xray-monolith repo
+7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.06.23**
+* Optimization pass:
+  * Spawn Antifreeze: put offloading model and texture resources into separate thread before spawning entities. Enabled by default. If you notice some issues, please report them and turn it off in console `spawn_antifreeze 0` (https://github.com/themrdemonized/xray-monolith/pull/257)
+  * Move Discord update into separate thread
+  * Fixed `trans_outfit.transparent_gg()` function having whole alife loop, now using only game objects
+  * Fix Dynamic News Manager loot table containing possible destroyed objects, leading to busy hands
+  * Changed Lua garbage collection step 400 -> 160
+* Moved project files outside of vs2022 folder, refactor solution file. Should fix broken precompiled headers
+* ProfLander: Integrate optick profiler (https://github.com/themrdemonized/xray-monolith/pull/262)
+
 **2025.06.20**
 * Updated Github Action to use `softprops/action-gh-release`
 * [Feature Request] Added an option to invert Mouse Wheel when changing weapons (https://github.com/themrdemonized/xray-monolith/issues/261)
