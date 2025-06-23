@@ -665,7 +665,7 @@ void CLevel::ProcessGameEvents()
 						if (model) {
 							LPCSTR modelWithoutExtension = model;
 							if (strext(modelWithoutExtension)) *strext(modelWithoutExtension) = 0;
-							if (xr_strcmp(modelWithoutExtension, "") && xr_strcmp(modelWithoutExtension, ".ogf"))
+							if (xr_strcmp(modelWithoutExtension, "") != 0 && xr_strcmp(modelWithoutExtension, ".ogf") != 0)
 								models.insert(modelWithoutExtension);
 						}
 					};
