@@ -38,7 +38,7 @@ function game_object_on_net_destroy(obj)
 	if instance and instance.loot then
 		for i = #instance.loot, 1, -1 do
 			local item = instance.loot[i]
-			if item:id() == obj:id() then
+			if type(item) == "userdata" and item:id() == obj:id() then
 				table.remove(instance.loot, i)
 			end
 		end
