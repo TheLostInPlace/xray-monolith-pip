@@ -7,6 +7,8 @@
 #include "occRasterizer.h"
 #include "../../xrEngine/GameFont.h"
 
+#include "../../xrCore/profiler.h"
+
 #include "dxRenderDeviceRender.h"
 
 #include <tbb/blocked_range.h>
@@ -16,7 +18,8 @@ float psOSSR = .001f;
 
 void __stdcall CHOM::MT_RENDER()
 {
-	MT.Enter();
+	PROF_EVENT("Render HOM");
+
 	bool b_main_menu_is_active = (g_pGamePersistent->m_pMainMenu && g_pGamePersistent->m_pMainMenu->IsActive());
 	if (MT_frame_rendered != Device.dwFrame && !b_main_menu_is_active)
 	{
@@ -25,7 +28,6 @@ void __stdcall CHOM::MT_RENDER()
 		Enable();
 		Render(ViewBase);
 	}
-	MT.Leave();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -137,6 +139,11 @@ void CHOM::Unload()
 	xr_delete(m_pModel);
 	xr_free(m_pTris);
 	bEnabled = FALSE;
+
+	auto I = std::find(Device.seqParallelRender.begin(), Device.seqParallelRender.end(), fastdelegate::FastDelegate0<>(this, &CHOM::MT_RENDER));
+
+	if (I != Device.seqParallelRender.end())
+		Device.seqParallelRender.erase(I);
 }
 
 class pred_fb
