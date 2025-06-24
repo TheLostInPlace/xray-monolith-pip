@@ -192,6 +192,7 @@ How to compile exes:
   * Spawn antifreeze: Fixed crashing to desktop if model hasn't been found for prefetching
   * Dynamic news manager: Check if the type of stuff in loot table is actual object, fixes crashes with existing moddb fixes
 * Fixed "overriding /ob2 with /ob3" warning when building
+* Fixed issue https://github.com/themrdemonized/xray-monolith/issues/267
 
 **2025.06.23**
 * Optimization pass:
