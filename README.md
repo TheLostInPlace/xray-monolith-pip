@@ -187,6 +187,12 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.06.24**
+* Hotfixes:
+  * Spawn antifreeze: Fixed crashing to desktop if model hasn't been found for prefetching
+  * Dynamic news manager: Check if the type of stuff in loot table is actual object, fixes crashes with existing moddb fixes
+* Fixed "overriding /ob2 with /ob3" warning when building
+
 **2025.06.23**
 * Optimization pass:
   * Spawn Antifreeze: put offloading model and texture resources into separate thread before spawning entities. Enabled by default. If you notice some issues, please report them and turn it off in console `spawn_antifreeze 0` (https://github.com/themrdemonized/xray-monolith/pull/257)
