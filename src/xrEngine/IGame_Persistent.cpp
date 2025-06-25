@@ -267,34 +267,25 @@ void IGame_Persistent::OnFrame()
 
 	if (!Device.Paused() || Device.dwPrecacheFrame)
 		Environment().OnFrame();
+#endif
+}
 
-
-	Device.Statistic->Particles_starting = ps_needtoplay.size();
-	Device.Statistic->Particles_active = ps_active.size();
-	Device.Statistic->Particles_destroy = ps_destroy.size();
-
+void IGame_Persistent::UpdateParticles()
+{
 	// Play req particle systems
-	while (ps_needtoplay.size())
+	while (!ps_needtoplay.empty())
 	{
-		CPS_Instance* psi = ps_needtoplay.back();
+		CPS_Instance* pInstance = ps_needtoplay.back();
 		ps_needtoplay.pop_back();
-		psi->Play(false);
+		pInstance->Play(false);
 	}
 	// Destroy inactive particle systems
-	while (ps_destroy.size())
+	while (!ps_destroy.empty())
 	{
-		// u32 cnt = ps_destroy.size();
-		CPS_Instance* psi = ps_destroy.back();
-		VERIFY(psi);
-		if (psi->Locked())
-		{
-			Log("--locked");
-			break;
-		}
+		CPS_Instance* pInstance = ps_destroy.back();
 		ps_destroy.pop_back();
-		psi->PSI_internal_delete();
+		pInstance->PSI_internal_delete();
 	}
-#endif
 }
 
 void IGame_Persistent::destroy_particles(const bool& all_particles)

@@ -123,6 +123,8 @@ public:
 	ShadersExternalData* m_pGShaderConstants; //--#SM+#--
 	xr_vector<script_attachment*> AttachmentUIsToRender;
 
+	void UpdateParticles();
+
 	virtual bool OnRenderPPUI_query() { return FALSE; }; // should return true if we want to have second function called
 	virtual void OnRenderPPUI_main()
 	{

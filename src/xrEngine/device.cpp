@@ -333,6 +333,13 @@ void CRenderDevice::on_idle()
 		pApp->LoadDraw();
 		return;
 	}
+	else
+	{
+		if (g_pGamePersistent != nullptr)
+		{
+			g_pGamePersistent->UpdateParticles();
+		}
+	}
 
 	if (!Device.dwPrecacheFrame && !g_SASH.IsBenchmarkRunning() && g_bLoaded)
 	{
