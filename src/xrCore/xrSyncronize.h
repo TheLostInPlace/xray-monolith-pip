@@ -71,7 +71,11 @@ public:
 	}
 	xrCriticalSectionGuard(xrCriticalSection* cs) : critical_section(cs) { Enter(); }
 	xrCriticalSectionGuard(xrCriticalSection& cs) : critical_section(&cs) { Enter(); }
+
 	xrCriticalSectionGuard(xrCriticalSectionGuard const& copy) = delete; //noncopyable
+	xrCriticalSectionGuard& operator=(const xrCriticalSectionGuard& Other) = delete;
+	xrCriticalSectionGuard& operator=(xrCriticalSectionGuard&& Other) = delete;
+
 	~xrCriticalSectionGuard() { Leave(); }
 };
 
