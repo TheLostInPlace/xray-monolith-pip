@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "LevelGameDef.h"
 #include "ai_space.h"
-#include "ParticlesObject.h"
 #include "script_process.h"
 #include "script_engine.h"
 #include "script_engine_space.h"

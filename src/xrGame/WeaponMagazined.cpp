@@ -2,7 +2,6 @@
 
 #include "WeaponMagazined.h"
 #include "actor.h"
-#include "ParticlesObject.h"
 #include "Scope.h"
 #include "Silencer.h"
 #include "GrenadeLauncher.h"

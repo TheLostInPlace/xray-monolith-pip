@@ -7,7 +7,6 @@
 
 #include "ShootingObject.h"
 
-#include "ParticlesObject.h"
 #include "WeaponAmmo.h"
 
 #include "actor.h"

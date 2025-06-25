@@ -10,6 +10,9 @@
 #include "../xrEngine/render.h"
 #include "anticheat_dumpable_object.h"
 
+#include "../xrParticles/psystem.h"
+#include "ParticlesObject.h"
+
 class CCartridge;
 class CParticlesObject;
 class IRender_Sector;
