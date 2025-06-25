@@ -152,6 +152,7 @@ extern float g_gunsnd_indoor_volume;
 extern int g_nearwall;
 extern int g_nearwall_trace;
 extern BOOL drawPickupItemNames;
+extern BOOL fun_allowed;
 
 extern BOOL spawn_antifreeze;
 extern BOOL spawn_antifreeze_verbose;
@@ -2817,6 +2818,9 @@ void CCC_RegisterCommands()
 
 	CMD4(CCC_Integer, "spawn_antifreeze", &spawn_antifreeze, 0, 1);
 	CMD4(CCC_Integer, "spawn_antifreeze_verbose", &spawn_antifreeze_verbose, 0, 1);
+
+	// demonized: Restores fun physics bugs like lift
+	CMD4(CCC_Integer, "fun_allowed", &fun_allowed, 0, 1);
 
 #ifdef DEBUG
 	//extern BOOL g_use_new_ballistics;
