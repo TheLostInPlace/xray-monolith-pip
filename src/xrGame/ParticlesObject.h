@@ -17,7 +17,6 @@ protected:
 	bool m_bLooped; //флаг, что система зациклена
 	bool m_bStopping; //вызвана функция Stop()
 
-protected:
 	static xr_list<CParticlesObject*> AllParticleObjects;
 
 protected:
@@ -30,8 +29,7 @@ public:
 	virtual float shedule_Scale();
 	virtual void shedule_Update(u32 dt);
 	virtual void renderable_Render();
-	void PerformAllTheWork(u32 dt);
-	// void __stdcall PerformAllTheWork_mt();
+	void PerformAllTheWork();
 
 	Fvector& Position();
 	void SetXFORM(const Fmatrix& m);

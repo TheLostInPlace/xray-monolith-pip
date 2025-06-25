@@ -73,13 +73,36 @@ void CParticlesObject::Init(LPCSTR p_name, IRender_Sector* S, BOOL bAutoRemove)
 	shedule.t_max = 50;
 	shedule_register();
 
+	AllParticleObjects.push_back(this);
+
 	dwLastTime = Device.dwTimeGlobal;
 }
 
+//----------------------------------------------------
 CParticlesObject::~CParticlesObject()
 {
-	//	we do not need this since CPS_Instance does it
-	//	shedule_unregister		();
+	AllParticleObjects.remove(this);
+}
+
+void CParticlesObject::UpdateAllAsync()
+{
+	for (CParticlesObject* particle : AllParticleObjects)
+	{
+		if (particle->m_bDead)
+		{
+			continue;
+		}
+
+		ParticleObjectTasks.run([particle]()
+			{
+				u32 dt = Device.dwTimeGlobal - particle->dwLastTime;
+				IParticleCustom* V = smart_cast<IParticleCustom*>(particle->renderable.visual);
+				VERIFY(V);
+				V->OnFrame(dt);
+
+				particle->dwLastTime = Device.dwTimeGlobal;
+			});
+	}
 }
 
 void CParticlesObject::UpdateSpatial()
@@ -135,7 +158,8 @@ void CParticlesObject::Play(bool bHudMode)
 
 	V->Play();
 	dwLastTime = Device.dwTimeGlobal - 33ul;
-	PerformAllTheWork(0);
+
+	PerformAllTheWork();
 	m_bStopping = false;
 }
 
@@ -150,7 +174,8 @@ void CParticlesObject::play_at_pos(const Fvector& pos, BOOL xform)
 	V->UpdateParent(m, zero_vel, xform);
 	V->Play();
 	dwLastTime = Device.dwTimeGlobal - 33ul;
-	PerformAllTheWork(0);
+
+	PerformAllTheWork();
 	m_bStopping = false;
 }
 
@@ -168,44 +193,20 @@ void CParticlesObject::shedule_Update(u32 _dt)
 {
 	inherited::shedule_Update(_dt);
 
-	if (g_dedicated_server) return;
+	if (g_dedicated_server)
+		return;
 
-	// Update
-	if (m_bDead) return;
-	u32 dt = Device.dwTimeGlobal - dwLastTime;
-	if (dt)
-	{
-		if (0)
-		{
-			//.psDeviceFlags.test(mtParticles))	{    //. AlexMX comment this line// NO UNCOMMENT - DON'T WORK PROPERLY
-			/*mt_dt = dt;
-			fastdelegate::FastDelegate0<> delegate(this, &CParticlesObject::PerformAllTheWork_mt);
-			Device.seqParallel.push_back(delegate);*/
-		}
-		else
-		{
-			IParticleCustom* V = smart_cast<IParticleCustom*>(renderable.visual);
-			VERIFY(V);
-			V->OnFrame(dt);
-		}
-		dwLastTime = Device.dwTimeGlobal;
-	}
+	if (m_bDead)
+		return;
+
 	UpdateSpatial();
 }
 
-void CParticlesObject::PerformAllTheWork(u32 _dt)
+void CParticlesObject::PerformAllTheWork()
 {
 	if (g_dedicated_server) return;
 
 	// Update
-	u32 dt = Device.dwTimeGlobal - dwLastTime;
-	if (dt)
-	{
-		IParticleCustom* V = smart_cast<IParticleCustom*>(renderable.visual);
-		VERIFY(V);
-		V->OnFrame(dt);
-		dwLastTime = Device.dwTimeGlobal;
-	}
 	UpdateSpatial();
 }
 
@@ -290,8 +291,8 @@ void CParticlesObject::SetHudMode(bool bHudMode)
 	V->SetHudMode(bHudMode);
 }
 
-//играются ли партиклы, отличается от PSI_Alive, тем что после
-//остановки Stop партиклы могут еще доигрывать анимацию IsPlaying = true
+//РёРіСЂР°СЋС‚СЃСЏ Р»Рё РїР°СЂС‚РёРєР»С‹, РѕС‚Р»РёС‡Р°РµС‚СЃСЏ РѕС‚ PSI_Alive, С‚РµРј С‡С‚Рѕ РїРѕСЃР»Рµ
+//РѕСЃС‚Р°РЅРѕРІРєРё Stop РїР°СЂС‚РёРєР»С‹ РјРѕРіСѓС‚ РµС‰Рµ РґРѕРёРіСЂС‹РІР°С‚СЊ Р°РЅРёРјР°С†РёСЋ IsPlaying = true
 bool CParticlesObject::IsPlaying()
 {
 	if (g_dedicated_server) return false;
