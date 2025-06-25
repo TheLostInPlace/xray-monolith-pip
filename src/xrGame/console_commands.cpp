@@ -2313,6 +2313,53 @@ public:
 	}
 };
 
+// Add after other includes, before command classes
+#include "../Include/xrRender/particles_systems_library_interface.hpp"
+#include "../Layers/xrRender/PSLibrary.h"
+#include "GamePersistent.h"
+
+class CCC_Particle_TEST : public IConsole_Command
+{
+public:
+    CCC_Particle_TEST(LPCSTR N)
+        : IConsole_Command(N) { bEmptyArgsHandled = TRUE; };
+    virtual void Execute(LPCSTR args)
+    {
+        if (!g_pGameLevel)
+            return;
+        if (!Level().CurrentControlEntity())
+            return;
+
+        collide::rq_result l_rq;
+        if (Level().ObjectSpace.RayPick(Device.vCameraPosition, Device.vCameraDirection, 1000.f, collide::rqtBoth, l_rq, Level().CurrentControlEntity()))
+        {
+            int count = 1;
+            string256 string;
+            string[0] = 0;
+            sscanf(args, "%s %d", &string, &count);
+            for (int i = 0; i < count; ++i)
+            {
+                CParticlesObject *pParticle = CParticlesObject::Create(string, FALSE);
+
+                // Set up matrix and position
+                Fmatrix pos;
+                pos.identity();
+                pos.k.set(Level().CurrentControlEntity()->XFORM().k);
+                Fvector::generate_orthonormal_basis_normalized(pos.k, pos.j, pos.i);
+                pos.c.set(Fvector(Device.vCameraPosition).add(Fvector(Device.vCameraDirection).mul(l_rq.range)));
+                pParticle->UpdateParent(pos, zero_vel);
+                GamePersistent().ps_needtoplay.push_back(pParticle);
+            }
+        }
+    }
+    virtual void fill_tips(vecTips& tips, u32 mode)
+    {
+        particles_systems::library_interface const& library = GamePersistent().Environment().m_pRender->particles_systems_library();
+        for (auto pi = library.vec_all_particles().begin(); pi != library.vec_all_particles().end(); ++pi)
+            tips.push_back(pi->c_str());
+    }
+};
+
 void CCC_RegisterCommands()
 {
 	//Not needed for a singleplayer-only mod
@@ -2953,4 +3000,6 @@ void CCC_RegisterCommands()
 	// Wallmark distances
 	CMD4(CCC_Float, "g_wallmark_range_static", &wallmark_range_static, 0.f, 1000.f);
 	CMD4(CCC_Float, "g_wallmark_range_skeleton", &wallmark_range_skeleton, 0.f, 1000.f);
+
+    CMD1(CCC_Particle_TEST,     "g_ps_test");
 }
