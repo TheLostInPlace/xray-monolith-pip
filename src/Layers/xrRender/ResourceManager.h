@@ -88,9 +88,10 @@ private:
 
 	xr_vector<ref_texture> m_necessary;
 	// misc
+	xrCriticalSection creationGuard;
+
 public:
 	CTextureDescrMngr m_textures_description;
-	//.	CInifile*											m_textures_description;
 	xr_vector<std::pair<shared_str, R_constant_setup*>> v_constant_setup;
 	lua_State* LSVM;
 	BOOL bDeferredLoad;
@@ -114,8 +115,6 @@ public:
 
 	// Editor cooperation
 	void ED_UpdateBlender(LPCSTR Name, IBlender* data);
-	void ED_UpdateMatrix(LPCSTR Name, CMatrix* data);
-	void ED_UpdateConstant(LPCSTR Name, CConstant* data);
 #ifdef _EDITOR
 	void							ED_UpdateTextures	(AStringVec* names);
 #endif
@@ -187,6 +186,8 @@ public:
 
 	SMatrixList* _CreateMatrixList(SMatrixList& L);
 	void _DeleteMatrixList(const SMatrixList* L);
+
+	Shader* _CreateShader(Shader* InShader);
 
 	SConstantList* _CreateConstantList(SConstantList& L);
 	void _DeleteConstantList(const SConstantList* L);
