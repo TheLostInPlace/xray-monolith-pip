@@ -210,6 +210,7 @@ public:
 
 	R_constant_table& operator=(const R_constant& Other) = delete;
 
+	void _copy(const R_constant_table& Other);
 	void clear();
 	BOOL parse(void* desc, u32 destination);
 	void merge(R_constant_table* C);
