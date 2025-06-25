@@ -489,13 +489,13 @@ bool CLevel::PostponedSpawnFind(u16 id, NET_Packet& P) const
 bool CLevel::PostponedSpawn(u16 id)
 {
 	PROF_EVENT("ProcessGameEvents PostponedSpawn");
-	prefetch_cs.Enter();
+
+	xrCriticalSectionGuard g(prefetch_cs);
 	auto queue = prefetch_events;
 	auto it = std::find_if(queue->begin(), queue->end(), [id, this](prefetch_event& E) { return PostponedSpawnFind(id, E.p); });
 
 	auto& queue2 = spawn_events->queue;
 	auto it2 = std::find_if(queue2.begin(), queue2.end(), [id, this](const NET_Event& E) { return PostponedSpawnFind(id, E); });
-	prefetch_cs.Leave();
 	return it != queue->end() || it2 != queue2.end();
 }
 
@@ -565,10 +565,10 @@ void CLevel::ProcessPrefetchEvents(void* args)
 
 		prefetch_event_queue saved_prefetch_events;
 
-		prefetch_cs.Enter();
+		xrCriticalSectionGuard g(prefetch_cs);
 		saved_prefetch_events = std::move(*prefetch_events); // move the events to temp queue, so we can continue processing prefetch_events in the main thread
 		pausePrefetchThreadSignal();
-		prefetch_cs.Leave();
+		g.Leave();
 
 		for (const auto& E : saved_prefetch_events)
 		{
@@ -583,12 +583,11 @@ void CLevel::ProcessPrefetchEvents(void* args)
 			}
 		}
 
-		prefetch_cs.Enter();
+		g.Enter();
 		for (auto& E : saved_prefetch_events)
 		{
 			spawn_events->insert(E.p); // reinsert the event to spawn_events queue for further processing
 		}
-		prefetch_cs.Leave();
 
 		if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] finished, spawn_events queue size %d", spawn_events->queue.size());
 	}
@@ -699,9 +698,8 @@ void CLevel::ProcessGameEvents()
 					E.p = std::move(P);
 					E.models = std::move(models);
 
-					prefetch_cs.Enter();
+					xrCriticalSectionGuard g(prefetch_cs);
 					prefetch_events->push_back(E);
-					prefetch_cs.Leave();
 
 					if (spawn_antifreeze_verbose) Msg("[ProcessGameEvents] added M_SPAWN to prefetch_events: section %s, obj_id %d, parent_id %d, event_id %d", section.c_str(), obj_id, parent_id, dest);
 					it = game_events->queue.erase(it); // remove current event
@@ -881,13 +879,14 @@ void CLevel::OnFrame()
 	
 	ProcessGameEvents();
 #ifdef SPAWN_ANTIFREEZE
-	prefetch_cs.Enter();
-	if (!spawn_events->queue.empty())
 	{
-		SortSpawnEventsQueue();
-		ProcessSpawnEvents();
+		xrCriticalSectionGuard g(prefetch_cs);
+		if (!spawn_events->queue.empty())
+		{
+			SortSpawnEventsQueue();
+			ProcessSpawnEvents();
+		}
 	}
-	prefetch_cs.Leave();
 #endif
 
 	if (m_bNeed_CrPr)
