@@ -229,6 +229,12 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 	for (u32 iPass = 0; iPass < sh->passes.size(); ++iPass)
 	{
 		// the most common node
+		
+		if (sh->passes[iPass] == nullptr)
+		{
+			continue;
+		}
+
 		//SPass&						pass	= *sh->passes.front	();
 		//mapMatrix_T&				map		= mapMatrix			[sh->flags.iPriority/2];
 		SPass& pass = *sh->passes[iPass];
