@@ -12,7 +12,12 @@
 #include "../xrEngine/IGame_Persistent.h"
 #include "../xrEngine/environment.h"
 
+#include <tbb/task_group.h>
+
 const Fvector zero_vel = {0.f, 0.f, 0.f};
+
+tbb::task_group ParticleObjectTasks;
+xr_list<CParticlesObject*> CParticlesObject::AllParticleObjects;
 
 CParticlesObject::CParticlesObject(LPCSTR p_name, BOOL bAutoRemove, bool destroy_on_game_load) :
 	inherited(destroy_on_game_load)
@@ -69,13 +74,10 @@ void CParticlesObject::Init(LPCSTR p_name, IRender_Sector* S, BOOL bAutoRemove)
 	shedule_register();
 
 	dwLastTime = Device.dwTimeGlobal;
-	mt_dt = 0;
 }
 
 CParticlesObject::~CParticlesObject()
 {
-	VERIFY(0==mt_dt);
-
 	//	we do not need this since CPS_Instance does it
 	//	shedule_unregister		();
 }
@@ -133,7 +135,6 @@ void CParticlesObject::Play(bool bHudMode)
 
 	V->Play();
 	dwLastTime = Device.dwTimeGlobal - 33ul;
-	mt_dt = 0;
 	PerformAllTheWork(0);
 	m_bStopping = false;
 }
@@ -149,7 +150,6 @@ void CParticlesObject::play_at_pos(const Fvector& pos, BOOL xform)
 	V->UpdateParent(m, zero_vel, xform);
 	V->Play();
 	dwLastTime = Device.dwTimeGlobal - 33ul;
-	mt_dt = 0;
 	PerformAllTheWork(0);
 	m_bStopping = false;
 }
@@ -178,13 +178,12 @@ void CParticlesObject::shedule_Update(u32 _dt)
 		if (0)
 		{
 			//.psDeviceFlags.test(mtParticles))	{    //. AlexMX comment this line// NO UNCOMMENT - DON'T WORK PROPERLY
-			mt_dt = dt;
+			/*mt_dt = dt;
 			fastdelegate::FastDelegate0<> delegate(this, &CParticlesObject::PerformAllTheWork_mt);
-			Device.seqParallel.push_back(delegate);
+			Device.seqParallel.push_back(delegate);*/
 		}
 		else
 		{
-			mt_dt = 0;
 			IParticleCustom* V = smart_cast<IParticleCustom*>(renderable.visual);
 			VERIFY(V);
 			V->OnFrame(dt);
@@ -210,15 +209,9 @@ void CParticlesObject::PerformAllTheWork(u32 _dt)
 	UpdateSpatial();
 }
 
-void CParticlesObject::PerformAllTheWork_mt()
+void CParticlesObject::WaitForParticles()
 {
-	if (g_dedicated_server) return;
-
-	if (0 == mt_dt) return; //???
-	IParticleCustom* V = smart_cast<IParticleCustom*>(renderable.visual);
-	VERIFY(V);
-	V->OnFrame(mt_dt);
-	mt_dt = 0;
+	ParticleObjectTasks.wait();
 }
 
 void CParticlesObject::SetXFORM(const Fmatrix& m)
