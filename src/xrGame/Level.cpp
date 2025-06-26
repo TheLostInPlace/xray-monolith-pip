@@ -77,31 +77,31 @@ u32 lvInterpSteps = 0;
 
 #ifdef SPAWN_ANTIFREEZE
 BOOL spawn_antifreeze = TRUE;
-BOOL spawn_antifreeze_verbose = FALSE;
+BOOL spawn_antifreeze_debug = FALSE;
 static xrCriticalSection prefetch_cs;
 static HANDLE prefetch_thread_signal;
 
 static void unpausePrefetchThreadSignal()
 {
-	//if (spawn_antifreeze_verbose) Msg("prefetch_thread_signal Set");
+	//if (spawn_antifreeze_debug) Msg("prefetch_thread_signal Set");
 	SetEvent(prefetch_thread_signal);
 }
 
 static void pausePrefetchThreadSignal()
 {
-	//if (spawn_antifreeze_verbose) Msg("prefetch_thread_signal Reset");
+	//if (spawn_antifreeze_debug) Msg("prefetch_thread_signal Reset");
 	ResetEvent(prefetch_thread_signal);
 }
 
 static void closePrefetchThreadSignal()
 {
-	if (spawn_antifreeze_verbose) Msg("prefetch_thread_signal Close");
+	if (spawn_antifreeze_debug) Msg("prefetch_thread_signal Close");
 	CloseHandle(prefetch_thread_signal);
 }
 
 static void createPrefetchThreadSignal()
 {
-	if (spawn_antifreeze_verbose) Msg("prefetch_thread_signal CreateEvent");
+	if (spawn_antifreeze_debug) Msg("prefetch_thread_signal CreateEvent");
 	prefetch_thread_signal = CreateEvent(nullptr, TRUE, FALSE, nullptr);
 }
 
@@ -546,7 +546,7 @@ void CLevel::ProcessPrefetchEvents(void* args)
 
 		if (*closeSignal == true)
 		{
-			if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] closeSignal received, destroying thread");
+			if (spawn_antifreeze_debug) Msg("[ProcessPrefetchEvents] closeSignal received, destroying thread");
 			closePrefetchThreadSignal();
 			delete events;
 			return;
@@ -554,14 +554,14 @@ void CLevel::ProcessPrefetchEvents(void* args)
 
 		if (prefetch_events->empty())
 		{
-			if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] called, but prefetch_events queue is empty");
+			if (spawn_antifreeze_debug) Msg("[ProcessPrefetchEvents] called, but prefetch_events queue is empty");
 			pausePrefetchThreadSignal();
 			continue;
 		}
 
 		PROF_EVENT("ProcessPrefetchEvents");
 
-		if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] started, queue size %d", prefetch_events->size());
+		if (spawn_antifreeze_debug) Msg("[ProcessPrefetchEvents] started, queue size %d", prefetch_events->size());
 
 		prefetch_event_queue saved_prefetch_events;
 
@@ -576,7 +576,7 @@ void CLevel::ProcessPrefetchEvents(void* args)
 			{
 				if (prefetched_models->find(model) == prefetched_models->end())
 				{
-					if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] Prefetching model '%s' for spawn event", model.c_str());
+					if (spawn_antifreeze_debug) Msg("[ProcessPrefetchEvents] Prefetching model '%s' for spawn event", model.c_str());
 					::Render->models_PrefetchOne(model.c_str(), false);
 					prefetched_models->insert(model); // add model to prefetched models set to avoid double prefetching
 				}
@@ -589,7 +589,7 @@ void CLevel::ProcessPrefetchEvents(void* args)
 			spawn_events->insert(E.p); // reinsert the event to spawn_events queue for further processing
 		}
 
-		if (spawn_antifreeze_verbose) Msg("[ProcessPrefetchEvents] finished, spawn_events queue size %d", spawn_events->queue.size());
+		if (spawn_antifreeze_debug) Msg("[ProcessPrefetchEvents] finished, spawn_events queue size %d", spawn_events->queue.size());
 	}
 }
 
@@ -611,7 +611,7 @@ void CLevel::ProcessSpawnEvents()
 		shared_str section;
 		u16 obj_id = GetSpawnInfo(P, parent_id, section);
 
-		if (spawn_antifreeze_verbose) Msg("[ProcessSpawnEvents] spawning section %s, obj_id %d, parent_id %d, event_id %d", section.c_str(), obj_id, parent_id, dest);
+		if (spawn_antifreeze_debug) Msg("[ProcessSpawnEvents] spawning section %s, obj_id %d, parent_id %d, event_id %d", section.c_str(), obj_id, parent_id, dest);
 
 		u16 dummy16;
 		P.r_begin(dummy16);
@@ -703,7 +703,7 @@ void CLevel::ProcessGameEvents()
 						xrCriticalSectionGuard g(prefetch_cs);
 						prefetch_events->push_back(E);
 
-						if (spawn_antifreeze_verbose) Msg("[ProcessGameEvents] added M_SPAWN to prefetch_events: section %s, obj_id %d, parent_id %d, event_id %d", section.c_str(), obj_id, parent_id, dest);
+						if (spawn_antifreeze_debug) Msg("[ProcessGameEvents] added M_SPAWN to prefetch_events: section %s, obj_id %d, parent_id %d, event_id %d", section.c_str(), obj_id, parent_id, dest);
 						it = game_events->queue.erase(it); // remove current event
 						continue;
 					}
@@ -719,7 +719,7 @@ void CLevel::ProcessGameEvents()
 					PROF_EVENT("ProcessGameEvents M_SPAWN");
 
 #ifdef SPAWN_ANTIFREEZE
-					if (spawn_antifreeze_verbose)
+					if (spawn_antifreeze_debug)
 					{
 						u16 parent_id;
 						shared_str section;
