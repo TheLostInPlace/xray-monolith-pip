@@ -155,7 +155,7 @@ extern BOOL drawPickupItemNames;
 extern BOOL fun_allowed;
 
 extern BOOL spawn_antifreeze;
-extern BOOL spawn_antifreeze_verbose;
+extern BOOL spawn_antifreeze_debug;
 
 extern CrosshairSettings g_crosshair_camera_near;
 extern CrosshairSettings g_crosshair_camera_far;
@@ -2817,7 +2817,7 @@ void CCC_RegisterCommands()
 	CMD3(CCC_Mask, "blend_move_anims", &psDeviceFlags2, rsBlendMoveAnims);
 
 	CMD4(CCC_Integer, "spawn_antifreeze", &spawn_antifreeze, 0, 1);
-	CMD4(CCC_Integer, "spawn_antifreeze_verbose", &spawn_antifreeze_verbose, 0, 1);
+	CMD4(CCC_Integer, "spawn_antifreeze_debug", &spawn_antifreeze_debug, 0, 1);
 
 	// demonized: Restores fun physics bugs like lift
 	CMD4(CCC_Integer, "fun_allowed", &fun_allowed, 0, 1);
