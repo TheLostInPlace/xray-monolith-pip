@@ -89,14 +89,16 @@ CParticlesObject::~CParticlesObject()
 void CParticlesObject::UpdateAllAsync()
 {
 	PROF_EVENT();
-	for (CParticlesObject* particle : AllParticleObjects)
+	if(psDeviceFlags.test(mtParticles))
 	{
-		if (particle->m_bDead)
+		for (CParticlesObject* particle : AllParticleObjects)
 		{
-			continue;
-		}
+			if (particle->m_bDead)
+			{
+				continue;
+			}
 
-		ParticleObjectTasks.run([particle]()
+			ParticleObjectTasks.run([particle]()
 			{
 				PROF_EVENT("CParticlesObject::UpdateAllAsync/ParticleObjectTasks.run");
 				u32 dt = Device.dwTimeGlobal - particle->dwLastTime;
@@ -106,6 +108,24 @@ void CParticlesObject::UpdateAllAsync()
 
 				particle->dwLastTime = Device.dwTimeGlobal;
 			});
+		}
+	}
+	else
+	{
+		for (CParticlesObject* particle : AllParticleObjects)
+		{
+			if (particle->m_bDead)
+			{
+				continue;
+			}
+
+			u32 dt = Device.dwTimeGlobal - particle->dwLastTime;
+			IParticleCustom* V = smart_cast<IParticleCustom*>(particle->renderable.visual);
+			VERIFY(V);
+			V->OnFrame(dt);
+
+			particle->dwLastTime = Device.dwTimeGlobal;
+		}
 	}
 }
 
@@ -216,7 +236,8 @@ void CParticlesObject::PerformAllTheWork()
 
 void CParticlesObject::WaitForParticles()
 {
-	ParticleObjectTasks.wait();
+	if(psDeviceFlags.test(mtParticles))
+		ParticleObjectTasks.wait();
 }
 
 void CParticlesObject::SetXFORM(const Fmatrix& m)
