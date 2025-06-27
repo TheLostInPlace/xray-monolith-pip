@@ -127,52 +127,94 @@ void CParticleEffect::UpdateParent(const Fmatrix& m, const Fvector& velocity, BO
 
 void CParticleEffect::OnFrame(u32 frame_dt)
 {
-	if (m_Def && m_RT_Flags.is(flRT_Playing))
+	if (!ps_r2_particle_dt)
 	{
-		m_MemDT += frame_dt;
-
-		int StepCount = 0;
-		u32 uDT_STEP = m_Def->GetUStep();
-		float fDT_STEP = m_Def->GetFStep();
-		if (m_MemDT >= uDT_STEP)
+		if (m_Def && m_RT_Flags.is(flRT_Playing))
 		{
-			// allow maximum of three steps (99ms) to avoid slowdown after loading
-			// it will really skip updates at less than 10fps, which is unplayable
-			StepCount = m_MemDT / uDT_STEP;
-			m_MemDT = m_MemDT % uDT_STEP;
-			clamp(StepCount, 0, 3);
-		}
+			m_MemDT += frame_dt;
 
-		for (; StepCount; StepCount--)
-		{
-			if (m_Def->m_Flags.is(CPEDef::dfTimeLimit))
+			int StepCount = 0;
+			u32 uDT_STEP = m_Def->GetUStep();
+			float fDT_STEP = m_Def->GetFStep();
+			if (m_MemDT >= uDT_STEP)
 			{
-				if (!m_RT_Flags.is(flRT_DefferedStop))
+				// allow maximum of three steps (99ms) to avoid slowdown after loading
+				// it will really skip updates at less than 10fps, which is unplayable
+				StepCount = m_MemDT / uDT_STEP;
+				m_MemDT = m_MemDT % uDT_STEP;
+				clamp(StepCount, 0, 3);
+			}
+
+			for (; StepCount; StepCount--)
+			{
+				if (m_Def->m_Flags.is(CPEDef::dfTimeLimit))
 				{
-					m_fElapsedLimit -= fDT_STEP;
-					if (m_fElapsedLimit < 0.f)
+					if (!m_RT_Flags.is(flRT_DefferedStop))
 					{
-						m_fElapsedLimit = m_Def->m_fTimeLimit;
-						Stop(true);
-						break;
+						m_fElapsedLimit -= fDT_STEP;
+						if (m_fElapsedLimit < 0.f)
+						{
+							m_fElapsedLimit = m_Def->m_fTimeLimit;
+							Stop(true);
+							break;
+						}
 					}
 				}
+				ParticleManager()->Update(m_HandleEffect, m_HandleActionList, fDT_STEP);
+
+				PAPI::Particle* particles;
+				u32 p_cnt;
+				ParticleManager()->GetParticles(m_HandleEffect, particles, p_cnt);
+
+				// our actions
+				if (m_Def->m_Flags.is(CPEDef::dfFramed | CPEDef::dfAnimated))
+					m_Def->ExecuteAnimate(particles, p_cnt, fDT_STEP);
+				if (m_Def->m_Flags.is(CPEDef::dfCollision))
+					m_Def->ExecuteCollision(particles, p_cnt, fDT_STEP, this, m_CollisionCallback);
+				
+				//-move action
+				if (p_cnt)
+				{
+					vis.box.invalidate();
+					float p_size = 0.f;
+					for (u32 i = 0; i < p_cnt; i++)
+					{
+						Particle& m = particles[i];
+						vis.box.modify((Fvector&)m.pos);
+						if (m.size.x > p_size) p_size = m.size.x;
+						if (m.size.y > p_size) p_size = m.size.y;
+						if (m.size.z > p_size) p_size = m.size.z;
+					}
+					vis.box.grow(p_size);
+					vis.box.getsphere(vis.sphere.P, vis.sphere.R);
+				}
+				if (m_RT_Flags.is(flRT_DefferedStop) && (0 == p_cnt))
+				{
+					m_RT_Flags.set(flRT_Playing | flRT_DefferedStop, FALSE);
+					break;
+				}
 			}
-			ParticleManager()->Update(m_HandleEffect, m_HandleActionList, fDT_STEP);
-
-			PAPI::Particle* particles;
-			u32 p_cnt;
+		}
+		else
+		{
+			vis.box.set(m_InitialPosition, m_InitialPosition);
+			vis.box.grow(EPS_L);
+			vis.box.getsphere(vis.sphere.P, vis.sphere.R);
+		}
+	}
+	else
+	{
+		if (m_Def && m_RT_Flags.is(flRT_Playing))
+		{
+			ParticleManager()->Update(m_HandleEffect, m_HandleActionList, Device.fTimeDelta);
+			PAPI::Particle* particles = NULL;
+			u32 p_cnt = 0;
 			ParticleManager()->GetParticles(m_HandleEffect, particles, p_cnt);
-
-			// our actions
+			if (!particles) return;
 			if (m_Def->m_Flags.is(CPEDef::dfFramed | CPEDef::dfAnimated))
-				m_Def->ExecuteAnimate(
-					particles, p_cnt, fDT_STEP);
+				m_Def->ExecuteAnimate(particles, p_cnt, Device.fTimeDelta);
 			if (m_Def->m_Flags.is(CPEDef::dfCollision))
-				m_Def->ExecuteCollision(
-					particles, p_cnt, fDT_STEP, this, m_CollisionCallback);
-
-			//-move action
+				m_Def->ExecuteCollision(particles, p_cnt, Device.fTimeDelta, this, m_CollisionCallback);
 			if (p_cnt)
 			{
 				vis.box.invalidate();
@@ -180,7 +222,8 @@ void CParticleEffect::OnFrame(u32 frame_dt)
 				for (u32 i = 0; i < p_cnt; i++)
 				{
 					Particle& m = particles[i];
-					vis.box.modify((Fvector&)m.pos);
+					if (!_valid(m.pos)) continue;
+					vis.box.modify(Fvector(m.pos));
 					if (m.size.x > p_size) p_size = m.size.x;
 					if (m.size.y > p_size) p_size = m.size.y;
 					if (m.size.z > p_size) p_size = m.size.z;
@@ -188,18 +231,44 @@ void CParticleEffect::OnFrame(u32 frame_dt)
 				vis.box.grow(p_size);
 				vis.box.getsphere(vis.sphere.P, vis.sphere.R);
 			}
-			if (m_RT_Flags.is(flRT_DefferedStop) && (0 == p_cnt))
+			m_MemDT += frame_dt;
+			int StepCount = 0;
+			u32 uDT_STEP = m_Def->GetUStep();
+			float fDT_STEP = m_Def->GetFStep();
+			if (m_MemDT >= uDT_STEP)
 			{
-				m_RT_Flags.set(flRT_Playing | flRT_DefferedStop,FALSE);
-				break;
+				StepCount = m_MemDT / uDT_STEP;
+				m_MemDT = m_MemDT % uDT_STEP;
+				clamp(StepCount, 0, 3);
+			}
+			for (; StepCount; StepCount--)
+			{
+				if (m_Def->m_Flags.is(CPEDef::dfTimeLimit))
+				{
+					if (!m_RT_Flags.is(flRT_DefferedStop))
+					{
+						m_fElapsedLimit -= fDT_STEP;
+						if (m_fElapsedLimit < 0.f)
+						{
+							m_fElapsedLimit = m_Def->m_fTimeLimit;
+							Stop(true);
+							break;
+						}
+					}
+				}
+				if (m_RT_Flags.is(flRT_DefferedStop) && (0 == p_cnt))
+				{
+					m_RT_Flags.set(flRT_Playing | flRT_DefferedStop, FALSE);
+					break;
+				}
 			}
 		}
-	}
-	else
-	{
-		vis.box.set(m_InitialPosition, m_InitialPosition);
-		vis.box.grow(EPS_L);
-		vis.box.getsphere(vis.sphere.P, vis.sphere.R);
+		else
+		{
+			vis.box.set(m_InitialPosition, m_InitialPosition);
+			vis.box.grow(EPS_L);
+			vis.box.getsphere(vis.sphere.P, vis.sphere.R);
+		}
 	}
 }
 
