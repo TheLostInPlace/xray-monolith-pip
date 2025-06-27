@@ -122,6 +122,7 @@ enum
 // R2
 extern ECORE_API float ps_r2_ssaLOD_A;
 extern ECORE_API float ps_r2_ssaLOD_B;
+extern ECORE_API BOOL ps_r2_particle_dt;
 
 // R2-specific
 extern ECORE_API Flags32 ps_r2_ls_flags; // r2-only

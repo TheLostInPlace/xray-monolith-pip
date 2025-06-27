@@ -166,6 +166,7 @@ int ps_r1_SoftwareSkinning = 0; // r1-only
 // R2
 float ps_r2_ssaLOD_A = 64.f;
 float ps_r2_ssaLOD_B = 48.f;
+BOOL ps_r2_particle_dt = FALSE;
 
 // R2-specific
 Flags32 ps_r2_ls_flags = {
@@ -1547,5 +1548,6 @@ void xrRender_initconsole()
 	CMD4(CCC_Vector4, "vignette_control", &ps_vignette_control, Fvector4().set(0.0f, 0.0f, 0.0f, 0.0f), Fvector4().set(1.0f, 1.0f, 1.0f, 1.0f));
 
 	//	CMD3(CCC_Mask,		"r2_sun_ignore_portals",		&ps_r2_ls_flags,			R2FLAG_SUN_IGNORE_PORTALS);
+    CMD4(CCC_Integer, "r_particles_real_dt", &ps_r2_particle_dt, 0, 1);
 }
 #endif
