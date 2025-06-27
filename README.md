@@ -187,6 +187,9 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.06.28**
+* Fixed crash to desktop in updateDiscordPresence function due to race condition
+
 **2025.06.27**
 * Disabled initial script prefetches, conflict with SSS
 
