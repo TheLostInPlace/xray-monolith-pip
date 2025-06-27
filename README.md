@@ -189,6 +189,7 @@ How to compile exes:
 ## Changelog
 **2025.06.28**
 * Fixed crash to desktop in updateDiscordPresence function due to race condition
+* Ascii1457: SSS 23 Update
 
 **2025.06.27**
 * Disabled initial script prefetches, conflict with SSS
