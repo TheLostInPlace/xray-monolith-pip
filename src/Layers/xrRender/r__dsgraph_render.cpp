@@ -131,7 +131,8 @@ void __fastcall water_node(mapSorted_Node* N)
 	V->Render(calcLOD(N->key, V->vis.sphere.R));
 }
 
-void __fastcall hud_node(mapSorted_Node* N)
+// SSS: DEPRECATED
+/*void __fastcall hud_node(mapSorted_Node* N)
 {
 	VERIFY(N);
 	dxRender_Visual* V = N->val.pVisual;
@@ -158,7 +159,7 @@ void __fastcall hud_node(mapSorted_Node* N)
 #ifdef USE_DX11
 	RImplementation.Target->RVelocity = false;
 #endif
-}
+}*/
 
 IC bool cmp_vs_nrm(mapNormalVS::TNode* N1, mapNormalVS::TNode* N2)
 {
@@ -593,18 +594,27 @@ void R_dsgraph_structure::r_dsgraph_render_hud(bool NoPS)
 	Device.mFullTransform.mul(Device.mProject, Device.mView);
 	RCache.set_xform_project(Device.mProject);
 
+	// Apply HUD Matrix
+	Fmatrix Pold_prev = Device.mProject_prev;
+	RCache.set_xform_project_prev(Device.mProject);
+
 	// Rendering
 	rmNear();
-	if (!NoPS)
-	{
+	//if (!NoPS)
+	//{
 		mapHUD.traverseLR(sorted_L1);
 		mapHUD.clear();
-	}
-	else
+	//}
+	/*else
 	{
 		HUDMask.traverseLR(hud_node);
 		HUDMask.clear();
-	}
+	}*/
+
+#if	RENDER==R_R1
+	if (g_hud && g_hud->RenderActiveItemUIQuery())
+		r_dsgraph_render_hud_ui(); // hud ui
+#endif
 
 	rmNormal();
 
@@ -613,10 +623,15 @@ void R_dsgraph_structure::r_dsgraph_render_hud(bool NoPS)
 	Device.mFullTransform = FTold;
 	Device.mView = FVold;
 	RCache.set_xform_project(Device.mProject);
+
+	// Restore Prev Matrix
+	RCache.set_xform_project_prev(Pold_prev);
 }
 
 void R_dsgraph_structure::r_dsgraph_render_hud_ui()
 {
+	VERIFY(g_hud && g_hud->RenderActiveItemUIQuery());
+
 	// Change projection
 	Fmatrix Pold = Device.mProject;
 	Fmatrix FTold = Device.mFullTransform;
@@ -627,6 +642,36 @@ void R_dsgraph_structure::r_dsgraph_render_hud_ui()
 
 	Device.mFullTransform.mul(Device.mProject, Device.mView);
 	RCache.set_xform_project(Device.mProject);
+
+#if	RENDER!=R_R1
+	// Targets, use accumulator for temporary storage
+	const ref_rt rt_null;
+	RCache.set_RT(0, 1);
+	RCache.set_RT(0, 2);
+#if	(RENDER==R_R3) || (RENDER==R_R4)
+	if (!RImplementation.o.dx10_msaa)
+	{
+		if (RImplementation.o.albedo_wo)
+			RImplementation.Target->u_setrt(RImplementation.Target->rt_Accumulator,
+			                                rt_null, rt_null, HW.pBaseZB);
+		else RImplementation.Target->u_setrt(RImplementation.Target->rt_Color, rt_null, rt_null, HW.pBaseZB);
+	}
+	else
+	{
+		if (RImplementation.o.albedo_wo)
+			RImplementation.Target->u_setrt(RImplementation.Target->rt_Accumulator,
+			                                rt_null, rt_null,
+			                                RImplementation.Target->rt_MSAADepth->pZRT);
+		else
+			RImplementation.Target->u_setrt(RImplementation.Target->rt_Color, rt_null, rt_null,
+			                                RImplementation.Target->rt_MSAADepth->pZRT);
+	}
+#else // (RENDER==R_R3) || (RENDER==R_R4)
+	if (RImplementation.o.albedo_wo) RImplementation.Target->u_setrt(RImplementation.Target->rt_Accumulator, rt_null,
+	                                                                 rt_null, HW.pBaseZB);
+	else RImplementation.Target->u_setrt(RImplementation.Target->rt_Color, rt_null, rt_null, HW.pBaseZB);
+#endif // (RENDER==R_R3) || (RENDER==R_R4)
+#endif // RENDER!=R_R1
 
 	rmNear();
 	g_hud->RenderActiveItemUI();

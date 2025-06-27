@@ -106,7 +106,8 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 			N->val.Matrix = *RI.val_pTransform;
 			N->val.se = sh;
 
-#if RENDER==R_R4
+			// SSS: DEPRECATED
+/*#if RENDER==R_R4
 			if (RImplementation.o.ssfx_core && !sh->passes[0]->ps->hud_disabled)
 			{
 				HUDMask_Node* N2 = HUDMask.insertInAnyWay(distSQ);
@@ -116,7 +117,7 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 				N2->val.Matrix = *RI.val_pTransform;
 				N2->val.se = sh;
 			}
-#endif
+#endif*/
 
 #if RENDER!=R_R1
 			if (sh->flags.bEmissive)

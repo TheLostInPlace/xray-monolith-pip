@@ -44,7 +44,7 @@ public:
 	R_dsgraph::mapSorted_T mapDistort;
 	R_dsgraph::mapHUD_T mapHUDSorted;
 	R_dsgraph::mapLandscape_T mapLandscape;
-	R_dsgraph::HUDMask_T HUDMask;
+	//R_dsgraph::HUDMask_T HUDMask; // SSS 23: Deprecated
 	R_dsgraph::mapWater_T mapWater;
 
 #if RENDER!=R_R1
@@ -172,7 +172,7 @@ public:
 		mapDistort.destroy();
 		mapHUDSorted.destroy();
 		mapLandscape.destroy();
-		HUDMask.destroy();
+		//HUDMask.destroy(); // SSS 23: Deprecated
 		mapWater.destroy();
 
 #if RENDER!=R_R1

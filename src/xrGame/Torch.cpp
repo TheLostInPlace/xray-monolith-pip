@@ -214,7 +214,8 @@ void CTorch::LoadLightParams()
 		if (!pSettings->section_exist(light_definition.c_str()))
 			light_definition = *m_light_section;
 
-		light_render->set_hud_mode(true); // Enable HUD flag to player headlamp
+		// SSS23: Is a player torch
+		light_render->set_is_playerlight(true);
 	}
 
 	IKinematics* K = smart_cast<IKinematics*>(Visual());

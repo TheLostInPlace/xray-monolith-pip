@@ -40,8 +40,8 @@ void CRenderTarget::phase_scene_begin()
 
 	// Targets, use accumulator for temporary storage
 	{
-		if (RImplementation.o.albedo_wo) u_setrt(rt_Position, rt_Accumulator, pZB);
-		else u_setrt(rt_Position, rt_Color, pZB);
+		if (RImplementation.o.albedo_wo) u_setrt(rt_Position, rt_Accumulator, 0, rt_ssfx_motion_vectors, pZB);
+		else u_setrt(rt_Position, rt_Color, 0, rt_ssfx_motion_vectors, pZB);
 	}
 
 
@@ -65,6 +65,8 @@ void CRenderTarget::disable_aniso()
 void CRenderTarget::phase_scene_end()
 {
 	disable_aniso();
+
+	RCache.set_RT(NULL, 3); // Always reset the 4th RT ( Motion Vectors )
 
 	if (!RImplementation.o.albedo_wo) return;
 

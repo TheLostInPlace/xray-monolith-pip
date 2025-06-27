@@ -70,6 +70,11 @@ public:
 		u32 ssfx_core : 1;
 		u32 ssfx_bloom : 1;
 		u32 ssfx_sss : 1;
+		u32 ssfx_fog : 1;
+		u32 ssfx_motionblur : 1;
+		u32 ssfx_taa : 1;
+		u32 ssfx_motionvectors : 1;
+		u32 ssfx_glass : 1;
 
 		u32 bug : 1;
 
