@@ -1,7 +1,5 @@
 #include "../../build_config_defines.h"
 
-#include "luapanda.h"
-
 #ifdef USE_LUAJIT_ONE
 #pragma comment(lib, "LuaJIT-1.1.8.lib")
 #else
@@ -16,8 +14,6 @@
 extern "C"{
     #include "lfs.h"
     #include "lmarshal.h"
-    #include "luasocket/socket.h"
-    #include "luasocket/luasocket.h"
 }
 
 //#include "Libs.h"
@@ -29,7 +25,8 @@ static const struct luaL_reg R[] =
 };
 
 //extern "C" __declspec(dllexport)
-int luaopen_lua_extensions(lua_State *L, bool IsDebug = false){
+int luaopen_lua_extensions(lua_State *L){
+    //luaopen_debug(L);
 
     open_additional_libs(L);
 
@@ -41,21 +38,6 @@ int luaopen_lua_extensions(lua_State *L, bool IsDebug = false){
     //open_kb(L);
     //open_log(L); 
 
-    if (IsDebug)
-    {
-        luaopen_jit(L);
-        luaopen_ffi(L);
-        luaopen_debug(L);
-    }
-
 	luaL_register(L, "lua_extensions", R);
 	return 0;
-}
-
-lua_CFunction luaopen_socket_core_init() {
-	return luaopen_socket_core;
-}
-
-void pdebug_init_init(lua_State* L) {
-    pdebug_init(L);
 }
