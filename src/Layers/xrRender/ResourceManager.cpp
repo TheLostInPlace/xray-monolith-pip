@@ -13,7 +13,7 @@
 #include "tss.h"
 #include "blenders\blender.h"
 #include "blenders\blender_recorder.h"
-#include <tbb\parallel_for_each.h>
+#include "../../xrCore/_thread_types.h"
 
 //	Already defined in Texture.cpp
 void fix_texture_name(LPSTR fn);
@@ -385,7 +385,10 @@ void CResourceManager::DeferredUpload()
 	CTimer timer;
 	timer.Start();
 
-	tbb::parallel_for_each(m_textures, [&](auto m_tex) { m_tex.second->Load(); });
+	xr_parallel_for(m_textures.begin(), m_textures.end(), [](auto& pair)
+	{
+		pair.second->Load();
+	});
 
 	Msg("texture loading time: %d", timer.GetElapsed_ms());
 }
@@ -395,7 +398,10 @@ void CResourceManager::DeferredUnload()
 	if (!RDEVICE.b_is_Ready)
 		return;
 
-	tbb::parallel_for_each(m_textures, [&](auto m_tex) { m_tex.second->Unload(); });
+	xr_parallel_for(m_textures.begin(), m_textures.end(), [](auto& pair)
+	{
+		pair.second->Load();
+	});
 }
 
 #ifdef _EDITOR
