@@ -12,13 +12,13 @@
 #include "../xrEngine/IGame_Persistent.h"
 #include "../xrEngine/environment.h"
 
-#include <tbb/task_group.h>
+#include "_thread_types.h"
 
 #include "../xrCore/profiler.h"
 
 const Fvector zero_vel = {0.f, 0.f, 0.f};
 
-tbb::task_group ParticleObjectTasks;
+xr_task_group ParticleObjectTasks;
 xr_list<CParticlesObject*> CParticlesObject::AllParticleObjects;
 
 CParticlesObject::CParticlesObject(LPCSTR p_name, BOOL bAutoRemove, bool destroy_on_game_load) :

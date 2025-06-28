@@ -609,6 +609,9 @@
     <ClInclude Include="profiler.h">
       <Filter>Profiling</Filter>
     </ClInclude>
+    <ClInclude Include="_thread_types.h">
+      <Filter>Kernel</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="xrCore.rc" />

@@ -306,6 +306,8 @@ DEFINE_VECTOR(xr_rtoken, RTokenVec, RTokenVecIt);
 
 #include "net_utils.h"
 
+#include "_thread_types.h"
+
 // destructor
 template <class T>
 class destructor

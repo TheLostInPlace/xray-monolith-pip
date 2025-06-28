@@ -653,6 +653,7 @@
     <ClInclude Include="_sphere.h" />
     <ClInclude Include="_std_extensions.h" />
     <ClInclude Include="_stl_extensions.h" />
+    <ClInclude Include="_thread_types.h" />
     <ClInclude Include="_types.h" />
     <ClInclude Include="_type_traits.h" />
     <ClInclude Include="_vector2.h" />
