@@ -1017,10 +1017,6 @@ void CLevel::OnFrame()
 #endif
 	g_pGamePersistent->Environment().SetGameTime(GetEnvironmentGameDayTimeSec(),
 	                                             game->GetEnvironmentGameTimeFactor());
-	if (!g_dedicated_server)
-		ai().script_engine().script_process(ScriptEngine::eScriptProcessorLevel)->update();
-	m_ph_commander->update();
-	m_ph_commander_scripts->update();
 	Device.Statistic->TEST0.Begin();
 	BulletManager().CommitRenderSet();
 	Device.Statistic->TEST0.End();
@@ -1056,7 +1052,14 @@ int psLUA_GCSTEP = 160;
 
 void CLevel::script_gc()
 {
-	PROF_EVENT();
+	{
+		PROF_EVENT("m_ph_commander");
+		ai().script_engine().script_process(ScriptEngine::eScriptProcessorLevel)->update();
+
+		m_ph_commander->update();
+		m_ph_commander_scripts->update();
+	}
+	PROF_EVENT("CLevel::script_gc");
 	lua_gc(ai().script_engine().lua(), LUA_GCSTEP, psLUA_GCSTEP);
 }
 
