@@ -189,7 +189,9 @@ How to compile exes:
 ## Changelog
 **2025.06.28**
 * Fixed crash to desktop in updateDiscordPresence function due to race condition
+* Spawn antifreeze: do not prefetch G_RPG7 and G_FAKE objects, fixes "incorrect destroy sequence for object" error
 * Ascii1457: SSS 23 Update
+* LVutner: R11G11B10_FLOAT support
 
 **2025.06.27**
 * Disabled initial script prefetches, conflict with SSS
