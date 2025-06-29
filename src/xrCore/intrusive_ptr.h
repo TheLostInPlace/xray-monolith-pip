@@ -12,11 +12,13 @@
 # include "object_type_traits.h"
 #endif //XRGAME_EXPORTS
 
+#include "_thread_types.h"
+
 #pragma pack(push,4)
 
 struct intrusive_base
 {
-	u32 m_ref_count;
+	xr_atomic_u32 m_ref_count;
 
 	IC intrusive_base() : m_ref_count(0)
 	{
@@ -25,13 +27,7 @@ struct intrusive_base
 	template <typename T>
 	IC void _release(T* object)
 	{
-		try
-		{
-			xr_delete(object);
-		}
-		catch (...)
-		{
-		}
+		xr_delete(object);
 	}
 };
 
