@@ -44,9 +44,13 @@ IC void _intrusive_ptr::dec()
 	if (!m_object)
 		return;
 
-	--m_object->base_type::m_ref_count;
-	if (!m_object->base_type::m_ref_count)
+	auto prev = m_object->base_type::m_ref_count.fetch_sub(1, std::memory_order_acq_rel);
+	if (prev == 1)
+	{
 		m_object->base_type::_release(m_object);
+		m_object = 0;
+	}
+		
 }
 
 TEMPLATE_SPECIALIZATION
@@ -106,7 +110,7 @@ IC void _intrusive_ptr::set(object_type* rhs)
 	m_object = rhs;
 	if (!m_object)
 		return;
-	++m_object->m_ref_count;
+	m_object->m_ref_count.fetch_add(1, std::memory_order_relaxed);
 }
 
 TEMPLATE_SPECIALIZATION
@@ -118,7 +122,7 @@ IC void _intrusive_ptr::set(self_type const& rhs)
 	m_object = rhs.m_object;
 	if (!m_object)
 		return;
-	++m_object->m_ref_count;
+	m_object->m_ref_count.fetch_add(1, std::memory_order_relaxed);
 }
 
 TEMPLATE_SPECIALIZATION
