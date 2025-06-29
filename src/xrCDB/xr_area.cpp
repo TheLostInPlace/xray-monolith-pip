@@ -1,27 +1,17 @@
 #include "stdafx.h"
-//#include "igame_level.h"
 
 #include "xr_area.h"
 #include "../xrengine/xr_object.h"
 #include "../xrengine/xrLevel.h"
 #include "../xrengine/xr_collide_form.h"
-//#include "../xrsound/sound.h"
-//#include "x_ray.h"
-//#include "GameFont.h"
-
 
 using namespace collide;
-
 
 //----------------------------------------------------------------------
 // Class	: CObjectSpace
 // Purpose	: stores space slots
 //----------------------------------------------------------------------
-CObjectSpace::CObjectSpace():
-	xrc()
-#ifdef PROFILE_CRITICAL_SECTIONS
-	,Lock(MUTEX_PROFILE_ID(CObjectSpace::Lock))
-#endif // PROFILE_CRITICAL_SECTIONS
+CObjectSpace::CObjectSpace()
 #ifdef DEBUG
 	,m_pRender(0)
 #endif
@@ -76,20 +66,6 @@ int CObjectSpace::GetNearest(xr_vector<ISpatial*>& q_spatial, xr_vector<CObject*
 	}
 
 	return q_nearest.size();
-}
-
-//----------------------------------------------------------------------
-int CObjectSpace::GetNearest(xr_vector<CObject*>& q_nearest, const Fvector& point, float range, CObject* ignore_object)
-{
-	return (
-		GetNearest(
-			r_spatial,
-			q_nearest,
-			point,
-			range,
-			ignore_object
-		)
-	);
 }
 
 //----------------------------------------------------------------------

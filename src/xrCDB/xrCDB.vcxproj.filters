@@ -123,9 +123,6 @@
     <ClCompile Include="xr_area.cpp">
       <Filter>engine</Filter>
     </ClCompile>
-    <ClCompile Include="xr_area_query.cpp">
-      <Filter>engine</Filter>
-    </ClCompile>
     <ClCompile Include="xr_area_raypick.cpp">
       <Filter>engine</Filter>
     </ClCompile>
