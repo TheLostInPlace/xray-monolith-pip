@@ -786,6 +786,11 @@ void CKinematics::CalculateWallmarks()
 		for (SkeletonWMVecIt it = wallmarks.begin(); it != wallmarks.end(); it++)
 		{
 			intrusive_ptr<CSkeletonWallmark>& wm = *it;
+			if (wm == 0)
+			{
+				need_remove = true;
+				continue;
+			}
 			float w = wm->TimeEnd() == -1.f ? 0.f : (RDEVICE.fTimeGlobal - wm->TimeStart()) / wm->TimeEnd();
 			if (w < 1.f)
 			{
