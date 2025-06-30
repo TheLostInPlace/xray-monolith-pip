@@ -168,6 +168,16 @@ void xrLogger::Msg(LPCSTR Msg, va_list argList)
 	SimpleMessage(formattedMessage, MsgSize);
 }
 
+void xrLogger::PauseLogging()
+{
+	ResetEvent(hLogThread);
+}
+
+void xrLogger::UnpauseLogging()
+{
+	SetEvent(hLogThread);
+}
+
 void xrLogger::SimpleMessage(LPCSTR Message, u32 MessageSize /*= 0*/)
 {
 	switch (MessageSize)
@@ -193,6 +203,8 @@ void xrLogger::SimpleMessage(LPCSTR Message, u32 MessageSize /*= 0*/)
 
 	xrCriticalSectionGuard guard(&logDataGuard);
 	logData->emplace(LogRecord(msgToLog.c_str(), (u32)msgToLog.size()));
+
+	UnpauseLogging();
 }
 
 void xrLogger::OpenLogFile()
@@ -217,6 +229,7 @@ void xrLogger::EnableFastDebugLog()
 void LogThreadEntryStartup(void* nullParam)
 {
 	PROF_THREAD("Logger Thread");
+	theLogger->UnpauseLogging();
 	theLogger->LogThreadEntry();
 }
 
@@ -231,9 +244,20 @@ void xrLogger::InitLog()
 	thread_spawn(LogThreadEntryStartup, "X-Ray Log Thread", 0, nullptr);
 }
 
+void xrLogger::InternalFlushLog()
+{
+	PROF_EVENT("Log Flush")
+	if (logFile != nullptr)
+	{
+		IWriter* mutableWritter = (IWriter*)logFile;
+		mutableWritter->flush();
+	}
+}
+
 void xrLogger::FlushLog()
 {
 	theLogger->bFlushRequested = true;
+	theLogger->UnpauseLogging();
 }
 
 void xrLogger::CloseLog()
@@ -269,6 +293,7 @@ void xrLogger::InternalCloseLog()
 	{
 		bIsAlive = false;
 		WaitForSingleObject(hLogThread, INFINITE);
+		CloseHandle(hLogThread);
 		hLogThread = 0;
 	}
 
@@ -281,12 +306,15 @@ void xrLogger::InternalCloseLog()
 
 xrLogger::xrLogger()
 	: logFile(nullptr), bFastDebugLog(false), 
-	bIsAlive(true), hLogThread(0),
+	bIsAlive(true),
 	bFlushRequested(false)
-{}
+{
+	hLogThread = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+}
 
 xrLogger::~xrLogger()
 {
+	UnpauseLogging();
 	InternalCloseLog();
 }
 
@@ -324,32 +352,31 @@ void xrLogger::LogThreadEntry()
 		{
 			if (bFlushRequested)
 			{
-				PROF_EVENT("Log Flush")
-				if (logFile != nullptr)
-				{
-					IWriter* mutableWritter = (IWriter*)logFile;
-					mutableWritter->flush();
-				}
+				InternalFlushLog();
+				bFlushRequested = false;
 			}
 		};
 
 	while (bIsAlive)
 	{
+		WaitForSingleObject(hLogThread, INFINITE);
+
 		PROF_EVENT("Log Frame")
-		bool bHaveMore = true;
 		LogRecord theRecord;
 
-		do
+		while (true)
 		{
+			if (logData->empty())
+			{
+				// we don't have any messages
+				PauseLogging();
+				break;
+			}
+
 			{
 				xrCriticalSectionGuard guard(&logDataGuard);
-				if (!logData->empty())
-				{
-					theRecord = logData->front();
-					logData->pop();
-					bHaveMore = !logData->empty();
-				}
-				else break; // we don't have any messages
+				theRecord = logData->front();
+				logData->pop();
 			}
 
 			xr_vector<xr_string> LogLines = theRecord.Message.Split('\n');
@@ -387,12 +414,9 @@ void xrLogger::LogThreadEntry()
 					FnCallback(finalLine);
 				}
 			}
-
-		} while (bHaveMore);
+		};
 
 		FlushLogIfRequestedLambda();
-
-		Sleep(13); // work at 60 FPS roughly
 	}
 
 	FlushLogIfRequestedLambda();

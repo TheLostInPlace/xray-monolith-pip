@@ -35,6 +35,11 @@ public:
 	static void AddLogCallback(LogCallback logCb);
 	static void RemoveLogCallback(LogCallback logCb);
 
+	void PauseLogging();
+	void UnpauseLogging();
+
+	void InternalFlushLog();
+
 	xrLogger();
 	~xrLogger();
 
