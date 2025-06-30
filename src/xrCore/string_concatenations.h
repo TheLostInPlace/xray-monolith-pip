@@ -1,5 +1,11 @@
-#ifndef STRING_CONCATENATIONS_H
-#define STRING_CONCATENATIONS_H
+//////////////////////////////////////////////////////////
+// Desc   : String concat system
+// Author : Giperion
+//////////////////////////////////////////////////////////
+// Oxygen Engine 2.0 - 2016-2019(c)
+//////////////////////////////////////////////////////////
+
+#pragma once
 
 #ifndef _EDITOR
 
@@ -74,5 +80,20 @@ IC char* strconcat(int dest_sz, char* dest, const char* S1, const char* S2, cons
 #endif //_EDITOR
 #include "string_concatenations_inline.h"
 
+int XRCORE_API _strconcatSingle(char*& destPtr, char* pDestEnd, const char* Str);
 
-#endif // #ifndef STRING_CONCATENATIONS_H
+// Giperion XRay Oxygen - ultimate version of strconcat
+template<typename StringReceiverType, typename... ArgList>
+char* xr_strconcat(StringReceiverType& receiver, ArgList... args)
+{
+    static_assert(std::is_array< StringReceiverType>::value); // must be array...
+    static_assert(std::is_same<typename std::remove_extent< StringReceiverType>::type, char>::value); // ... of chars
+
+    char* pStrCursor = &receiver[0];
+    char* pStrEnd = &receiver[0] + sizeof(StringReceiverType);
+    int dummy[] = { _strconcatSingle(pStrCursor, pStrEnd, args)... };
+    (void)dummy;
+
+    *pStrCursor = '\0';
+    return &receiver[0];
+}

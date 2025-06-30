@@ -1122,7 +1122,7 @@ public:
 
 	virtual void Execute(LPCSTR /**args/**/)
 	{
-		FlushLog();
+		xrLogger::FlushLog();
 		Msg("* Log file has been saved successfully!");
 	}
 };
@@ -1134,8 +1134,8 @@ public:
 
 	virtual void Execute(LPCSTR)
 	{
-		LogFile->clear_not_free();
-		FlushLog();
+		Console->ClearLog();
+		xrLogger::FlushLog();
 		Msg("* Log file has been cleaned successfully!");
 	}
 };

@@ -79,4 +79,6 @@ public:
 	~xrCriticalSectionGuard() { Leave(); }
 };
 
+using ThreadID = HANDLE;
+
 #endif // xrSyncronizeH

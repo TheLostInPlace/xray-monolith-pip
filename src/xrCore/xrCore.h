@@ -336,7 +336,7 @@ public:
 	bool april1;
 
 public:
-	void _initialize(LPCSTR ApplicationName, LogCallback cb = 0, BOOL init_fs = TRUE, LPCSTR fs_fname = 0);
+	void _initialize(LPCSTR ApplicationName, xrLogger::LogCallback cb = 0, BOOL init_fs = TRUE, LPCSTR fs_fname = 0);
 	void _destroy();
 };
 

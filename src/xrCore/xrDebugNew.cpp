@@ -193,7 +193,7 @@ void xrDebug::gather_info(const char* expression, const char* description, const
 			if (shared_str_initialized)
 			{
 				Msg("%s", assertion_info);
-				FlushLog();
+				xrLogger::FlushLog();
 			}
 			buffer = assertion_info;
 			endline = "\r\n";
@@ -230,7 +230,7 @@ void xrDebug::gather_info(const char* expression, const char* description, const
 		//        }
 
 		if (shared_str_initialized)
-			FlushLog();
+			xrLogger::FlushLog();
 
 		os_clipboard::copy_to_clipboard(assertion_info);
 	}
@@ -238,7 +238,7 @@ void xrDebug::gather_info(const char* expression, const char* description, const
 
 void xrDebug::do_exit(const std::string& message)
 {
-	FlushLog();
+	xrLogger::FlushLog();
 	MessageBox(NULL, message.c_str(), "Error", MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
 	TerminateProcess(GetCurrentProcess(), 1);
 }
@@ -272,7 +272,7 @@ void xrDebug::backend(const char* expression, const char* description, const cha
 	if (handler)
 		handler();
 
-	FlushLog();
+	xrLogger::FlushLog();
 
 	ShowCursor(true);
 	ShowWindow(GetActiveWindow(), SW_FORCEMINIMIZE);
@@ -843,7 +843,7 @@ LONG WINAPI UnhandledFilter(_EXCEPTION_POINTERS* pExceptionInfo)
 	}
 	//return EXCEPTION_CONTINUE_EXECUTION;
 
-	FlushLog();
+    xrLogger::FlushLog();
 
 # ifdef USE_OWN_MINI_DUMP
 	save_mini_dump(pExceptionInfo);

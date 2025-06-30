@@ -333,7 +333,7 @@ void CHW::CreateDevice(HWND hwnd, bool move_window)
 
     if ((D3DFMT_UNKNOWN==fTarget) || (D3DFMT_UNKNOWN==fTarget))	{
 		Msg					("Failed to initialize graphics hardware.\nPlease try to restart the game.");
-		FlushLog			();
+		xrLogger::FlushLog();
 		MessageBox			(NULL,"Failed to initialize graphics hardware.\nPlease try to restart the game.","Error!",MB_OK|MB_ICONERROR);
 		TerminateProcess	(GetCurrentProcess(),0);
     }
@@ -546,7 +546,7 @@ void CHW::CreateDevice(HWND hwnd, bool move_window)
             "Please try to restart the game.\n"
 		    "CreateDevice returned 0x%08x", R
 		);
-        FlushLog();
+        xrLogger::FlushLog();
 		MessageBox(NULL, "Failed to initialize graphics hardware.\nPlease try to restart the game.", "Error!",
             MB_OK | MB_ICONERROR);
         TerminateProcess(GetCurrentProcess(), 0);

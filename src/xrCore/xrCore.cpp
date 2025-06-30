@@ -36,7 +36,7 @@ static u32 init_counter = 0;
 extern int get_modded_exes_version();
 extern std::string timeInDMYHMSMMM();
 
-void xrCore::_initialize(LPCSTR _ApplicationName, LogCallback cb, BOOL init_fs, LPCSTR fs_fname)
+void xrCore::_initialize(LPCSTR _ApplicationName, xrLogger::LogCallback cb, BOOL init_fs, LPCSTR fs_fname)
 {
 	xr_strcpy(ApplicationName, _ApplicationName);
 	if (0 == init_counter)
@@ -92,7 +92,7 @@ void xrCore::_initialize(LPCSTR _ApplicationName, LogCallback cb, BOOL init_fs, 
 
 		DUMP_PHASE;
 
-		InitLog();
+		xrLogger::InitLog();
 		_initialize_cpu();
 
 		// Debug._initialize ();
@@ -171,7 +171,7 @@ void xrCore::_initialize(LPCSTR _ApplicationName, LogCallback cb, BOOL init_fs, 
 #endif
 #endif // DEBUG
 	}
-	SetLogCB(cb);
+	xrLogger::AddLogCallback(cb);
 	init_counter++;
 }
 

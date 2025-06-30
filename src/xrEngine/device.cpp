@@ -295,7 +295,7 @@ void mt_FreezeThread(void *ptr) {
 		START_PROFILE("Check timer");
 		if (FreezeTimer.GetElapsed_sec()*1000.f > freezetime)
 		{
-			FlushLog();
+			xrLogger::FlushLog();
 			repeatcheck = 5000.f;
 		}
 		STOP_PROFILE;

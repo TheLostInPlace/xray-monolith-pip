@@ -150,7 +150,7 @@ void xrSASH::LoopNative()
 	else
 		Msg("oa:: Native path can't find \"%s\" config file.", in_file);
 
-	FlushLog();
+	xrLogger::FlushLog();
 }
 
 void xrSASH::ReportNative(LPCSTR pszTestName)

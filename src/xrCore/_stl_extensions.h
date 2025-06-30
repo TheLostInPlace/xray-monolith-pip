@@ -4,6 +4,7 @@
 using std::swap;
 
 #include <functional>
+#include <queue>
 #include "_type_traits.h"
 
 #ifdef __BORLANDC__
@@ -142,8 +143,6 @@ namespace std
 	inline xalloc<_Tp2> __stl_alloc_create(xalloc<_Tp1>&, const _Tp2*) { return xalloc<_Tp2>(); }
 };
 
-// string(char)
-typedef std::basic_string<char, std::char_traits<char>, xalloc<char>> xr_string;
 
 // vector
 template <typename T, typename allocator = xalloc<T>>
@@ -244,6 +243,10 @@ public:
 	typedef typename allocator_type::size_type size_type;
 	u32 size() const { return (u32)__super::size(); }
 };
+
+// queue
+template <typename T, typename container = xr_deque<T>>
+using xr_queue = std::queue<T, container>;
 
 // stack
 template <typename _Ty, class _C = xr_vector<_Ty>>
@@ -400,7 +403,6 @@ DEFINE_VECTOR(Fcolor*, LPFcolorVec, LPFcolorIt);
 DEFINE_VECTOR(LPSTR, LPSTRVec, LPSTRIt);
 DEFINE_VECTOR(LPCSTR, LPCSTRVec, LPCSTRIt);
 DEFINE_VECTOR(string64, string64Vec, string64It);
-DEFINE_VECTOR(xr_string, SStringVec, SStringVecIt);
 
 DEFINE_VECTOR(s8, S8Vec, S8It);
 DEFINE_VECTOR(s8*, LPS8Vec, LPS8It);

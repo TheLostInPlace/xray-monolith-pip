@@ -348,7 +348,7 @@ void CHW::CreateDevice(HWND m_hWnd, bool move_window)
 			"Please try to restart the game.\n"
 			"Can not find matching format for back buffer."
 		);
-		FlushLog();
+		xrLogger::FlushLog();
 		MessageBox(NULL, "Failed to initialize graphics hardware.\nPlease try to restart the game.", "Error!",
 		           MB_OK | MB_ICONERROR);
 		TerminateProcess(GetCurrentProcess(), 0);
@@ -419,7 +419,7 @@ void CHW::CreateDevice(HWND m_hWnd, bool move_window)
 		Msg("Failed to initialize graphics hardware.\n"
 		    "Please try to restart the game.\n"
 		    "CreateDevice returned 0x%08x(D3DERR_DEVICELOST)", R);
-		FlushLog();
+		xrLogger::FlushLog();
 		MessageBox(NULL, "Failed to initialize graphics hardware.\nPlease try to restart the game.", "Error!",
 		           MB_OK | MB_ICONERROR);
 		TerminateProcess(GetCurrentProcess(), 0);

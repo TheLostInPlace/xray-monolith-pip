@@ -7,6 +7,8 @@
 #include "../Include/xrRender/FactoryPtr.h"
 #include "../Include/xrRender/UIShader.h"
 
+#include "../xrCore/RingBuffer.h"
+
 //refs
 class ENGINE_API CGameFont;
 class ENGINE_API IConsole_Command;
@@ -116,6 +118,9 @@ protected:
 	POINT m_mouse_pos;
 	bool m_disable_tips;
 
+	RingBuffer<shared_str, 1024> m_log_history;
+	xrCriticalSection m_log_history_guard;
+
 private:
 	vecHistory m_cmd_history;
 	u32 m_cmd_history_max;
@@ -136,6 +141,9 @@ public:
 	virtual ~CConsole();
 	virtual void Initialize();
 	virtual void Destroy();
+
+	void AddLogEntry(LPCSTR line);
+	void ClearLog();
 
 	virtual void OnRender();
 	virtual void _BCL OnFrame();

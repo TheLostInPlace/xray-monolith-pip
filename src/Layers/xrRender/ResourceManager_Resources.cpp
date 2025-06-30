@@ -210,7 +210,7 @@ SVS* CResourceManager::_CreateVS(LPCSTR _name)
 
 		if (FAILED(_hr))
 		{
-			FlushLog();
+			xrLogger::FlushLog();
 		}
 
 		CHECK_OR_EXIT(
@@ -306,7 +306,7 @@ SPS* CResourceManager::_CreatePS(LPCSTR name)
 
 		if (FAILED(_hr))
 		{
-			FlushLog();
+			xrLogger::FlushLog();
 		}
 
 		CHECK_OR_EXIT(
