@@ -550,7 +550,6 @@
     <ClCompile Include="..\xrRender\SkeletonRigid.cpp" />
     <ClCompile Include="..\xrRender\SkeletonX.cpp" />
     <ClCompile Include="..\xrRender\stats_manager.cpp" />
-    <ClCompile Include="..\xrRender\Texture.cpp" />
     <ClCompile Include="..\xrRender\TextureDescrManager.cpp" />
     <ClCompile Include="..\xrRender\tga.cpp" />
     <ClCompile Include="..\xrRender\tss_def.cpp" />
@@ -584,6 +583,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Verified|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release-AVX|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\xrRenderDX9\dx9Texture.cpp" />
     <ClCompile Include="xrRender_R1.cpp" />
   </ItemGroup>
   <ItemGroup>

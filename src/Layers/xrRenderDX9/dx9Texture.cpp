@@ -10,7 +10,7 @@
 #pragma warning(default:4995)
 
 #ifndef _EDITOR
-#include "dxRenderDeviceRender.h"
+#include "../xrRender/dxRenderDeviceRender.h"
 #endif
 
 // #include "std_classes.h"
