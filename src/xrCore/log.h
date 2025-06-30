@@ -65,6 +65,7 @@ private:
 
 	xrCriticalSection logDataGuard;
 	xrCriticalSection logCallbackGuard;
+	xrCriticalSection logFlushGuard;
 	bool bFastDebugLog;
 
 	std::atomic_bool bFlushRequested;

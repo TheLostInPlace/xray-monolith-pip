@@ -246,6 +246,7 @@ void xrLogger::InitLog()
 
 void xrLogger::InternalFlushLog()
 {
+	xrCriticalSectionGuard g(logFlushGuard);
 	PROF_EVENT("Log Flush")
 	if (logFile != nullptr)
 	{
@@ -349,13 +350,13 @@ void xrLogger::LogThreadEntry()
 	bool isDebug = IsDebuggerPresent();
 
 	auto FlushLogIfRequestedLambda = [this]()
+	{
+		if (bFlushRequested)
 		{
-			if (bFlushRequested)
-			{
-				InternalFlushLog();
-				bFlushRequested = false;
-			}
-		};
+			InternalFlushLog();
+			bFlushRequested = false;
+		}
+	};
 
 	while (bIsAlive)
 	{
