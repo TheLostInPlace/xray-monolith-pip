@@ -187,6 +187,13 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.06.30**
+* Disable printing DLTX `!` warnings by default, toggle it with `print_dltx_warnings 1` cvar
+* Lua GC step increased to 300
+* OneMorePseudoCoder:
+  * Don't apply rendering optimizations to cars and helicopters (https://github.com/themrdemonized/xray-monolith/pull/271)
+  * Fix npc footsteps (https://github.com/themrdemonized/xray-monolith/pull/274)
+
 **2025.06.28**
 * Fixed crash to desktop in updateDiscordPresence function due to race condition
 * Spawn antifreeze: do not prefetch G_RPG7 and G_FAKE objects, fixes "incorrect destroy sequence for object" error
