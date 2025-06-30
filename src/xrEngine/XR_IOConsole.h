@@ -119,6 +119,7 @@ protected:
 	bool m_disable_tips;
 
 	RingBuffer<shared_str, 1024> m_log_history;
+	u32 m_log_line_counter;
 	xrCriticalSection m_log_history_guard;
 
 private:

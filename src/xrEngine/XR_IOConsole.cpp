@@ -140,6 +140,8 @@ void ConsoleLogCallback(LPCSTR line) {
 CConsole::CConsole()
 	: m_hShader_back(NULL)
 {
+	m_log_line_counter = 0;
+
 	m_editor = xr_new<text_editor::line_editor>((u32)CONSOLE_BUF_SIZE);
 	m_cmd_history_max = cmd_history_max;
 	m_disable_tips = false;
@@ -200,6 +202,7 @@ void CConsole::AddLogEntry(LPCSTR line)
 	xrCriticalSectionGuard guard(&m_log_history_guard);
 	m_log_history.Get(m_log_history.GetHead())._set(line);
 	m_log_history.MoveHead(1);
+	m_log_line_counter++;
 }
 
 void CConsole::ClearLog()
@@ -209,6 +212,7 @@ void CConsole::ClearLog()
 	{
 		m_log_history.Get(i)._set(nullptr);
 	}
+	m_log_line_counter = 0;
 }
 
 void CConsole::AddCommand(IConsole_Command* cc)
@@ -437,10 +441,10 @@ void CConsole::OnRender()
 	m_log_history_guard.Leave();
 
 	string16 q;
-	itoa(log_line, q, 10);
+	itoa(m_log_line_counter, q, 10);
 	u32 qn = xr_strlen(q);
 	pFont->SetColor(total_font_color);
-	pFont->OutI(0.95f - 0.03f * qn, fMaxY - 2.0f * LDIST, "[%d]", log_line);
+	pFont->OutI(0.95f - 0.03f * qn, fMaxY - 2.0f * LDIST, "[%d]", m_log_line_counter);
 
 	pFont->OnRender();
 	pFont2->OnRender();

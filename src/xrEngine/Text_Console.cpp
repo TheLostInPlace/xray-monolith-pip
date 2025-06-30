@@ -272,7 +272,7 @@ void CTextConsole::DrawLog(HDC hDC, RECT* pRect)
 	TextOut(hDC, xb, Height - tm.tmHeight - 3, s_edt, xr_strlen(s_edt));
 
 	SetTextColor(hDC, RGB(205, 205, 225));
-	u32 log_line = (u32)m_log_history.GetSize() - 1;
+	u32 log_line = m_log_line_counter;
 	string16 q, q2;
 	itoa(log_line, q, 10);
 	xr_strcpy(q2, sizeof(q2), "[");
