@@ -15,6 +15,8 @@ xrCriticalSection UCalc_Mutex
 #endif // PROFILE_CRITICAL_SECTIONS
 ;
 
+xrCriticalSection wallmarks_cs;
+
 #ifndef _EDITOR
 #include "../../xrServerEntities/smart_cast.h"
 #else
@@ -732,6 +734,7 @@ void CKinematics::AddWallmark(const Fmatrix* parent_xform, const Fvector3& start
 		}
 	}
 
+	xrCriticalSectionGuard guard(wallmarks_cs);
 	// find similar wm
 	for (u32 wm_idx = 0; wm_idx < wallmarks.size(); wm_idx++)
 	{
@@ -774,41 +777,45 @@ void CKinematics::AddWallmark(const Fmatrix* parent_xform, const Fvector3& start
 
 struct zero_wm_pred : public std::unary_function<intrusive_ptr<CSkeletonWallmark>, bool>
 {
-	bool operator()(const intrusive_ptr<CSkeletonWallmark> x) { return x == 0; }
+	bool operator()(const intrusive_ptr<CSkeletonWallmark>& x) { return x == 0 || x == nullptr; }
 };
 
 void CKinematics::CalculateWallmarks()
 {
+	xrCriticalSectionGuard guard(wallmarks_cs);
 	if (!wallmarks.empty() && (wm_frame != RDEVICE.dwFrame))
 	{
 		wm_frame = RDEVICE.dwFrame;
-		bool need_remove = false;
-		for (SkeletonWMVecIt it = wallmarks.begin(); it != wallmarks.end(); it++)
+		for (SkeletonWMVecIt it = wallmarks.begin(); it != wallmarks.end();)
 		{
 			intrusive_ptr<CSkeletonWallmark>& wm = *it;
+
 			if (wm == 0)
 			{
-				need_remove = true;
+				it = wallmarks.erase(it);
 				continue;
 			}
+
 			float w = wm->TimeEnd() == -1.f ? 0.f : (RDEVICE.fTimeGlobal - wm->TimeStart()) / wm->TimeEnd();
 			if (w < 1.f)
 			{
 				// append wm to WallmarkEngine
 				if (::Render->ViewBase.testSphere_dirty(wm->m_Bounds.P, wm->m_Bounds.R))
-					//::Render->add_SkeletonWallmark	(wm);
-					::RImplementation.add_SkeletonWallmark(wm);
+				{
+					::RImplementation.add_SkeletonWallmark(std::move(wm));
+					it = wallmarks.erase(it);
+				}
+				else
+				{
+					it++;
+				}
+				
 			}
 			else
 			{
 				// remove wallmark				
-				need_remove = true;
+				it = wallmarks.erase(it);
 			}
-		}
-		if (need_remove)
-		{
-			SkeletonWMVecIt new_end = std::remove_if(wallmarks.begin(), wallmarks.end(), zero_wm_pred());
-			wallmarks.erase(new_end, wallmarks.end());
 		}
 	}
 }
@@ -900,6 +907,7 @@ void CKinematics::RenderWallmark(intrusive_ptr<CSkeletonWallmark> wm, FVF::LIT* 
 
 void CKinematics::ClearWallmarks()
 {
+	xrCriticalSectionGuard guard(wallmarks_cs);
 	//	for (SkeletonWMVecIt it=wallmarks.begin(); it!=wallmarks.end(); it++)
 	//		xr_delete	(*it);
 	wallmarks.clear();

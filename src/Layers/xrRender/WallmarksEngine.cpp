@@ -352,7 +352,7 @@ void CWallmarksEngine::AddSkeletonWallmark(intrusive_ptr<CSkeletonWallmark> wm)
 		wm_slot* slot = FindSlot(wm->Shader());
 		if (0 == slot) slot = AppendSlot(wm->Shader());
 		// no similar - register _new_
-		slot->skeleton_items.push_back(wm);
+		slot->skeleton_items.push_back(std::move(wm));
 #ifdef	DEBUG
 		wm->used_in_render	= Device.dwFrame;
 #endif
@@ -383,6 +383,14 @@ ICF void FlushStream(ref_geom hGeom, ref_shader shader, u32& w_offset, FVF::LIT*
 		Device.Statistic->RenderDUMP_WMT_Count += w_count / 3;
 	}
 }
+
+struct timeout_wm_pred : public std::unary_function<intrusive_ptr<CSkeletonWallmark>, bool>
+{
+	bool operator()(const intrusive_ptr<CSkeletonWallmark>& wm) { 
+		float w = wm->TimeEnd() == -1.f ? 0.f : (RDEVICE.fTimeGlobal - wm->TimeStart()) / wm->TimeEnd();
+		return w > 1.f;
+	}
+};
 
 void CWallmarksEngine::Render()
 {
@@ -503,7 +511,9 @@ void CWallmarksEngine::Render()
 			 W->used_in_render	= u32(-1);
 #endif
 		}
-		slot->skeleton_items.clear();
+		auto it = std::remove_if(slot->skeleton_items.begin(), slot->skeleton_items.end(), timeout_wm_pred());
+		slot->skeleton_items.erase(it, slot->skeleton_items.end());
+
 		// Flush stream
 		FlushStream(hGeom, slot->shader, w_offset, w_verts, w_start,TRUE);
 	}

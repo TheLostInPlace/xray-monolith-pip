@@ -795,7 +795,7 @@ void CRender::clear_static_wallmarks()
 
 void CRender::add_SkeletonWallmark(intrusive_ptr<CSkeletonWallmark> wm)
 {
-	Wallmarks->AddSkeletonWallmark(wm);
+	Wallmarks->AddSkeletonWallmark(std::move(wm));
 }
 
 void CRender::add_SkeletonWallmark(const Fmatrix* xf, CKinematics* obj, ref_shader& sh, const Fvector& start,
