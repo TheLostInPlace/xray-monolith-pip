@@ -187,6 +187,9 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.07.01**
+* `hanging_lamp_ignore_match_configuration` cvar to circumvent the SSS23 + HF crash
+
 **2025.06.30**
 * Disable printing DLTX `!` warnings by default, toggle it with `print_dltx_warnings 1` cvar
 * Lua GC step increased to 300
