@@ -263,7 +263,6 @@ void xrLogger::FlushLog()
 
 void xrLogger::CloseLog()
 {
-	FlushLog();
 	theLogger->InternalCloseLog();
 }
 
@@ -284,25 +283,20 @@ void xrLogger::RemoveLogCallback(LogCallback logCb)
 
 void xrLogger::InternalCloseLog()
 {
-	while (!logData->empty() && hLogThread != 0) {
-		Sleep(1u);
-	}
+	PauseLogging();
+	bIsAlive = false;
 
-	FlushLog();
-
-	if (hLogThread != 0)
-	{
-		bIsAlive = false;
-		WaitForSingleObject(hLogThread, INFINITE);
-		CloseHandle(hLogThread);
-		hLogThread = 0;
-	}
+	InternalPrintAllRecords();
+	InternalFlushLog();
 
 	IWriter* tempCopy = (IWriter*)logFile;
 	logFile = nullptr;
 
 	if (tempCopy != nullptr)
 		FS.w_close(tempCopy);
+
+	UnpauseLogging();
+	CloseHandle(hLogThread);
 }
 
 xrLogger::xrLogger()
@@ -315,7 +309,6 @@ xrLogger::xrLogger()
 
 xrLogger::~xrLogger()
 {
-	UnpauseLogging();
 	InternalCloseLog();
 }
 
@@ -345,78 +338,83 @@ void xrLogger::InternalOpenLogFile()
 	CHECK_OR_EXIT(logFile, "Can't create log file");
 }
 
+void xrLogger::InternalPrintRecord()
+{
+	LogRecord theRecord;
+
+	theRecord = logData->front();
+	logData->pop();
+
+	xr_vector<xr_string> LogLines = theRecord.Message.Split('\n');
+
+	string256 TimeOfDay = {};
+
+	PROF_EVENT("Log: Apply Messages")
+		int TimeOfDaySize = 0;
+	for (const xr_string& line : LogLines)
+	{
+		string4096 finalLine;
+		xr_strconcat(finalLine, TimeOfDay, line.c_str());
+
+		int FinalSize = TimeOfDaySize + (int)line.size();
+		// line is ready, ready up everything
+
+		// Output to MSVC debug output
+		if (IsDebuggerPresent() && !bFastDebugLog)
+		{
+			OutputDebugStringA(finalLine);
+			OutputDebugStringA("\n");
+		}
+
+		if (logFile != nullptr)
+		{
+			IWriter* mutableWritter = (IWriter*)logFile;
+			// write to file
+			mutableWritter->w(finalLine, FinalSize);
+			mutableWritter->w("\r\n", 2);
+		}
+
+		xrCriticalSectionGuard guard(&logCallbackGuard);
+		for (const LogCallback& FnCallback : logCallbackList)
+		{
+			FnCallback(finalLine);
+		}
+	}
+}
+
+void xrLogger::InternalPrintAllRecords()
+{
+	xrCriticalSectionGuard g(&logDataGuard);
+	while (!logData->empty()) {
+		InternalPrintRecord();
+	}
+}
+
 void xrLogger::LogThreadEntry()
 {
-	bool isDebug = IsDebuggerPresent();
-
 	auto FlushLogIfRequestedLambda = [this]()
-	{
-		if (bFlushRequested)
 		{
-			InternalFlushLog();
-			bFlushRequested = false;
-		}
-	};
-
-	while (bIsAlive)
-	{
-		WaitForSingleObject(hLogThread, INFINITE);
-
-		PROF_EVENT("Log Frame")
-		LogRecord theRecord;
-
-		while (true)
-		{
-			if (logData->empty())
+			if (bFlushRequested)
 			{
-				// we don't have any messages
-				PauseLogging();
-				break;
-			}
-
-			{
-				xrCriticalSectionGuard guard(&logDataGuard);
-				theRecord = logData->front();
-				logData->pop();
-			}
-
-			xr_vector<xr_string> LogLines = theRecord.Message.Split('\n');
-
-			string256 TimeOfDay = {};
-
-			PROF_EVENT("Log: Apply Messages")
-			int TimeOfDaySize = 0;
-			for (const xr_string& line : LogLines)
-			{
-				string4096 finalLine;
-				xr_strconcat(finalLine, TimeOfDay, line.c_str());
-
-				int FinalSize = TimeOfDaySize + (int)line.size();
-				// line is ready, ready up everything
-
-				// Output to MSVC debug output
-				if (isDebug && !bFastDebugLog)
-				{
-					OutputDebugStringA(finalLine);
-					OutputDebugStringA("\n");
-				}
-
-				if (logFile != nullptr)
-				{
-					IWriter* mutableWritter = (IWriter*)logFile;
-					// write to file
-					mutableWritter->w(finalLine, FinalSize);
-					mutableWritter->w("\r\n", 2);
-				}
-
-				xrCriticalSectionGuard guard(&logCallbackGuard);
-				for (const LogCallback& FnCallback : logCallbackList)
-				{
-					FnCallback(finalLine);
-				}
+				InternalFlushLog();
+				bFlushRequested = false;
 			}
 		};
 
+	while (true)
+	{
+		WaitForSingleObject(hLogThread, INFINITE);
+
+		if (!bIsAlive)
+		{
+			return;
+		}
+
+		PROF_EVENT("Log Frame");
+
+		InternalPrintAllRecords();
+
+		PauseLogging();
 		FlushLogIfRequestedLambda();
 	}
 

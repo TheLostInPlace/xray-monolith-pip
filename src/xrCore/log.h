@@ -38,8 +38,6 @@ public:
 	void PauseLogging();
 	void UnpauseLogging();
 
-	void InternalFlushLog();
-
 	xrLogger();
 	~xrLogger();
 
@@ -51,6 +49,11 @@ private:
 	ThreadID hLogThread;
 
 	void InternalOpenLogFile();
+
+	void InternalPrintRecord();
+	void InternalPrintAllRecords();
+
+	void InternalFlushLog();
 
 	string_path logFileName;
 	volatile IWriter* logFile;
