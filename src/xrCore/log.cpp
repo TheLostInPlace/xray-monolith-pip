@@ -284,7 +284,6 @@ void xrLogger::RemoveLogCallback(LogCallback logCb)
 void xrLogger::InternalCloseLog()
 {
 	SimpleMessage("[xrLogger] InternalCloseLog called, terminating thread");
-	PauseLogging();
 	bIsAlive = false;
 
 	InternalPrintAllRecords();
@@ -297,7 +296,6 @@ void xrLogger::InternalCloseLog()
 		FS.w_close(tempCopy);
 
 	UnpauseLogging();
-	CloseHandle(hLogThread);
 }
 
 xrLogger::xrLogger()
@@ -408,6 +406,7 @@ void xrLogger::LogThreadEntry()
 	{
 		if (!bIsAlive)
 		{
+			CloseHandle(hLogThread);
 			return;
 		}
 		
@@ -420,8 +419,6 @@ void xrLogger::LogThreadEntry()
 		PauseLogging();
 		FlushLogIfRequestedLambda();
 	}
-
-	FlushLogIfRequestedLambda();
 }
 
 xrLogger::LogRecord::LogRecord(LPCSTR Msg, u32 sizeMsg)
