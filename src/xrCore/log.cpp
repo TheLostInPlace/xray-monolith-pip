@@ -342,8 +342,11 @@ void xrLogger::InternalPrintRecord()
 {
 	LogRecord theRecord;
 
-	theRecord = logData->front();
-	logData->pop();
+	{
+		xrCriticalSectionGuard g(&logDataGuard);
+		theRecord = logData->front();
+		logData->pop();
+	}
 
 	xr_vector<xr_string> LogLines = theRecord.Message.Split('\n');
 
@@ -384,7 +387,6 @@ void xrLogger::InternalPrintRecord()
 
 void xrLogger::InternalPrintAllRecords()
 {
-	xrCriticalSectionGuard g(&logDataGuard);
 	while (!logData->empty()) {
 		InternalPrintRecord();
 	}
