@@ -335,7 +335,7 @@ void xrLogger::InternalOpenLogFile()
 	{
 		FS.update_path(logFileName, "$logs$", logFileName);
 	}
-	logFile = FS.w_open_ex(logFileName);
+	logFile = FS.w_open(logFileName);
 	CHECK_OR_EXIT(logFile, "Can't create log file");
 }
 
@@ -406,12 +406,12 @@ void xrLogger::LogThreadEntry()
 
 	while (true)
 	{
-		WaitForSingleObject(hLogThread, INFINITE);
-
 		if (!bIsAlive)
 		{
 			return;
 		}
+		
+		WaitForSingleObject(hLogThread, INFINITE);
 
 		PROF_EVENT("Log Frame");
 
