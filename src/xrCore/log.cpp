@@ -283,6 +283,7 @@ void xrLogger::RemoveLogCallback(LogCallback logCb)
 
 void xrLogger::InternalCloseLog()
 {
+	SimpleMessage("[xrLogger] InternalCloseLog called, terminating thread");
 	PauseLogging();
 	bIsAlive = false;
 
