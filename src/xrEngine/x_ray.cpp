@@ -298,6 +298,10 @@ void destroyConsole()
 void destroyEngine()
 {
 	Device.Destroy();
+
+	// This should prevent empty log file in some cases
+	xrLogger::FlushLog();
+
 	Engine.Destroy();
 }
 

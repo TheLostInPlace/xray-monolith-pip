@@ -1,13 +1,8 @@
 #include "stdafx.h"
 
-#include <time.h>
 #include "resource.h"
 #include "log.h"
-#include <chrono>
-#include <ctime>
-#include <iomanip>
-#include <sstream>
-#include <string>
+#include "TimeUtils.h"
 
 #include "profiler.h"
 #include "string_concatenations.h"
@@ -31,41 +26,6 @@ shared_str FormatString(LPCSTR fmt, ...)
 BOOL logTimestamps = FALSE;
 enum Console_mark;
 extern bool is_console_mark(Console_mark type);
-
-std::string getCurrentTimeStamp(const char* format = "%H:%M:%S")
-{
-	using namespace std::chrono;
-
-	// get current time
-	auto now = system_clock::now();
-
-	// get number of milliseconds for the current second
-	// (remainder after division into seconds)
-	auto ms = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
-
-	// convert to std::time_t in order to convert to std::tm (broken time)
-	auto timer = system_clock::to_time_t(now);
-
-	// convert to broken time
-	std::tm bt = *std::localtime(&timer);
-
-	std::ostringstream oss;
-
-	oss << std::put_time(&bt, format); // HH:MM:SS
-	oss << '.' << std::setfill('0') << std::setw(3) << ms.count();
-
-	return oss.str();
-}
-
-std::string timeInDMYHMSMMM()
-{
-	return getCurrentTimeStamp("%d.%m.%Y %H:%M:%S");
-}
-
-std::string timeInHMSMMM() 
-{
-    return getCurrentTimeStamp("%H:%M:%S");
-}
 
 void Log(const char* s)
 {

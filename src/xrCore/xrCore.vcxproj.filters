@@ -621,6 +621,7 @@
     <ClInclude Include="RingBuffer.h">
       <Filter>FS</Filter>
     </ClInclude>
+    <ClInclude Include="TimeUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="xrCore.rc" />
