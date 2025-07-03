@@ -280,6 +280,7 @@ IC void CBackend::Compute(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT T
 
 IC void CBackend::Render(D3DPRIMITIVETYPE T, u32 baseV, u32 startV, u32 countV, u32 startI, u32 PC)
 {
+	PROF_EVENT("RCache.Render_ibvb");
 	//VERIFY(vs);
 	//HW.pDevice->VSSetShader(vs);
 	//HW.pDevice->GSSetShader(0);
@@ -329,6 +330,7 @@ IC void CBackend::Render(D3DPRIMITIVETYPE T, u32 baseV, u32 startV, u32 countV, 
 
 IC void CBackend::Render(D3DPRIMITIVETYPE T, u32 startV, u32 PC)
 {
+	PROF_EVENT("RCache.Render_vb");
 	//	TODO: DX10: Remove triangle fan usage from the engine
 	if (T == D3DPT_TRIANGLEFAN)
 		return;

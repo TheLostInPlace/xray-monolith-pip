@@ -147,7 +147,8 @@ void CRender::render_main(Fmatrix& m_ViewProjection, bool _fportals)
 		}
 		if (g_pGameLevel && (phase == PHASE_NORMAL))
 		{
-			g_hud->Render_Last(); // HUD
+			PROF_EVENT("Render HUD");
+			g_hud->Render_Last();
 			if (g_hud->RenderActiveItemUIQuery())
 				r_dsgraph_render_hud_ui();
 			if (g_hud->RenderCamAttachedUIQuery())
@@ -159,7 +160,8 @@ void CRender::render_main(Fmatrix& m_ViewProjection, bool _fportals)
 		set_Object(0);
 		if (g_pGameLevel && (phase == PHASE_NORMAL))
 		{
-			g_hud->Render_Last(); // HUD
+			PROF_EVENT("Render HUD");
+			g_hud->Render_Last();
 			if (g_hud->RenderActiveItemUIQuery())
 				r_dsgraph_render_hud_ui();
 			if (g_hud->RenderCamAttachedUIQuery())

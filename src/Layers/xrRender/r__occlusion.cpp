@@ -48,6 +48,7 @@ void R_occlusion::occq_destroy()
 
 u32 R_occlusion::occq_begin(u32& ID)
 {
+	PROF_EVENT("R_occlusion::occq_begin");
 	if (!enabled) return 0;
 
 	//	Igor: prevent release crash if we issue too many queries
@@ -84,6 +85,7 @@ u32 R_occlusion::occq_begin(u32& ID)
 
 void R_occlusion::occq_end(u32& ID)
 {
+	PROF_EVENT("R_occlusion::occq_end");
 	if (!enabled) return;
 
 	//	Igor: prevent release crash if we issue too many queries
@@ -96,6 +98,7 @@ void R_occlusion::occq_end(u32& ID)
 
 R_occlusion::occq_result R_occlusion::occq_get(u32& ID)
 {
+	PROF_EVENT("R_occlusion::occq_get");
 	if (!enabled) return 0xffffffff;
 
 	//	Igor: prevent release crash if we issue too many queries
@@ -112,6 +115,7 @@ R_occlusion::occq_result R_occlusion::occq_get(u32& ID)
 	VERIFY2(ID<used.size(), make_string("_Pos = %d, size() = %d ", ID, used.size()));
 	while ((hr = GetData(used[ID].Q, &fragments, sizeof(fragments))) == S_FALSE)
 	{
+		PROF_EVENT("GPU::GetData");
 		if (!SwitchToThread())
 			Sleep(ps_r2_wait_sleep);
 
