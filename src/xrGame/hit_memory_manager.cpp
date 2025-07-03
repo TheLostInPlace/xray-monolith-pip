@@ -94,6 +94,7 @@ void CHitMemoryManager::reload(LPCSTR section)
 
 void CHitMemoryManager::add(float amount, const Fvector& vLocalDir, const CObject* who, s16 element)
 {
+	PROF_EVENT("HitMemory::add");
 #ifndef MASTER_GOLD
 	if (who && smart_cast<CActor const*>(who) && psAI_Flags.test(aiIgnoreActor))
 		return;
