@@ -56,6 +56,7 @@ CUIGameCustom::~CUIGameCustom()
 
 void CUIGameCustom::OnFrame()
 {
+	PROF_EVENT("CUIGameCustom::OnFrame");
 	CDialogHolder::OnFrame();
 	for (auto item : CustomStatics)
 		item->Update();
@@ -83,6 +84,7 @@ void CUIGameCustom::OnFrame()
 
 void CUIGameCustom::Render()
 {
+	PROF_EVENT("CUIGameCustom::Render");
 	for (StaticDrawableWrapper* item : CustomStatics)
 		item->Draw();
 	Window->Draw();
