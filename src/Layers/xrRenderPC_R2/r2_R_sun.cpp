@@ -1544,6 +1544,7 @@ void CRender::render_sun_cascades()
 
 void CRender::render_sun_cascade(u32 cascade_ind)
 {
+	PROF_EVENT("Render Cascade");
 	light* fuckingsun = (light*)Lights.sun_adapted._get();
 
 	// calculate view-frustum bounds in world space
