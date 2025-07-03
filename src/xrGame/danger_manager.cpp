@@ -259,6 +259,7 @@ float CDangerManager::do_evaluate(const CDangerObject& object) const
 
 void CDangerManager::add(const CVisibleObject& object)
 {
+	PROF_EVENT("DangerManager::add_VisibleObject");
 	if (!object.m_enabled)
 		return;
 
@@ -273,6 +274,7 @@ void CDangerManager::add(const CVisibleObject& object)
 
 void CDangerManager::add(const CSoundObject& object)
 {
+	PROF_EVENT("DangerManager::add_SoundObject");
 	if (!object.m_enabled)
 		return;
 
@@ -324,6 +326,7 @@ void CDangerManager::add(const CSoundObject& object)
 
 void CDangerManager::add(const CHitObject& object)
 {
+	PROF_EVENT("DangerManager::add_HitObject");
 	if (!object.m_enabled)
 		return;
 
@@ -340,6 +343,7 @@ void CDangerManager::add(const CHitObject& object)
 
 void CDangerManager::add(const CDangerObject& object)
 {
+	PROF_EVENT("DangerManager::add_DangerObject");
 	if (m_object->memory().enemy().selected() && object.object()) // && !object.object()->g_Alive())
 		ignore(object.object());
 

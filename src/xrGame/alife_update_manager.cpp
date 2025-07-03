@@ -112,6 +112,7 @@ void CALifeUpdateManager::update_scheduled(bool init_ef)
 
 void CALifeUpdateManager::update()
 {
+	PROF_EVENT("AI: A-Life Update");
 	update_switch();
 	update_scheduled(false);
 }
