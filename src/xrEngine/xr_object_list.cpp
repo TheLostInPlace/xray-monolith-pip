@@ -197,6 +197,7 @@ void CObjectList::clear_crow_vec(Objects& o)
 
 void CObjectList::Update(bool bForce)
 {
+	PROF_EVENT("CObjectList::Update");
 	if (!Device.Paused() || bForce)
 	{
 		// Clients
