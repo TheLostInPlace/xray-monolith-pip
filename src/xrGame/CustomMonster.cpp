@@ -319,6 +319,7 @@ void CCustomMonster::net_Import(NET_Packet& P)
 
 void CCustomMonster::shedule_Update(u32 DT)
 {
+	PROF_EVENT("CCustomMonster::shedule_Update");
 	VERIFY(!g_Alive() || processing_enabled());
 	// Queue shrink
 	VERIFY(_valid(Position()));
@@ -426,6 +427,7 @@ void CCustomMonster::net_update::lerp(CCustomMonster::net_update& A, CCustomMons
 
 void CCustomMonster::update_sound_player()
 {
+	PROF_EVENT("AI: [Monsters] Update sounds");
 	sound().update(client_update_fdelta());
 }
 
@@ -678,6 +680,7 @@ void CCustomMonster::eye_pp_s2()
 
 void CCustomMonster::Exec_Visibility()
 {
+	PROF_EVENT("AI: Exec_Visibility");
 	//if (0==Sector())				return;
 	if (!g_Alive()) return;
 
