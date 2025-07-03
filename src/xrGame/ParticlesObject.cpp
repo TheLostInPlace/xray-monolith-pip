@@ -223,8 +223,11 @@ void CParticlesObject::PerformAllTheWork()
 
 void CParticlesObject::WaitForParticles()
 {
-	if(psDeviceFlags.test(mtParticles))
+	if (psDeviceFlags.test(mtParticles))
+	{
+		PROF_EVENT("Particles Wait");
 		ParticleObjectTasks.wait();
+	}
 }
 
 void CParticlesObject::SetXFORM(const Fmatrix& m)
