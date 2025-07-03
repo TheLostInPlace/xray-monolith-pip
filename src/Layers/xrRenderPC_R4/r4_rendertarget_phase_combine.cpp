@@ -65,6 +65,7 @@ void CRenderTarget::phase_combine()
 	{
 		if (ps_r_ssao > 0)
 		{
+			PROF_EVENT("PHASE_AMBIENT_OCCLUSION");
 			phase_hdao();
 		}
 	}

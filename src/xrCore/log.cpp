@@ -371,13 +371,12 @@ void xrLogger::LogThreadEntry()
 		}
 		
 		WaitForSingleObject(hLogThread, INFINITE);
-
-		PROF_EVENT("Log Frame");
-
-		InternalPrintAllRecords();
-
-		PauseLogging();
-		FlushLogIfRequestedLambda();
+		{
+			PROF_EVENT("Log Frame");
+			InternalPrintAllRecords();
+			PauseLogging();
+			FlushLogIfRequestedLambda();
+		}
 	}
 }
 
