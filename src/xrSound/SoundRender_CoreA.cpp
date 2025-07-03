@@ -240,6 +240,7 @@ void CSoundRender_CoreA::i_eax_get(const GUID* guid, u32 prop, void* val, u32 sz
 
 void CSoundRender_CoreA::update_listener(const Fvector& P, const Fvector& D, const Fvector& N, float dt)
 {
+	PROF_EVENT("Sound: update_listener");
 	inherited::update_listener(P, D, N, dt);
 
 	Listener.curVelocity.sub(P, Listener.position);
