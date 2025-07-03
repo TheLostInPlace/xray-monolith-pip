@@ -391,7 +391,10 @@ void dxRenderDeviceRender::End()
 	RCache.OnFrameEnd();
 	Memory.dbg_check();
 
-	DoAsyncScreenshot();
+	{
+		PROF_EVENT("Async Screenshot");
+		DoAsyncScreenshot();
+	}
 
 #if defined(USE_DX10) || defined(USE_DX11)
     UINT present_flags = 0;
