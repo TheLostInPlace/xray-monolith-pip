@@ -5,6 +5,8 @@
 #include "StateManager/dx10StateManager.h"
 #include "StateManager/dx10ShaderResourceStateCache.h"
 
+#include "../../xrCore/profiler.h"
+
 IC void CBackend::set_xform(u32 ID, const Fmatrix& M)
 {
 	stat.xforms ++;
