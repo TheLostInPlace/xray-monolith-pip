@@ -154,6 +154,7 @@ CHUDManager::~CHUDManager()
 //--------------------------------------------------------------------
 void CHUDManager::OnFrame()
 {
+	PROF_EVENT("CHUDManager::OnFrame");
 	if (!psHUD_Flags.is(HUD_DRAW_RT2))
 		return;
 
@@ -273,6 +274,7 @@ extern ENGINE_API BOOL bShowPauseString;
 //отрисовка элементов интерфейса
 void CHUDManager::RenderUI()
 {
+	PROF_EVENT("CHUDManager::RenderUI");
 	if (!psHUD_Flags.is(HUD_DRAW_RT2))
 		return;
 
