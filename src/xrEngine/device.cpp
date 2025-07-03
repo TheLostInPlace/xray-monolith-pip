@@ -61,7 +61,7 @@ ENGINE_API float refresh_rate = 0;
 
 BOOL CRenderDevice::Begin()
 {
-	PROF_EVENT();
+	PROF_EVENT("Render: Begin");
 
 #ifndef DEDICATED_SERVER
 	switch (m_pRender->GetDeviceState())
@@ -102,7 +102,7 @@ extern void CheckPrivilegySlowdown();
 
 void CRenderDevice::End(void)
 {
-	PROF_EVENT();
+	PROF_EVENT("Render: End");
 
 #ifndef DEDICATED_SERVER
 
@@ -172,6 +172,7 @@ volatile u32 mt_Thread_marker = 0x12345678;
 
 static void mt_Thread(void* ptr)
 {
+	PROF_THREAD("SecondaryThread");
 	auto& device = *static_cast<CRenderDevice*>(ptr);
 	while (FALSE == Device.mt_bMustExit)
 	{
@@ -306,6 +307,9 @@ void mt_FreezeThread(void *ptr) {
 
 void CRenderDevice::on_idle()
 {
+	PROF_THREAD("Primary Thread");
+	PROF_FRAME("X-Ray Primary Thread");
+
 	FreezeTimer.Start();
 
 	if (!b_is_Ready)
@@ -313,9 +317,6 @@ void CRenderDevice::on_idle()
 		Sleep(100);
 		return;
 	}
-
-	PROF_FRAME("X-RAY Primary thread");
-	PROF_EVENT();
 
 #ifdef DEDICATED_SERVER
     u32 FrameStartTime = TimerGlobal.GetElapsed_ms();
@@ -339,6 +340,7 @@ void CRenderDevice::on_idle()
 	{
 		if (g_pGamePersistent != nullptr)
 		{
+			PROF_EVENT("Update Particles");
 			g_pGamePersistent->UpdateParticles();
 		}
 	}
@@ -616,7 +618,7 @@ u32 app_inactive_time_start = 0;
 
 void CRenderDevice::FrameMove()
 {
-	PROF_EVENT();
+	PROF_EVENT("Render: Frame Move");
 
 	dwFrame++;
 	Core.dwFrame = dwFrame;

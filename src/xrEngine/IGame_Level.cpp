@@ -167,8 +167,14 @@ void IGame_Level::OnRender()
 	// Level render, only when no client output required
 	if (!g_dedicated_server)
 	{
-		Render->Calculate();
-		Render->Render();
+		{
+			PROF_EVENT("IGame_Level::OnRender: Calculate");
+			Render->Calculate();
+		}
+		{
+			PROF_EVENT("IGame_Level::OnRender: Render");
+			Render->Render();
+		}
 	}
 	else
 	{
@@ -187,7 +193,7 @@ void IGame_Level::OnRender()
 
 void IGame_Level::OnFrame()
 {
-	PROF_EVENT("IGame_Level::OnFrame()");
+	PROF_EVENT("IGame_Level::OnFrame");
 	// Log ("- level:on-frame: ",u32(Device.dwFrame));
 	// if (_abs(Device.fTimeDelta)<EPS_S) return;
 
@@ -325,6 +331,7 @@ void IGame_Level::SoundEvent_Register(ref_sound_data_ptr S, float range)
 
 void IGame_Level::SoundEvent_Dispatch()
 {
+	PROF_EVENT("IGame_Level::SoundEvent_Dispatch");
 	while (!snd_Events.empty())
 	{
 		_esound_delegate& D = snd_Events.back();
