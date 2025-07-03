@@ -927,6 +927,7 @@ void CAI_Stalker::net_Import(NET_Packet& P)
 
 void CAI_Stalker::update_object_handler()
 {
+	PROF_EVENT("AI: [Stalker] Update Handler");
 	if (!g_Alive())
 		return;
 
@@ -985,6 +986,7 @@ void CAI_Stalker::destroy_anim_mov_ctrl()
 
 void CAI_Stalker::UpdateCL()
 {
+	PROF_EVENT_DYNAMIC(cNameSect_str());
 	START_PROFILE("stalker")
 		START_PROFILE("stalker/client_update")
 			VERIFY2(PPhysicsShell()||getEnabled(), *cName());
@@ -1088,6 +1090,7 @@ CPHDestroyable* CAI_Stalker::ph_destroyable()
 
 void CAI_Stalker::shedule_Update(u32 DT)
 {
+	PROF_EVENT_DYNAMIC(cNameSect_str());
 	// Optimization update
 //	if (Device.dwFrame % 2) return;
 
