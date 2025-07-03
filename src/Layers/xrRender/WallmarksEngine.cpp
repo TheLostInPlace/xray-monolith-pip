@@ -363,6 +363,7 @@ void CWallmarksEngine::AddSkeletonWallmark(intrusive_ptr<CSkeletonWallmark> wm)
 extern float r_ssaDISCARD;
 ICF void BeginStream(ref_geom hGeom, u32& w_offset, FVF::LIT*& w_verts, FVF::LIT*& w_start)
 {
+	PROF_EVENT("BeginStream");
 	w_offset = 0;
 	w_verts = (FVF::LIT*)RCache.Vertex.Lock(MAX_TRIS * 3, hGeom->vb_stride, w_offset);
 	w_start = w_verts;
@@ -371,6 +372,7 @@ ICF void BeginStream(ref_geom hGeom, u32& w_offset, FVF::LIT*& w_verts, FVF::LIT
 ICF void FlushStream(ref_geom hGeom, ref_shader shader, u32& w_offset, FVF::LIT*& w_verts, FVF::LIT*& w_start,
                      BOOL bSuppressCull)
 {
+	PROF_EVENT("FlushStream");
 	u32 w_count = u32(w_verts - w_start);
 	RCache.Vertex.Unlock(w_count, hGeom->vb_stride);
 	if (w_count)
