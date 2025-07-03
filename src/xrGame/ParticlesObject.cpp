@@ -88,6 +88,7 @@ CParticlesObject::~CParticlesObject()
 
 void CParticlesObject::UpdateAllAsync()
 {
+	PROF_EVENT();
 	for (CParticlesObject* particle : AllParticleObjects)
 	{
 		if (particle->m_bDead)
@@ -95,6 +96,7 @@ void CParticlesObject::UpdateAllAsync()
 
 		auto UpdateParticle = [particle]()
 		{
+			PROF_EVENT("CParticlesObject::UpdateAllAsync/UpdateParticle");
 			u32 dt = Device.dwTimeGlobal - particle->dwLastTime;
 			IParticleCustom* V = smart_cast<IParticleCustom*>(particle->renderable.visual);
 			VERIFY(V);
