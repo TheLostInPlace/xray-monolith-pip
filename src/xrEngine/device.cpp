@@ -172,7 +172,7 @@ volatile u32 mt_Thread_marker = 0x12345678;
 
 static void mt_Thread(void* ptr)
 {
-	PROF_THREAD("SecondaryThread");
+	PROF_THREAD("X-Ray Secondary Thread");
 	auto& device = *static_cast<CRenderDevice*>(ptr);
 	while (FALSE == Device.mt_bMustExit)
 	{
@@ -307,7 +307,7 @@ void mt_FreezeThread(void *ptr) {
 
 void CRenderDevice::on_idle()
 {
-	PROF_THREAD("Primary Thread");
+	PROF_THREAD("X-Ray Primary Thread");
 	PROF_FRAME("X-Ray Primary Thread");
 
 	FreezeTimer.Start();
@@ -559,7 +559,7 @@ void mt_DiscordThread(void*)
 
 static void mt_TaskThread(void*)
 {
-	PROF_THREAD("mt_TaskThread");
+	PROF_THREAD("X-Ray mt_TaskThread");
 	while (FALSE == Device.mt_bMustExit)
 	{
 		WaitForSingleObject(RenderEventMT, INFINITE);
