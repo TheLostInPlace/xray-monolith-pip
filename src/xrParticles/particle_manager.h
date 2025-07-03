@@ -1,7 +1,4 @@
-//---------------------------------------------------------------------------
-#ifndef particle_managerH
-#define particle_managerH
-//---------------------------------------------------------------------------
+#pragma once
 #include "particle_actions.h"
 #include <atomic>
 
@@ -26,6 +23,7 @@ namespace PAPI
 
         xrCriticalSection m_effect_guard;
         xrCriticalSection m_action_guard;
+        xr_atomic_s32 ActionIter = 0;
 
     public:
         CParticleManager();
@@ -61,5 +59,3 @@ namespace PAPI
         virtual void                OnFrame() override;
     };
 };
-//---------------------------------------------------------------------------
-#endif
