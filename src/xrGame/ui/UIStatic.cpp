@@ -80,6 +80,7 @@ void CUIStatic::InitTextureEx(LPCSTR tex_name, LPCSTR sh_name)
 
 void CUIStatic::Draw()
 {
+	PROF_EVENT("CUIStatic::Draw");
 	DrawTexture();
 	inherited::Draw();
 	DrawText();
