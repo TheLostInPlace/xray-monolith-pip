@@ -33,7 +33,7 @@ void R_constant_table::fatal(LPCSTR S)
 void R_constant_table::_copy(const R_constant_table& Other)
 {
 	table = Other.table;
-#ifdef USE_DX11
+#if defined(USE_DX10) || defined(USE_DX11)
 	m_CBTable = Other.m_CBTable;
 #endif
 }
