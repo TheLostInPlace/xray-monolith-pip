@@ -386,7 +386,7 @@ ICF void FlushStream(ref_geom hGeom, ref_shader shader, u32& w_offset, FVF::LIT*
 	}
 }
 
-struct timeout_wm_pred : public std::unary_function<intrusive_ptr<CSkeletonWallmark>, bool>
+struct timeout_wm_pred
 {
 	bool operator()(const intrusive_ptr<CSkeletonWallmark>& wm) { 
 		float w = wm->TimeEnd() == -1.f ? 0.f : (RDEVICE.fTimeGlobal - wm->TimeStart()) / wm->TimeEnd();
