@@ -156,7 +156,7 @@ void CGamePersistent::OnAppStart()
 	// load game materials
 	GMLib.Load();
 	init_game_globals();
-	__super::OnAppStart();
+	inherited::OnAppStart();
 	m_pUI_core = xr_new<ui_core>();
 	m_pMainMenu = xr_new<CMainMenu>();
 	m_pWallmarksManager = xr_new<ScriptWallmarksManager>();
@@ -172,7 +172,7 @@ void CGamePersistent::OnAppEnd()
 	xr_delete(m_pUI_core);
 	xr_delete(m_pWallmarksManager);
 
-	__super::OnAppEnd();
+	inherited::OnAppEnd();
 
 	clean_game_globals();
 
@@ -181,7 +181,7 @@ void CGamePersistent::OnAppEnd()
 
 void CGamePersistent::Start(LPCSTR op)
 {
-	__super::Start(op);
+	inherited::Start(op);
 }
 
 void CGamePersistent::Disconnect()
@@ -189,7 +189,7 @@ void CGamePersistent::Disconnect()
 	// destroy ambient particles
 	CParticlesObject::Destroy(ambient_particles);
 
-	__super::Disconnect();
+	inherited::Disconnect();
 	// stop all played emitters
 	::Sound->stop_emitters();
 	m_game_params.m_e_game_type = eGameIDNoGame;
@@ -199,7 +199,7 @@ void CGamePersistent::Disconnect()
 
 void CGamePersistent::OnGameStart()
 {
-	__super::OnGameStart();
+	inherited::OnGameStart();
 	UpdateGameType();
 }
 
@@ -255,7 +255,7 @@ EGameIDs ParseStringToGameType(LPCSTR str)
 
 void CGamePersistent::UpdateGameType()
 {
-	__super::UpdateGameType();
+	inherited::UpdateGameType();
 
 	m_game_params.m_e_game_type = ParseStringToGameType(m_game_params.m_game_type);
 
@@ -268,7 +268,7 @@ void CGamePersistent::UpdateGameType()
 
 void CGamePersistent::OnGameEnd()
 {
-	__super::OnGameEnd();
+	inherited::OnGameEnd();
 
 	xr_delete(g_stalker_animation_data_storage);
 	xr_delete(g_stalker_velocity_holder);
@@ -737,7 +737,7 @@ void CGamePersistent::OnFrame()
 		}
 #endif // MASTER_GOLD
 	}
-	__super::OnFrame();
+	inherited::OnFrame();
 
 	if (!Device.Paused())
 	{
