@@ -613,6 +613,18 @@ void CLevel::ProcessSpawnEvents()
 
 		if (spawn_antifreeze_debug) Msg("[ProcessSpawnEvents] spawning section %s, obj_id %d, parent_id %d, event_id %d", section.c_str(), obj_id, parent_id, dest);
 
+		// demonized: If there is a parent of this object, check if its still in alife
+		if (parent_id != 0xffff)
+		{
+			auto parent_obj = ai().alife().objects().object(parent_id);
+			if (!parent_obj || !parent_obj->m_bOnline)
+			{
+				if (spawn_antifreeze_debug) Msg("![ProcessSpawnEvents] parent object is not in alife, do not spawn, section %s, obj_id %d, parent_id %d, event_id %d", section.c_str(), obj_id, parent_id, dest);
+				it = spawn_events->queue.erase(it); // remove current event
+				continue;
+			}
+		}
+
 		u16 dummy16;
 		P.r_begin(dummy16);
 		cl_Process_Spawn(P);
@@ -689,9 +701,10 @@ void CLevel::ProcessGameEvents()
 							if (model)
 							{
 								string_path modelWithoutExtension;
-								xr_strcpy(modelWithoutExtension, sizeof(modelWithoutExtension), model);
+								xr_strcpy(modelWithoutExtension, model);
 								xr_strlwr(modelWithoutExtension);
 								if (strext(modelWithoutExtension)) *strext(modelWithoutExtension) = 0;
+
 								if (xr_strcmp(modelWithoutExtension, "") != 0 && xr_strcmp(modelWithoutExtension, ".ogf") != 0)
 									models.insert(modelWithoutExtension);
 							}
