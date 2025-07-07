@@ -27,6 +27,9 @@ extern void destroy_lua_wpn_params();
 
 void restart_all()
 {
+	if (Core.ParamsData.test(ECoreParams::keep_lua))
+		return;
+
 	destroy_lua_wpn_params();
 	MainMenu()->DestroyInternal(true);
 	xr_delete(g_object_factory);

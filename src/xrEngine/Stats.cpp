@@ -494,7 +494,6 @@ void CStats::OnDeviceCreate()
 {
 	g_bDisableRedText = Core.ParamsData.test(ECoreParams::xclsx);
 
-	// if (!strstr(Core.Params, "-dedicated"))
 #ifndef DEDICATED_SERVER
 	pFont = xr_new<CGameFont>("stat_font", CGameFont::fsDeviceIndependent);
 #endif

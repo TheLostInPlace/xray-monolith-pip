@@ -82,7 +82,7 @@ void xrMemory::_initialize(BOOL bDebug)
 
 #ifndef M_BORLAND
 #ifndef PURE_ALLOC
-    if (!strstr(Core.Params, "-pure_alloc"))
+    if (!Core.ParamsData.test(ECoreParams::pure_alloc))
     {
         // initialize POOLs
         u32 element = mem_pools_ebase;
@@ -97,7 +97,7 @@ void xrMemory::_initialize(BOOL bDebug)
 #endif // M_BORLAND
 
 #ifdef DEBUG_MEMORY_MANAGER
-    if (0 == strstr(Core.Params, "-memo")) mem_initialized = TRUE;
+    if (!Core.ParamsData.test(ECoreParams::memo)) mem_initialized = TRUE;
     else g_bMEMO = TRUE;
 #else // DEBUG_MEMORY_MANAGER
 	mem_initialized = TRUE;

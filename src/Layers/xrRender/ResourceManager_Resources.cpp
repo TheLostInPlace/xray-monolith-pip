@@ -18,7 +18,7 @@ void fix_texture_name(LPSTR fn);
 
 void simplify_texture(string_path& fn)
 {
-	if (strstr(Core.Params, "-game_designer"))
+	if (Core.ParamsData.test(ECoreParams::game_designer))
 	{
 		if (strstr(fn, "$user")) return;
 		if (strstr(fn, "ui\\")) return;

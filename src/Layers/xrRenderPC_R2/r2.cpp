@@ -242,7 +242,7 @@ void CRender::create()
 	o.fp16_blend = HW.support(D3DFMT_A16B16G16R16F, D3DRTYPE_TEXTURE,D3DUSAGE_QUERY_POSTPIXELSHADER_BLENDING);
 
 	// search for ATI formats
-	if (!o.HW_smap && (0 == strstr(Core.Params, "-nodf24")))
+	if (!o.HW_smap && !Core.ParamsData.test(ECoreParams::nodf24))
 	{
 		o.HW_smap = HW.support((D3DFORMAT)(MAKEFOURCC('D', 'F', '2', '4')), D3DRTYPE_TEXTURE,D3DUSAGE_DEPTHSTENCIL);
 		if (o.HW_smap)
@@ -255,7 +255,7 @@ void CRender::create()
 	}
 
 	// emulate ATI-R4xx series
-	if (strstr(Core.Params, "-r4xx"))
+	if (Core.ParamsData.test(ECoreParams::r4xx))
 	{
 		o.mrtmixdepth = FALSE;
 		o.HW_smap = FALSE;
@@ -290,18 +290,18 @@ void CRender::create()
 	o.nvdbt = HW.support((D3DFORMAT)MAKEFOURCC('N', 'V', 'D', 'B'), D3DRTYPE_SURFACE, 0);
 	if (o.nvdbt) Msg("* NV-DBT supported and used");
 
-	o.no_ram_textures = (strstr(Core.Params, "-noramtex")) ? TRUE : ps_r__common_flags.test(RFLAG_NO_RAM_TEXTURES);
+	o.no_ram_textures = Core.ParamsData.test(ECoreParams::noramtex) ? TRUE : ps_r__common_flags.test(RFLAG_NO_RAM_TEXTURES);
 	if (o.no_ram_textures)
 		Msg("* Managed textures disabled");
 	else
 		Msg("* Managed textures enabled");
 
 	// options (smap-pool-size)
-	if (strstr(Core.Params, "-smap1536")) o.smapsize = 1536;
-	if (strstr(Core.Params, "-smap2048")) o.smapsize = 2048;
-	if (strstr(Core.Params, "-smap2560")) o.smapsize = 2560;
-	if (strstr(Core.Params, "-smap3072")) o.smapsize = 3072;
-	if (strstr(Core.Params, "-smap4096")) o.smapsize = 4096;
+	if (Core.ParamsData.test(ECoreParams::smap1536)) o.smapsize = 1536;
+	if (Core.ParamsData.test(ECoreParams::smap2048)) o.smapsize = 2048;
+	if (Core.ParamsData.test(ECoreParams::smap2560)) o.smapsize = 2560;
+	if (Core.ParamsData.test(ECoreParams::smap3072)) o.smapsize = 3072;
+	if (Core.ParamsData.test(ECoreParams::smap4096)) o.smapsize = 4096;
 
 	// gloss
 	char* g = strstr(Core.Params, "-gloss ");
@@ -312,13 +312,12 @@ void CRender::create()
 	}
 
 	// options
-	o.bug = (strstr(Core.Params, "-bug")) ? TRUE : FALSE;
-	o.sunfilter = (strstr(Core.Params, "-sunfilter")) ? TRUE : FALSE;
-	//.	o.sunstatic			= (strstr(Core.Params,"-sunstatic"))?	TRUE	:FALSE	;
+	o.bug = Core.ParamsData.test(ECoreParams::bug);
+	o.sunfilter = Core.ParamsData.test(ECoreParams::sunfilter);
 	o.sunstatic = r2_sun_static;
 	o.advancedpp = r2_advanced_pp;
-	o.sjitter = (strstr(Core.Params, "-sjitter")) ? TRUE : FALSE;
-	o.depth16 = (strstr(Core.Params, "-depth16")) ? TRUE : FALSE;
+	o.sjitter = Core.ParamsData.test(ECoreParams::sjitter);
+	o.depth16 = Core.ParamsData.test(ECoreParams::depth16);
 	o.noshadows = Core.ParamsData.test(ECoreParams::noshadows);
 	o.Tshadows = Core.ParamsData.test(ECoreParams::tsh);
 	o.distortion_enabled = !Core.ParamsData.test(ECoreParams::nodistort);

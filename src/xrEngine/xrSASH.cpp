@@ -454,16 +454,16 @@ void xrSASH::TryInitEngine(bool bNoRun)
 	}
 
 	xr_strcpy(Console->ConfigFile, "user.ltx");
-	if (strstr(Core.Params, "-ltx "))
+	if (Core.ParamsData.test(ECoreParams::ltx))
 	{
 		string64 c_name;
 		sscanf(strstr(Core.Params, "-ltx ") + 5, "%[^ ] ", c_name);
 		xr_strcpy(Console->ConfigFile, c_name);
 	}
 
-	if (strstr(Core.Params, "-r2a"))
+	if (Core.ParamsData.test(ECoreParams::r2a))
 		Console->Execute("renderer renderer_r2a");
-	else if (strstr(Core.Params, "-r2"))
+	else if (Core.ParamsData.test(ECoreParams::r2))
 		Console->Execute("renderer renderer_r2");
 	else
 	{

@@ -333,7 +333,7 @@ public:
 	string64 UserName;
 	string64 CompName;
 	char* Params;
-	Flags64 ParamsData;
+	xr_BitsetFlags<ECoreParams> ParamsData;
 	DWORD dwFrame;
 	bool april1;
 

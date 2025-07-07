@@ -242,7 +242,7 @@ PROTECT_API void InitConsole()
 	Console->Initialize();
 
 	xr_strcpy(Console->ConfigFile, "user.ltx");
-	if (strstr(Core.Params, "-ltx "))
+	if (Core.ParamsData.test(ECoreParams::ltx))
 	{
 		string64 c_name;
 		sscanf(strstr(Core.Params, "-ltx ") + 5, "%[^ ] ", c_name);
@@ -254,7 +254,7 @@ PROTECT_API void InitConsole()
 
 PROTECT_API void InitInput()
 {
-	BOOL bCaptureInput = FALSE; // !strstr(Core.Params, "-i");
+	BOOL bCaptureInput = FALSE;
 
 	pInput = xr_new<CInput>(bCaptureInput);
 }
@@ -330,11 +330,11 @@ void slowdownthread(void*)
 void CheckPrivilegySlowdown()
 {
 #ifdef DEBUG
-    if (strstr(Core.Params, "-slowdown"))
+    if (Core.ParamsData.test(ECoreParams::slowdown))
     {
         thread_spawn(slowdownthread, "slowdown", 0, 0);
     }
-    if (strstr(Core.Params, "-slowdown2x"))
+    if (Core.ParamsData.test(ECoreParams::slowdown2x))
     {
         thread_spawn(slowdownthread, "slowdown", 0, 0);
         thread_spawn(slowdownthread, "slowdown", 0, 0);
@@ -1077,7 +1077,7 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
 		}
 
 		extern bool ignore_verify;
-		ignore_verify = !strstr(Core.Params, "-dbgdev");
+		ignore_verify = !Core.ParamsData.test(ECoreParams::dbgdev);
 
 		Msg("command line %s", Core.Params);
 		LPCSTR sashName = "-openautomate ";
@@ -1100,9 +1100,9 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
 		};
 
 #ifndef DEDICATED_SERVER
-		if (strstr(Core.Params, "-r2a"))
+		if (Core.ParamsData.test(ECoreParams::r2a))
 			Console->Execute("renderer renderer_r2a");
-		else if (strstr(Core.Params, "-r2"))
+		else if (Core.ParamsData.test(ECoreParams::r2))
 			Console->Execute("renderer renderer_r2");
 		else
 		{
@@ -1815,7 +1815,7 @@ void doBenchmark(LPCSTR name)
 		Engine.External.Initialize();
 
 		xr_strcpy(Console->ConfigFile, "user.ltx");
-		if (strstr(Core.Params, "-ltx "))
+		if (Core.ParamsData.test(ECoreParams::ltx))
 		{
 			string64 c_name;
 			sscanf(strstr(Core.Params, "-ltx ") + 5, "%[^ ] ", c_name);

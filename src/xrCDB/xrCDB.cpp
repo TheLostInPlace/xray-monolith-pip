@@ -97,7 +97,7 @@ void MODEL::build(Fvector* V, int Vcnt, TRI* T, int Tcnt, build_callback* bc, vo
 #ifdef _EDITOR
 	build_internal				(V,Vcnt,T,Tcnt,bc,bcp);
 #else
-	if (!strstr(Core.Params, "-mt_cdb"))
+	if (!Core.ParamsData.test(ECoreParams::mt_cdb))
 	{
 		build_internal(V, Vcnt, T, Tcnt, bc, bcp);
 		status = S_READY;

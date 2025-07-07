@@ -477,7 +477,7 @@ void CScriptEngine::process_file_if_exists(LPCSTR file_name, bool warn_if_not_ex
 			return;
 		}
 		//#ifndef MASTER_GOLD
-		if (strstr(Core.Params, "-dbg"))
+		if (Core.ParamsData.test(ECoreParams::dbg))
 			Msg("* loading script %s", S1);
 		//#endif // MASTER_GOLD
 		m_reload_modules = false;

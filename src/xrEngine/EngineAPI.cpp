@@ -261,7 +261,7 @@ void CEngineAPI::Initialize(void)
 	//////////////////////////////////////////////////////////////////////////
 	// vTune
 	tune_enabled = FALSE;
-	if (strstr(Core.Params, "-tune"))
+	if (Core.ParamsData.test(ECoreParams::tune))
 	{
 		LPCSTR g_name = "vTuneAPI.dll";
 		Log("Loading DLL:", g_name);

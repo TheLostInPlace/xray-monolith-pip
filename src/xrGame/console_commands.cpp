@@ -2583,7 +2583,7 @@ void CCC_RegisterCommands()
 	/* AVO: changing restriction to -dbg key instead of DEBUG */
 	//#ifndef MASTER_GOLD
 #ifdef MASTER_GOLD
-	if (0 != strstr(Core.Params, "-dbg"))
+	if (0 != Core.ParamsData.test(ECoreParams::dbg))
 	{
 		CMD1(CCC_JumpToLevel, "jump_to_level");
 		CMD3(CCC_Mask, "g_god", &psActorFlags, AF_GODMODE);
@@ -2979,7 +2979,7 @@ void CCC_RegisterCommands()
 	// New zoom delta algorithm
 	CMD4(CCC_Integer, "new_zoom_delta_algorithm", &useNewZoomDeltaAlgorithm, 0, 1);
 
-	if (strstr(Core.Params, "-dbgdev"))
+	if (Core.ParamsData.test(ECoreParams::dbgdev))
 		CMD4(CCC_Float, "g_streff", &streff, -10.f, 10.f);
 	//No need for server commands in a singleplayer-only mod
 	//register_mp_console_commands();

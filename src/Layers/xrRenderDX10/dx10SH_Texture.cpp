@@ -370,7 +370,7 @@ void CTexture::apply_normal(u32 dwStage)
 
 void CTexture::Preload()
 {
-	if (!strstr(Core.Params, "-r4_dev"))
+	if (!Core.ParamsData.test(ECoreParams::r4_dev))
 	{
 	m_bumpmap = DEV->m_textures_description.GetBumpName(cName);
 	}

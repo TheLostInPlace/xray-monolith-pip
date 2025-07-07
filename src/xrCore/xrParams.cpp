@@ -7,6 +7,8 @@ template <>
 struct magic_enum::customize::enum_range<ECoreParams> 
 {
 	static constexpr bool is_flags = true;
+	static constexpr int min = (const int)ECoreParams::ECOREPARAMSMIN;
+	static constexpr int max = (const int)ECoreParams::size-1;
 };
 
 void xrParams::LoadParams()
@@ -21,11 +23,9 @@ void xrParams::LoadParams()
 
 		Command = Command.substr(1);
 
-		auto EnumData = magic_enum::enum_cast<ECoreParams>(Command);
-
-		if (EnumData.has_value())
+		if (auto EnumData = magic_enum::enum_cast<ECoreParams>(Command))
 		{
-			Core.ParamsData.set((u64)EnumData.value(), true);
+			Core.ParamsData.set(EnumData.value(), true);
 		}
 	}
 }

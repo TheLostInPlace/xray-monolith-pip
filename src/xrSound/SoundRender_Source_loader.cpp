@@ -138,7 +138,7 @@ bool CSoundRender_Source::LoadWave(LPCSTR pName)
 		}
 		else
 		{
-			if (strstr(Core.Params, "-dbg"))
+			if (Core.ParamsData.test(ECoreParams::dbg))
 			{
 				Log("! Invalid ogg-comment version, file: ", pName);
 			}
@@ -146,7 +146,7 @@ bool CSoundRender_Source::LoadWave(LPCSTR pName)
 	}
 	else
 	{
-		if (strstr(Core.Params, "-dbg"))
+		if (Core.ParamsData.test(ECoreParams::dbg))
 		{
 			Log("! Missing ogg-comment, file: ", pName);
 		}

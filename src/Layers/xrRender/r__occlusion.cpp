@@ -15,7 +15,7 @@ R_occlusion::~R_occlusion(void)
 
 void R_occlusion::occq_create(u32 limit)
 {
-	enabled = Core.ParamsData.test(ECoreParams::no_occq);
+	enabled = !Core.ParamsData.test(ECoreParams::no_occq);
 	pool.reserve(limit);
 	used.reserve(limit);
 	fids.reserve(limit);

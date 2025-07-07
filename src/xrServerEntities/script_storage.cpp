@@ -345,7 +345,7 @@ void CScriptStorage::reinit()
 
 #ifndef USE_LUAJIT_ONE
 	luaL_openlibs(lua());
-	if (strstr(Core.Params, "-nojit"))
+	if (Core.ParamsData.test(ECoreParams::nojit))
 		luaJIT_setmode(lua(), 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF);
 #else // USE_LUAJIT_ONE
     // initialize lua standard library functions
@@ -371,11 +371,11 @@ void CScriptStorage::reinit()
     luajit::open_lib(lua(), LUA_DBLIBNAME, luaopen_debug);
 #else //!DEBUG
 
-    if (strstr(Core.Params, "-dbg"))
+    if (Core.ParamsData.test(ECoreParams::dbg))
         luajit::open_lib(lua(), LUA_DBLIBNAME, luaopen_debug);
 #endif //-DEBUG
 
-    if (!strstr(Core.Params, "-nojit"))
+    if (!Core.ParamsData.test(ECoreParams::nojit))
     {
         luajit::open_lib(lua(), LUA_JITLIBNAME, luaopen_jit);
 #ifndef DEBUG
@@ -390,7 +390,7 @@ void CScriptStorage::reinit()
 	luaopen_lua_extensions(lua());
 	disable_os_funcs(lua());
 
-	if (strstr(Core.Params, "-_g"))
+	if (Core.ParamsData.test(ECoreParams::_g))
 		file_header = file_header_new; //AVO: I get fatal crash at the start if this is used
 	else
 		file_header = file_header_old;
@@ -412,7 +412,7 @@ int CScriptStorage::vscript_log(ScriptStorage::ELuaMessageType tLuaMessageType, 
 	//AVO: allow LUA debug prints (i.e.: ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "CWeapon : cannot access class member Weapon_IsScopeAttached!");)
 #       ifndef DEBUG
 
-	if (!strstr(Core.Params, "-dbg"))
+	if (!Core.ParamsData.test(ECoreParams::dbg))
 		return (0);
 #       endif //!DEBUG
 #       ifndef LUA_DEBUG_PRINT
@@ -686,7 +686,7 @@ bool CScriptStorage::load_buffer(lua_State* L, LPCSTR caBuffer, size_t tSize, LP
 	if (l_iErrorCode)
 	{
 //#ifdef DEBUG
-		if (strstr(Core.Params, "-dbg")) print_output(L,caScriptName,l_iErrorCode);
+		if (Core.ParamsData.test(ECoreParams::dbg)) print_output(L,caScriptName,l_iErrorCode);
 //#endif //-DEBUG
 		on_error(L);
 		return (false);
@@ -949,7 +949,7 @@ bool CScriptStorage::do_file(LPCSTR caScriptName, LPCSTR caNameSpaceName)
 	if (l_iErrorCode)
 	{
 //#ifdef DEBUG
-		if (strstr(Core.Params, "-dbg")) print_output(lua(),caScriptName,l_iErrorCode);
+		if (Core.ParamsData.test(ECoreParams::dbg)) print_output(lua(),caScriptName,l_iErrorCode);
 //#endif
 		on_error(lua());
 		lua_settop(lua(), start);
@@ -1103,7 +1103,7 @@ struct raii_guard : private boost::noncopyable
 #endif //-DEBUG
 		{
 #ifdef DEBUG
-            static bool const break_on_assert	= !!strstr(Core.Params,"-break_on_assert");
+            static bool const break_on_assert	= Core.ParamsData.test(ECoreParams::break_on_assert);
 #else //!DEBUG
 			static bool const break_on_assert = false; //Alundaio: Can't get a proper stack trace with this enabled
 #endif //-DEBUG
