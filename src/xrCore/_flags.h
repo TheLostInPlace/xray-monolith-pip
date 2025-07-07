@@ -1,6 +1,8 @@
 #ifndef __FLAGS_H__
 #define __FLAGS_H__
 
+#include <bitset>
+
 template <class T>
 struct _flags
 {
@@ -101,5 +103,65 @@ typedef _flags<u32> Flags32;
 typedef _flags<u32> flags32;
 typedef _flags<u64> Flags64;
 typedef _flags<u64> flags64;
+
+/* https://m-peko.github.io/craft-cpp/posts/different-ways-to-define-binary-flags/ */
+template <typename EnumT>
+class xr_BitsetFlags {
+	static_assert(std::is_enum_v<EnumT>, "xr_BitsetFlags can only be specialized for enum types");
+
+	using UnderlyingT = typename std::make_unsigned_t<typename std::underlying_type_t<EnumT>>;
+
+public:
+	xr_BitsetFlags& set(EnumT e, bool value = true) noexcept {
+		bits_.set(underlying(e), value);
+		return *this;
+	}
+
+	xr_BitsetFlags& reset(EnumT e) noexcept {
+		set(e, false);
+		return *this;
+	}
+
+	xr_BitsetFlags& reset() noexcept {
+		bits_.reset();
+		return *this;
+	}
+
+	[[nodiscard]] bool all() const noexcept {
+		return bits_.all();
+	}
+
+	[[nodiscard]] bool any() const noexcept {
+		return bits_.any();
+	}
+
+	[[nodiscard]] bool none() const noexcept {
+		return bits_.none();
+	}
+
+	[[nodiscard]] constexpr std::size_t size() const noexcept {
+		return bits_.size();
+	}
+
+	[[nodiscard]] std::size_t count() const noexcept {
+		return bits_.count();
+	}
+
+	constexpr bool operator[](EnumT e) const {
+		return bits_[underlying(e)];
+	}
+
+	constexpr BOOL test(EnumT e) const {
+		return bits_[underlying(e)];
+	}
+
+private:
+	static constexpr UnderlyingT underlying(EnumT e) {
+		return static_cast<UnderlyingT>(e);
+	}
+
+private:
+	std::bitset<underlying(EnumT::size)> bits_;
+};
 
 #endif //__FLAGS_H__
