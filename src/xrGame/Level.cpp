@@ -217,7 +217,7 @@ CLevel::CLevel() :
 , DemoCS(MUTEX_PROFILE_ID(DemoCS))
 #endif
 {
-	g_bDebugEvents = strstr(Core.Params, "-debug_ge") != nullptr;
+	g_bDebugEvents = Core.ParamsData.test(ECoreParams::debug_ge);
 	game_events = xr_new<NET_Queue_Event>();
 
 	eChangeRP = Engine.Event.Handler_Attach("LEVEL:ChangeRP", this);
