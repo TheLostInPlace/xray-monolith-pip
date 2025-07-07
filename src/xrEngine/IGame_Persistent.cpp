@@ -169,7 +169,7 @@ void IGame_Persistent::OnGameStart()
 #ifndef _EDITOR
 	// LoadTitle("st_prefetching_objects");
 	LoadTitle();
-	if (!strstr(Core.Params, "-noprefetch"))
+	if (!Core.ParamsData.test(ECoreParams::noprefetch))
 		Prefetch();
 #endif
 }

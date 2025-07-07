@@ -332,7 +332,7 @@ void CEngineAPI::CreateRendererList()
 	LPCSTR r3_name = "xrRender_R3.dll";
 	LPCSTR r4_name = "xrRender_R4.dll";
 
-	if (strstr(Core.Params, "-perfhud_hack"))
+	if (Core.ParamsData.test(ECoreParams::perfhud_hack))
 	{
 		bSupports_r2 = true;
 		bSupports_r2_5 = true;
