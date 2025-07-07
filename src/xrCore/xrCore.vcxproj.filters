@@ -291,6 +291,7 @@
     <ClCompile Include="DateTime.cpp">
       <Filter>FS</Filter>
     </ClCompile>
+    <ClCompile Include="xrParams.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FTimer.h">
@@ -622,6 +623,7 @@
       <Filter>FS</Filter>
     </ClInclude>
     <ClInclude Include="TimeUtils.h" />
+    <ClInclude Include="xrParams.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="xrCore.rc" />

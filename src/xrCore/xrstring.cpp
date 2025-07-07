@@ -445,7 +445,8 @@ str_container::~str_container()
 #endif
 
 //xr_string class
-xr_vector<xr_string> xr_string::Split(char splitCh) {
+xr_vector<xr_string> xr_string::Split(char splitCh) const
+{
 	xr_vector<xr_string> Result;
 
 	u32 SubStrBeginCursor = 0;
@@ -478,20 +479,8 @@ xr_vector<xr_string> xr_string::Split(char splitCh) {
 	return Result;
 }
 
-xr_string::xr_string()
-	: Super() {
-}
-
 xr_string::xr_string(LPCSTR Str, u32 Size)
-	: Super(Str, Size) {
-}
-
-xr_string::xr_string(const xr_string& other)
-	: Super(other) {
-}
-
-xr_string::xr_string(xr_string&& other) noexcept
-	: Super(other)
+	: Super(Str, Size)
 {
 }
 
@@ -501,25 +490,24 @@ xr_string::xr_string(Super&& other)
 }
 
 xr_string::xr_string(LPCSTR Str)
-	: Super(Str) {
+	: Super(Str)
+{
 }
 
-xr_string& xr_string::operator=(LPCSTR Str) {
+xr_string& xr_string::operator=(LPCSTR Str)
+{
 	Super::operator=(Str);
 	return *this;
 }
 
-xr_string& xr_string::operator=(const xr_string& other) {
+xr_string& xr_string::operator=(const Super& other)
+{
 	Super::operator=(other);
 	return *this;
 }
 
-xr_string& xr_string::operator=(const Super& other) {
-	Super::operator=(other);
-	return *this;
-}
-
-xr_vector<xr_string> xr_string::Split(u32 NumberOfSplits, ...) {
+xr_vector<xr_string> xr_string::Split(u32 NumberOfSplits, ...) const
+{
 	xr_vector<xr_string> intermediateTokens;
 	xr_vector<xr_string> Result;
 
@@ -555,7 +543,9 @@ xr_vector<xr_string> xr_string::Split(u32 NumberOfSplits, ...) {
 	return Result;
 }
 
-xr_string xr_string::RemoveWhitespaces() const {
+
+xr_string xr_string::RemoveWhitespaces() const
+{
 	size_t Size = size();
 	if (Size == 0) return xr_string();
 
@@ -575,16 +565,20 @@ xr_string xr_string::RemoveWhitespaces() const {
 	return Result;
 }
 
-bool xr_string::StartWith(const xr_string& Other) const {
+bool xr_string::StartWith(const xr_string& Other) const
+{
 	return StartWith(Other.data(), Other.size());
 }
 
-bool xr_string::StartWith(LPCSTR Str) const {
+
+bool xr_string::StartWith(LPCSTR Str) const
+{
 	u32 StrLen = xr_strlen(Str);
 	return StartWith(Str, (int)StrLen);
 }
 
-bool xr_string::StartWith(LPCSTR Str, size_t Size) const {
+bool xr_string::StartWith(LPCSTR Str, size_t Size) const
+{
 	size_t OurSize = size();
 
 	//String is greater then our, we can't success
@@ -603,45 +597,45 @@ bool xr_string::StartWith(LPCSTR Str, size_t Size) const {
 	return true;
 }
 
-xr_string xr_string::ToString(int Value) {
+bool xr_string::Contains(const xr_string& SubStr) const
+{
+	return find(SubStr) != npos;
+}
+
+xr_string xr_string::ToString(int Value)
+{
 	string64 buf = { 0 };
 	itoa(Value, &buf[0], 10);
 
 	return xr_string(buf);
 }
 
-xr_string xr_string::ToString(unsigned int Value) {
+xr_string xr_string::ToString(unsigned int Value)
+{
 	string64 buf = { 0 };
 	sprintf(buf, "%u", Value);
 
 	return xr_string(buf);
 }
 
-xr_string xr_string::ToString(float Value) {
+xr_string xr_string::ToString(float Value)
+{
 	string64 buf = { 0 };
 	sprintf(buf, "%f", Value);
 
 	return xr_string(buf);
 }
 
-xr_string xr_string::ToString(double Value) {
+xr_string xr_string::ToString(double Value)
+{
 	string64 buf = { 0 };
 	sprintf(buf, "%f", Value);
 
 	return xr_string(buf);
 }
 
-xr_string xr_string::ToString(const Fvector& Value) {
-	// TODO: Implement proper formatting if needed
-	return xr_string("");
-}
-
-xr_string xr_string::ToString(const Dvector& Value) {
-	// TODO: Implement proper formatting if needed
-	return xr_string("");
-}
-
-xr_string xr_string::Join(xrStringVector::iterator beginIter, xrStringVector::iterator endIter, const char delimeter /*= '\0'*/) {
+xr_string xr_string::Join(xrStringVector::iterator beginIter, xrStringVector::iterator endIter, const char delimeter /*= '\0'*/)
+{
 	xr_string Result;
 	xrStringVector::iterator cursorIter = beginIter;
 
@@ -655,7 +649,7 @@ xr_string xr_string::Join(xrStringVector::iterator beginIter, xrStringVector::it
 		cursorIter++;
 	}
 
-	if (delimeter != '\0' && !Result.empty())
+	if (delimeter != '\0')
 	{
 		Result.erase(Result.end() - 1);
 	}

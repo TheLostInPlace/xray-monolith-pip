@@ -536,6 +536,7 @@
     <ClCompile Include="xrMemory_pso_Fill32.cpp" />
     <ClCompile Include="xrMemory_subst_borland.cpp" />
     <ClCompile Include="xrMemory_subst_msvc.cpp" />
+    <ClCompile Include="xrParams.cpp" />
     <ClCompile Include="xrsharedmem.cpp" />
     <ClCompile Include="xrstring.cpp" />
     <ClCompile Include="xrSyncronize.cpp" />
@@ -634,6 +635,7 @@
     <ClInclude Include="xrMemory_pure.h" />
     <ClInclude Include="xrMemory_subst_borland.h" />
     <ClInclude Include="xrMemory_subst_msvc.h" />
+    <ClInclude Include="xrParams.h" />
     <ClInclude Include="xrPool.h" />
     <ClInclude Include="xrsharedmem.h" />
     <ClInclude Include="xrstring.h" />
