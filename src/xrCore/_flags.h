@@ -115,54 +115,81 @@ class xr_bitsetflags {
 	using UnderlyingT = typename std::make_unsigned_t<typename std::underlying_type_t<EnumT>>;
 
 public:
-	xr_bitsetflags& set(EnumT e, bool value = true) noexcept {
+	IC xr_bitsetflags& set(EnumT e, bool value = true) noexcept {
 		bits_.set(underlying(e), value);
 		return *this;
 	}
 
-	xr_bitsetflags& reset(EnumT e) noexcept {
+	IC xr_bitsetflags& reset(EnumT e) noexcept {
 		set(e, false);
 		return *this;
 	}
 
-	xr_bitsetflags& reset() noexcept {
+	IC xr_bitsetflags& reset() noexcept {
 		bits_.reset();
 		return *this;
 	}
 
-	[[nodiscard]] bool all() const noexcept {
+	[[nodiscard]] IC bool all() const noexcept {
 		return bits_.all();
 	}
 
-	[[nodiscard]] bool any() const noexcept {
+	[[nodiscard]] IC bool any() const noexcept {
 		return bits_.any();
 	}
 
-	[[nodiscard]] bool none() const noexcept {
+	[[nodiscard]] IC bool none() const noexcept {
 		return bits_.none();
 	}
 
-	[[nodiscard]] constexpr std::size_t size() const noexcept {
+	[[nodiscard]] IC constexpr std::size_t size() const noexcept {
 		return enum_size;
 	}
 
-	[[nodiscard]] std::size_t count() const noexcept {
+	[[nodiscard]] IC std::size_t count() const noexcept {
 		return bits_.count();
 	}
 
-	constexpr bool operator[](EnumT e) const {
+	IC constexpr bool operator[](EnumT e) const {
 		return bits_[underlying(e)];
 	}
 
-	constexpr BOOL test(EnumT e) const {
+	IC constexpr BOOL test(EnumT e) const {
 		return !!bits_[underlying(e)];
 	}
 
-	constexpr BOOL test(const std::size_t pos) const {
+	IC constexpr BOOL test(const std::size_t pos) const {
 		return bits_.test(pos);
 	}
 
-	std::map<std::string, bool> getBitsetAsMap() const {
+	IC xr_bitsetflags& zero() noexcept
+	{
+		return reset();
+	}
+
+	IC xr_bitsetflags& set() noexcept
+	{
+		bits_.set();
+		return *this;
+	}
+
+	IC xr_bitsetflags& one() noexcept
+	{
+		return set();
+	}
+
+	IC xr_bitsetflags& flip() noexcept
+	{
+		bits_.flip();
+		return *this;
+	}
+
+	IC xr_bitsetflags& invert() noexcept
+	{
+		return flip();
+	}
+
+	IC std::map<std::string, bool> getBitsetAsMap() const {
 		std::map<std::string, bool> result;
 		for (std::size_t pos = 0; pos < enum_size; pos++)
 		{

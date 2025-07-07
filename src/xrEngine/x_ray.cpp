@@ -1080,11 +1080,11 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
 		ignore_verify = !Core.ParamsData.test(ECoreParams::dbgdev);
 
 		Msg("command line %s", Core.Params);
-		Msg("params: ");
+		/*Msg("params: ");
 		for (const auto& v: Core.ParamsData.getBitsetAsMap())
 		{
 			Msg("%s: %s", v.first.c_str(), v.second ? "true" : "false");
-		}
+		}*/
 
 		LPCSTR sashName = "-openautomate ";
 		if (strstr(lpCmdLine, sashName))
