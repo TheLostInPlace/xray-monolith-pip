@@ -121,7 +121,7 @@ void xrCore::_initialize(LPCSTR _ApplicationName, xrLogger::LogCallback cb, BOOL
 		}
 		cmdlineTxt.close();
 
-		LoadParams();
+		xrParams::LoadParams();
 	}
 	if (init_fs)
 	{

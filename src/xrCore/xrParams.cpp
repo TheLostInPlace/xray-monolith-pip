@@ -9,7 +9,7 @@ struct magic_enum::customize::enum_range<ECoreParams>
 	static constexpr bool is_flags = true;
 };
 
-void LoadParams()
+void xrParams::LoadParams()
 {
 	xr_string CommandLine = Core.Params;
 	auto CommandList = CommandLine.Split(' ');

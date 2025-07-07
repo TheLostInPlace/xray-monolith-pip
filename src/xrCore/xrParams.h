@@ -41,4 +41,6 @@ enum ECoreParams
 	renderdoc = 1<<27,
 };
 
-void LoadParams();
+namespace xrParams {
+	void LoadParams();
+}
