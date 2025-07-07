@@ -107,6 +107,7 @@ typedef _flags<u32> flags32;
 typedef _flags<u64> Flags64;
 typedef _flags<u64> flags64;
 
+// demonized: bitset flags for flag enums with more than 64 possible values
 /* https://m-peko.github.io/craft-cpp/posts/different-ways-to-define-binary-flags/ */
 template <typename EnumT>
 class xr_bitsetflags {
