@@ -283,7 +283,8 @@ void CRender::create()
 			(D3DFORMAT MAKEFOURCC('R', 'A', 'W', 'Z'))));
 	}
 
-	if (strstr(Core.Params, "-nonvs")) o.nvstencil = FALSE;
+	if (Core.ParamsData.test(ECoreParams::nonvs))
+		o.nvstencil = FALSE;
 
 	// nv-dbt
 	o.nvdbt = HW.support((D3DFORMAT)MAKEFOURCC('N', 'V', 'D', 'B'), D3DRTYPE_SURFACE, 0);
@@ -318,12 +319,12 @@ void CRender::create()
 	o.advancedpp = r2_advanced_pp;
 	o.sjitter = (strstr(Core.Params, "-sjitter")) ? TRUE : FALSE;
 	o.depth16 = (strstr(Core.Params, "-depth16")) ? TRUE : FALSE;
-	o.noshadows = (strstr(Core.Params, "-noshadows")) ? TRUE : FALSE;
-	o.Tshadows = (strstr(Core.Params, "-tsh")) ? TRUE : FALSE;
-	o.distortion_enabled = (strstr(Core.Params, "-nodistort")) ? FALSE : TRUE;
+	o.noshadows = Core.ParamsData.test(ECoreParams::noshadows);
+	o.Tshadows = Core.ParamsData.test(ECoreParams::tsh);
+	o.distortion_enabled = !Core.ParamsData.test(ECoreParams::nodistort);
 	o.distortion = o.distortion_enabled;
-	o.disasm = (strstr(Core.Params, "-disasm")) ? TRUE : FALSE;
-	o.forceskinw = (strstr(Core.Params, "-skinw")) ? TRUE : FALSE;
+	o.disasm = Core.ParamsData.test(ECoreParams::disasm);
+	o.forceskinw = Core.ParamsData.test(ECoreParams::skinw);
 
 	o.ssao_blur_on = ps_r2_ls_flags_ext.test(R2FLAGEXT_SSAO_BLUR) && ps_r_ssao != 0;
 	o.ssao_opt_data = ps_r2_ls_flags_ext.test(R2FLAGEXT_SSAO_OPT_DATA) && (ps_r_ssao != 0);
