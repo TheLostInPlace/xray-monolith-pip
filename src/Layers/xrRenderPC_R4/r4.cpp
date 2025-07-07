@@ -327,7 +327,8 @@ void CRender::create()
 	// nvstencil on NV40 and up
 	o.nvstencil = FALSE;
 	//if ((HW.Caps.id_vendor==0x10DE)&&(HW.Caps.id_device>=0x40))	o.nvstencil = TRUE;
-	if (strstr(Core.Params, "-nonvs")) o.nvstencil = FALSE;
+	if (Core.ParamsData.test(ECoreParams::nonvs))
+		o.nvstencil = FALSE;
 
 	// nv-dbt
 	//	DX10 disabled
@@ -365,16 +366,15 @@ void CRender::create()
 	o.volumetricfog = ps_r2_ls_flags.test(R3FLAG_VOLUMETRIC_SMOKE);
 	o.sjitter = (strstr(Core.Params, "-sjitter")) ? TRUE : FALSE;
 	o.depth16 = (strstr(Core.Params, "-depth16")) ? TRUE : FALSE;
-	if (strstr(Core.Params, "-noshadows") || strstr(Core.Params, "-r4_dev"))
+	if (Core.ParamsData.test(ECoreParams::noshadows) || strstr(Core.Params, "-r4_dev"))
 		o.noshadows = TRUE;
 	else
 		o.noshadows = FALSE;
-	o.Tshadows = (strstr(Core.Params, "-tsh")) ? TRUE : FALSE;
-
-	o.distortion_enabled = (strstr(Core.Params, "-nodistort")) ? FALSE : TRUE;
+	o.Tshadows = Core.ParamsData.test(ECoreParams::tsh);
+	o.distortion_enabled = !Core.ParamsData.test(ECoreParams::nodistort);
 	o.distortion = o.distortion_enabled;
-	o.disasm = (strstr(Core.Params, "-disasm")) ? TRUE : FALSE;
-	o.forceskinw = (strstr(Core.Params, "-skinw")) ? TRUE : FALSE;
+	o.disasm = Core.ParamsData.test(ECoreParams::disasm);
+	o.forceskinw = Core.ParamsData.test(ECoreParams::skinw);
 
 	o.ssao_blur_on = ps_r2_ls_flags_ext.test(R2FLAGEXT_SSAO_BLUR) && (ps_r_ssao != 0);
 	o.ssao_opt_data = ps_r2_ls_flags_ext.test(R2FLAGEXT_SSAO_OPT_DATA) && (ps_r_ssao != 0);
