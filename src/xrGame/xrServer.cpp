@@ -983,9 +983,8 @@ static	BOOL	_ve_use					= TRUE;
 
 bool xrServer::verify_entities				() const
 {
-	if (!_ve_initialized)	{
-		_ve_initialized					= TRUE;
-		if (strstr(Core.Params,"-~ve"))	_ve_use=FALSE;
+	if (!_ve_initialized) {
+		_ve_initialized = TRUE;
 	}
 	if (!_ve_use)						return true;
 
