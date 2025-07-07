@@ -305,7 +305,7 @@ void CRender::create()
 
 	// gloss
 	char* g = strstr(Core.Params, "-gloss ");
-	o.forcegloss = g ? TRUE : FALSE;
+	o.forcegloss = Core.ParamsData.test(ECoreParams::gloss);
 	if (g)
 	{
 		o.forcegloss_v = float(atoi(g + xr_strlen("-gloss "))) / 255.f;

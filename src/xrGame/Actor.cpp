@@ -120,7 +120,7 @@ CActor::CActor() : CEntityAlive(), current_ik_cam_shift(0)
 
 	//Alundaio -psp always
 	/*
-    if (strstr(Core.Params, "-psp"))
+    if (Core.ParamsData.test(ECoreParams::psp))
         psActorFlags.set(AF_PSP, TRUE);
     else
         psActorFlags.set(AF_PSP, FALSE);

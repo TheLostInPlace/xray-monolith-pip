@@ -1804,7 +1804,7 @@ public:
 		float time_factor = (float)atof(args);
 		clamp(time_factor, EPS, 1000.f);
 		Device.time_factor(time_factor);
-		if (!strstr(Core.Params, "-sound_constant_speed"))
+		if (!Core.ParamsData.test(ECoreParams::sound_constant_speed))
 			psSpeedOfSound = time_factor;
 	}
 

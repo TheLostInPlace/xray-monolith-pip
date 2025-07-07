@@ -2,6 +2,9 @@
 #define __FLAGS_H__
 
 #include <bitset>
+#include <map>
+#include <string_view>
+#include "../3rd party/magic_enum/magic_enum.hpp"
 
 template <class T>
 struct _flags
@@ -106,23 +109,23 @@ typedef _flags<u64> flags64;
 
 /* https://m-peko.github.io/craft-cpp/posts/different-ways-to-define-binary-flags/ */
 template <typename EnumT>
-class xr_BitsetFlags {
-	static_assert(std::is_enum_v<EnumT>, "xr_BitsetFlags can only be specialized for enum types");
+class xr_bitsetflags {
+	static_assert(std::is_enum_v<EnumT>, "xr_bitsetflags can only be specialized for enum types");
 
 	using UnderlyingT = typename std::make_unsigned_t<typename std::underlying_type_t<EnumT>>;
 
 public:
-	xr_BitsetFlags& set(EnumT e, bool value = true) noexcept {
+	xr_bitsetflags& set(EnumT e, bool value = true) noexcept {
 		bits_.set(underlying(e), value);
 		return *this;
 	}
 
-	xr_BitsetFlags& reset(EnumT e) noexcept {
+	xr_bitsetflags& reset(EnumT e) noexcept {
 		set(e, false);
 		return *this;
 	}
 
-	xr_BitsetFlags& reset() noexcept {
+	xr_bitsetflags& reset() noexcept {
 		bits_.reset();
 		return *this;
 	}
@@ -140,7 +143,7 @@ public:
 	}
 
 	[[nodiscard]] constexpr std::size_t size() const noexcept {
-		return bits_.size();
+		return enum_size;
 	}
 
 	[[nodiscard]] std::size_t count() const noexcept {
@@ -152,7 +155,23 @@ public:
 	}
 
 	constexpr BOOL test(EnumT e) const {
-		return bits_[underlying(e)];
+		return !!bits_[underlying(e)];
+	}
+
+	constexpr BOOL test(const std::size_t pos) const {
+		return bits_.test(pos);
+	}
+
+	std::map<std::string, bool> getBitsetAsMap() const {
+		std::map<std::string, bool> result;
+		for (std::size_t pos = 0; pos < enum_size; pos++)
+		{
+			EnumT value = magic_enum::enum_value<EnumT>(pos);
+			std::string_view name = magic_enum::enum_name(value);
+			BOOL r = test(pos);
+			result.emplace(name, r);
+		}
+		return result;
 	}
 
 private:
@@ -161,7 +180,9 @@ private:
 	}
 
 private:
-	std::bitset<underlying(EnumT::size)> bits_;
+	// Use magic_enum to get the enum size at compile time
+	static constexpr std::size_t enum_size = magic_enum::enum_count<EnumT>();
+	std::bitset<enum_size> bits_;
 };
 
 #endif //__FLAGS_H__

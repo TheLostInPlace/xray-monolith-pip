@@ -41,8 +41,6 @@ IDirect3DStateBlock9*	dwDebugSB = 0;
 #endif
 */
 
-LPCSTR dxgiOld = "--dxgi-old";
-
 CHW::CHW() :
     //	hD3D(NULL),
 	//pD3D(NULL),
@@ -452,7 +450,7 @@ void CHW::CreateDevice(HWND hwnd, bool move_window)
     };
 
     UINT create_device_flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-    if (strstr(Core.Params, "--dxgi-dbg")) {
+    if (Core.ParamsData.test(ECoreParams::dxgi_dbg)) {
         // enables d3d11 debug layer validation and output
         // viewable in VS debugger `Output > Debug` view or using a tool like Sysinternals DebugView
         create_device_flags |= D3D11_CREATE_DEVICE_DEBUG;
@@ -583,8 +581,8 @@ void CHW::CreateDevice(HWND hwnd, bool move_window)
     // probably the sequence ResizeTarget, ResizeBuffers, and UpdateViews is important
     
     // u32	memory									= pDevice->GetAvailableTextureMem	();
-    if (strstr(Core.Params, dxgiOld)) {
-        Msg("* %s enabled", dxgiOld);
+    if (Core.ParamsData.test(ECoreParams::dxgi_old)) {
+        Msg("* %s enabled", "dxgi-old");
         UpdateViews();
         size_t memory = Desc.DedicatedVideoMemory;
         Msg("*     Texture memory: %d M", memory / (1024 * 1024));
@@ -636,7 +634,7 @@ void CHW::DestroyDevice()
     if (!is_windowed) {
         m_pSwapChain->SetFullscreenState(FALSE, NULL);
 
-        if (strstr(Core.Params, dxgiOld)) {
+        if (Core.ParamsData.test(ECoreParams::dxgi_old)) {
 #ifdef USE_DX11
             const auto& cd = m_ChainDesc;
             CHK_DX(m_pSwapChain->ResizeBuffers(
@@ -915,7 +913,7 @@ DXGI_RATIONAL CHW::selectRefresh(u32 dwWidth, u32 dwHeight, DXGI_FORMAT fmt)
 
     float CurrentFreq = 60.0f;
 
-	if (psDeviceFlags.is(rsRefresh60hz) || strstr(Core.Params, "-60hz"))
+	if (psDeviceFlags.is(rsRefresh60hz) || Core.ParamsData.test(ECoreParams::_60hz))
 	{
         refresh_rate = 1.f / 60.f;
         return res;
@@ -985,7 +983,7 @@ void CHW::OnAppActivate()
         m_pSwapChain->SetFullscreenState(TRUE, NULL);
 
 #ifdef USE_DX11
-        if (!strstr(Core.Params, dxgiOld)) {
+        if (!Core.ParamsData.test(ECoreParams::dxgi_old)) {
             _SHOW_REF("refCount:pBaseZB", pBaseZB);
             _RELEASE(pBaseZB);
 
@@ -1031,7 +1029,7 @@ void CHW::OnAppDeactivate()
         m_pSwapChain->SetFullscreenState(FALSE, NULL);
 
 #ifdef USE_DX11
-        if (!strstr(Core.Params, dxgiOld)) {
+        if (!Core.ParamsData.test(ECoreParams::dxgi_old)) {
             _SHOW_REF("refCount:pBaseZB", pBaseZB);
             _RELEASE(pBaseZB);
 

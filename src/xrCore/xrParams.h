@@ -3,7 +3,6 @@
 enum class ECoreParams : u8
 {
 	// Core
-	ECOREPARAMSMIN = 0,
 	auto_load_arch,
 	overlaypath,
 	nolog,
@@ -83,8 +82,17 @@ enum class ECoreParams : u8
 	break_on_assert,
 	prefetch_sounds,
 	keep_lua,
-
-	size,
+	_60hz,
+	dxgi_old,
+	dxgi_dbg,
+	gloss,
+	start,
+	load,
+	psp,
+	ignore_save_incompatibility,
+	sound_constant_speed,
+	savescreenshots,
+	lua_studio
 };
 
 namespace xrParams {

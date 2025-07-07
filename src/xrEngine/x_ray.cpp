@@ -581,11 +581,11 @@ void Startup()
 	// ...command line for auto start
 	{
 		LPCSTR pStartup = strstr(Core.Params, "-start ");
-		if (pStartup) Console->Execute(pStartup + 1);
+		if (Core.ParamsData.test(ECoreParams::start)) Console->Execute(pStartup + 1);
 	}
 	{
 		LPCSTR pStartup = strstr(Core.Params, "-load ");
-		if (pStartup) Console->Execute(pStartup + 1);
+		if (Core.ParamsData.test(ECoreParams::load)) Console->Execute(pStartup + 1);
 	}
 
 	// Initialize APP
@@ -1080,6 +1080,12 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
 		ignore_verify = !Core.ParamsData.test(ECoreParams::dbgdev);
 
 		Msg("command line %s", Core.Params);
+		Msg("params: ");
+		for (const auto& v: Core.ParamsData.getBitsetAsMap())
+		{
+			Msg("%s: %s", v.first.c_str(), v.second ? "true" : "false");
+		}
+
 		LPCSTR sashName = "-openautomate ";
 		if (strstr(lpCmdLine, sashName))
 		{
