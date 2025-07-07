@@ -305,6 +305,7 @@ DEFINE_VECTOR(xr_rtoken, RTokenVec, RTokenVecIt);
 #include "intrusive_ptr.h"
 
 #include "net_utils.h"
+#include "xrParams.h"
 
 #include "_thread_types.h"
 
@@ -332,6 +333,7 @@ public:
 	string64 UserName;
 	string64 CompName;
 	char* Params;
+	Flags64 ParamsData;
 	DWORD dwFrame;
 	bool april1;
 

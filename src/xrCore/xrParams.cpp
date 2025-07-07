@@ -23,9 +23,9 @@ void LoadParams()
 
 		auto EnumData = magic_enum::enum_cast<ECoreParams>(Command);
 
-		/*if (EnumData.has_value())
+		if (EnumData.has_value())
 		{
 			Core.ParamsData.set((u64)EnumData.value(), true);
-		}*/
+		}
 	}
 }
