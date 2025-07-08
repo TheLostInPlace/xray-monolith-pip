@@ -104,7 +104,11 @@ void CPhysicsShellAnimator::OnFrame()
 		dQfromR(target_obj_quat_dQuaternionS, ph_mat);
 		Fvector mc;
 		i->m_element->CPHGeometryOwner::get_mc_vs_transform(mc, target_obj_posFmatrixS);
-		dJointSetFixedQuaternionPos(i->m_anim_fixed_dJointID, target_obj_quat_dQuaternionS, &mc.x);
+
+		Fvector4 ODEVect;
+		ODEVect.set(mc.x, mc.y, mc.z);
+
+		dJointSetFixedQuaternionPos(i->m_anim_fixed_dJointID, target_obj_quat_dQuaternionS, &ODEVect.x);
 	}
 	//(*(m_pPhysicsShell->Elements().begin()))->PhysicsRefObject()->XFORM().set(m_pPhysicsShell->mXFORM);
 }
