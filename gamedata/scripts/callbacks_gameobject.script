@@ -134,6 +134,28 @@ end
 -- 	end)
 -- end
 
+-- HUD item callbacks
+
+-- Near-wall transform callback
+-- Intercepts the transforms applied to the HUD when near a wall
+-- Receives the following table:
+-- {
+--   target: int
+--   offset: float
+--   direction: vector
+--   matrix: matrix
+--   override: bool
+-- }
+-- `target` corresponds to the Weapon and Camera variants of ETraceTarget in lua_help_ex.script
+-- `offset` is the signed distance from the barrel to the wall
+-- `direction` is the vector along which the offset is applied
+-- `matrix` is the mutable offset transform
+-- `override` is a mutable flag for suppressing the built-in position offset
+AddScriptCallback("actor_hud_on_nearwall")
+_G.CActorHudOnNearWall = function(arg)
+	SendScriptCallback("actor_hud_on_nearwall", arg)
+end
+
 -- Mouse callbacks
 -- Scroll wheel callback, sends mouse wheel direction as a number
 -- 1 is up, 0 is down
@@ -215,9 +237,9 @@ end
 
 -- On receive game news callback
 AddScriptCallback("on_news_received")
-_G.CUIMessagesWindow__AddIconedPdaMessage = function(UIWindow, UITimeText, UICaptionText, UIMsgText, UIIconStatic)
+_G.CUIMessagesWindow__AddIconedPdaMessage = function(UIMessageView, UITimeText, UICaptionText, UIMsgText, UIIconStatic, UIMessagesScrollView)
 	local tags = {}
-	SendScriptCallback("on_news_received", UIWindow, UITimeText, UICaptionText, UIMsgText, UIIconStatic, tags)
+	SendScriptCallback("on_news_received", UIMessageView, UITimeText, UICaptionText, UIMsgText, UIIconStatic, UIMessagesScrollView, tags)
 end
 
 -- NPC on item before pickup callback
@@ -226,6 +248,42 @@ _G.CAI_Stalker__OnBeforeOwnershipTake = function(npc, item)
 	local flags = { ret_value = true }
 	SendScriptCallback("npc_on_item_before_pickup", npc, item, flags)
 	return flags.ret_value
+end
+
+AddScriptCallback("npc_set_body_state")
+function _G.CAI_Stalker__SetBodyState(npc, state)
+	local flags = {ret_value = state}
+	SendScriptCallback("npc_set_body_state",npc, state, flags)
+	return flags.ret_value
+end
+
+--[[
+GhenTuong:
+Force stalkers to play a body state during combat by changing csbs_flags.body_state.
+world_operator = {
+	stalker_ids.action_get_item_to_kill,
+	stalker_ids.action_make_item_killing,
+	stalker_ids.action_retreat_from_enemy,
+	stalker_ids.action_get_ready_to_kill,
+	stalker_ids.action_take_cover,
+	stalker_ids.action_look_out,
+	stalker_ids.action_hold_position,
+	stalker_ids.action_detour_enemy,
+	stalker_ids.action_hide_from_grenade,
+	stalker_ids.action_sudden_attack,
+	stalker_ids.action_throw_grenade,
+}
+body_state = {
+	move.crouch,
+	move.stand,
+}
+--]]
+local csbs_flags = {}
+AddScriptCallback("npc_on_combat_set_body_state")
+function _G.CAI_Stalker__CombatSetBodyState(npc,world_operator,body_state)
+	csbs_flags.body_state = body_state
+	SendScriptCallback("npc_on_combat_set_body_state",npc,world_operator,body_state,csbs_flags)
+	return csbs_flags.body_state
 end
 
 -- actor_on_task_callback
@@ -344,6 +402,21 @@ _G.COnBeforePlayHudSound = function(alias, parent)
 	end
 end
 
+-- NLTP_ASHES & demonized : Actor on death callback
+AddScriptCallback("actor_on_death")
+
+function actor_on_first_update()
+	db.actor:set_callback(callback.death, function()
+		SendScriptCallback("actor_on_death")
+	end)
+end
+
+-- ImGui callback (can be used to inject your own tabs into the menu bar and for drawing your UIs)
+AddScriptCallback("imgui_on_render")
+function on_imgui_render(name)
+	SendScriptCallback("imgui_on_render", name)
+end
+
 -- Improve NPCs pathfinding by reducing actual anomaly damage radius
 -- Works only when npc:get_enable_anomalies_pathfinding() == true or ai_die_in_anomalies cvar is 1
 function is_outside_damage_radius(zone, obj)
@@ -384,6 +457,7 @@ function ActorMenu_on_item_after_move(npc_id, obj, mode, bag_from)
 end
 
 function on_game_start()
+	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
 	RegisterScriptCallback("ActorMenu_on_item_after_move", ActorMenu_on_item_after_move)
 	RegisterScriptCallback("anomaly_on_before_activate", anomaly_on_before_activate)
 	RegisterScriptCallback("game_object_on_net_spawn", game_object_on_net_spawn)

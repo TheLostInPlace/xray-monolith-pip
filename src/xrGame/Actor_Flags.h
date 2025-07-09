@@ -22,7 +22,10 @@ enum
 	AF_SIMPLE_PDA = (1 << 18),
 	AF_AIM_TOGGLE = (1 << 19),
 	AF_3D_PDA = (1 << 20),
-	AF_FIREPOS_ZOOM =(1 << 21),
+	AF_FIREPOS_ZOOM = (1 << 21),
+	AF_FIREDIR_THIRD_PERSON = (1 << 22),
+	AF_AIMPOS = (1 << 23),
+	AF_AIMPOS_ZOOM = (1 << 24),
 };
 
 extern Flags32 psActorFlags;

@@ -23,6 +23,8 @@
 #include "HUDManager.h"
 
 ENGINE_API extern float psHUD_FOV_def;
+int g_nearwall = NW_FOV;
+int g_nearwall_trace = NT_CAM;
 
 CHudItem::CHudItem()
 {
@@ -38,7 +40,7 @@ CHudItem::CHudItem()
 	m_fLR_InertiaFactor = 0.f;
 	m_fUD_InertiaFactor = 0.f;
 
-	m_nearwall_last_hud_fov = psHUD_FOV_def;
+	m_nearwall_factor = 0.f;
 	m_lastState = eHidden;
 
 	script_ui = nullptr;
@@ -480,6 +482,62 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
 	trans.mulB_43(hud_rotation);
 }
 
+float CHudItem::GetNearWallRange()
+{
+	return m_nearwall_dist_max - m_nearwall_dist_min;
+}
+
+static float lerp(float a, float b, float t)
+{
+	clamp(t, 0.f, 1.f);
+	return a * (1 - t) + b * t;
+}
+
+float CHudItem::GetTargetHudFov()
+{
+	float target_fov = GetBaseHudFov();
+	if (g_nearwall == NW_FOV)
+		target_fov -= m_nearwall_target_hud_fov * m_nearwall_factor;
+	return target_fov;
+}
+
+float CHudItem::GetTargetNearWallOffset()
+{
+	if (g_nearwall_trace == NT_CAM)
+	{
+		return m_nearwall_factor * GetNearWallRange() * GetBaseHudFov();
+	}
+	else if (g_nearwall_trace == NT_ITEM)
+	{
+		return m_nearwall_factor * GetBaseHudFov();
+	}
+
+	return 0.f;
+}
+
+void CHudItem::UpdateNearWall()
+{
+	if (g_nearwall && ParentIsActor() && Level().CurrentViewEntity() == object().H_Parent())
+	{
+		if (g_nearwall_trace == NT_CAM)
+		{
+			// Use the HUD trace, and lerp between min and max distances
+			collide::rq_result& rq = HUD().GetRQ();
+
+			float dist = rq.range;
+			clamp(dist, m_nearwall_dist_min, m_nearwall_dist_max);
+			m_nearwall_factor = 1 - ((dist - m_nearwall_dist_min) / GetNearWallRange());
+		}
+		else if (g_nearwall_trace == NT_ITEM)
+		{
+			// Take the item's trace range and invert it, as negative ranges encode penetration distance
+			collide::rq_result& rq = GetRQ();
+			m_nearwall_factor = -rq.range;
+			clamp(m_nearwall_factor, 0.f, m_nearwall_factor);
+		}
+	}
+}
+
 void CHudItem::UpdateCL()
 {
 	if (m_current_motion_def)
@@ -546,7 +604,7 @@ void CHudItem::OnH_B_Independent(bool just_before_destroy)
 {
 	m_sounds.StopAllSounds();
 	UpdateXForm();
-	m_nearwall_last_hud_fov = psHUD_FOV_def;
+	m_nearwall_factor = 0.f;
 
 	// next code was commented
 	/*
@@ -926,30 +984,218 @@ bool CHudItem::ParentIsActor()
 	return !!EA->cast_actor();
 }
 
-collide::rq_result& CHudItem::GetRQ()
-{ 
-	return HUD().GetCurrentRayQuery(); 
+void CHudItem::ApplyAimModifiers(Fmatrix& matrix)
+{
+	// Fetch actor
+	const CActor* pActor = Actor();
+
+	// Fetch HUD pick
+	const SPickParam& hud_pick = HUD().GetPick();
+
+	// If firepos is disabled, use the eye position
+	bool firepos = HUD().FireposActive();
+	if (!firepos)
+	{
+		if (pActor->HUDview())
+		{
+			// If we're in first-person, use the HUD pick start position
+			matrix.c = hud_pick.defs.start;
+		}
+		else
+		{
+			// If we're in third-person, project the actor position onto the HUD pick vector
+			matrix.c = Fvector().mad(hud_pick.defs.start, hud_pick.defs.dir, Fvector().sub(pActor->Position(), hud_pick.defs.start).dotproduct(hud_pick.defs.dir));
+		}
+	}
+
+	// If aim position is disabled...
+	bool aimpos = HUD().AimposActive();
+	if (!aimpos)
+	{
+		// Cache position
+		Fvector pos = matrix.c;
+
+		// Aim toward the hud pick's endpoint
+		Fvector target = Fvector().mad(
+			hud_pick.defs.start,
+			hud_pick.defs.dir,
+			hud_pick.defs.range
+		);
+		Fvector delta = Fvector().sub(target, pos).normalize();
+
+		float h, p, b;
+		delta.getHP(h, p);
+		float _h, _p;
+		Device.mInvView.getHPB(_h, _p, b);
+
+		// Account for freelook offset
+		if (pActor && pActor->cam_freelook != eflDisabled)
+		{
+			float cam_h, cam_p, cam_b;
+			Device.mView.getHPB(cam_h, cam_p, cam_b);
+
+			float pc = p;
+			clamp(pc, 0.f, pc);
+
+			h -= angle_normalize_signed(pActor->old_torso_yaw) - cam_h;
+			p -= pc;
+		}
+
+		// Apply rotation
+		matrix.setHPB(h, p, b);
+
+		// Restore position
+		matrix.c = pos;
+	}
+}
+
+Fmatrix CHudItem::RayTransform()
+{
+	const attachable_hud_item* hi = HudItemData();
+	Fmatrix matrix = hi->m_item_transform;
+	matrix.mulB_43(hi->m_model->LL_GetTransform(0));
+
+	ApplyAimModifiers(matrix);
+
+	return matrix;
+}
+
+void CHudItem::Ray(SPickParam& pp)
+{
+	const CActor* pActor = Actor();
+	if (!pActor)
+		return;
+
+	pp.InitPick();
+
+	// Fetch transform, root bone matrix
+	Fmatrix matrix = RayTransform();
+	pp.barrel_matrix = matrix;
+
+	// If we're in first-person...
+	if (GetHUDmode())
+	{
+		// Build HUD projection without near-wall FOV offset for stability
+		Fmatrix proj = Fmatrix().build_projection(
+			deg2rad(GetBaseHudFov() * 83.f),
+			Device.fASPECT,
+			R_VIEWPORT_NEAR,
+			g_pGamePersistent->Environment().CurrentEnv->far_plane
+		);
+
+		// Transform from non-offset HUD space to world space
+		Device.hud_to_world(matrix, proj);
+	}
+
+	// Detect wall penetration
+	Fvector eye_pos;
+
+	// Start by choosing an eye position
+	if (!GetHUDmode() && HUD().FireposActive())
+	{
+		// If we're in third-person with firepos active, use the actor's head bone
+		eye_pos = pActor->XFORM().c;
+		auto model = pActor->Visual()->dcast_PKinematics();
+		eye_pos.add(model->LL_GetTransform(model->LL_BoneID("bip01_head")).c);
+	}
+	else
+	{
+		// Otherwise, use the camera
+		eye_pos = Device.vCameraPosition;
+	}
+
+	// Trace from eye -> barrel
+	SPickParam pn = SPickParam(CDB::OPT_CULL | CDB::OPT_ONLYFIRST);
+	pn.defs.start = eye_pos;
+	pn.defs.dir = Fvector3().sub(matrix.c, eye_pos);
+	pn.defs.range = pn.defs.dir.magnitude();
+	VERIFY(!fis_zero(pn.defs.range));
+	pn.defs.dir.normalize();
+	pp.barrel_dist = pn.defs.range;
+
+	// If the eye -> barrel vector is obstructed...
+	if (HUD().DoPick(pn))
+	{
+		pp.barrel_blocked = true;
+
+		// If we're in first person...
+		if (GetHUDmode())
+		{
+			// Use the eye -> barrel trace directly
+			pp.defs.start = pn.defs.start;
+			pp.defs.dir = pn.defs.dir;
+			pp.defs.range = pn.defs.range;
+		}
+		else
+		{
+			// Move to the intersection point
+			pn.defs.start.add(Fvector().mul(pn.defs.dir, pn.result.range * 0.99));
+
+			// Trace to the camera
+			pn.defs.dir = Fvector().sub(Device.vCameraPosition, pn.defs.start);
+			pn.defs.range = pn.defs.dir.magnitude();
+			pn.defs.dir.normalize();
+			HUD().DoPick(pn);
+
+			// Move to the intersection point and trace to the barrel
+			pp.defs.start.add(pn.defs.start, Fvector().mul(pn.defs.dir, pn.result.range * 0.99));
+			pp.defs.dir.sub(matrix.c, pp.defs.start);
+			pp.defs.range = pp.defs.dir.magnitude();
+			pp.defs.dir.normalize();
+			pp.barrel_dist = pp.defs.range;
+		}
+
+		return;
+	}
+
+	// Trace from the resulting transform
+	pp.defs.start = matrix.c;
+	pp.defs.dir = matrix.k;
+}
+
+void CHudItem::UpdatePick()
+{
+	Ray(PP);
+	HUD().DoPick(PP);
+	if (PP.barrel_blocked)
+		PP.result.range -= PP.barrel_dist;
+}
+
+void CHudItem::OnFrame()
+{
+	UpdatePick();
+
+	if (g_nearwall)
+		UpdateNearWall();
+
+	float t = m_nearwall_speed_mod * Device.fTimeDelta;
+
+	float target_fov = GetTargetHudFov();
+	m_hud_fov = lerp(m_hud_fov, target_fov, t);
+
+	float target_ofs = GetTargetNearWallOffset();
+	m_nearwall_ofs = lerp(m_nearwall_ofs, target_ofs, t);
+}
+
+void CHudItem::net_Relcase(CObject* O)
+{
+	if (PP.result.O == O)
+		PP.result.O = NULL;
+}
+
+float CHudItem::GetBaseHudFov()
+{
+	return (m_base_fov ? m_base_fov : psHUD_FOV_def) + m_hud_fov_add_mod;
 }
 
 float CHudItem::GetHudFov()
 {
-	if (ParentIsActor() && Level().CurrentViewEntity() == object().H_Parent())
-	{
-		float dist = GetRQ().range;
+	return m_hud_fov;
+}
 
-		clamp(dist, m_nearwall_dist_min, m_nearwall_dist_max);
-		float fDistanceMod = ((dist - m_nearwall_dist_min) / (m_nearwall_dist_max - m_nearwall_dist_min));
-		// 0.f ... 1.f
-		float fBaseFov = (m_base_fov ? m_base_fov : psHUD_FOV_def) + m_hud_fov_add_mod;
-		clamp(fBaseFov, 0.0f, 1.f);
-		float src = m_nearwall_speed_mod * Device.fTimeDelta;
-		clamp(src, 0.f, 1.f);
-
-		float fTrgFov = m_nearwall_target_hud_fov + fDistanceMod * (fBaseFov - m_nearwall_target_hud_fov);
-		m_nearwall_last_hud_fov = m_nearwall_last_hud_fov * (1 - src) + fTrgFov * src;
-	}
-
-	return m_nearwall_last_hud_fov;
+float CHudItem::GetNearWallOffset()
+{
+	return m_nearwall_ofs;
 }
 
 CAnonHudItem::CAnonHudItem() { }

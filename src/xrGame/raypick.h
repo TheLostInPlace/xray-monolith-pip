@@ -32,10 +32,33 @@ struct script_rq_result
 
 	script_rq_result()
 	{
-		O = 0;
+		O = nullptr;
 		range = 0;
 		element = 0;
 	};
+
+	void reset() {
+		O = nullptr;
+		range = 0;
+		element = 0;
+
+		pMaterialName = nullptr;
+		pMaterialFlags = 0;
+
+		fPHFriction = 0;
+		fPHDamping = 0;
+		fPHSpring = 0;
+		fPHBounceStartVelocity = 0;
+		fPHBouncing = 0;
+		fFlotationFactor = 0;
+		fShootFactor = 0;
+		fShootFactorMP = 0;
+		fBounceDamageFactor = 0;
+		fInjuriousSpeed = 0;
+		fVisTransparencyFactor = 0;
+		fSndOcclusionFactor = 0;
+		fDensityFactor = 0;
+	}
 
 	void set(collide::rq_result& R)
 	{
@@ -82,7 +105,7 @@ struct CRayPick
 	float range;
 	collide::rq_target flags;
 	script_rq_result result;
-	CObject* ignore;
+	xr_vector<CObject*> ignore;
 
 	CRayPick();
 	CRayPick(const Fvector& P, const Fvector& D, float R, collide::rq_target F, CScriptGameObject* I);
@@ -91,7 +114,14 @@ struct CRayPick
 	IC void set_direction(Fvector& D) { direction = D; };
 	IC void set_range(float R) { range = R; };
 	IC void set_flags(collide::rq_target F) { flags = F; };
-	void set_ignore_object(CScriptGameObject* I) { if (I) ignore = smart_cast<CObject*>(&(I->object())); };
+	void set_ignore_object(CScriptGameObject* I) { 
+		if (I) {
+			CObject* obj = smart_cast<CObject*>(&(I->object()));
+			if (obj && std::find(ignore.begin(), ignore.end(), obj) == ignore.end()) {
+				ignore.push_back(obj);
+			}
+		}
+	};
 
 	bool query();
 

@@ -1215,7 +1215,7 @@ void CActor::UpdateCL()
 			// Apply Weapon Data in Shaders
 			g_pGamePersistent->m_pGShaderConstants->hud_params.x = pWeapon->GetZRotatingFactor();
 			g_pGamePersistent->m_pGShaderConstants->hud_params.y = pWeapon->GetSecondVPZoomFactor();
-			g_pGamePersistent->m_pGShaderConstants->hud_params.z = pWeapon->m_nearwall_last_hud_fov;
+			g_pGamePersistent->m_pGShaderConstants->hud_params.z = pWeapon->GetHudFov();
 			g_pGamePersistent->m_pGShaderConstants->hud_params.w = Device.m_SecondViewport.IsSVPFrame();
 
 			g_pGamePersistent->m_pGShaderConstants->hud_fov_params.x = pWeapon->CurrentZoomFactor();
@@ -1227,7 +1227,7 @@ void CActor::UpdateCL()
 		if (Level().CurrentEntity() && this->ID() == Level().CurrentEntity()->ID())
 		{
 			HUD().SetCrosshairDisp(0.f);
-			HUD().ShowCrosshair(false);
+			HUD().ShowCrosshair(psCrosshair_Flags.is(CROSSHAIR_SHOW_ALWAYS));
 
 			// Clearing Weapons Information in Shaders
 			g_pGamePersistent->m_pGShaderConstants->hud_params.set(0.f, 0.f, 0.f, 0.f);
@@ -1837,7 +1837,7 @@ void CActor::shedule_Update(u32 DT)
 		setVisible(TRUE);
 
 	//÷òî àêòåð âèäèò ïåðåä ñîáîé
-	collide::rq_result& RQ = HUD().GetCurrentRayQuery();
+	collide::rq_result& RQ = HUD().GetRQ();
 
 
 	if (!input_external_handler_installed() && RQ.O && RQ.O->getVisible() && RQ.range < 2.0f)
@@ -1932,14 +1932,12 @@ void CActor::RenderCamAttached()
 			Fmatrix cam = Fidentity;
 			Cameras().camera_Matrix(cam);
 
-			xr_map<u16, script_attachment*>::iterator it = GetAttachments()->begin();
-			xr_map<u16, script_attachment*>::iterator it_e = GetAttachments()->end();
-			for (; it != it_e; ++it)
+			for (auto& pair : m_script_attachments)
 			{
-				script_attachment* att = (*it).second;
+				script_attachment* att = pair.second;
 
-				if (att->GetFFlags().test(eSA_CamAttached))
-					att->Render(nullptr, &cam, true);
+				if (att->GetType() == eSA_CamAttached)
+					att->Render(nullptr, &cam);
 			}
 
 			::Render->set_CamAttached(FALSE);

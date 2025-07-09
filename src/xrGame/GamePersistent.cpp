@@ -775,6 +775,17 @@ void CGamePersistent::OnFrame()
 	UpdateDof();
 }
 
+void CGamePersistent::ImGui_OnRender(LPCSTR name)
+{
+	if (!g_pGameLevel || !g_pGameLevel->bReady) return;
+
+	luabind::functor<void> imgui_render;
+	if (ai().script_engine().functor("callbacks_gameobject.on_imgui_render", imgui_render))
+	{
+		imgui_render(name);
+	}
+}
+
 #include "game_sv_single.h"
 #include "xrServer.h"
 #include "UIGameCustom.h"
@@ -982,7 +993,7 @@ void CGamePersistent::UpdateDof()
 	if (m_bPickableDOF)
 	{
 		Fvector pick_dof;
-		pick_dof.y = HUD().GetCurrentRayQuery().range;
+		pick_dof.y = HUD().GetRQ().range;
 		pick_dof.x = pick_dof.y + diff_near;
 		pick_dof.z = pick_dof.y + diff_far;
 		m_dof[0] = pick_dof;

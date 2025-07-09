@@ -91,6 +91,18 @@ Fmatrix CScriptGameObject::Xform(bool bHud)
 	return *xform;
 }
 
+Fbox CScriptGameObject::bounding_box(bool bHud)
+{	
+	if (bHud)
+	{
+		CHudItem* itm = smart_cast<CHudItem*>(&object());
+		if (itm)
+			return itm->HudItemData()->m_model->dcast_RenderVisual()->getVisData().box;
+	}
+
+	return object().BoundingBox();
+}
+
 BIND_FUNCTION10(&object(), CScriptGameObject::Position, CGameObject, Position, Fvector, Fvector());
 BIND_FUNCTION10(&object(), CScriptGameObject::Direction, CGameObject, Direction, Fvector, Fvector());
 BIND_FUNCTION10(&object(), CScriptGameObject::Mass, CPhysicsShellHolder, GetMass, float, float(-1));
@@ -1049,22 +1061,32 @@ void CScriptGameObject::StartUpgrade(CScriptGameObject* obj)
 		pGameSP->StartUpgrade(pActorInv, pOtherOwner);
 }
 
-script_attachment* CScriptGameObject::AddAttachment(u16 slot, LPCSTR model_name)
+script_attachment* CScriptGameObject::AddAttachment(LPCSTR name, LPCSTR model_name)
 {
-	script_attachment* att = xr_new<script_attachment>(slot, model_name);
+	script_attachment* att = xr_new<script_attachment>(name, model_name);
 	R_ASSERT(att);
 	att->SetParent(&object());
 	return att;
 }
 
-script_attachment* CScriptGameObject::GetAttachment(u16 slot)
+script_attachment* CScriptGameObject::GetAttachment(LPCSTR name)
 {
-	return object().get_attachment(slot);
+	return object().get_attachment(name);
 }
 
-void CScriptGameObject::RemoveAttachment(u16 slot)
+void CScriptGameObject::RemoveAttachment(LPCSTR name)
 {
-	object().remove_attachment(slot, true);
+	object().remove_attachment(name);
+}
+
+void CScriptGameObject::RemoveAttachment(script_attachment* child)
+{
+	object().remove_attachment(child);
+}
+
+void CScriptGameObject::IterateAttachments(::luabind::functor<bool> functor)
+{
+	object().iterate_attachments(functor);
 }
 
 CGameObject& CScriptGameObject::object() const

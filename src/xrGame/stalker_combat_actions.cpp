@@ -115,9 +115,15 @@ void CStalkerActionGetItemToKill::execute()
 	object().movement().set_desired_direction(0);
 	object().movement().set_path_type(MovementManager::ePathTypeLevelPath);
 	object().movement().set_detail_path_type(DetailPathManager::eDetailPathTypeSmooth);
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+	EWorldOperators wo = eWorldOperatorGetItemToKill;
+	EBodyState body_state = (object().movement().body_state() == eBodyStateCrouch) ? eBodyStateCrouch : eBodyStateStand;
+	object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 	object().movement().set_body_state(object().movement().body_state() == eBodyStateCrouch
 		                                   ? eBodyStateCrouch
 		                                   : eBodyStateStand);
+#endif
 	object().movement().set_movement_type(eMovementTypeWalk);
 	object().set_goal(eObjectActionIdle);
 }
@@ -178,7 +184,13 @@ void CStalkerActionMakeItemKilling::execute()
 	object().movement().set_desired_direction(0);
 	object().movement().set_path_type(MovementManager::ePathTypeLevelPath);
 	object().movement().set_detail_path_type(DetailPathManager::eDetailPathTypeSmooth);
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+	EWorldOperators wo = eWorldOperatorMakeItemKilling;
+	EBodyState body_state = eBodyStateStand;
+	object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 	object().movement().set_body_state(eBodyStateStand);
+#endif
 	object().movement().set_movement_type(eMovementTypeWalk);
 	object().sight().action(eSightActionTypeWatchEnemy).set_vector3d(object().memory().enemy().selected()->Position());
 	object().set_goal(eObjectActionIdle);
@@ -220,7 +232,13 @@ void CStalkerActionRetreatFromEnemy::execute()
 	object().movement().set_detail_path_type(DetailPathManager::eDetailPathTypeSmooth);
 	object().movement().set_mental_state(eMentalStateDanger);
 	//Alundaio: Panic animation looks ridiculous, danger set is better
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+	EWorldOperators wo = eWorldOperatorRetreatFromEnemy;
+	EBodyState body_state = eBodyStateStand;
+	object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 	object().movement().set_body_state(eBodyStateStand);
+#endif
 
 	CCoverPoint const* point = 0;
 	CMemoryInfo mem_object = object().memory().memory(object().memory().enemy().selected());
@@ -298,7 +316,13 @@ void CStalkerActionGetReadyToKill::initialize()
 	object().movement().set_detail_path_type(DetailPathManager::eDetailPathTypeSmooth);
 	object().movement().set_nearest_accessible_position();
 	object().movement().set_mental_state(eMentalStateDanger);
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+	EWorldOperators wo = eWorldOperatorGetReadyToKill;
+	EBodyState body_state = m_body_state;
+	object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 	object().movement().set_body_state(m_body_state);
+#endif
 	//	object().movement().set_movement_type				(eMovementTypeRun);
 	//	object().sight().setup								(CSightAction(SightManager::eSightTypePathDirection));
 	if (m_affect_properties)
@@ -346,8 +370,15 @@ void CStalkerActionGetReadyToKill::execute()
 		object().sight().setup(CSightAction(SightManager::eSightTypePathDirection));
 	}
 
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+	EWorldOperators wo = eWorldOperatorGetReadyToKill;
+	EBodyState body_state = eBodyStateStand;
+	if (object().movement().detail().distance_to_target() > CLOSE_MOVE_DISTANCE)
+		object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 	if (object().movement().detail().distance_to_target() > CLOSE_MOVE_DISTANCE)
 		object().movement().set_body_state(eBodyStateStand);
+#endif
 	//	else {
 	//		object().movement().set_movement_type	(m_movement_type);
 	//	}
@@ -488,7 +519,14 @@ void CStalkerActionTakeCover::initialize()
 	object().movement().set_path_type(MovementManager::ePathTypeLevelPath);
 	object().movement().set_detail_path_type(DetailPathManager::eDetailPathTypeSmooth);
 	object().movement().set_mental_state(eMentalStateDanger);
+
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+	EWorldOperators wo = eWorldOperatorTakeCover;
+	EBodyState body_state = m_body_state;
+	object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 	object().movement().set_body_state(m_body_state);
+#endif
 	object().movement().set_movement_type(m_movement_type);
 	m_storage->set_property(eWorldPropertyLookedOut, false);
 	m_storage->set_property(eWorldPropertyPositionHolded, false);
@@ -531,8 +569,17 @@ void CStalkerActionTakeCover::execute()
 	if (!mem_object.m_object)
 		return;
 
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+	EWorldOperators wo = eWorldOperatorTakeCover;
+	EBodyState body_state = eBodyStateStand;
+#endif
+
 	if (object().movement().detail().distance_to_target() > CLOSE_MOVE_DISTANCE)
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+		object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 		object().movement().set_body_state(eBodyStateStand);
+#endif
 	else
 		object().movement().set_movement_type(m_movement_type);
 
@@ -611,9 +658,15 @@ void CStalkerActionLookOut::initialize()
 	object().movement().set_detail_path_type(DetailPathManager::eDetailPathTypeSmooth);
 	object().movement().set_mental_state(eMentalStateDanger);
 
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+	EWorldOperators wo = eWorldOperatorLookOut;
+	EBodyState body_state = m_storage->property(eWorldPropertyUseCrouchToLookOut) ? eBodyStateCrouch : eBodyStateStand;
+	object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 	object().movement().set_body_state(m_storage->property(eWorldPropertyUseCrouchToLookOut)
 		                                   ? eBodyStateCrouch
 		                                   : eBodyStateStand);
+#endif
 	object().movement().set_movement_type(eMovementTypeWalk);
 	object().movement().set_nearest_accessible_position();
 
@@ -739,9 +792,16 @@ void CStalkerActionHoldPosition::initialize()
 	object().movement().set_detail_path_type(DetailPathManager::eDetailPathTypeSmooth);
 	object().movement().set_nearest_accessible_position();
 	object().movement().set_mental_state(eMentalStateDanger);
+
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+	EWorldOperators wo = eWorldOperatorHoldPosition;
+	EBodyState body_state = m_storage->property(eWorldPropertyUseCrouchToLookOut) ? eBodyStateCrouch : eBodyStateStand;
+	object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 	object().movement().set_body_state(m_storage->property(eWorldPropertyUseCrouchToLookOut)
 		                                   ? eBodyStateCrouch
 		                                   : eBodyStateStand);
+#endif
 	object().movement().set_movement_type(eMovementTypeStand);
 
 	aim_ready();
@@ -837,7 +897,14 @@ void CStalkerActionDetourEnemy::initialize()
 	object().movement().set_path_type(MovementManager::ePathTypeLevelPath);
 	object().movement().set_detail_path_type(DetailPathManager::eDetailPathTypeSmooth);
 	object().movement().set_mental_state(eMentalStateDanger);
+
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+	EWorldOperators wo = eWorldOperatorDetourEnemy;
+	EBodyState body_state = eBodyStateStand;
+	object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 	object().movement().set_body_state(eBodyStateStand);
+#endif
 	object().movement().set_movement_type(eMovementTypeRun);
 
 	aim_ready();
@@ -1012,7 +1079,14 @@ void CStalkerActionHideFromGrenade::initialize()
 	object().movement().set_path_type(MovementManager::ePathTypeLevelPath);
 	object().movement().set_detail_path_type(DetailPathManager::eDetailPathTypeSmooth);
 	object().movement().set_mental_state(eMentalStateDanger);
+
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+	EWorldOperators wo = eWorldOperatorHideFromGrenade;
+	EBodyState body_state = eBodyStateStand;
+	object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 	object().movement().set_body_state(eBodyStateStand);
+#endif
 	object().movement().set_movement_type(eMovementTypeRun);
 	object().m_ce_best->invalidate();
 
@@ -1043,7 +1117,13 @@ void CStalkerActionHideFromGrenade::execute()
 	else
 	{
 		object().movement().set_movement_type(eMovementTypeStand);
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+		EWorldOperators wo = eWorldOperatorHideFromGrenade;
+		EBodyState body_state = eBodyStateCrouch;
+		object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 		object().movement().set_body_state(eBodyStateCrouch);
+#endif
 	}
 
 	if (!object().memory().enemy().selected())
@@ -1077,8 +1157,14 @@ void CStalkerActionHideFromGrenade::execute()
 		}
 	}
 
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+	EWorldOperators wo = eWorldOperatorHideFromGrenade;
+	EBodyState body_state = eBodyStateCrouch;
+	object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 	if (object().movement().path_completed())
 		object().movement().set_body_state(eBodyStateCrouch);
+#endif
 }
 
 void CStalkerActionHideFromGrenade::finalize()
@@ -1184,33 +1270,63 @@ void CStalkerActionSuddenAttack::execute()
 	float distance = object().Position().distance_to(mem_object.m_object_params.m_position);
 	if (distance >= 15.f)
 	{
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+		EWorldOperators wo = eWorldOperatorSuddenAttack;
+		EBodyState body_state = eBodyStateStand;
+		object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 		object().movement().set_body_state(eBodyStateStand);
+#endif
 		object().movement().set_movement_type(eMovementTypeRun);
 	}
 	else
 	{
 		if (distance >= 8.f)
 		{
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+			EWorldOperators wo = eWorldOperatorSuddenAttack;
+			EBodyState body_state = eBodyStateStand;
+			object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 			object().movement().set_body_state(eBodyStateStand);
+#endif
 			object().movement().set_movement_type(eMovementTypeWalk);
 		}
 		else
 		{
 			if (distance >= 6.f)
 			{
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+				EWorldOperators wo = eWorldOperatorSuddenAttack;
+				EBodyState body_state = eBodyStateCrouch;
+				object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 				object().movement().set_body_state(eBodyStateCrouch);
+#endif
 				object().movement().set_movement_type(eMovementTypeRun);
 			}
 			else
 			{
 				if ((distance >= 4.f) || !visible_now)
 				{
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+					EWorldOperators wo = eWorldOperatorSuddenAttack;
+					EBodyState body_state = eBodyStateCrouch;
+					object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 					object().movement().set_body_state(eBodyStateCrouch);
+#endif
 					object().movement().set_movement_type(eMovementTypeRun);
 				}
 				else
 				{
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+					EWorldOperators wo = eWorldOperatorSuddenAttack;
+					EBodyState body_state = eBodyStateCrouch;
+					object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 					object().movement().set_body_state(eBodyStateCrouch);
+#endif
 					object().movement().set_movement_type(eMovementTypeStand);
 
 					fire();
@@ -1359,7 +1475,14 @@ void CStalkerCombatActionThrowGrenade::initialize()
 	m_grenade_id = grenade->object().ID();
 
 	object().movement().set_movement_type(eMovementTypeStand);
+
+#ifdef COMBAT_BODY_STATE_OVERRIDE
+	EWorldOperators wo = eWorldOperatorThrowGrenade;
+	EBodyState body_state = eBodyStateStand;
+	object().movement().set_body_state(object().movement().body_state_combat_override(wo, body_state));
+#else
 	object().movement().set_body_state(eBodyStateStand);
+#endif
 	object().sound().play(eStalkerSoundThrowGrenade);
 	m_storage->set_property(eWorldPropertyStartedToThrowGrenade, true);
 }

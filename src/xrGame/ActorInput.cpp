@@ -268,6 +268,9 @@ void CActor::IR_OnKeyboardPress(int cmd)
 // demonized: switch to disable mouse wheel weapon change
 BOOL mouseWheelChangeWeapon = TRUE;
 
+// demonized: switch to invert mouse wheel weapon change
+BOOL mouseWheelInvertChangeWeapons = FALSE;
+
 // mbehm: switch to allow inverting mouse wheel zoom direction
 BOOL mouseWheelInvertZoom = FALSE;
 void CActor::IR_OnMouseWheel(int direction)
@@ -285,10 +288,17 @@ void CActor::IR_OnMouseWheel(int direction)
 	}
 
 	if (mouseWheelChangeWeapon) {
-		if (direction > 0)
-			OnNextWeaponSlot();
-		else
-			OnPrevWeaponSlot();
+		if (mouseWheelInvertChangeWeapons) {
+			if (direction < 0)
+				OnNextWeaponSlot();
+			else
+				OnPrevWeaponSlot();
+		} else {
+			if (direction > 0)
+				OnNextWeaponSlot();
+			else
+				OnPrevWeaponSlot();
+		}
 	}
 }
 
@@ -541,7 +551,7 @@ void CActor::ActorUse()
 	{
 		bool bCaptured = false;
 
-		collide::rq_result& RQ = HUD().GetCurrentRayQuery();
+		collide::rq_result& RQ = HUD().GetRQ();
 		CPhysicsShellHolder* object = smart_cast<CPhysicsShellHolder*>(RQ.O);
 		u16 element = BI_NONE;
 		if (object)

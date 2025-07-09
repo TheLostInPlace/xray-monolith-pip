@@ -2494,6 +2494,9 @@
     <Filter Include="AI\AMonsters\monsters\Chimera\state attack">
       <UniqueIdentifier>{8d6475ec-c185-4ebb-9ba6-e7dc1644c4c1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="UI\Common\ImGui">
+      <UniqueIdentifier>{c14ffa0c-947d-49b9-8e01-269569b48371}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\mt_config.h">
@@ -7392,6 +7395,15 @@
     <ClInclude Include="..\NewZoomFlag.h">
       <Filter>Core\Common\Shared</Filter>
     </ClInclude>
+    <ClInclude Include="..\HUDRecon.h">
+      <Filter>UI\Cursor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\script_imgui.h">
+      <Filter>UI\Common\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\script_imgui_inline.h">
+      <Filter>UI\Common\ImGui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\damage_manager.cpp">
@@ -11083,6 +11095,12 @@
     </ClCompile>
     <ClCompile Include="..\medkit_script.cpp">
       <Filter>Core\Client\Objects\items &amp; weapons\Food &amp; Drugs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HUDRecon.cpp">
+      <Filter>UI\Cursor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\script_imgui_script.cpp">
+      <Filter>UI\Common\ImGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

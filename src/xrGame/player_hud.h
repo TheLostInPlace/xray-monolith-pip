@@ -47,6 +47,8 @@ enum eMovementLayers
 	eWalk,
 	eRun,
 	eSprint,
+	eAimIdle,
+	eIdle,
 	move_anms_end
 };
 
@@ -77,7 +79,7 @@ struct movement_layer
 
 	void Play(bool bLoop = true)
 	{
-		if (!anm->Name())
+		if (!anm->Name() || !xr_strcmp("", anm->Name()))
 			return;
 
 		if (IsPlaying())
@@ -329,6 +331,8 @@ public:
 	u32 anim_play(u16 part, const MotionID& M, BOOL bMixIn, const CMotionDef*& md, float speed, u16 override_part = u16(-1));
 	u32 script_anim_play(u8 hand, LPCSTR itm_name, LPCSTR anm_name, bool bMixIn = true, float speed = 1.f);
 	const shared_str& section_name() const { return m_sect_name; }
+	void OnFrame();
+	void net_Relcase(CObject* obj);
 
 	u8 script_anim_part;
 	Fvector script_anim_offset[2];

@@ -3,17 +3,34 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-
 #include "HUDCrosshair.h"
-//.#include "UIStaticItem.h"
+#include "HUDTarget.h"
+
+#include "../xrEngine/CustomHUD.h"
+#include "../xrEngine/igame_persistent.h"
 #include "ui_base.h"
+
+string32 crosshair_shader = "hud\\cursor";
+string32 crosshair_texture = "ui\\cursor";
+float crosshair_near_size = 1.f;
+float crosshair_far_size = 1.f;
+float crosshair_depth_begin = 0.f;
+float crosshair_depth_end = 100.f;
+
+u32 C_CROSS D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0xff);
 
 CHUDCrosshair::CHUDCrosshair()
 {
-	hShader->create("hud\\crosshair");
-	radius = 0;
+	crosshairShader = NULL;
+	crosshairTexture = NULL;
+	strcpy(lastCrosshairShader, "");
+	strcpy(lastCrosshairTexture, "");
+	transform = Fmatrix().identity();
+	minRadius = 0.001f;
+	maxRadius = 0.004f;
+	crossColor = C_CROSS;
+	dispersionRadius = 0.f;
 }
-
 
 CHUDCrosshair::~CHUDCrosshair()
 {
@@ -21,145 +38,190 @@ CHUDCrosshair::~CHUDCrosshair()
 
 void CHUDCrosshair::Load()
 {
-	//все размеры в процентах от длины экрана
-	//длина крестика 
-	cross_length_perc = pSettings->r_float(HUD_CURSOR_SECTION, "cross_length");
-	min_radius_perc = pSettings->r_float(HUD_CURSOR_SECTION, "min_radius");
-	max_radius_perc = pSettings->r_float(HUD_CURSOR_SECTION, "max_radius");
-	cross_color = pSettings->r_fcolor(HUD_CURSOR_SECTION, "cross_color").get();
+	minRadius = pSettings->r_float(HUD_CURSOR_SECTION, "min_radius");
+	maxRadius = pSettings->r_float(HUD_CURSOR_SECTION, "max_radius");
+	crossColor = pSettings->r_fcolor(HUD_CURSOR_SECTION, "cross_color").get();
 }
 
-//выставляет radius от min_radius до max_radius
-void CHUDCrosshair::SetDispersion(float disp)
+void CHUDCrosshair::SetTransform(const Fmatrix& m)
 {
-	Fvector4 r;
-	Fvector R = {VIEWPORT_NEAR * _sin(disp), 0.f, VIEWPORT_NEAR};
-	Device.mProject.transform(r, R);
-
-	Fvector2 scr_size;
-	scr_size.set(float(::Render->getTarget()->get_width()), float(::Render->getTarget()->get_height()));
-	float radius_pixels = _abs(r.x) * scr_size.x / 2.0f;
-	target_radius = radius_pixels;
+	transform.set(m);
 }
 
-#ifdef DEBUG
-void CHUDCrosshair::SetFirstBulletDispertion(float fbdisp)
+void CHUDCrosshair::SetScale(float s)
 {
-	Fvector4 r;
-	Fvector R			= { VIEWPORT_NEAR*_sin(fbdisp), 0.f, VIEWPORT_NEAR };
-	Device.mProject.transform	(r,R);
-
-	Fvector2		scr_size;
-	scr_size.set	(float(::Render->getTarget()->get_width()), float(::Render->getTarget()->get_height()));
-	fb_radius		= _abs(r.x)*scr_size.x/2.0f;
+	scale = s;
 }
 
-BOOL	g_bDrawFirstBulletCrosshair = FALSE;
-
-void CHUDCrosshair::OnRenderFirstBulletDispertion()
+void CHUDCrosshair::SetColor(u32 c)
 {
-	VERIFY			(g_bRendering);
-	Fvector2		center;
-	Fvector2		scr_size;
-	scr_size.set	(float(::Render->getTarget()->get_width()), float(::Render->getTarget()->get_height()));
-	center.set		(scr_size.x/2.0f, scr_size.y/2.0f);
-
-	UIRender->StartPrimitive		(10, IUIRender::ptLineList, UI().m_currentPointType);
-
-	u32	fb_cross_color				= color_rgba(255, 0, 0, 255); //red
-	
-
-	float cross_length				= /*cross_length_perc*/0.008f*scr_size.x;
-	float min_radius				= min_radius_perc*scr_size.x;
-	float max_radius				= max_radius_perc*scr_size.x;
-
-	clamp							(target_radius , min_radius, max_radius);
-
-	float x_min						= min_radius + fb_radius;
-	float x_max						= x_min + cross_length;
-
-	float y_min						= x_min;
-	float y_max						= x_max;
-
-	// 0
-	UIRender->PushPoint(center.x,			center.y + y_min,	0, fb_cross_color, 0,0);
-	UIRender->PushPoint(center.x,			center.y + y_max,	0, fb_cross_color, 0,0);
-	// 1
-	UIRender->PushPoint(center.x,			center.y - y_min,	0, fb_cross_color, 0,0);
-	UIRender->PushPoint(center.x,			center.y - y_max,	0, fb_cross_color, 0,0);
-	// 2
-	UIRender->PushPoint(center.x + x_min,	center.y,			0, fb_cross_color, 0,0);
-	UIRender->PushPoint(center.x + x_max,	center.y,			0, fb_cross_color, 0,0);
-	// 3
-	UIRender->PushPoint(center.x - x_min,	center.y,			0, fb_cross_color, 0,0);
-	UIRender->PushPoint(center.x - x_max,	center.y,			0, fb_cross_color, 0,0);
-	
-	// point
-	UIRender->PushPoint(center.x-0.5f,		center.y,			0, fb_cross_color, 0,0);
-	UIRender->PushPoint(center.x+0.5f,		center.y,			0, fb_cross_color, 0,0);
-
-
-	// render	
-	UIRender->SetShader						(*hShader);
-	UIRender->FlushPrimitive				();
+	crossColor = c;
 }
-#endif
+
+void CHUDCrosshair::SetDispersion(float d)
+{
+	dispersionRadius = d;
+}
 
 extern ENGINE_API BOOL g_bRendering;
 
-void CHUDCrosshair::OnRender()
+static float lerp(float a, float b, float t)
+{
+	clamp(t, 0.f, 1.f);
+	return a * (1 - t) + b * t;
+}
+
+void CHUDCrosshair::InitShaderWire()
+{
+	if (!shaderWire->inited())
+		shaderWire->create("hud\\crosshair");
+}
+
+void CHUDCrosshair::DeinitShaderCrosshair()
+{
+	if (shaderCrosshair->inited())
+	{
+		shaderCrosshair->destroy();
+		strcpy(lastCrosshairShader, "");
+		strcpy(lastCrosshairTexture, "");
+	}
+}
+
+bool CHUDCrosshair::InitShaderCrosshair()
+{
+	if (!crosshairShader || !crosshairTexture)
+		return false;
+
+	if (strcmp(lastCrosshairShader, *crosshairShader) || strcmp(lastCrosshairTexture, *crosshairTexture))
+	{
+		DeinitShaderCrosshair();
+
+		shaderCrosshair->create(*crosshairShader, *crosshairTexture);
+		strcpy(lastCrosshairShader, *crosshairShader);
+		strcpy(lastCrosshairTexture, *crosshairTexture);
+	}
+
+	return shaderCrosshair->inited();
+}
+
+void CHUDCrosshair::PushVerts(Fvector* verts, Fvector* uvs, int count, Fmatrix mat, Fvector4 pos) const
+{
+	Fvector2 scr_size = {
+		float(::Render->getTarget()->get_width()),
+		float(::Render->getTarget()->get_height())
+	};
+
+	for (int i = 0; i < count; i++)
+	{
+		Fvector vert = verts[i];
+		Fvector uv = Fvector();
+		if (uvs)
+			uv = uvs[i];
+
+		vert.mul(scale);
+		mat.transform(vert);
+		vert.x *= scr_size.x / scr_size.y;
+		vert.y *= -1;
+		vert.x += pos.x;
+		vert.y += pos.y;
+		UIRender->PushPoint(vert.x, vert.y, 0, crossColor, uv.x, uv.y);
+	}
+}
+
+void CHUDCrosshair::RenderShaderCrosshair()
+{
+	// Fetch the render target size
+	Fvector2 scr_size = {
+		float(::Render->getTarget()->get_width()),
+		float(::Render->getTarget()->get_height())
+	};
+
+	float max = maxRadius;
+
+	Fvector verts[4] = {
+		{-max, -max},
+		{-max, max},
+		{max, -max},
+		{max, max},
+	};
+
+	Fvector uvs[4] = {
+		{0, 1},
+		{0, 0},
+		{1, 1},
+		{1, 0},
+	};
+
+	Fmatrix mat = Fmatrix().mul(Device.mFullTransform, transform);
+	Fvector4 pos = Fvector4().set(mat._41, mat._42, mat._43, mat._44);
+
+	// Apply perspective divide to aim point and transform into screen space
+	pos.x = ((pos.x / pos.w) + 1.f) * 0.5f * scr_size.x;
+	pos.y = (-(pos.y / pos.w) + 1.f) * 0.5f * scr_size.y;
+
+	UIRender->StartPrimitive(4, IUIRender::ptTriStrip, UI().m_currentPointType);
+	PushVerts(verts, uvs, 4, mat, pos);
+
+	// Draw
+	UIRender->SetShader(*shaderCrosshair);
+	UIRender->FlushPrimitive();
+}
+
+void CHUDCrosshair::RenderWireCrosshair()
+{
+	// Fetch the render target size
+	Fvector2 scr_size = {
+		float(::Render->getTarget()->get_width()),
+		float(::Render->getTarget()->get_height())
+	};
+
+	float min = minRadius;
+	float max = maxRadius;
+
+	// Create vertices from our size metrics
+	Fvector verts[8] = {
+		{ min, 0 },
+		{ max, 0 },
+		{ -min, 0 },
+		{ -max, 0 },
+		{ 0, min },
+		{ 0, max },
+		{ 0, -min },
+		{ 0, -max },
+	};
+
+	Fmatrix mat = Fmatrix().mul(Device.mFullTransform, transform);
+	Fvector4 pos = Fvector4().set(mat._41, mat._42, mat._43, mat._44);
+
+	// Apply perspective divide to aim point and transform into screen space
+	pos.x = ((pos.x / pos.w) + 1.f) * 0.5f * scr_size.x;
+	pos.y = (-(pos.y / pos.w) + 1.f) * 0.5f * scr_size.y;
+
+	// Project vertices for accurate scaling
+	UIRender->StartPrimitive(8, IUIRender::ptLineList, UI().m_currentPointType);
+	PushVerts(verts, NULL, 8, mat, pos);
+
+	// Render a 1px wide line  for the center dot
+	UIRender->PushPoint(pos.x - 0.5f, pos.y, 0, crossColor, 0, 0);
+	UIRender->PushPoint(pos.x + 0.5f, pos.y, 0, crossColor, 0, 0);
+
+	UIRender->SetShader(*shaderWire);
+	UIRender->FlushPrimitive();
+}
+
+void CHUDCrosshair::OnRender(bool use_shader)
 {
 	VERIFY(g_bRendering);
-	Fvector2 center;
-	Fvector2 scr_size;
-	scr_size.set(float(::Render->getTarget()->get_width()), float(::Render->getTarget()->get_height()));
-	center.set(scr_size.x / 2.0f, scr_size.y / 2.0f);
 
-	UIRender->StartPrimitive(10, IUIRender::ptLineList, UI().m_currentPointType);
-
-
-	float cross_length = cross_length_perc * scr_size.x;
-	float min_radius = min_radius_perc * scr_size.x;
-	float max_radius = max_radius_perc * scr_size.x;
-
-	clamp(target_radius, min_radius, max_radius);
-
-	float x_min = min_radius + radius;
-	float x_max = x_min + cross_length;
-
-	float y_min = x_min;
-	float y_max = x_max;
-
-	// 0
-	UIRender->PushPoint(center.x, center.y + y_min, 0, cross_color, 0, 0);
-	UIRender->PushPoint(center.x, center.y + y_max, 0, cross_color, 0, 0);
-	// 1
-	UIRender->PushPoint(center.x, center.y - y_min, 0, cross_color, 0, 0);
-	UIRender->PushPoint(center.x, center.y - y_max, 0, cross_color, 0, 0);
-	// 2
-	UIRender->PushPoint(center.x + x_min, center.y, 0, cross_color, 0, 0);
-	UIRender->PushPoint(center.x + x_max, center.y, 0, cross_color, 0, 0);
-	// 3
-	UIRender->PushPoint(center.x - x_min, center.y, 0, cross_color, 0, 0);
-	UIRender->PushPoint(center.x - x_max, center.y, 0, cross_color, 0, 0);
-
-	// point
-	UIRender->PushPoint(center.x - 0.5f, center.y, 0, cross_color, 0, 0);
-	UIRender->PushPoint(center.x + 0.5f, center.y, 0, cross_color, 0, 0);
-
-
-	// render	
-	UIRender->SetShader(*hShader);
-	UIRender->FlushPrimitive();
-
-
-	if (!fsimilar(target_radius, radius))
+	if (use_shader)
 	{
-		//here was crosshair innertion emulation
-		radius = target_radius;
-	};
-#ifdef DEBUG
-	if (g_bDrawFirstBulletCrosshair)
-		OnRenderFirstBulletDispertion();
-#endif
+		if (InitShaderCrosshair())
+			RenderShaderCrosshair();
+	}
+	else
+	{
+		DeinitShaderCrosshair();
+		InitShaderWire();
+		RenderWireCrosshair();
+	}
 }

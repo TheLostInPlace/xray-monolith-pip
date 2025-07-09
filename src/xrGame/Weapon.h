@@ -169,6 +169,8 @@ protected:
 	virtual bool IsHudModeNow();
 	virtual bool SOParentIsActor() { return ParentIsActor(); }
 	u8 last_idx;
+
+	CAnonHudItem* m_scopeItem = NULL;
 public:
 	void signal_HideComplete();
 	virtual bool Action(u16 cmd, u32 flags);
@@ -518,12 +520,8 @@ public:
 
 private:
 	firedeps m_current_firedeps;
-	//collide::rq_results RQS;
-	//PickParam PP;
 
 public:
-	//virtual collide::rq_result& GetRQ() { return PP.RQ; }
-	//virtual void net_Relcase(CObject* object);
 	Fmatrix m_shoot_shake_mat;
 	void UpdateZoomParams();
 
@@ -532,6 +530,20 @@ public:
 	shared_str m_primary_scope_tex_name;
 	shared_str m_secondary_scope_tex_name;
 
+private:
+	float m_nearwall_zoomed_range;
+	bool m_firepos;
+	bool m_aimpos;
+
+public:
+	bool GetFirepos() { return m_firepos; }
+	bool GetAimpos() { return m_aimpos; }
+	float GetTargetNearWallOffset();
+	float GetTargetHudFov();
+
+public:
+	Fmatrix RayTransform();
+
 protected:
 	virtual void UpdateFireDependencies_internal();
 	void UpdateUIScope();
@@ -539,7 +551,6 @@ protected:
 	void ToggleGrenadeLauncher();
     void SetZoomType(u8 new_zoom_type);
 	void SetZoomTypeAndParams(u8 zoomType);
-	float GetHudFov();
 	virtual void UpdatePosition(const Fmatrix& transform); //.
 	virtual void UpdateXForm();
 	void InterpolateOffset(Fvector& current, const Fvector& target, const float factor) const;

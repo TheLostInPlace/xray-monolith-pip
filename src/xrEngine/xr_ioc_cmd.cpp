@@ -887,6 +887,16 @@ public:
 	}
 };
 
+class CCC_Editor : public IConsole_Command
+{
+public:
+	CCC_Editor(pcstr name) : IConsole_Command(name) { bEmptyArgsHandled = true; }
+	void Execute(pcstr args) override
+	{
+		Device.imgui().Show(true);
+	}
+};
+
 ENGINE_API float psHUD_FOV_def = 0.45f;
 ENGINE_API float psHUD_FOV = psHUD_FOV_def;
 
@@ -914,7 +924,7 @@ extern float g_dispersion_factor;
 float g_AimLookFactor = 1.f;
 
 int ps_framelimiter = 0;
-Ivector4 g_crosshair_color_temp;
+extern u32 g_crosshair_color;
 float g_freelook_z_offset;
 float g_ironsights_factor = 1.25f;
 
@@ -1094,7 +1104,7 @@ void CCC_Register()
 
 	CMD4(CCC_Integer, "r__framelimit", &ps_framelimiter, 0, 500);
 	CMD3(CCC_Mask, "rs_refresh_60hz", &psDeviceFlags, rsRefresh60hz);
-	CMD4(CCC_CrosshairColor, "g_crosshair_color", &g_crosshair_color_temp, Ivector4().set(0, 0, 0, 0), Ivector4().set(255, 255, 255, 255));
+	CMD2(CCC_Color, "g_crosshair_color", &g_crosshair_color);
 	CMD4(CCC_Float, "mouse_sens_aim", &g_AimLookFactor, 0.01f, 5.0f);
 
 	if (strstr(Core.Params, "-dbgdev"))
@@ -1120,7 +1130,7 @@ void CCC_Register()
 	CMD4(CCC_Float, "scope_fog_radius", &scope_fog_radius, 0, 1000);
 	CMD4(CCC_Float, "scope_fog_sharp", &scope_fog_sharp, 0, 1000);
 	CMD2(CCC_Integer, "scope_2dtexactive", &scope_2dtexactive);
-
+	CMD1(CCC_Editor, "rs_editor");
 #ifdef DEBUG
     extern BOOL debug_destroy;
     CMD4(CCC_Integer, "debug_destroy", &debug_destroy, FALSE, TRUE);

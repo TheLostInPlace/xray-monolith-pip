@@ -27,6 +27,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VerifiedDX11|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -46,6 +47,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -119,6 +121,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <StringPooling>true</StringPooling>
       <FunctionLevelLinking>true</FunctionLevelLinking>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
       <AdditionalOptions>/Ob3 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ResourceCompile>
@@ -258,6 +261,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <StringPooling>true</StringPooling>
       <FunctionLevelLinking>true</FunctionLevelLinking>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
       <AdditionalOptions>/Ob3 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ResourceCompile>
@@ -1127,6 +1131,7 @@
     <ClInclude Include="..\HUDCrosshair.h" />
     <ClInclude Include="..\HudItem.h" />
     <ClInclude Include="..\HUDManager.h" />
+    <ClInclude Include="..\HUDRecon.h" />
     <ClInclude Include="..\HudSound.h" />
     <ClInclude Include="..\HUDTarget.h" />
     <ClInclude Include="..\hud_item_object.h" />
@@ -1436,6 +1441,8 @@
     <ClInclude Include="..\screenshot_manager.h" />
     <ClInclude Include="..\screenshot_server.h" />
     <ClInclude Include="..\script_attachment_manager.h" />
+    <ClInclude Include="..\script_imgui.h" />
+    <ClInclude Include="..\script_imgui_inline.h" />
     <ClInclude Include="..\script_light_inline.h" />
     <ClInclude Include="..\ScriptXMLInit.h" />
     <ClInclude Include="..\script_abstract_action.h" />
@@ -2880,6 +2887,7 @@
     <ClCompile Include="..\HUDCrosshair.cpp" />
     <ClCompile Include="..\HudItem.cpp" />
     <ClCompile Include="..\HUDManager.cpp" />
+    <ClCompile Include="..\HUDRecon.cpp" />
     <ClCompile Include="..\HudSound.cpp" />
     <ClCompile Include="..\HUDTarget.cpp" />
     <ClCompile Include="..\hud_item_object.cpp" />
@@ -2900,6 +2908,10 @@
     <ClCompile Include="..\ik_foot_collider.cpp" />
     <ClCompile Include="..\ik_limb_state.cpp" />
     <ClCompile Include="..\ik_object_shift.cpp" />
+    <ClCompile Include="..\script_imgui_script.cpp">
+      <PrecompiledHeaderFile>pch_script.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
+    </ClCompile>
     <ClCompile Include="..\imotion_position.cpp" />
     <ClCompile Include="..\imotion_velocity.cpp" />
     <ClCompile Include="..\InfoDocument.cpp" />

@@ -56,6 +56,9 @@ public:
 
 	void Load(LPCSTR section);
 
+	virtual bool NeedBlendAnm();
+	virtual bool MovingAnimAllowedNow();
+
 	virtual bool IsZoomEnabled() const { return false; }
 
 	void Fire2Start();
