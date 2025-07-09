@@ -141,7 +141,7 @@ void UITaskListWnd::UpdateList()
 	vGameTasks::iterator ite = tasks.end();
 	for (; itb != ite; ++itb)
 	{
-		CGameTask* task = (*itb).game_task;
+		CGameTask* task = (*itb).getGameTask();
 		if (task && task->GetTaskState() == eTaskStateInProgress)
 		{
 			UITaskListWndItem* item = xr_new<UITaskListWndItem>();

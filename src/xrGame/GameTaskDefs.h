@@ -26,7 +26,6 @@ class CGameTask;
 struct SGameTaskKey : public IPureSerializeObject<IReader, IWriter>, public IPureDestroyableObject
 {
 	shared_str task_id;
-	CGameTask* game_task;
 
 	SGameTaskKey(const shared_str& t_id): task_id(t_id), game_task(NULL)
 	{
@@ -40,6 +39,12 @@ struct SGameTaskKey : public IPureSerializeObject<IReader, IWriter>, public IPur
 	virtual void save(IWriter& stream);
 	virtual void load(IReader& stream);
 	virtual void destroy();
+
+	IC CGameTask* getGameTask() const { return game_task; }
+	void setGameTask(CGameTask* pTask) { game_task = pTask; }
+
+private:
+	CGameTask* game_task;
 };
 
 DEFINE_VECTOR(SGameTaskKey, vGameTasks, vGameTasks_it);
