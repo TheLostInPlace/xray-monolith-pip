@@ -212,6 +212,7 @@ public:
 };
 
 namespace soundSmoothingParams {
+	extern float distanceBasedDelayPower;
 	extern float power;
 	extern int steps;
 	extern float alpha;

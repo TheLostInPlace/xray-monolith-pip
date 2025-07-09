@@ -1047,6 +1047,10 @@ void CCC_Register()
 	CMD3(CCC_Mask, "snd_efx", &psSoundFlags, ss_EFX);
 	CMD4(CCC_Integer, "snd_targets", &psSoundTargets, 32, 1024);
 	CMD4(CCC_Integer, "snd_cache_size", &psSoundCacheSizeMB, 8, 256);
+
+	// Distance based delay power
+	CMD4(CCC_Float, "snd_distance_based_delay_power", &soundSmoothingParams::distanceBasedDelayPower, 0.f, 2.f);
+
 	// Doppler effect power
 	CMD4(CCC_Float, "snd_doppler_power", &soundSmoothingParams::power, 0.f, 5.f);
 	CMD4(CCC_SoundParamsSmoothing, "snd_doppler_smoothing", &soundSmoothingParams::steps, 1, 100);
