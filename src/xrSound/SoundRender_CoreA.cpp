@@ -165,7 +165,20 @@ void  CSoundRender_CoreA::_restart()
 
 void CSoundRender_CoreA::_initialize(int stage)
 {
-	inherited::_initialize(stage);
+	if (stage == 0)
+	{
+		pDeviceList = xr_new<ALDeviceList>();
+
+		if (0 == pDeviceList->GetNumDevices())
+		{
+			CHECK_OR_EXIT(0, "OpenAL: Can't create sound device.");
+			xr_delete(pDeviceList);
+		}
+		return;
+	}
+
+	pDeviceList->SelectBestDevice();
+	R_ASSERT(snd_device_id>=0 && snd_device_id<pDeviceList->GetNumDevices());
 	const ALDeviceDesc& deviceDesc = pDeviceList->GetDeviceDesc(snd_device_id);
 	// OpenAL device
 	pDevice = alcOpenDevice(deviceDesc.name);
@@ -175,6 +188,10 @@ void CSoundRender_CoreA::_initialize(int stage)
 		bPresent = FALSE;
 		return;
 	}
+
+	// Get the device specifier.
+	const ALCchar* deviceSpecifier;
+	deviceSpecifier = alcGetString(pDevice, ALC_DEVICE_SPECIFIER);
 
 	// Create context
 	pContext = alcCreateContext(pDevice, NULL);
