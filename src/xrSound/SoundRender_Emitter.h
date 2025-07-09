@@ -86,7 +86,12 @@ public:
 	virtual void set_frequency(float scale)
 	{
 		VERIFY(_valid(scale));
-		p_source.freq = scale + p_source.pitch_variation;
+		p_source.freq = scale;
+
+		// demonized: if the sound is short, apply pitch variation, so that stuff like music and most of speech won't be randomized
+		if (get_length_sec() < 10)
+			p_source.freq += p_source.pitch_variation;
+
 		if (fTimeToStop != 0.f)
 			fTimeToStop = SoundRender->fTimer_Value + ((get_length_sec() - (SoundRender->fTimer_Value - fTimeStarted)) / (scale * psSpeedOfSound));
 	}
