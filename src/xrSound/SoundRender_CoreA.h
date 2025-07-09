@@ -6,6 +6,8 @@
 #include "OpenALDeviceList.h"
 #include <AL/efx.h>
 
+#include <AL/efx.h>
+
 
 #ifdef DEBUG
 #	define A_CHK(expr)		{ alGetError(); 		expr; ALenum error=alGetError(); 			VERIFY2(error==AL_NO_ERROR, (LPCSTR)alGetString(error)); }
