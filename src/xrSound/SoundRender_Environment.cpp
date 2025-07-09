@@ -125,7 +125,7 @@ bool CSoundRender_Environment::load(IReader* fs)
 
 	Environment = fs->r_u32();
 
-	DecayHFLimit = fs->r_u32();
+	/*DecayHFLimit = fs->r_u32();
 	EchoTime = fs->r_float();
 	EchoDepth = fs->r_float();
 	ReverbDelay = fs->r_float();
@@ -134,7 +134,7 @@ bool CSoundRender_Environment::load(IReader* fs)
 	ModulationDepth = fs->r_float();
 	HFReference = fs->r_float();
 	LFReference = fs->r_float();
-	Density = fs->r_float();
+	Density = fs->r_float();*/
 
 	return true;
 }
