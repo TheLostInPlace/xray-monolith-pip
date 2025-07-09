@@ -2,6 +2,7 @@
 #define SoundH
 #pragma once
 
+
 #ifdef XRSOUND_EXPORTS
 #define XRSOUND_API
 //__declspec(dllexport)
@@ -212,6 +213,7 @@ public:
 };
 
 namespace soundSmoothingParams {
+	extern float pitchVariationPower;
 	extern float distanceBasedDelayPower;
 	extern float power;
 	extern int steps;
@@ -231,6 +233,9 @@ public:
 			position.set(0.0f, 0.0f, 0.0f);
 			velocity.set(0.0f, 0.0f, 0.0f);
 			accVelocity.set(0.f, 0.f, 0.f);
+
+			// demonized: add pitch variation
+			pitch_variation = 0.02 * Random.randF(-1.f, 1.f) * soundSmoothingParams::pitchVariationPower;
 		}
 
 private:
@@ -248,6 +253,8 @@ public:
 	float min_distance;
 	float max_distance;
 	float max_ai_distance;
+
+	float pitch_variation;
 
 	// Functions added by Cribbledirge for doppler effect.
 	IC virtual void update_position(const Fvector& newPosition)
