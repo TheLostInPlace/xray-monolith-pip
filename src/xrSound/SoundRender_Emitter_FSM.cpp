@@ -56,7 +56,7 @@ void CSoundRender_Emitter::update(float dt)
 	// Starting at 90m, full delay kicks in
 	if (need_preplay_update && m_current_state < stPlaying)
 	{
-		if (_valid(p_source.position) && !p_source.position.similar(Fvector().set(0.f, 0.f, 0.f)) && source() && source()->channels_num() == 1)
+		if (_valid(p_source.position) && !p_source.position.similar(Fvector().set(0.f, 0.f, 0.f)) && owner_data && source() && source()->channels_num() == 1)
 		{
 			//Smooth Ramp Using Hermite(Smootherstep)
 			static auto CalculateSmoothSoundDelay = [](float distance, float speedOfSound, float rampStart, float rampRange)
@@ -93,7 +93,7 @@ void CSoundRender_Emitter::update(float dt)
 				}
 				need_preplay_update = false;
 				/*Msg("CSoundRender_Emitter::update, file %s, state %s, need_preplay_update, distance %.2f, old delay %.2f, delay %.2f",
-					source() && source()->file_name() ? source()->file_name() : "null",
+					owner_data && source() && source()->file_name() ? source()->file_name() : "null",
 					magic_enum::enum_name(oldState).data(),
 					p_source.position.distance_to(SoundRender->listener_position()),
 					oldDelay,
