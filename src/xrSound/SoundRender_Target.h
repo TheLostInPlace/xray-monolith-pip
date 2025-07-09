@@ -3,7 +3,6 @@
 #pragma once
 
 #include "SoundRender.h"
-#include "ogg_utils.h"
 
 class CSoundRender_Target
 {
@@ -13,12 +12,16 @@ protected:
 public:
 	float priority;
 protected:
-	OggVorbis_File m_ovf;
-	IReader* m_wave;
+	OggVorbis_File ovf;
+	IReader* wave;
 	void attach();
 	void dettach();
 public:
-	OggVorbis_File* get_data() { return &m_ovf; }
+	OggVorbis_File* get_data()
+	{
+		if (!wave) attach();
+		return &ovf;
+	}
 
 public:
 	CSoundRender_Target();

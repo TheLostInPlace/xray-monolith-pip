@@ -69,9 +69,6 @@
     <ClInclude Include="SoundRender_Cache.h">
       <Filter>Cache</Filter>
     </ClInclude>
-    <ClInclude Include="ogg_utils.h">
-      <Filter>Kernel</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="guids.cpp">
@@ -130,9 +127,6 @@
     </ClCompile>
     <ClCompile Include="SoundRender_Cache.cpp">
       <Filter>Cache</Filter>
-    </ClCompile>
-    <ClCompile Include="ogg_utils.cpp">
-      <Filter>Kernel</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

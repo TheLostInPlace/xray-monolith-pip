@@ -27,8 +27,6 @@ public:
 private:
 	void i_decompress_fr(OggVorbis_File* ovf, char* dest, u32 size);
 	bool LoadWave(LPCSTR name);
-	OggVorbis_File m_ovf;
-	IReader* m_wave;
 public:
 	CSoundRender_Source();
 	~CSoundRender_Source();
