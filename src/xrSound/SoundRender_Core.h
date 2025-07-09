@@ -5,7 +5,6 @@
 #include "SoundRender.h"
 #include "SoundRender_Environment.h"
 #include "SoundRender_Cache.h"
-#include "soundrender_environment.h"
 
 class CSoundRender_Core : public CSound_manager_interface
 {
@@ -24,9 +23,8 @@ public:
 public:
 	BOOL bPresent;
 	BOOL bUserEnvironment;
-	BOOL bEAX; // Boolean variable to indicate presence of EAX Extension 
-	BOOL bDeferredEAX;
 	BOOL bReady;
+	bool m_is_supported; // Boolean variable to indicate presence of EFX Extension
 
 	CTimer Timer;
 	float fTimer_Value;
@@ -56,9 +54,7 @@ public:
 	// Cache
 	CSoundRender_Cache cache;
 	u32 cache_bytes_per_line;
-protected:
-	virtual void i_eax_set(const GUID* guid, u32 prop, void* val, u32 sz) =0;
-	virtual void i_eax_get(const GUID* guid, u32 prop, void* val, u32 sz) =0;
+
 public:
 	CSoundRender_Core();
 	virtual ~CSoundRender_Core();
@@ -94,11 +90,11 @@ public:
 
 	// listener
 	//	virtual const Fvector&				listener_position		( )=0;
-	virtual void update_listener(const Fvector& P, const Fvector& D, const Fvector& N, float dt) =0;
-	// eax listener
-	void i_eax_commit_setting();
-	void i_eax_listener_set(CSound_environment* E);
-	void i_eax_listener_get(CSound_environment* E);
+	virtual void update_listener(const Fvector& P, const Fvector& D, const Fvector& N, float dt)=0;
+	// EFX
+	virtual void set_listener(const CSoundRender_Environment& env)=0;
+	virtual void get_listener(CSoundRender_Environment& env)=0;
+	virtual void commit()=0;
 
 #ifdef _EDITOR
 	virtual SoundEnvironment_LIB*		get_env_library			()																{ return s_environment; }
