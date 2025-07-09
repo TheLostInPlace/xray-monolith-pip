@@ -270,12 +270,13 @@ void CSoundRender_CoreA::_initialize(int stage)
 	ALenum err = alGetError();
 	if (err == AL_NO_ERROR)
 	{
+		Msg("SOUND: OpenAL: EFX supported");
 		m_is_supported = true;
 		alGenAuxiliaryEffectSlots(1, &slot);
 	}
 	else
 	{
-		Log("SOUND: OpenAL: Failed to init EFX:", alGetString(err));
+		Msg("SOUND: OpenAL: Failed to init EFX:", alGetString(err));
 		if (alIsEffect(effect))
 			alDeleteEffects(1, &effect);
 	}
