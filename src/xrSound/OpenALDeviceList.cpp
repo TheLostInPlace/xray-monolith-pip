@@ -30,14 +30,21 @@
 #include <objbase.h>
 #pragma warning(pop)
 
+#ifdef _EDITOR
+	log_fn_ptr_type* pLog = NULL;
 
 void __cdecl al_log(char* msg)
 {
 	Log(msg);
 }
+#endif
 
 ALDeviceList::ALDeviceList()
 {
+#ifdef _EDITOR
+    pLog = al_log;
+#endif
+
 	snd_device_id = u32(-1);
 	Enumerate();
 }
@@ -94,7 +101,7 @@ void ALDeviceList::Enumerate()
 
 					if ((actualDeviceName != nullptr) && xr_strlen(actualDeviceName) > 0)
 					{
-						alcGetIntegerv(device, ALC_MINOR_VERSION, sizeof(int), &ALmajor);
+						alcGetIntegerv(device, ALC_MAJOR_VERSION, sizeof(int), &ALmajor);
 						alcGetIntegerv(device, ALC_MINOR_VERSION, sizeof(int), &ALminor);
 
 						alcGetIntegerv(device, ALC_EFX_MAJOR_VERSION, sizeof(int), &EFXmajor);

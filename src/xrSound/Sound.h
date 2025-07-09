@@ -2,8 +2,6 @@
 #define SoundH
 #pragma once
 
-//#include "../include/xrapi/xrapi.h"
-
 #ifdef XRSOUND_EXPORTS
 #define XRSOUND_API
 //__declspec(dllexport)
@@ -401,7 +399,6 @@ public:
 #endif
 };
 
-class CSound_manager_interface;
 extern XRSOUND_API CSound_manager_interface* Sound;
 
 /// ********* Sound ********* (utils, accessors, helpers)
@@ -525,6 +522,4 @@ IC void ref_sound::set_params(CSound_params* p)
 		_feedback()->set_volume(p->volume);
 	}
 }
-
-
 #endif

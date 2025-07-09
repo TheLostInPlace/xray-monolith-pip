@@ -89,9 +89,9 @@ public:
 	virtual void statistic(CSound_stats* dest, CSound_stats_ext* ext);
 
 	// listener
-	//	virtual const Fvector&				listener_position		( )=0;
 	virtual void update_listener(const Fvector& P, const Fvector& D, const Fvector& N, float dt)=0;
-	// EFX
+	
+	//  EFX listener
 	virtual void set_listener(const CSoundRender_Environment& env)=0;
 	virtual void get_listener(CSoundRender_Environment& env)=0;
 	virtual void commit()=0;

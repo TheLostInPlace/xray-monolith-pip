@@ -2,13 +2,15 @@
 #pragma hdrstop
 
 #include "../xrEngine/xrLevel.h"
-#include "soundrender_core.h"
-#include "soundrender_source.h"
-#include "soundrender_emitter.h"
+
+#include "SoundRender_Core.h"
+#include "SoundRender_Source.h"
+#include "SoundRender_Emitter.h"
+
 #include <AL/efx.h>
 
 float psSpeedOfSound = 1.f;
-int psSoundTargets = 256;
+int psSoundTargets = 1024;
 Flags32 psSoundFlags = {ss_Hardware | ss_EFX};
 float psSoundOcclusionScale = 0.5f;
 float psSoundCull = 0.01f;
@@ -19,10 +21,10 @@ float psSoundVFactor = 1.0f;
 
 float psSoundVMusic = 1.f;
 float psSoundVMusicFactor = 1.f;
-int psSoundCacheSizeMB = 32;
+int psSoundCacheSizeMB = 256;
 
-CSoundRender_Core* SoundRender = 0;
-CSound_manager_interface* Sound = 0;
+CSoundRender_Core* SoundRender = nullptr;
+CSound_manager_interface* Sound = nullptr;
 
 CSoundRender_Core::CSoundRender_Core()
 {
@@ -318,19 +320,18 @@ void CSoundRender_Core::clone(ref_sound& S, const ref_sound& from, esound_type s
 
 void CSoundRender_Core::play(ref_sound& S, CObject* O, u32 flags, float delay)
 {
-	if (!bPresent || 0 == S._handle())return;
+	if (!bPresent || (0==S._handle())) return;
 	S._p->g_object = O;
 	if (S._feedback()) ((CSoundRender_Emitter*)S._feedback())->rewind();
 	else i_play(&S, flags & sm_Looped, delay);
 
-	if (flags & sm_2D || S._handle()->channels_num() == 2)
+	if ((flags & sm_2D) || (S._handle()->channels_num() == 2))
 		S._feedback()->switch_to_2D();
 }
 
-void CSoundRender_Core::play_no_feedback(ref_sound& S, CObject* O, u32 flags, float delay, Fvector* pos, float* vol,
-                                         float* freq, Fvector2* range)
+void CSoundRender_Core::play_no_feedback(ref_sound& S, CObject* O, u32 flags, float delay, Fvector* pos, float* vol, float* freq, Fvector2* range)
 {
-	if (!bPresent || 0 == S._handle())return;
+	if (!bPresent || (0 == S._handle())) return;
 	ref_sound_data_ptr orig = S._p;
 	S._p = xr_new<ref_sound_data>();
 	S._p->handle = orig->handle;
@@ -353,16 +354,15 @@ void CSoundRender_Core::play_no_feedback(ref_sound& S, CObject* O, u32 flags, fl
 	S._p = orig;
 }
 
-void CSoundRender_Core::play_at_pos(ref_sound& S, CObject* O, const Fvector& pos, u32 flags, float delay)
+void CSoundRender_Core::play_at_pos(ref_sound& S, CObject* O, const Fvector &pos, u32 flags, float delay)
 {
-	if (!bPresent || 0 == S._handle())return;
+	if (!bPresent || (0 == S._handle())) return;
 	S._p->g_object = O;
 	if (S._feedback()) ((CSoundRender_Emitter*)S._feedback())->rewind();
 	else i_play(&S, flags & sm_Looped, delay);
 
 	S._feedback()->set_position(pos);
-
-	if (flags & sm_2D || S._handle()->channels_num() == 2)
+	if ((flags & sm_2D) || (S._handle()->channels_num() == 2))
 		S._feedback()->switch_to_2D();
 }
 
@@ -461,16 +461,6 @@ CSoundRender_Environment* CSoundRender_Core::get_environment(const Fvector& P)
 
 void CSoundRender_Core::env_apply()
 {
-	/*
-		// Force all sounds to change their environment
-		// (set their positions to signal changes in environment)
-		for (u32 it=0; it<s_emitters.size(); it++)
-		{
-			CSoundRender_Emitter*	pEmitter	= s_emitters[it];
-			const CSound_params*	pParams		= pEmitter->get_params	();
-			pEmitter->set_position	(pParams->position);
-		}
-	*/
 	bListenerMoved = TRUE;
 }
 
@@ -480,22 +470,18 @@ void CSoundRender_Core::update_listener(const Fvector& P, const Fvector& D, cons
 
 void CSoundRender_Core::object_relcase(CObject* obj)
 {
-	if (obj)
-	{
-		for (u32 eit = 0; eit < s_emitters.size(); eit++)
-		{
-			if (s_emitters[eit])
-				if (s_emitters[eit]->owner_data)
-					if (obj == s_emitters[eit]->owner_data->g_object)
-						s_emitters[eit]->owner_data->g_object = 0;
+	if (obj) {
+		for (u32 eit = 0; eit < s_emitters.size(); eit++) {
+			if (s_emitters[eit] && s_emitters[eit]->owner_data && (obj == s_emitters[eit]->owner_data->g_object))
+				s_emitters[eit]->owner_data->g_object = nullptr;
 		}
 	}
 }
 
 #ifdef _EDITOR
-void						CSoundRender_Core::set_user_env		( CSound_environment* E)
+void CSoundRender_Core::set_user_env(CSound_environment* E)
 {
-	if (0==E && !bUserEnvironment)	return;
+	if ((0 == E) && !bUserEnvironment) return;
 
 	if (E)
 	{
@@ -509,13 +495,13 @@ void						CSoundRender_Core::set_user_env		( CSound_environment* E)
 	env_apply			();
 }
 
-void						CSoundRender_Core::refresh_env_library()
+void CSoundRender_Core::refresh_env_library()
 {
 	env_unload			();
 	env_load			();
 	env_apply			();
 }
-void						CSoundRender_Core::refresh_sources()
+void CSoundRender_Core::refresh_sources()
 {
 	for (u32 eit=0; eit<s_emitters.size(); eit++)
     	s_emitters[eit]->stop(FALSE);
