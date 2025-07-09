@@ -24,6 +24,22 @@
 #include "lua.hpp"
 #endif
 
+extern "C"
+{
+#include <lua.h>
+	int luaopen_marshal(lua_State* L);
+
+}
+struct luajit
+{
+	static void open_lib(lua_State* L, pcstr module_name, lua_CFunction function)
+	{
+		lua_pushcfunction(L, function);
+		lua_pushstring(L, module_name);
+		lua_call(L, 1, 0);
+	}
+};
+
 LPCSTR file_header_old =
 	"\
                           local function script_name() \
@@ -304,7 +320,9 @@ CScriptStorage::~CScriptStorage()
 		lua_close(m_virtual_machine);
 }
 
-extern int luaopen_lua_extensions(lua_State* L);
+extern int luaopen_lua_extensions(lua_State* L, bool IsDebug = false);
+extern lua_CFunction luaopen_socket_core_init();
+extern void pdebug_init_init(lua_State* L);
 
 void disable_os_funcs(lua_State* L)
 {
@@ -325,6 +343,54 @@ void disable_os_funcs(lua_State* L)
 	lua_pop(L, 1);
 }
 
+bool LoadKernelScriptToGlobal(lua_State* L, const char* name)
+{
+	string_path FileName;
+	xr_string FixedFileName = name;
+	//FixedFileName = "kernel\\" + FixedFileName; //When this line is enabled all lua files are not being loaded after loading a game
+
+	if (FS.exist(FileName, "$game_scripts$", FixedFileName.data()))
+	{
+		int	start = lua_gettop(L);
+		IReader* l_tpFileReader = FS.r_open(FileName);
+
+		string_path NameSpace;
+		xr_strcpy(NameSpace, name);
+
+		if (strext(NameSpace))
+			*strext(NameSpace) = 0;
+
+		if (luaL_loadbuffer(L, (const char*)l_tpFileReader->pointer(), l_tpFileReader->length(), NameSpace))
+		{
+			lua_settop(L, start);
+			return false;
+		}
+		else
+		{
+			int errFuncId = -1;
+			int	l_iErrorCode = lua_pcall(L, 0, 0, (-1 == errFuncId) ? 0 : errFuncId);
+			if (l_iErrorCode)
+			{
+#ifdef DEBUG
+				g_pScriptEngine->print_output(L, name, l_iErrorCode);
+#endif
+				lua_settop(L, start);
+				return false;
+			}
+		}
+
+
+		FS.r_close(l_tpFileReader);
+	}
+	else
+	{
+		return false;
+	}
+
+	return true;
+};
+
+BOOL lua_debug = FALSE;
 void CScriptStorage::reinit()
 {
 	if (m_virtual_machine)
@@ -345,19 +411,10 @@ void CScriptStorage::reinit()
 
 #ifndef USE_LUAJIT_ONE
 	luaL_openlibs(lua());
-	if (Core.ParamsData.test(ECoreParams::nojit))
+	if (strstr(Core.Params, "-nojit"))
 		luaJIT_setmode(lua(), 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF);
 #else // USE_LUAJIT_ONE
-    // initialize lua standard library functions
-    struct luajit
-    {
-        static void open_lib(lua_State *L, pcstr module_name, lua_CFunction function)
-        {
-            lua_pushcfunction(L, function);
-            lua_pushstring(L, module_name);
-            lua_call(L, 1, 0);
-        }
-    }; // struct lua;
+    // initialize lua standard library functions    
 
     luajit::open_lib(lua(), "", luaopen_base);
     luajit::open_lib(lua(), LUA_LOADLIBNAME, luaopen_package);
@@ -366,31 +423,52 @@ void CScriptStorage::reinit()
     luajit::open_lib(lua(), LUA_OSLIBNAME, luaopen_os);
     luajit::open_lib(lua(), LUA_MATHLIBNAME, luaopen_math);
     luajit::open_lib(lua(), LUA_STRLIBNAME, luaopen_string);
+    luajit::open_lib(lua(), LUA_JITLIBNAME, luaopen_jit);
+	luajit::open_lib(lua(), LUA_BITLIBNAME, luaopen_bit);
+	luajit::open_lib(lua(), LUA_FFILIBNAME, luaopen_ffi);
 
 #ifdef DEBUG
     luajit::open_lib(lua(), LUA_DBLIBNAME, luaopen_debug);
 #else //!DEBUG
 
-    if (Core.ParamsData.test(ECoreParams::dbg))
+    if (strstr(Core.Params, "-dbg"))
         luajit::open_lib(lua(), LUA_DBLIBNAME, luaopen_debug);
 #endif //-DEBUG
 
-    if (!Core.ParamsData.test(ECoreParams::nojit))
-    {
-        luajit::open_lib(lua(), LUA_JITLIBNAME, luaopen_jit);
+	if (!strstr(Core.Params, "-nojit"))
+	{
+		luajit::open_lib(lua(), LUA_JITLIBNAME, luaopen_jit);
 #ifndef DEBUG
-        put_function(lua(), opt_lua_binary, sizeof(opt_lua_binary), "jit.opt");
-        put_function(lua(), opt_inline_lua_binary, sizeof(opt_lua_binary), "jit.opt_inline");
-        dojitopt(lua(), "2");
+		put_function(lua(), opt_lua_binary, sizeof(opt_lua_binary), "jit.opt");
+		put_function(lua(), opt_inline_lua_binary, sizeof(opt_lua_binary), "jit.opt_inline");
+		dojitopt(lua(), "2");
 #endif //!DEBUG
-    }
+	}
 
 #endif //!USE_LUAJIT_ONE
-
-	luaopen_lua_extensions(lua());
+	bool isDebugEnabled = lua_debug;
+	luaopen_lua_extensions(lua(), isDebugEnabled);
 	disable_os_funcs(lua());
 
-	if (Core.ParamsData.test(ECoreParams::_g))
+	if (isDebugEnabled)
+	{
+		Msg("!lua_debug 1, opening socket and initializing LuaPanda");
+		LoadKernelScriptToGlobal(lua(), "global.lua");
+		LoadKernelScriptToGlobal(lua(), "dynamic_callbacks.lua");
+
+		// Sockets
+		luajit::open_lib(lua(), "socket.core", luaopen_socket_core_init());
+		bool SocketTest = LoadKernelScriptToGlobal(lua(), "socket.lua");
+
+		// Panda
+		if (SocketTest)
+		{
+			pdebug_init_init(lua());
+			LoadKernelScriptToGlobal(lua(), "LuaPanda.lua");
+		}
+	}
+	
+	if (strstr(Core.Params, "-_g"))
 		file_header = file_header_new; //AVO: I get fatal crash at the start if this is used
 	else
 		file_header = file_header_old;
@@ -412,7 +490,7 @@ int CScriptStorage::vscript_log(ScriptStorage::ELuaMessageType tLuaMessageType, 
 	//AVO: allow LUA debug prints (i.e.: ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "CWeapon : cannot access class member Weapon_IsScopeAttached!");)
 #       ifndef DEBUG
 
-	if (!Core.ParamsData.test(ECoreParams::dbg))
+	if (!strstr(Core.Params, "-dbg"))
 		return (0);
 #       endif //!DEBUG
 #       ifndef LUA_DEBUG_PRINT
@@ -686,7 +764,7 @@ bool CScriptStorage::load_buffer(lua_State* L, LPCSTR caBuffer, size_t tSize, LP
 	if (l_iErrorCode)
 	{
 //#ifdef DEBUG
-		if (Core.ParamsData.test(ECoreParams::dbg)) print_output(L,caScriptName,l_iErrorCode);
+		if (strstr(Core.Params, "-dbg")) print_output(L,caScriptName,l_iErrorCode);
 //#endif //-DEBUG
 		on_error(L);
 		return (false);
@@ -949,7 +1027,7 @@ bool CScriptStorage::do_file(LPCSTR caScriptName, LPCSTR caNameSpaceName)
 	if (l_iErrorCode)
 	{
 //#ifdef DEBUG
-		if (Core.ParamsData.test(ECoreParams::dbg)) print_output(lua(),caScriptName,l_iErrorCode);
+		if (strstr(Core.Params, "-dbg")) print_output(lua(),caScriptName,l_iErrorCode);
 //#endif
 		on_error(lua());
 		lua_settop(lua(), start);
@@ -1103,7 +1181,7 @@ struct raii_guard : private boost::noncopyable
 #endif //-DEBUG
 		{
 #ifdef DEBUG
-            static bool const break_on_assert	= Core.ParamsData.test(ECoreParams::break_on_assert);
+            static bool const break_on_assert	= !!strstr(Core.Params,"-break_on_assert");
 #else //!DEBUG
 			static bool const break_on_assert = false; //Alundaio: Can't get a proper stack trace with this enabled
 #endif //-DEBUG

@@ -6,6 +6,7 @@
 #include "SoundRender_Emitter.h"
 #include "SoundRender_Target.h"
 #include "SoundRender_Source.h"
+#include "SoundRender_CoreA.h"
 
 CSoundRender_Emitter* CSoundRender_Core::i_play(ref_sound* S, BOOL _loop, float delay)
 {
@@ -101,8 +102,8 @@ void CSoundRender_Core::update(const Fvector& P, const Fvector& D, const Fvector
 			s_targets_defer[it]->fill_parameters();
 	}
 
-	// update EAX
-	if (psSoundFlags.test(ss_EAX) && bEAX)
+	// update EFX
+	if (m_is_supported)
 	{
 		if (bListenerMoved)
 		{
@@ -112,8 +113,8 @@ void CSoundRender_Core::update(const Fvector& P, const Fvector& D, const Fvector
 
 		e_current.lerp(e_current, e_target, dt_sec);
 
-		i_eax_listener_set(&e_current);
-		i_eax_commit_setting();
+		set_listener(e_current);
+		commit();
 	}
 
 	// update listener
