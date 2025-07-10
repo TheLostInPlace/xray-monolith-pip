@@ -81,8 +81,8 @@ void CSoundRender_Emitter::update(float dt)
 			auto oldState = m_current_state;
 			auto delay = CalculateSmoothSoundDelay(p_source.position.distance_to(SoundRender->listener_position()), speedOfSound, soundSmoothingParams::distanceBasedDelayMinDistance, 60);
 
-			// clamp delay to random top value in case of strange result
-			delay = std::clamp(delay, 0.f, Random.randF(2.5f, 3.5f));
+			// clamp delay in case of strange result
+			delay = std::clamp(delay, 0.f, 3.5f);
 
 			// apply cvar power
 			delay *= soundSmoothingParams::distanceBasedDelayPower;
