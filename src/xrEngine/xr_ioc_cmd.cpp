@@ -1049,6 +1049,7 @@ void CCC_Register()
 
 	// Distance based delay power
 	CMD4(CCC_Float, "snd_distance_based_delay_power", &soundSmoothingParams::distanceBasedDelayPower, 0.f, 2.f);
+	CMD4(CCC_Float, "snd_distance_based_delay_min_distance", &soundSmoothingParams::distanceBasedDelayMinDistance, 15.f, 100.f);
 
 	// Pitch variation power
 	CMD4(CCC_Float, "snd_pitch_variation_power", &soundSmoothingParams::pitchVariationPower, 0.f, 4.f);

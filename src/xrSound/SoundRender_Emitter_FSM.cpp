@@ -51,10 +51,11 @@ void CSoundRender_Emitter::update(float dt)
 
 	// demonized: add preplay update, calculate delay based on distance and speed of sound
 	// Adaptation for user experience
-	// For distances < 30m, no delay
+	// For distances < 30m (configurable via cvar), no delay
 	// Then gradually ramp up to delay calculated by math
 	// Starting at 90m, full delay kicks in
-	if (need_preplay_update && m_current_state < stPlaying)
+	// Don't apply delay to already delayed sounds, they are most likely already handled in respective parts of code and scripts
+	if (need_preplay_update && m_current_state < stPlaying && starting_delay == 0.f)
 	{
 		if (_valid(p_source.position) && !p_source.position.similar(Fvector().set(0.f, 0.f, 0.f)) && owner_data && source() && source()->channels_num() == 1)
 		{
@@ -78,7 +79,12 @@ void CSoundRender_Emitter::update(float dt)
 			float speedOfSound = 343.f;
 			float oldDelay = starting_delay;
 			auto oldState = m_current_state;
-			auto delay = CalculateSmoothSoundDelay(p_source.position.distance_to(SoundRender->listener_position()), speedOfSound, 30, 60);
+			auto delay = CalculateSmoothSoundDelay(p_source.position.distance_to(SoundRender->listener_position()), speedOfSound, soundSmoothingParams::distanceBasedDelayMinDistance, 60);
+
+			// clamp delay in case of strange result
+			delay = std::clamp(delay, 0.f, 3.5f);
+
+			// apply cvar power
 			delay *= soundSmoothingParams::distanceBasedDelayPower;
 			if (delay > 0.f)
 			{
