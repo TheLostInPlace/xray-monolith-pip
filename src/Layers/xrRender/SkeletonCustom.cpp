@@ -8,13 +8,8 @@
 #ifndef _EDITOR
 #include	"../../xrEngine/Render.h"
 #endif
-int psSkeletonUpdate = 32;
-xrCriticalSection UCalc_Mutex
-#ifdef PROFILE_CRITICAL_SECTIONS
-	(MUTEX_PROFILE_ID(UCalc_Mutex))
-#endif // PROFILE_CRITICAL_SECTIONS
-;
 
+int psSkeletonUpdate = 32;
 xrCriticalSection wallmarks_cs;
 
 #ifndef _EDITOR

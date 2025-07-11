@@ -17,7 +17,7 @@ void CKinematics::CalculateBones(BOOL bForceExact)
 	// check if the info is still relevant
 	// skip all the computations - assume nothing changes in a small period of time :)
 	if (RDEVICE.dwTimeGlobal == UCalc_Time) return; // early out for "fast" update
-	UCalc_mtlock lock;
+	xrCriticalSectionGuard g(UCalc_Mutex);
 	OnCalculateBones();
 	if (!bForceExact && (RDEVICE.dwTimeGlobal < (UCalc_Time + UCalc_Interval))) return; // early out for "slow" update
 	if (Update_Visibility) Visibility_Update();
@@ -178,6 +178,7 @@ void CKinematics::Bone_GetAnimPos(Fmatrix& pos, u16 id, u8 mask_channel, bool ig
 
 void CKinematics::Bone_Calculate(CBoneData* bd, Fmatrix* parent)
 {
+	xrCriticalSectionGuard g(UCalc_Mutex2);
 	u16 SelfID = bd->GetSelfID();
 	CBoneInstance& BONE_INST = LL_GetBoneInstance(SelfID);
 	CLBone(bd, BONE_INST, parent, u8(-1));
