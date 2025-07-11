@@ -205,9 +205,8 @@ void CObjectList::Update(bool bForce)
 		{
 			// Select Crow-Mode
 			Device.Statistic->UpdateClient_updated = 0;
-
-			CObject** b;
-			CObject** e;
+			Objects workload;
+			workload.reserve(objects_active.capacity());
 
 			{
 				PROF_EVENT("CObjectList::Update/Crows");
@@ -219,12 +218,12 @@ void CObjectList::Update(bool bForce)
 				}
 
 				Device.Statistic->UpdateClient_crows = crows.size();
-				Objects* workload = 0;
+				Objects* required_workload;
 				if (!psDeviceFlags.test(rsDisableObjectsAsCrows))
-					workload = &crows;
+					required_workload = &crows;
 				else
 				{
-					workload = &objects_active;
+					required_workload = &objects_active;
 					clear_crow_vec(crows);
 				}
 
@@ -232,25 +231,26 @@ void CObjectList::Update(bool bForce)
 				Device.Statistic->UpdateClient_active = objects_active.size();
 				Device.Statistic->UpdateClient_total = objects_active.size() + objects_sleeping.size();
 
-				u32 const objects_count = workload->size();
-				CObject** objects = (CObject**)_alloca(objects_count * sizeof(CObject*));
-				std::copy(workload->begin(), workload->end(), objects);
-
+				{
+					PROF_EVENT("CObjectList::Update/CopyWorkload");
+					workload = *required_workload;
+				}
+				
 				crows.clear_not_free();
 
-				b = objects;
-				e = objects + objects_count;
-				for (CObject** i = b; i != e; ++i)
+				for (const auto obj: workload)
 				{
-					(*i)->IAmNotACrowAnyMore();
-					(*i)->dwFrame_AsCrow = u32(-1);
+					obj->IAmNotACrowAnyMore();
+					obj->dwFrame_AsCrow = u32(-1);
 				}
 			}
 
 			{
 				PROF_EVENT("CObjectList::Update/SingleUpdate");
-				for (CObject** i = b; i != e; ++i)
-					SingleUpdate(*i);
+				for (const auto obj : workload)
+				{
+					SingleUpdate(obj);
+				}
 			}
 
 			Device.Statistic->UpdateClient.End();
