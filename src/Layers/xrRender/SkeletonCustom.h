@@ -5,12 +5,16 @@
 #include		"fhierrarhyvisual.h"
 #include		"../../xrEngine/bone.h"
 #include		"../../Include/xrRender/Kinematics.h"
+#include "../../xrEngine/IRenderable.h"
+#include <optional>
 
 // refs
 class CKinematics;
 class CInifile;
 class CBoneData;
 struct SEnumVerticesCallback;
+
+class IRenderable;
 
 #pragma warning(push)
 #pragma warning(disable:4275)
@@ -110,6 +114,11 @@ public:
 
 public:
 	dxRender_Visual* m_lod;
+
+	IC auto getXForm()
+	{
+		return renderableParent ? std::optional<Fmatrix>(renderableParent->renderable.xform) : std::nullopt;
+	}
 protected:
 	SkeletonWMVec wallmarks;
 	u32 wm_frame;

@@ -10,6 +10,12 @@ extern int psSkeletonUpdate;
 void check_kinematics(CKinematics* _k, LPCSTR s);
 #endif
 
+extern float IK_CALC_DIST;
+extern float IK_ALWAYS_CALC_DIST;
+BOOL r_optimize_calculate_bones = TRUE;
+
+class IRenderable;
+
 void CKinematics::CalculateBones(BOOL bForceExact)
 {
 	PROF_EVENT("CKinematics::CalculateBones");
@@ -17,6 +23,43 @@ void CKinematics::CalculateBones(BOOL bForceExact)
 	// check if the info is still relevant
 	// skip all the computations - assume nothing changes in a small period of time :)
 	if (RDEVICE.dwTimeGlobal == UCalc_Time) return; // early out for "fast" update
+
+	// demonized: don't calculate bones when the object is far away and not in frustum
+	if (r_optimize_calculate_bones)
+		if (auto xForm = getXForm())
+		{
+			Fvector p;
+			xForm.value().transform_tiny(p, vis.sphere.P);
+
+			// Perceivable distance depending on FOV, so that objects will behave normal in binoculars
+			float dist = Device.vCameraPosition.distance_to(p);
+			float fov_rad = deg2rad(Device.fFOV); // Make sure Device.fFOV is in degrees
+			float perceived_dist = dist / tanf(fov_rad * 0.5f);
+			float dist_k = perceived_dist / dist;
+
+			auto v_copy = vis;
+			vis.box.xform(xForm.value());
+
+			bool bVisible = (dist < IK_ALWAYS_CALC_DIST * dist_k) ||
+				(
+					(dist < IK_CALC_DIST * dist_k) &&
+					::Render->ViewBase.testSphere_dirty(p, vis.sphere.R) &&
+					::Render->occ_visible(v_copy)
+				);
+
+			if (!bVisible)
+			{
+				/*if (RDEVICE.dwTimeGlobal % UCalc_Interval < 5)
+				{
+					Fvector p;
+					p = xForm.value().c;
+					Msg("CKinematics::CalculateBones, vis not visible, skip, box position %.2f, %.2f, %.2f, dist %.2f", p.x, p.y, p.z, dist / dist_k);
+				}*/
+				UCalc_Time = RDEVICE.dwTimeGlobal;
+				return;
+			}
+		}
+
 	xrCriticalSectionGuard g(UCalc_Mutex);
 	OnCalculateBones();
 	if (!bForceExact && (RDEVICE.dwTimeGlobal < (UCalc_Time + UCalc_Interval))) return; // early out for "slow" update
