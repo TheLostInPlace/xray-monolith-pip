@@ -11,9 +11,6 @@
 
 #include "dxRenderDeviceRender.h"
 
-#include <tbb/blocked_range.h>
-#include <tbb/parallel_for.h>
-
 float psOSSR = .001f;
 
 void __stdcall CHOM::MT_RENDER()
@@ -100,7 +97,7 @@ void CHOM::Load()
 	// Create RASTER-triangles
 	m_pTris = xr_alloc<occTri>(u32(CL.getTS()));
 
-	tbb::parallel_for(tbb::blocked_range<u32>(0, CL.getTS()), [&](const auto& range)
+	xr_parallel_for(xr_blocked_range<u32>(0, CL.getTS()), [&](const auto& range)
 	{
 		for (u32 it = range.begin(); it != range.end(); ++it)
 		{

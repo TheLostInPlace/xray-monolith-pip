@@ -4,9 +4,6 @@
 #include "particle_actions_collection.h"
 #include "particle_effect.h"
 
-#include <tbb/parallel_for.h>
-#include <tbb/blocked_range.h>
-
 using namespace PAPI;
 
 void PAPI::PAAvoid::Execute(ParticleEffect* effect, const float dt, float& tm_max)
@@ -1739,7 +1736,7 @@ void PATurbulenceExecuteStream(LPVOID lpvParams)
 	int octaves = pParams->octaves;
 	float magnitude = pParams->magnitude;
 
-	tbb::parallel_for(tbb::blocked_range<u32>(0, count), [&](const tbb::blocked_range<u32>& range)
+	xr_parallel_for(xr_blocked_range<u32>(0, count), [&](const auto& range)
 	{
 		for (u32 i = range.begin(); i != range.end(); ++i)
 		{
