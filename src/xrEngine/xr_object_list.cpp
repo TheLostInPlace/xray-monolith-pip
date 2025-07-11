@@ -206,65 +206,52 @@ void CObjectList::Update(bool bForce)
 			// Select Crow-Mode
 			Device.Statistic->UpdateClient_updated = 0;
 
-			Objects& crows = m_crows[0];
+			CObject** b;
+			CObject** e;
 
 			{
-				Objects& crows1 = m_crows[1];
-				crows.insert(crows.end(), crows1.begin(), crows1.end());
-				crows1.clear_not_free();
+				PROF_EVENT("CObjectList::Update/Crows");
+				Objects& crows = m_crows[0];
+				{
+					Objects& crows1 = m_crows[1];
+					crows.insert(crows.end(), crows1.begin(), crows1.end());
+					crows1.clear_not_free();
+				}
+
+				Device.Statistic->UpdateClient_crows = crows.size();
+				Objects* workload = 0;
+				if (!psDeviceFlags.test(rsDisableObjectsAsCrows))
+					workload = &crows;
+				else
+				{
+					workload = &objects_active;
+					clear_crow_vec(crows);
+				}
+
+				Device.Statistic->UpdateClient.Begin();
+				Device.Statistic->UpdateClient_active = objects_active.size();
+				Device.Statistic->UpdateClient_total = objects_active.size() + objects_sleeping.size();
+
+				u32 const objects_count = workload->size();
+				CObject** objects = (CObject**)_alloca(objects_count * sizeof(CObject*));
+				std::copy(workload->begin(), workload->end(), objects);
+
+				crows.clear_not_free();
+
+				b = objects;
+				e = objects + objects_count;
+				for (CObject** i = b; i != e; ++i)
+				{
+					(*i)->IAmNotACrowAnyMore();
+					(*i)->dwFrame_AsCrow = u32(-1);
+				}
 			}
 
-#if 0
-            std::sort (crows.begin(), crows.end());
-            crows.erase (
-                std::unique(
-                    crows.begin(),
-                    crows.end()
-                ),
-                crows.end()
-            );
-#else
-# ifdef DEBUG
-            std::sort(crows.begin(), crows.end());
-            VERIFY(
-                std::unique(
-                    crows.begin(),
-                    crows.end()
-                ) == crows.end()
-            );
-# endif // ifdef DEBUG
-#endif
-
-			Device.Statistic->UpdateClient_crows = crows.size();
-			Objects* workload = 0;
-			if (!psDeviceFlags.test(rsDisableObjectsAsCrows))
-				workload = &crows;
-			else
 			{
-				workload = &objects_active;
-				clear_crow_vec(crows);
+				PROF_EVENT("CObjectList::Update/SingleUpdate");
+				for (CObject** i = b; i != e; ++i)
+					SingleUpdate(*i);
 			}
-
-			Device.Statistic->UpdateClient.Begin();
-			Device.Statistic->UpdateClient_active = objects_active.size();
-			Device.Statistic->UpdateClient_total = objects_active.size() + objects_sleeping.size();
-
-			u32 const objects_count = workload->size();
-			CObject** objects = (CObject**)_alloca(objects_count * sizeof(CObject*));
-			std::copy(workload->begin(), workload->end(), objects);
-
-			crows.clear_not_free();
-
-			CObject** b = objects;
-			CObject** e = objects + objects_count;
-			for (CObject** i = b; i != e; ++i)
-			{
-				(*i)->IAmNotACrowAnyMore();
-				(*i)->dwFrame_AsCrow = u32(-1);
-			}
-
-			for (CObject** i = b; i != e; ++i)
-				SingleUpdate(*i);
 
 			Device.Statistic->UpdateClient.End();
 		}
@@ -273,43 +260,36 @@ void CObjectList::Update(bool bForce)
 	// Destroy
 	if (!destroy_queue.empty())
 	{
-		// Info
-		for (Objects::iterator oit = objects_active.begin(); oit != objects_active.end(); oit++)
-			for (int it = destroy_queue.size() - 1; it >= 0; it--)
-			{
-				(*oit)->net_Relcase(destroy_queue[it]);
-			}
-		for (Objects::iterator oit = objects_sleeping.begin(); oit != objects_sleeping.end(); oit++)
-			for (int it = destroy_queue.size() - 1; it >= 0; it--) (*oit)->net_Relcase(destroy_queue[it]);
-
-		for (int it = destroy_queue.size() - 1; it >= 0; it--) Sound->object_relcase(destroy_queue[it]);
-
-		RELCASE_CALLBACK_VEC::iterator It = m_relcase_callbacks.begin();
-		RELCASE_CALLBACK_VEC::iterator Ite = m_relcase_callbacks.end();
-		for (; It != Ite; ++It)
-		{
-			VERIFY(*(*It).m_ID == (It - m_relcase_callbacks.begin()));
-			Objects::iterator dIt = destroy_queue.begin();
-			Objects::iterator dIte = destroy_queue.end();
-			for (; dIt != dIte; ++dIt)
-			{
-				(*It).m_Callback(*dIt);
-				g_hud->net_Relcase(*dIt);
-			}
-		}
-
-		// Destroy
+		PROF_EVENT("CObjectList::Update/destroy_queue");
 		for (int it = destroy_queue.size() - 1; it >= 0; it--)
 		{
-			CObject* O = destroy_queue[it];
-			// Msg ("Object [%x]", O);
+			auto obj = destroy_queue[it];
+			for (const auto oit: objects_active)
+				oit->net_Relcase(obj);
+
+			for (const auto oit : objects_sleeping)
+				oit->net_Relcase(obj);
+
+			Sound->object_relcase(obj);
+
+			auto It = m_relcase_callbacks.begin();
+			auto Ite = m_relcase_callbacks.end();
+			for (; It != Ite; ++It)
+			{
+				VERIFY(*(*It).m_ID == (It - m_relcase_callbacks.begin()));
+				(*It).m_Callback(obj);
+				g_hud->net_Relcase(obj);
+			}
+
 #ifdef DEBUG
-            if (debug_destroy)
-                Msg("Destroying object[%x][%x] [%d][%s] frame[%d]", dynamic_cast<void*>(O), O, O->ID(), *O->cName(), Device.dwFrame);
+			if (debug_destroy)
+				Msg("Destroying object[%x][%x] [%d][%s] frame[%d]", dynamic_cast<void*>(obj), obj, obj->ID(), *obj->cName(), Device.dwFrame);
 #endif // DEBUG
-			O->net_Destroy();
-			Destroy(O);
+
+			obj->net_Destroy();
+			Destroy(obj);
 		}
+
 		destroy_queue.clear();
 	}
 }
