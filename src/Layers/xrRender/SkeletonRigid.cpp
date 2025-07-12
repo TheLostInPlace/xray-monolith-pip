@@ -23,7 +23,6 @@ void CKinematics::CalculateBones(BOOL bForceExact)
 	// skip all the computations - assume nothing changes in a small period of time :)
 	if (RDEVICE.dwTimeGlobal == UCalc_Time) return; // early out for "fast" update
 
-	UCalc_mtlock lock;
 
 	// demonized: don't calculate bones when the object is far away and not in frustum
 	if (r_optimize_calculate_bones)
@@ -38,7 +37,7 @@ void CKinematics::CalculateBones(BOOL bForceExact)
 			float perceived_dist = dist / tanf(fov_rad * 0.5f);
 			float dist_k = perceived_dist / dist;
 
-			xrCriticalSectionGuard g(UCalc_Mutex);
+			UCalc_mtlock lock;
 
 			if (UCalc_Time == RDEVICE.dwTimeGlobal) return;
 
@@ -61,6 +60,7 @@ void CKinematics::CalculateBones(BOOL bForceExact)
 			}
 		}
 
+	UCalc_mtlock lock;
 	OnCalculateBones();
 	if (!bForceExact && (RDEVICE.dwTimeGlobal < (UCalc_Time + UCalc_Interval))) return; // early out for "slow" update
 	if (Update_Visibility) Visibility_Update();
