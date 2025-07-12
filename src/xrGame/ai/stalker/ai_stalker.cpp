@@ -986,7 +986,7 @@ void CAI_Stalker::destroy_anim_mov_ctrl()
 
 void CAI_Stalker::UpdateCL()
 {
-	PROF_EVENT_DYNAMIC(cNameSect_str());
+	PROF_EVENT("CAI_Stalker::UpdateCL");
 	START_PROFILE("stalker")
 		START_PROFILE("stalker/client_update")
 			VERIFY2(PPhysicsShell()||getEnabled(), *cName());
@@ -1090,7 +1090,7 @@ CPHDestroyable* CAI_Stalker::ph_destroyable()
 
 void CAI_Stalker::shedule_Update(u32 DT)
 {
-	PROF_EVENT_DYNAMIC(cNameSect_str());
+	PROF_EVENT("CAI_Stalker::shedule_Update");
 	// Optimization update
 //	if (Device.dwFrame % 2) return;
 

@@ -164,7 +164,6 @@ void CMemoryManager::update(const xr_vector<T>& objects, bool add_enemies)
 	squad_mask_type mask = m_stalker ? m_stalker->agent_manager().member().mask(m_stalker) : 0;
 	xr_vector<T>::const_iterator I = objects.begin();
 	xr_vector<T>::const_iterator E = objects.end();
-	PROF_EVENT("MEMBERS_FOR");
 	for (; I != E; ++I)
 	{
 		if (!(*I).m_enabled)
@@ -173,7 +172,6 @@ void CMemoryManager::update(const xr_vector<T>& objects, bool add_enemies)
 		if (m_stalker && !(*I).m_squad_mask.test(mask))
 			continue;
 
-		PROF_EVENT_DYNAMIC((*I).m_object->cName().c_str());
 		danger().add(*I);
 
 		if (add_enemies)
