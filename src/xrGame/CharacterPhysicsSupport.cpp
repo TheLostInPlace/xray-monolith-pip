@@ -388,6 +388,7 @@ void CCharacterPhysicsSupport::UpdateCollisionActivatingDellay()
 
 void CCharacterPhysicsSupport::in_shedule_Update(u32 DT)
 {
+	PROF_EVENT();
 	///VERIFY( 0 );
 
 	//CPHSkeleton::Update(DT);

@@ -148,7 +148,7 @@ CActor::CActor() : CEntityAlive(), current_ik_cam_shift(0)
 	fCurAVelocity = 0.0f;
 	fFPCamYawMagnitude = 0.0f; //--#SM+#--
 	fFPCamPitchMagnitude = 0.0f; //--#SM+#--
-	// ýôôåêòîðû
+	// Эффекторы (Effectors)
 	pCamBobbing = 0;
 
 	cam_freelook = eflDisabled;
@@ -186,7 +186,7 @@ CActor::CActor() : CEntityAlive(), current_ik_cam_shift(0)
     Device.seqRender.Add	(this,REG_PRIORITY_LOW);
 #endif
 
-	//ðàçðåøèòü èñïîëüçîâàíèå ïîÿñà â inventory
+	// Разрешить использование пояса в inventory (Allow use of belt in inventory)
 	inventory().SetBeltUseful(true);
 
 	m_pPersonWeLookingAt = NULL;
@@ -489,7 +489,7 @@ void CActor::Load(LPCSTR section)
 	// sheduler
 	shedule.t_min = shedule.t_max = 1;
 
-	// íàñòðîéêè äèñïåðñèè ñòðåëüáû
+	// Настройки дисперсии стрельбы (Dispersion settings for shooting)
 	m_fDispBase = pSettings->r_float(section, "disp_base");
 	m_fDispBase = deg2rad(m_fDispBase);
 
@@ -576,12 +576,12 @@ void CActor::Hit(SHit* pHDS)
 			if (Device.dwFrame != last_hit_frame &&
 				HDS.bone() != BI_NONE)
 			{
-				// âû÷èñëèòü ïîçèöèþ è íàïðàâëåííîñòü ïàðòèêëà
+				// вычислить позицию и направленность партикла (Calculate position and direction of particle)
 				Fmatrix pos;
 
 				CParticlesPlayer::MakeXFORM(this, HDS.bone(), HDS.dir, HDS.p_in_bone_space, pos);
 
-				// óñòàíîâèòü particles
+				// установить particles (Set particles)
 				CParticlesObject* ps = NULL;
 
 				if (eacFirstEye == cam_active && this == Level().CurrentEntity())
@@ -904,7 +904,7 @@ void CActor::Die(CObject* who)
 		};
 
 
-		///!!! ÷èñòêà ïîÿñà
+		///!!! чистка пояса (Belt cleanup)
 		TIItemContainer& l_blist = inventory().m_belt;
 		while (!l_blist.empty())
 			inventory().Ruck(l_blist.front());
@@ -1758,7 +1758,7 @@ void CActor::shedule_Update(u32 DT)
 
 	inherited::shedule_Update(DT);
 
-	//ýôôåêòîð âêëþ÷àåìûé ïðè õîäüáå
+	// Эффектор, включаемый при ходьбе (Effector enabled while walking)
 	if (!pCamBobbing)
 	{
 		pCamBobbing = xr_new<CEffectorBobbing>();
@@ -1766,7 +1766,7 @@ void CActor::shedule_Update(u32 DT)
 	}
 	pCamBobbing->SetState(mstate_real, conditions().IsLimping(), IsZoomAimingMode());
 
-	//çâóê òÿæåëîãî äûõàíèÿ ïðè óòàëîñòè è õðîìàíèè
+	// Звук тяжелого дыхания при усталости и хромании (Heavy breathing sound when tired or limping)
 	if (this == Level().CurrentControlEntity() && !g_dedicated_server)
 	{
 		if (conditions().IsLimping() && g_Alive() && !psActorFlags.test(AF_GODMODE_RT))
@@ -1834,11 +1834,11 @@ void CActor::shedule_Update(u32 DT)
 			m_DangerSnd.stop();
 	}
 
-	//åñëè â ðåæèìå HUD, òî ñàìà ìîäåëü àêòåðà íå ðèñóåòñÿ
+	// если в режиме HUD, то сама модель актера не рисуется (If in HUD mode, the actor model is not drawn)
 	if (!character_physics_support()->IsRemoved())
 		setVisible(TRUE);
 
-	//÷òî àêòåð âèäèò ïåðåä ñîáîé
+	// что актер видит перед собой (What the actor sees in front of him)
 	collide::rq_result& RQ = HUD().GetRQ();
 
 
@@ -1913,9 +1913,7 @@ void CActor::shedule_Update(u32 DT)
 		m_pInvBoxWeLookingAt = NULL;
 	}
 
-	//	UpdateSleep									();
-
-	//äëÿ ñâîéñò àðòåôàêòîâ, íàõîäÿùèõñÿ íà ïîÿñå
+	// для свойств артефактов, находящихся на поясе (For properties of artefacts on the belt)
 	UpdateArtefactsOnBeltAndOutfit();
 	m_pPhysics_support->in_shedule_Update(DT);
 	Check_for_AutoPickUp();
@@ -2307,6 +2305,7 @@ void CActor::OnItemBelt(CInventoryItem* inventory_item, const SInvItemPlace& pre
 
 void CActor::UpdateArtefactsOnBeltAndOutfit()
 {
+	PROF_EVENT();
 	static float update_time = 0;
 
 	float f_update_time = 0;
@@ -2527,12 +2526,12 @@ bool CActor::can_attach(const CInventoryItem* inventory_item) const
 	if (!item || /*!item->enabled() ||*/ !item->can_be_attached())
 		return (false);
 
-	//ìîæíî ëè ïðèñîåäèíÿòü îáúåêòû òàêîãî òèïà
+	// можно ли присоединять объекты такого типа (Can objects of this type be attached)
 	if (m_attach_item_sections.end() == std::find(m_attach_item_sections.begin(), m_attach_item_sections.end(),
 	                                              inventory_item->object().cNameSect()))
 		return false;
 
-	//åñëè óæå åñòü ïðèñîåäèííåíûé îáúåò òàêîãî òèïà 
+	// если уже есть присоединенный объект такого типа (If there is already an attached object of this type)
 	if (attached(inventory_item->object().cNameSect()))
 		return false;
 
