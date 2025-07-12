@@ -37,14 +37,10 @@ void CKinematics::CalculateBones(BOOL bForceExact)
 			float perceived_dist = dist / tanf(fov_rad * 0.5f);
 			float dist_k = perceived_dist / dist;
 
-			auto v_copy = vis;
-			vis.box.xform(xForm.value());
-
 			bool bVisible = (dist < IK_ALWAYS_CALC_DIST * dist_k) ||
 				(
 					(dist < IK_CALC_DIST * dist_k) &&
-					::Render->ViewBase.testSphere_dirty(p, vis.sphere.R) &&
-					::Render->occ_visible(v_copy)
+					::Render->ViewBase.testSphere_dirty(p, vis.sphere.R)
 				);
 
 			if (!bVisible)
