@@ -199,9 +199,8 @@ void xrLogger::InitLog()
 	{
 		theLogger = new xrLogger;
 		xrLogger::logData = new xr_queue <xrLogger::LogRecord>;
-	}
-
-	thread_spawn(LogThreadEntryStartup, "X-Ray Log Thread", 0, nullptr);
+		thread_spawn(LogThreadEntryStartup, "X-Ray Log Thread", 0, nullptr);
+	}	
 }
 
 void xrLogger::InternalFlushLog()
@@ -328,12 +327,26 @@ void xrLogger::InternalPrintRecord()
 			OutputDebugStringA("\n");
 		}
 
+		// demonized: add tempLogData in case the logFile initialization takes time
 		if (logFile != nullptr)
 		{
 			IWriter* mutableWritter = (IWriter*)logFile;
+
+			while (!tempLogData.empty())
+			{
+				auto line = tempLogData.front();
+				tempLogData.pop();
+				mutableWritter->w(line.c_str(), line.size());
+				mutableWritter->w("\r\n", 2);
+			}
+
 			// write to file
 			mutableWritter->w(finalLine, FinalSize);
 			mutableWritter->w("\r\n", 2);
+		}
+		else
+		{
+			tempLogData.push(finalLine);
 		}
 
 		xrCriticalSectionGuard guard(&logCallbackGuard);

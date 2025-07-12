@@ -75,6 +75,7 @@ private:
 
 	//LogCallback onLogMsg;
 	xr_list<LogCallback> logCallbackList;
+	xr_fixedqueue<xr_string, 512> tempLogData;
 public:
 	static xr_queue <LogRecord>* logData;
 };

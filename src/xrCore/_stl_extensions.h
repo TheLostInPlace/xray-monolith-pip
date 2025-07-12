@@ -248,6 +248,33 @@ public:
 template <typename T, typename container = xr_deque<T>>
 using xr_queue = std::queue<T, container>;
 
+// fixed queue
+template <typename T, int MaxLen, typename container = xr_deque<T>>
+class xr_fixedqueue : public xr_queue<T, container>
+{
+private:
+	typedef xr_queue<T, container> inherited;
+	void check_and_pop_front()
+	{
+		if (this->size() == MaxLen)
+			this->c.pop_front();
+	}
+
+public:
+	void push(const T& value)
+	{
+		check_and_pop_front();
+		inherited::push(value);
+	}
+
+	template<typename... Args>
+	void emplace(Args&&... args)
+	{
+		check_and_pop_front();
+		inherited::emplace(std::forward<Args>(args)...);
+	}
+};
+
 // stack
 template <typename _Ty, class _C = xr_vector<_Ty>>
 class xr_stack
