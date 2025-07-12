@@ -12,7 +12,7 @@ void check_kinematics(CKinematics* _k, LPCSTR s);
 
 extern float IK_CALC_DIST;
 extern float IK_ALWAYS_CALC_DIST;
-BOOL r_optimize_calculate_bones = FALSE;
+BOOL r_optimize_calculate_bones = TRUE;
 
 class IRenderable;
 
