@@ -209,6 +209,9 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.07.12**
+* lulnope: expose `memory_remove_links` to lua scripts
+
 **2025.07.08**
 * Spawn antifreeze: fixed issue related to bolts, introduced in previous version: https://github.com/themrdemonized/xray-monolith/issues/287
 * SaloEater: Debug scripts with luapanda (https://github.com/themrdemonized/xray-monolith/pull/251)
