@@ -117,7 +117,7 @@ public:
 
 	IC auto getXForm()
 	{
-		return renderableParent ? std::optional<Fmatrix>(renderableParent->renderable.xform) : std::nullopt;
+		return renderableParent ? std::optional<const Fmatrix>(renderableParent->renderable.xform) : std::nullopt;
 	}
 protected:
 	SkeletonWMVec wallmarks;
