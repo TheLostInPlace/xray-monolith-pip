@@ -196,13 +196,13 @@ void CSoundRender_TargetA::fill_block(ALuint BufferID)
 	ALuint format = (m_pEmitter->source()->m_wformat.nChannels == 1) ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
 	if (format == AL_FORMAT_MONO16)
 	{
-		m_pEmitter->fill_block(&g_target_temp_data.front(), buf_block);
-		A_CHK(alBufferData(BufferID, format, &g_target_temp_data.front(), buf_block, m_pEmitter->source()->m_wformat.nSamplesPerSec));
+		m_pEmitter->fill_block(&g_target_temp_data.front(), g_target_temp_data.size());
+		A_CHK(alBufferData(BufferID, format, &g_target_temp_data.front(), g_target_temp_data.size(), m_pEmitter->source()->m_wformat.nSamplesPerSec));
 	}
 	else
 	{
-		m_pEmitter->fill_block(&g_target_temp_data_16.front(), buf_block);
-		A_CHK(alBufferData(BufferID, format, &g_target_temp_data_16.front(), buf_block, m_pEmitter->source()->m_wformat.nSamplesPerSec));
+		m_pEmitter->fill_block(&g_target_temp_data_16.front(), g_target_temp_data.size());
+		A_CHK(alBufferData(BufferID, format, &g_target_temp_data_16.front(), g_target_temp_data.size(), m_pEmitter->source()->m_wformat.nSamplesPerSec));
 	}
 }
 
