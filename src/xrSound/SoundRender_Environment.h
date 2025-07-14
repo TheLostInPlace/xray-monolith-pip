@@ -1,9 +1,9 @@
-#ifndef soundrender_environmentH
-#define soundrender_environmentH
 #pragma once
 
 #include <AL/efx-presets.h>
-const EFXEAXREVERBPROPERTIES reverbs[113] = {
+
+constexpr EFXEAXREVERBPROPERTIES reverbs[] =
+{
     // Default presets
     EFX_REVERB_PRESET_GENERIC,
     EFX_REVERB_PRESET_PADDEDCELL,
@@ -194,4 +194,3 @@ public:
 	void Remove(int id);
 	SE_VEC& Library();
 };
-#endif

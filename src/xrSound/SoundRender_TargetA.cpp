@@ -77,12 +77,12 @@ void CSoundRender_TargetA::render()
 	for (u32 buf_idx = 0; buf_idx < sdef_target_count; buf_idx++)
 		fill_block(pBuffers[buf_idx]);
 
-	A_CHK(alSourceQueueBuffers (pSource, sdef_target_count, pBuffers));
-	if (Slot != u32(-1))
+	A_CHK(alSourceQueueBuffers(pSource, sdef_target_count, pBuffers));
+	if (Slot != u32(-1) && !m_pEmitter->bIntro)
 	{
 		A_CHK(alSource3i(pSource, AL_AUXILIARY_SEND_FILTER, Slot, 0, AL_FILTER_NULL));
 	}
-	A_CHK(alSourcePlay (pSource));
+	A_CHK(alSourcePlay(pSource));
 
 	inherited::render();
 }
