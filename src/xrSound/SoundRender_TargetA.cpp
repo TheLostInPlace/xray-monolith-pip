@@ -19,6 +19,11 @@ CSoundRender_TargetA::~CSoundRender_TargetA()
 {
 }
 
+void CSoundRender_TargetA::SetSlot(ALuint NewSlot)
+{
+	Slot = NewSlot;
+}
+
 BOOL CSoundRender_TargetA::_initialize()
 {
 	inherited::_initialize();
@@ -72,6 +77,7 @@ void CSoundRender_TargetA::render()
 		fill_block(pBuffers[buf_idx]);
 
 	A_CHK(alSourceQueueBuffers (pSource, sdef_target_count, pBuffers));
+	A_CHK(alSource3i(pSource, AL_AUXILIARY_SEND_FILTER, Slot, 0, AL_FILTER_NULL));
 	A_CHK(alSourcePlay (pSource));
 
 	inherited::render();
