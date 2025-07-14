@@ -263,23 +263,30 @@ void CSoundRender_CoreA::_initialize(int stage)
 	LOAD_PROC(LPALGETAUXILIARYEFFECTSLOTFV, alGetAuxiliaryEffectSlotfv);
 #undef LOAD_PROC
 
-	alGenEffects(1, &effect);
-
-	load_reverb(effect, &reverbs[0]);
-
-	// Check if an error occured, and clean up if so.
-	ALenum err = alGetError();
-	if (err == AL_NO_ERROR)
+	if (psSoundFlags.test(ss_EFX))
 	{
-		Msg("SOUND: OpenAL: EFX supported");
-		m_is_supported = true;
-		alGenAuxiliaryEffectSlots(1, &slot);
+		alGenEffects(1, &effect);
+		load_reverb(effect, &reverbs[0]);
+
+		// Check if an error occured, and clean up if so.
+		ALenum err = alGetError();
+		if (err == AL_NO_ERROR)
+		{
+			Msg("SOUND: OpenAL: EFX supported");
+			m_is_supported = true;
+			alGenAuxiliaryEffectSlots(1, &slot);
+		}
+		else
+		{
+			Msg("SOUND: OpenAL: Failed to init EFX:", alGetString(err));
+			if (alIsEffect(effect))
+				alDeleteEffects(1, &effect);
+		}
 	}
 	else
 	{
-		Msg("SOUND: OpenAL: Failed to init EFX:", alGetString(err));
-		if (alIsEffect(effect))
-			alDeleteEffects(1, &effect);
+		Msg("SOUND: OpenAL: EFX is disabled");
+		m_is_supported = false;
 	}
 
 	// Init listener struct

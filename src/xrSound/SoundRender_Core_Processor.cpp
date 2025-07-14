@@ -128,7 +128,8 @@ void CSoundRender_Core::update(const Fvector& P, const Fvector& D, const Fvector
 		for (it = 0; it < s_targets_defer.size(); it++)
 		{
 			CSoundRender_TargetA* Ptr = (CSoundRender_TargetA*)s_targets_defer[it];
-			Ptr->SetSlot(Core->slot);
+			if (m_is_supported)
+				Ptr->SetSlot(Core->slot);
 			Ptr->render();
 		}
 	}
