@@ -16,7 +16,7 @@ XRSOUND_API extern float psSoundCull;
 inline u32 calc_cursor(const float& fTimeStarted, float& fTime, const float& fTimeTotal, const WAVEFORMATEX& wfx)
 {
 	if (fTime < fTimeStarted)
-		fTime = fTimeStarted; // Андрюха посоветовал, ассерт что ниже вылетел из за паузы как то хитро
+		fTime = fTimeStarted; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	R_ASSERT((fTime-fTimeStarted)>=0.0f);
 	while ((fTime - fTimeStarted) > fTimeTotal) //looped
 	{
@@ -133,7 +133,6 @@ void CSoundRender_Emitter::update(float dt)
 		smooth_volume = p_source.base_volume * p_source.volume * (owner_data->s_type == st_Effect
 			                                                          ? psSoundVEffects * psSoundVFactor
 			                                                          : psSoundVMusic * psSoundVMusicFactor) * (b2D ? 1.f : occluder_volume);
-		e_current = e_target = *SoundRender->get_environment(p_source.position);
 		if (update_culling(dt))
 		{
 			m_current_state = stPlaying;
@@ -159,7 +158,6 @@ void CSoundRender_Emitter::update(float dt)
 		smooth_volume = p_source.base_volume * p_source.volume * (owner_data->s_type == st_Effect
 			                                                          ? psSoundVEffects * psSoundVFactor
 			                                                          : psSoundVMusic * psSoundVMusicFactor) * (b2D ? 1.f : occluder_volume);
-		e_current = e_target = *SoundRender->get_environment(p_source.position);
 		if (update_culling(dt))
 		{
 			m_current_state = stPlayingLooped;
@@ -398,8 +396,6 @@ float CSoundRender_Emitter::priority()
 void CSoundRender_Emitter::update_environment(float dt)
 {
 	if (bMoved) {
-		e_target = *SoundRender->get_environment(p_source.position);
 		p_source.update_velocity(dt);
 	}
-	e_current.lerp(e_current, e_target, dt);
 }

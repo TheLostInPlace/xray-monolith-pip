@@ -96,6 +96,13 @@ void CSoundRender_Emitter::switch_to_2D()
 	set_priority(100.f);
 }
 
+void CSoundRender_Emitter::switch_to_Intro()
+{
+	bIntro = true;
+	b2D = TRUE;
+	set_priority(100.f);
+}
+
 void CSoundRender_Emitter::switch_to_3D()
 {
 	b2D = FALSE;
