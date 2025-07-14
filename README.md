@@ -209,6 +209,9 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.07.15**
+* Reducing updates of bones calculations instead of disabling them, fixes issues with T-posing corpses
+
 **2025.07.14**
 * DLTX: Allow DLTX's `>` to create the property if it doesn't exist (https://github.com/themrdemonized/xray-monolith/issues/289)
 * Optimizations:
