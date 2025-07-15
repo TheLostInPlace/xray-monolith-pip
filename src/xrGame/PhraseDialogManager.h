@@ -11,14 +11,14 @@ public:
 	virtual void InitDialog(CPhraseDialogManager* dialog_partner, DIALOG_SHARED_PTR& phrase_dialog);
 	virtual void AddDialog(DIALOG_SHARED_PTR& phrase_dialog);
 
-	//РїРѕР»СѓС‡РµРЅРёРµ С„СЂР°Р·С‹, РІРёСЂС‚СѓР°Р»СЊРЅР°СЏ С„СѓРЅРєС†РёСЏ, 
-	//РґРѕР»Р¶РЅР° Р±С‹С‚СЊ РїРµСЂРµРѕРїСЂРµРґРµР»РµРЅР° РґР»СЏ СЃС‚Р°Р»РєРµСЂРѕРІ Рё Р°РєС‚РµСЂР°
+	//получение фразы, виртуальная функция, 
+	//должна быть переопределена для сталкеров и актера
 	virtual void ReceivePhrase(DIALOG_SHARED_PTR& phrase_dialog);
-	//РѕС‚РІРµС‚РёС‚СЊ РЅР° СЃРєР°Р·Р°РЅРЅСѓСЋ С„СЂР°Р·Сѓ РІ РґРёР°Р»РѕРіРµ
+	//ответить на сказанную фразу в диалоге
 	virtual void SayPhrase(DIALOG_SHARED_PTR& phrase_dialog, const shared_str& phrase_id);
 
-	//РІРёСЂС‚СѓР°Р»СЊРЅР°СЏ С„СѓРЅРєС†РёСЏ, Р·Р°РїРѕР»РЅСЏРµС‚ РјР°СЃСЃРёРІ, С‚РµРј РґРёР°Р»РѕРіР°РјРё, РєРѕС‚РѕСЂС‹Рµ
-	//РїРµСЂСЃРѕРЅР°Р¶ РјРѕР¶РµС‚ РёРЅРёС†РёРёСЂРѕРІР°С‚СЊ РІ РґР°РЅРЅС‹Р№ РјРѕРјРµРЅС‚
+	//виртуальная функция, заполняет массив, тем диалогами, которые
+	//персонаж может инициировать в данный момент
 	virtual void UpdateAvailableDialogs(CPhraseDialogManager* partner);
 
 	DEFINE_VECTOR(DIALOG_SHARED_PTR, DIALOG_VECTOR, DIALOG_VECTOR_IT);
@@ -29,12 +29,12 @@ public:
 protected:
 	virtual bool AddAvailableDialog(shared_str dialog_id, CPhraseDialogManager* partner);
 
-	//Р±СѓС„С„РµСЂРЅС‹Р№ СЃРїРёСЃРѕРє РґРёР°Р»РѕРіРѕРІ, РєРѕС‚РѕСЂС‹Рµ Р±С‹Р»Рё РїСЂРѕРІРµСЂРµРЅС‹
-	//РІРѕ РІСЂРµРјСЏ UpdateAvailableDialogs
+	//буфферный список диалогов, которые были проверены
+	//во время UpdateAvailableDialogs
 	DIALOG_ID_VECTOR m_CheckedDialogs;
 
-	//СЃРїРёСЃРѕРє Р°РєС‚РёРІРЅС‹С… РґРёР°Р»РѕРіРѕРІ
+	//список активных диалогов
 	DIALOG_VECTOR m_ActiveDialogs;
-	//СЃРїРёСЃРѕРє РґРѕСЃС‚СѓРїРЅС‹С… РґРёР°Р»РѕРіРѕРІ
+	//список доступных диалогов
 	DIALOG_VECTOR m_AvailableDialogs;
 };

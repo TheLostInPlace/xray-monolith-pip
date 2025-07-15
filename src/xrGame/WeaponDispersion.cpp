@@ -1,4 +1,4 @@
-// WeaponDispersion.cpp: СЂР°Р·Р±РѕСЃ РїСЂРё СЃС‚СЂРµР»СЊР±Рµ
+// WeaponDispersion.cpp: разбос при стрельбе
 // 
 //////////////////////////////////////////////////////////////////////
 
@@ -14,7 +14,7 @@
 #include "EffectorShotX.h"
 
 
-//РІРѕР·РІСЂР°С‰Р°РµС‚ 1, РµСЃР»Рё РѕСЂСѓР¶РёРµ РІ РѕС‚Р»РёС‡РЅРѕРј СЃРѕСЃС‚РѕСЏРЅРёРё Рё >1 РµСЃР»Рё РїРѕРІСЂРµР¶РґРµРЅРѕ
+//возвращает 1, если оружие в отличном состоянии и >1 если повреждено
 float CWeapon::GetConditionDispersionFactor() const
 {
 	return (1.f + fireDispersionConditionFactor * (1.f - GetCondition()));
@@ -32,13 +32,13 @@ float CWeapon::GetBaseDispersion(float cartridge_k)
 	return fireDispersionBase * cur_silencer_koef.fire_dispersion * cartridge_k * GetConditionDispersionFactor();
 }
 
-//С‚РµРєСѓС‰Р°СЏ РґРёСЃРїРµСЂСЃРёСЏ (РІ СЂР°РґРёР°РЅР°С…) РѕСЂСѓР¶РёСЏ СЃ СѓС‡РµС‚РѕРј РёСЃРїРѕР»СЊР·СѓРµРјРѕРіРѕ РїР°С‚СЂРѕРЅР°
+//текущая дисперсия (в радианах) оружия с учетом используемого патрона
 float CWeapon::GetFireDispersion(float cartridge_k, bool for_crosshair)
 {
-	//СѓС‡РµС‚ Р±Р°Р·РѕРІРѕР№ РґРёСЃРїРµСЂСЃРёРё, СЃРѕСЃС‚РѕСЏРЅРёРµ РѕСЂСѓР¶РёСЏ Рё РІР»РёСЏРµРЅРёРµ РїР°С‚СЂРѕРЅР°
+	//учет базовой дисперсии, состояние оружия и влияение патрона
 	float fire_disp = GetBaseDispersion(cartridge_k);
 
-	//РІС‹С‡РёСЃР»РёС‚СЊ РґРёСЃРїРµСЂСЃРёСЋ, РІРЅРѕСЃРёРјСѓСЋ СЃР°РјРёРј СЃС‚СЂРµР»РєРѕРј
+	//вычислить дисперсию, вносимую самим стрелком
 	if (H_Parent())
 	{
 		const CInventoryOwner* pOwner = smart_cast<const CInventoryOwner*>(H_Parent());
@@ -51,7 +51,7 @@ float CWeapon::GetFireDispersion(float cartridge_k, bool for_crosshair)
 
 
 //////////////////////////////////////////////////////////////////////////
-// Р”Р»СЏ СЌС„С„РµРєС‚Р° РѕС‚РґР°С‡Рё РѕСЂСѓР¶РёСЏ
+// Для эффекта отдачи оружия
 void CWeapon::AddShotEffector()
 {
 	inventory_owner().on_weapon_shot_start(this);

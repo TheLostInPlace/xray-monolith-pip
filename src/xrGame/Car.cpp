@@ -72,7 +72,7 @@ CCar::CCar()
 	m_exhaust_particles = "vehiclefx\\exhaust_1";
 	m_car_sound = xr_new<SCarSound>(this);
 
-	//Сѓ РјР°С€РёРЅС‹ СЃР»РѕС‚РѕРІ РІ РёРЅРІРµРЅС‚Р°СЂРµ РЅРµС‚
+	//у машины слотов в инвентаре нет
 	inventory = xr_new<CInventory>();
 	inventory->SetSlotsUseful(false);
 	m_doors_torque_factor = 2.f;
@@ -1709,7 +1709,7 @@ void CCar::OnEvent(NET_Packet& P, u16 type)
 	inherited::OnEvent(P, type);
 	CExplosive::OnEvent(P, type);
 
-	//РѕР±СЂР°Р±РѕС‚РєР° СЃРѕРѕР±С‰РµРЅРёР№, РЅСѓР¶РЅС‹С… РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ Р±Р°РіР°Р¶РЅРёРєРѕРј РјР°С€РёРЅС‹
+	//обработка сообщений, нужных для работы с багажником машины
 	u16 id;
 	switch (type)
 	{
@@ -2071,7 +2071,7 @@ Fvector CCar::ExitVelocity()
 
 /************************************************** added by Ray Twitty (aka Shadows) START **************************************************/
 #ifdef ENABLE_CAR
-// РїРѕР»СѓС‡РёС‚СЊ Рё Р·Р°РґР°С‚СЊ С‚РµРєСѓС‰РµРµ РєРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕРїР»РёРІР°
+// получить и задать текущее количество топлива
 float CCar::GetfFuel()
 {
 	return m_fuel;
@@ -2082,7 +2082,7 @@ void CCar::SetfFuel(float fuel)
 	m_fuel = fuel;
 }
 
-// РїРѕР»СѓС‡РёС‚СЊ Рё Р·Р°РґР°С‚СЊ СЂР°Р·РјРµСЂ С‚РѕРїР»РёРІРЅРѕРіРѕ Р±Р°РєР° 
+// получить и задать размер топливного бака 
 float CCar::GetfFuelTank()
 {
 	return m_fuel_tank;
@@ -2093,7 +2093,7 @@ void CCar::SetfFuelTank(float fuel_tank)
 	m_fuel_tank = fuel_tank;
 }
 
-// РїРѕР»СѓС‡РёС‚СЊ Рё Р·Р°РґР°С‚СЊ РІРµР»РёС‡РёРЅСѓ РїРѕС‚СЂРµР±Р»РµРЅРёРµ С‚РѕРїР»РёРІР°
+// получить и задать величину потребление топлива
 float CCar::GetfFuelConsumption()
 {
 	return m_fuel_consumption;
@@ -2104,7 +2104,7 @@ void CCar::SetfFuelConsumption(float fuel_consumption)
 	m_fuel_consumption = fuel_consumption;
 }
 
-// РїСЂРёР±Р°РІРёС‚СЊ РёР»Рё СѓР±Р°РІРёС‚СЊ РєРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕРїР»РёРІР°
+// прибавить или убавить количество топлива
 void CCar::ChangefFuel(float fuel)
 {
 	if (m_fuel + fuel < 0)
@@ -2123,7 +2123,7 @@ void CCar::ChangefFuel(float fuel)
 	}
 }
 
-// РїСЂРёР±Р°РІРёС‚СЊ РёР»Рё СѓР±Р°РІРёС‚СЊ Р¶РёР·РЅРµР№ :)
+// прибавить или убавить жизней :)
 void CCar::ChangefHealth(float health)
 {
 	float current_health = GetfHealth();
@@ -2143,7 +2143,7 @@ void CCar::ChangefHealth(float health)
 	}
 }
 
-// Р°РєС‚РёРІРµРЅ Р»Рё СЃРµР№С‡Р°СЃ РґРІРёРіР°С‚РµР»СЊ
+// активен ли сейчас двигатель
 bool CCar::isActiveEngine()
 {
 	return b_engine_on;

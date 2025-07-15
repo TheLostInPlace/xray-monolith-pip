@@ -243,9 +243,9 @@ float CHelmet::HitThroughArmor(float hit_power, s16 element, float ap, bool& add
 		float BoneArmor = ba * GetCondition();
 		if (ap <= BoneArmor)
 		{
-			//РїСѓР»СЏ РќР• РїСЂРѕР±РёР»Р° Р±СЂРѕРЅСЊ
+			//пуля НЕ пробила бронь
 			NewHitPower *= m_boneProtection->m_fHitFracActor;
-			//add_wound = false; 	//СЂР°РЅС‹ РЅРµС‚
+			//add_wound = false; 	//раны нет
 			if (Core.ParamsData.test(ECoreParams::dbgbullet))
 				Msg("CHelmet::HitThroughArmor AP(%f) <= bone_armor(%f) [HitFracActor=%f] modified hit_power=%f", ap,
 				    BoneArmor, m_boneProtection->m_fHitFracActor, NewHitPower);
@@ -287,7 +287,7 @@ float CHelmet::HitThroughArmor(float hit_power, s16 element, float ap, bool& add
 	if (Core.ParamsData.test(ECoreParams::dbgbullet))
 		Msg("CHelmet::HitThroughArmor hit_type=%d | After HitFractionActor hit_power=%f", (u32)hit_type, NewHitPower);
 
-	//СѓРІРµР»РёС‡РёС‚СЊ РёР·РЅРѕС€РµРЅРЅРѕСЃС‚СЊ С€Р»РµРјР°
+	//увеличить изношенность шлема
 	Hit(hit_power, hit_type);
 
 	if (Core.ParamsData.test(ECoreParams::dbgbullet))

@@ -114,7 +114,7 @@ public:
 	void init();
 
 	virtual void OnChangeVisual();
-	//РґР»СЏ РЅР°СЃР»РµРґРѕРІР°РЅРёСЏ CParticlesPlayer
+	//для наследования CParticlesPlayer
 	virtual void UpdateCL();
 	void correct_spawn_pos();
 protected:

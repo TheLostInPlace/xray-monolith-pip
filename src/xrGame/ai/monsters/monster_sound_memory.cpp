@@ -58,7 +58,7 @@ void CMonsterSoundMemory::HearSound(const SoundElem& s)
 	if (DOOR_OPENING <= s.type) return;
 	if ((s.type == MONSTER_WALKING) && !s.who) return;
 
-	// РїРѕРёСЃРє РІ РјР°СЃСЃРёРІРµ Р·РІСѓРєР°
+	// поиск в массиве звука
 	xr_vector<SoundElem>::iterator it;
 
 	bool b_sound_replaced = false;
@@ -99,7 +99,7 @@ void CMonsterSoundMemory::GetSound(SoundElem& s, bool& bDangerous)
 {
 	VERIFY(!Sounds.empty());
 
-	// РІРѕР·РІСЂР°С‚ СЃР°РјРѕРіРѕ РѕРїР°СЃРЅРѕРіРѕ
+	// возврат самого опасного
 	s = GetSound();
 
 	if (s.type > WEAPON_EMPTY_CLICKING) bDangerous = false;
@@ -123,13 +123,13 @@ struct pred_remove_nonactual_sounds
 
 	bool operator()(const SoundElem& x)
 	{
-		// СѓРґР°Р»РёС‚СЊ Р·РІСѓРєРё РѕС‚ РѕР±СЉРµРєС‚РѕРІ, РїРµСЂРµС€РµРґС€РёС… РІ РѕС„С„Р»Р°Р№РЅ	
+		// удалить звуки от объектов, перешедших в оффлайн	
 		if (x.who && x.who->getDestroy()) return true;
 
-		// СѓРґР°Р»РёС‚СЊ 'СЃС‚Р°СЂС‹Рµ' Р·РІСѓРєРё
+		// удалить 'старые' звуки
 		if (x.time < new_time) return true;
 
-		// СѓРґР°Р»РёС‚СЊ Р·РІСѓРєРё РѕС‚ РЅРµР¶РёРІС‹С… РѕР±СЉРµРєС‚РѕРІ
+		// удалить звуки от неживых объектов
 		if (x.who)
 		{
 			const CEntityAlive* pE = smart_cast<const CEntityAlive*>(x.who);
@@ -143,7 +143,7 @@ struct pred_remove_nonactual_sounds
 
 void CMonsterSoundMemory::UpdateHearing()
 {
-	// СѓРґР°Р»РµРЅРёРµ СѓСЃС‚Р°СЂРµРІС€РёС… Р·РІСѓРєРѕРІ
+	// удаление устаревших звуков
 	Sounds.erase(
 		std::remove_if(
 			Sounds.begin(),
@@ -155,7 +155,7 @@ void CMonsterSoundMemory::UpdateHearing()
 		Sounds.end()
 	);
 
-	// РїРµСЂРµСЃС‡РёС‚Р°С‚СЊ value
+	// пересчитать value
 	for (xr_vector<SoundElem>::iterator I = Sounds.begin(); I != Sounds.end(); ++I) I->CalcValue(
 		Device.dwTimeGlobal, monster->Position());
 
@@ -198,7 +198,7 @@ struct pred_remove_relcase
 
 void CMonsterSoundMemory::remove_links(CObject* O)
 {
-	// СѓРґР°Р»РµРЅРёРµ СѓСЃС‚Р°СЂРµРІС€РёС… Р·РІСѓРєРѕРІ
+	// удаление устаревших звуков
 	Sounds.erase(
 		std::remove_if(
 			Sounds.begin(),

@@ -35,19 +35,19 @@ void CStateBurerAttackRunAroundAbstract::initialize()
 
 	if (dist > 30.f)
 	{
-		// Ð±ÐµÐ¶Ð°Ñ‚ÑŒ Ðº Ð²Ñ€Ð°Ð³Ñƒ
+		// áåæàòü ê âðàãó
 		selected_point.mad(object->Position(), dir_to_enemy,DIST_QUANT);
 	}
 	else if ((dist < 20.f) && (dist > 4.f))
 	{
-		// ÑƒÐ±ÐµÐ³Ð°Ñ‚ÑŒ Ð¾Ñ‚ Ð²Ñ€Ð°Ð³Ð°
+		// óáåãàòü îò âðàãà
 		selected_point.mad(object->Position(), dir_from_enemy,DIST_QUANT);
 		dest_direction.sub(object->EnemyMan.get_enemy()->Position(), selected_point);
 		dest_direction.normalize();
 	}
 	else
 	{
-		// Ð²Ñ‹Ð±Ñ€Ð°Ñ‚ÑŒ ÑÐ»ÑƒÑ‡Ð°Ð¹Ð½ÑƒÑŽ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸ÑŽ
+		// âûáðàòü ñëó÷àéíóþ ïîçèöèþ
 		selected_point = random_position(object->Position(), DIST_QUANT);
 		dest_direction.sub(object->EnemyMan.get_enemy()->Position(), selected_point);
 		dest_direction.normalize();

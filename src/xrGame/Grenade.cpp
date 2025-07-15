@@ -30,7 +30,7 @@ void CGrenade::Load(LPCSTR section)
 	CExplosive::Load(section);
 
 	//////////////////////////////////////
-	//РІСЂРµРјСЏ СѓР±РёСЂР°РЅРёСЏ РѕСЂСѓР¶РёСЏ СЃ СѓСЂРѕРІРЅСЏ
+	//время убирания оружия с уровня
 	if (pSettings->line_exist(section, "grenade_remove_time"))
 		m_dwGrenadeRemoveTime = pSettings->r_u32(section, "grenade_remove_time");
 	else
@@ -178,7 +178,7 @@ void CGrenade::Throw()
 	if (pGrenade)
 	{
 		pGrenade->set_destroy_time(m_dwDestroyTimeMax);
-		//СѓСЃС‚Р°РЅРѕРІРёС‚СЊ ID С‚РѕРіРѕ РєС‚Рѕ РєРёРЅСѓР» РіСЂР°РЅР°С‚Сѓ
+		//установить ID того кто кинул гранату
 		pGrenade->SetInitiator(H_Parent()->ID());
 	}
 	inherited::Throw();
@@ -222,7 +222,7 @@ void CGrenade::PutNextToSlot()
 	if (OnClient()) return;
 
 	VERIFY(!getDestroy());
-	//РІС‹РєРёРЅСѓС‚СЊ РіСЂР°РЅР°С‚Сѓ РёР· РёРЅРІРµРЅС‚Р°СЂСЏ
+	//выкинуть гранату из инвентаря
 	NET_Packet P;
 	if (m_pInventory)
 	{
@@ -293,7 +293,7 @@ bool CGrenade::Action(u16 cmd, u32 flags)
 
 	switch (cmd)
 	{
-		//РїРµСЂРµРєР»СЋС‡РµРЅРёРµ С‚РёРїР° РіСЂР°РЅР°С‚С‹
+		//переключение типа гранаты
 	case kWPN_NEXT:
 		{
 			if (flags & CMD_START)

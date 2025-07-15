@@ -17,23 +17,23 @@ void CBaseMonster::Think()
 
 		if (!g_Alive() || getDestroy()) return;
 
-		// РРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°С‚СЊ
+		// Инициализировать
 		InitThink();
 		anim().ScheduledInit();
 
-		// РћР±РЅРѕРІРёС‚СЊ РїР°РјСЏС‚СЊ
+		// Обновить память
 		START_PROFILE("Base Monster/Think/Update Memory")
 			;
 			UpdateMemory();
 		STOP_PROFILE;
 
-		// РћР±РЅРѕРІРёС‚СЊ СЃРєРІР°Рґ
+		// Обновить сквад
 		START_PROFILE("Base Monster/Think/Update Squad")
 			;
 			monster_squad().update(this);
 		STOP_PROFILE;
 
-		// Р—Р°РїСѓСЃС‚РёС‚СЊ FSM
+		// Запустить FSM
 		START_PROFILE("Base Monster/Think/FSM")
 			;
 			update_fsm();
@@ -46,12 +46,12 @@ void CBaseMonster::update_fsm()
 {
 	StateMan->update();
 
-	// Р·Р°РІРµСЂС€РёС‚СЊ РѕР±СЂР°Р±РѕС‚РєСѓ СѓСЃС‚Р°РЅРѕРІР»РµРЅРЅС‹С… РІ FSM РїР°СЂР°РјРµС‚СЂРѕРІ
+	// завершить обработку установленных в FSM параметров
 	post_fsm_update();
 
 	TranslateActionToPathParams();
 
-	// РёРЅС„РѕСЂРјРёСЂРѕРІР°С‚СЊ squad Рѕ СЃРІРѕРёС… С†РµР»СЏС…
+	// информировать squad о своих целях
 	squad_notify();
 
 #ifdef DEBUG

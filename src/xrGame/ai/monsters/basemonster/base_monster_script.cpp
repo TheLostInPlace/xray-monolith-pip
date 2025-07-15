@@ -311,7 +311,7 @@ bool CBaseMonster::bfAssignWatch(CScriptEntityAction* tpEntityAction)
 	if (!inherited::bfAssignWatch(tpEntityAction))
 		return (false);
 
-	// РРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°С‚СЊ action
+	// Инициализировать action
 	anim().m_tAction = ACT_STAND_IDLE;
 
 	CScriptWatchAction& l_tWatchAction = tpEntityAction->m_tWatchAction;
@@ -485,33 +485,33 @@ void CBaseMonster::ProcessScripts()
 
 	//movement().Update_Initialize			();
 
-	// Р’С‹РїРѕР»РЅРёС‚СЊ СЃРєСЂРёРїС‚РѕРІС‹Рµ actions
+	// Выполнить скриптовые actions
 	m_script_state_must_execute = false;
 	inherited::ProcessScripts();
 
 	Device.dwTimeGlobal = Device.dwTimeGlobal;
 
-	// РѕР±РЅРѕРІРёС‚СЊ РјРёСЂ (РїР°РјСЏС‚СЊ, РІСЂР°РіРё, РѕР±СЉРµРєС‚С‹)
+	// обновить мир (память, враги, объекты)
 	UpdateMemory();
 
 	anim().accel_deactivate();
 
-	// РµСЃР»Рё РёР· СЃРєСЂРёРїС‚Р° РІС‹Р±СЂР°РЅРѕ РґРµР№СЃС‚РІРёРµ РїРѕ СѓРЅРёРІРµСЂСЃР°Р»СЊРЅРѕР№ СЃС…РµРјРµ, РІС‹РїРѕР»РЅРёС‚СЊ РµРіРѕ
+	// если из скрипта выбрано действие по универсальной схеме, выполнить его
 	if (m_script_state_must_execute)
 		StateMan->execute_script_state();
 
 	TranslateActionToPathParams();
 
-	// РѕР±РЅРѕРІРёС‚СЊ РїСѓС‚СЊ
+	// обновить путь
 	//movement().Update_Execute			();
 
 	//anim().Update							();
 
-	// СѓСЃС‚Р°РЅРѕРІРёС‚СЊ С‚РµРєСѓС‰СѓСЋ СЃРєРѕСЂРѕСЃС‚СЊ
+	// установить текущую скорость
 	//movement().Update_Finalize			();
 
-	// РЈРґР°Р»РёС‚СЊ РІСЃРµ РІСЂР°РіРё Рё РѕР±СЉРµРєС‚С‹, РєРѕС‚РѕСЂС‹Рµ Р±С‹Р»Рё РїСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕ СѓСЃС‚Р°РЅРѕРІР»РµРЅС‹
-	// РІРѕ РІСЂРµРјСЏ РІС‹РїРѕР»РЅРµРЅРёСЏ СЃРєСЂРёРїС‚РѕРІРѕРіРѕ РґРµР№СЃС‚РІРёСЏ
+	// Удалить все враги и объекты, которые были принудительно установлены
+	// во время выполнения скриптового действия
 	if (m_script_state_must_execute)
 	{
 		EnemyMan.unforce_enemy();

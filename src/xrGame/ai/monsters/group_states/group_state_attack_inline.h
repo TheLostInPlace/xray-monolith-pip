@@ -195,7 +195,7 @@ void CStateGroupAttackAbstract::execute()
 	}
 	else
 	{
-		// РѕРїСЂРµРґРµР»РёС‚СЊ С‚РёРї Р°С‚Р°РєРё
+		// определить тип атаки
 		bool b_melee = false;
 
 		if (prev_substate == eStateAttack_Melee)
@@ -210,7 +210,7 @@ void CStateGroupAttackAbstract::execute()
 			b_melee = true;
 		}
 
-		// СѓСЃС‚Р°РЅРѕРІРёС‚СЊ С†РµР»РµРІРѕРµ СЃРѕСЃС‚РѕСЏРЅРёРµ
+		// установить целевое состояние
 		if (!can_attack_on_move && b_melee)
 		{
 			// check if enemy is behind me for a long time

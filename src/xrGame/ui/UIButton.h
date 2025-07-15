@@ -18,7 +18,7 @@ public:
 	virtual bool OnMouseAction(float x, float y, EUIMessages mouse_action);
 	virtual void OnClick();
 
-	//РїСЂРѕСЂРёСЃРѕРІРєР° РѕРєРЅР°
+	//прорисовка окна
 	virtual void DrawTexture();
 	virtual void DrawText();
 
@@ -27,30 +27,30 @@ public:
 	virtual bool OnKeyboardAction(int dik, EUIMessages keyboard_action);
 	virtual void OnFocusLost();
 
-	//СЃРѕСЃС‚РѕСЏРЅРёСЏ РІ РєРѕС‚РѕСЂС‹С… РЅР°С…РѕРґРёС‚СЃСЏ РєРЅРѕРїРєР°
+	//состояния в которых находится кнопка
 	typedef enum
 	{
 		BUTTON_NORMAL,
-		//РєРЅРѕРїРєР° РЅРёРєР°Рє РЅРµ Р·Р°С‚СЂР°РіРёРІР°РµС‚СЃСЏ
+		//кнопка никак не затрагивается
 		BUTTON_PUSHED,
-		//РІ РЅР°Р¶Р°С‚РѕРј СЃРѕС‚РѕСЏРЅРёРё
-		BUTTON_UP //РїСЂРё СѓРґРµСЂР¶РёРІР°РµРјРѕР№ РєРЅРѕРїРєРё РјС‹С€Рё 
+		//в нажатом сотоянии
+		BUTTON_UP //при удерживаемой кнопки мыши 
 	} E_BUTTON_STATE;
 
 
-	//Р·Р°РЅРѕРІРѕ РїРѕРґРіРѕС‚РѕРІРёС‚СЊ СЃРѕСЃС‚РѕСЏРЅРёРµ
+	//заново подготовить состояние
 	virtual void Reset();
 
-	// РЈСЃС‚Р°РЅРѕРІРєР° СЃРѕСЃС‚РѕСЏРЅРёСЏ РєРЅРѕРїРєРё: СѓС‚РѕРїР»РµРЅР°, РЅРµ СѓС‚РѕРїР»РµРЅР°
+	// Установка состояния кнопки: утоплена, не утоплена
 	void SetButtonState(E_BUTTON_STATE eBtnState) { m_eButtonState = eBtnState; }
 	E_BUTTON_STATE GetButtonState() const { return m_eButtonState; }
 
-	// РџРѕРІРµРґРµРЅРёРµ РєРЅРѕРїРєРё РєР°Рє РїРµСЂРµРєР»СЋС‡Р°С‚РµР»СЏ СЂРµР°Р»РёР·РѕРІР°РЅРѕ РїРѕРєР° С‚РѕР»СЊРєРѕ РІ СЂРµР¶РёРјРµ NORMAL_PRESS
+	// Поведение кнопки как переключателя реализовано пока только в режиме NORMAL_PRESS
 	void SetButtonAsSwitch(bool bAsSwitch) { m_bIsSwitch = bAsSwitch; }
 
-	// Р Р°Р±РѕС‚Р° СЃ Р°РєСЃРµР»РµСЂР°С‚РѕСЂРѕРј
-	// РљРѕРґ Р°РєСЃРµР»РµСЂР°С‚РѕСЂР° Р±РµСЂРµС‚СЃСЏ РёР· С„Р°Р№Р»Р° dinput.h, РёР· DirectX SDK.
-	// РќР°РїСЂРёРјРµСЂ: РєРЅРѕРїРєР° A - РєРѕРґ 0x1E(DIK_A)
+	// Работа с акселератором
+	// Код акселератора берется из файла dinput.h, из DirectX SDK.
+	// Например: кнопка A - код 0x1E(DIK_A)
 	void SetAccelerator(int iAccel, int idx);
 	const int GetAccelerator(int idx) const;
 	bool IsAccelerator(int iAccel) const;

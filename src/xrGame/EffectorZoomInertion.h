@@ -6,7 +6,7 @@
 
 class CEffectorZoomInertion : public CEffectorCam
 {
-	//РєРѕСЌС„С„РёС†РёРµРЅС‚ СЃРєРѕСЂРѕСЃС‚Рё "РїРѕРєР°С‡РёРІР°РЅРёСЏ" РїСЂРёС†РµР»Р°
+	//коэффициент скорости "покачивания" прицела
 	float m_fFloatSpeed;
 	float m_fDispRadius;
 
@@ -20,13 +20,13 @@ class CEffectorZoomInertion : public CEffectorCam
 
 	u32 m_dwTimePassed;
 
-	//РїР°СЂР°РјРµС‚СЂС‹ РЅР°СЃС‚СЂРѕР№РєРё СЌС„С„РµРєС‚РѕСЂР°
+	//параметры настройки эффектора
 	float m_fCameraMoveEpsilon;
 	float m_fDispMin;
 	float m_fSpeedMin;
 	float m_fZoomAimingDispK;
 	float m_fZoomAimingSpeedK;
-	//РІСЂРµРјСЏ С‡РµСЂРµР· РєРѕС‚РѕСЂРѕРµ СЌС„С„РµРєС‚РѕСЂ РјРµРЅСЏРµС‚ РЅР°РїСЂР°РІР»РµРЅРёРµ РґРІРёР¶РµРЅРёСЏ
+	//время через которое эффектор меняет направление движения
 	u32 m_dwDeltaTime;
 
 	CRandom m_Random;

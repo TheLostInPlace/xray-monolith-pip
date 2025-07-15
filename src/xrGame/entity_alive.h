@@ -118,28 +118,28 @@ protected:
 	                                float trace_dist, float wallmark_size,
 	                                IWallMarkArray* pwallmarks_vector);
 
-	//РёРЅС„РѕСЂРјР°С†РёСЏ Рѕ РєСЂРѕРІР°РІС‹С… РѕС‚РјРµС‚РєР°С… РЅР° СЃС‚РµРЅР°С…, РѕР±С‰Р°СЏ РґР»СЏ РІСЃРµС… CEntityAlive
+	//информация о кровавых отметках на стенах, общая для всех CEntityAlive
 	static FactoryPtr<IWallMarkArray>* m_pBloodMarksVector;
 	static float m_fBloodMarkSizeMax;
 	static float m_fBloodMarkSizeMin;
 	static float m_fBloodMarkDistance;
 	static float m_fNominalHit;
 
-	//С‚РµРєСЃС‚СѓСЂРєРё РєР°РїРµР»СЊ РєСЂРѕРІРё
+	//текстурки капель крови
 	static FactoryPtr<IWallMarkArray>* m_pBloodDropsVector;
-	//СЃРїРёСЃРѕРє СЂР°РЅ СЃ РєРѕС‚РѕСЂС‹С… РєР°РїР°РµС‚ РєСЂРѕРІСЊ
+	//список ран с которых капает кровь
 
-	//СЂР°Р·РјРµСЂ СЂР°РЅС‹, С‡С‚РѕР± РЅР°С‡Р°Р»Р° РєР°РїР°С‚СЊ РєСЂРѕРІСЊ
+	//размер раны, чтоб начала капать кровь
 	static float m_fStartBloodWoundSize;
-	//СЂР°Р·РјРµСЂ СЂР°РЅС‹, С‡С‚РѕР± РѕСЃС‚Р°РЅРѕРІРёС‚СЊ РєСЂРѕРІСЊ
+	//размер раны, чтоб остановить кровь
 	static float m_fStopBloodWoundSize;
 	static float m_fBloodDropSize;
 
-	//РѕР±РЅРѕРІР»РµРЅРёРµ СЂР°РЅ, Рё СЂРёСЃРѕРІР°РЅРёРµ РѕС‚РјРµС‚РѕРє РѕС‚ РєР°РїР°СЋС‰РµР№ РєСЂРѕРІРё
+	//обновление ран, и рисование отметок от капающей крови
 	virtual void UpdateBloodDrops();
 
 
-	//РѕС‚РЅРѕС€РµРЅРёСЏ РјРµР¶РґСѓ СЃСѓС‰РµСЃС‚РІР°РјРё Рё РїРµСЂСЃРѕРЅР°Р¶Р°РјРё РІ Р·РѕРЅРµ
+	//отношения между существами и персонажами в зоне
 public:
 	virtual ALife::ERelationType tfGetRelationType(const CEntityAlive* tpEntityAlive) const;
 	virtual bool is_relation_enemy(const CEntityAlive* tpEntityAlive) const;
@@ -176,16 +176,16 @@ public:
 public:
 	virtual void OnHitHealthLoss(float NewHealth)
 	{
-	}; //РІС‹Р·С‹РІР°РµС‚СЃСЏ РµСЃР»Рё entity С‚РµСЂСЏРµС‚ Р·РґРѕСЂРѕРІСЊРµ
+	}; //вызывается если entity теряет здоровье
 	virtual void OnCriticalHitHealthLoss()
 	{
-	}; //РІС‹Р·С‹РІР°РµС‚СЃСЏ РµСЃР»Рё entity СѓРјСЂРµС‚ РѕС‚ С…РёС‚Р° 
+	}; //вызывается если entity умрет от хита 
 	virtual void OnCriticalWoundHealthLoss()
 	{
-	}; //РІС‹Р·С‹РІР°РµС‚СЃСЏ РµСЃР»Рё entity СѓРјСЂРµС‚ РѕС‚ РїРѕС‚РµСЂРё РєСЂРѕРІРё 
+	}; //вызывается если entity умрет от потери крови 
 	virtual void OnCriticalRadiationHealthLoss()
 	{
-	}; //РІС‹Р·С‹РІР°РµС‚СЃСЏ РµСЃР»Рё entity СѓРјСЂРµС‚ РѕС‚ СЂР°РґРёР°С†РёРё 
+	}; //вызывается если entity умрет от радиации 
 
 	virtual CVisualMemoryManager* visual_memory() const { return (0); }
 	virtual void net_Relcase(CObject* O);

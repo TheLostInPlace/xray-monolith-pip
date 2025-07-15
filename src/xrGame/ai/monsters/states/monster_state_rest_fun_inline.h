@@ -66,7 +66,7 @@ void CStateMonsterRestFunAbstract::execute()
 			dir.setHP(h, p + 5 * PI / 180);
 			dir.normalize();
 
-			// РІС‹РїРѕР»РЅРёС‚СЊ Р±СЂРѕСЃРѕРє
+			// выполнить бросок
 			for (u32 i = 0; i < target->m_pPhysicsShell->get_ElementsNumber(); i++)
 			{
 				target->m_pPhysicsShell->get_ElementByStoreOrder((u16)i)->applyImpulse(

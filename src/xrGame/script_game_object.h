@@ -350,7 +350,7 @@ public:
 	bool inv_box_can_take(bool status);
 	bool inv_box_can_take_status();
 
-	//РїРµСЂРµРґР°С‡Р° РїРѕСЂС†РёРё РёРЅС„РѕСЂРјР°С†РёРё InventoryOwner
+	//передача порции информации InventoryOwner
 	bool GiveInfoPortion(LPCSTR info_id);
 	bool DisableInfoPortion(LPCSTR info_id);
 	void GiveGameNews(LPCSTR caption, LPCSTR news, LPCSTR texture_name, int delay, int show_time);
@@ -360,10 +360,10 @@ public:
 	{
 	};
 	void AddIconedTalkMessage(LPCSTR caption, LPCSTR text, LPCSTR texture_name, LPCSTR templ_name);
-	//РїСЂРµРґРёРєР°С‚С‹ РЅР°Р»РёС‡РёСЏ/РѕС‚СЃСѓС‚СЃС‚РІРёСЏ РїРѕСЂС†РёРё РёРЅС„РѕСЂРјР°С†РёРё Сѓ РїРµСЂСЃРѕРЅР°Р¶Р°
+	//предикаты наличия/отсутствия порции информации у персонажа
 	bool HasInfo(LPCSTR info_id);
 	bool DontHasInfo(LPCSTR info_id);
-	//СЂР°Р±РѕС‚Р° СЃ Р·Р°РґР°РЅРёСЏРјРё
+	//работа с заданиями
 	ETaskState GetGameTaskState(LPCSTR task_id);
 	void SetGameTaskState(ETaskState state, LPCSTR task_id);
 	void GiveTaskToActor(CGameTask* t, u32 dt, bool bCheckExisting, u32 t_timer);

@@ -462,8 +462,8 @@ dInternalStepFast (dxWorld * world, dxBody * body[2], dReal * GI[2], dReal * Gin
 		dSolveLCP (m, A, lambda, rhs, residual, nub, lo, hi, Jinfo.findex);
 #endif
 
-	//Р·РґРµСЃСЊ Р±С‹Р»  LCP - solver replacement РѕРЅ РѕСЃС‚Р°Р»СЃСЏ РІ Р±Р°Р·Рµ Source control
-	//СЃРєРѕСЂРµРµ РІСЃРµРіРѕ РѕРЅ РЅРµ РїРѕРЅР°РґРѕР±РёС‚СЃСЏ
+	//здесь был  LCP - solver replacement он остался в базе Source control
+	//скорее всего он не понадобится
 
 	// compute the constraint force `cforce'
 #	ifdef TIMING

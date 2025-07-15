@@ -50,16 +50,16 @@ void CUITalkDialogWnd::InitTalkDialogWnd()
 	//	AttachChild					(&UIOurIcon);
 	//	AttachChild					(&UIOthersIcon);
 
-	// Р¤СЂРµР№Рј СЃ РЅР°С‰РёРјРё С„СЂР°Р·Р°РјРё
+	// Фрейм с нащими фразами
 	//	AttachChild					(&UIDialogFrameBottom);
 	//	CUIXmlInit::InitStatic		(*m_uiXml, "frame_bottom", 0, &UIDialogFrameBottom);
 
-	//РѕСЃРЅРѕРІРЅРѕР№ С„СЂРµР№Рј РґРёР°Р»РѕРіР°
+	//основной фрейм диалога
 	//	AttachChild					(&UIDialogFrameTop);
 	//	CUIXmlInit::InitStatic		(*m_uiXml, "frame_top", 0, &UIDialogFrameTop);
 
 
-	//РћС‚РІРµС‚С‹
+	//Ответы
 	UIAnswersList = xr_new<CUIScrollView>();
 	UIAnswersList->SetAutoDelete(true);
 	//	UIDialogFrameTop.AttachChild(UIAnswersList);
@@ -67,7 +67,7 @@ void CUITalkDialogWnd::InitTalkDialogWnd()
 	CUIXmlInit::InitScrollView(*m_uiXml, "answers_list", 0, UIAnswersList);
 	UIAnswersList->SetWindowName("---UIAnswersList");
 
-	//Р’РѕРїСЂРѕСЃС‹
+	//Вопросы
 	UIQuestionsList = xr_new<CUIScrollView>();
 	UIQuestionsList->SetAutoDelete(true);
 	//	UIDialogFrameBottom.AttachChild(UIQuestionsList);
@@ -76,7 +76,7 @@ void CUITalkDialogWnd::InitTalkDialogWnd()
 	UIQuestionsList->SetWindowName("---UIQuestionsList");
 
 
-	//РєРЅРѕРїРєР° РїРµСЂРµС…РѕРґР° РІ СЂРµР¶РёРј С‚РѕСЂРіРѕРІР»Рё
+	//кнопка перехода в режим торговли
 	AttachChild(&UIToTradeButton);
 	CUIXmlInit::Init3tButton(*m_uiXml, "button", 0, &UIToTradeButton);
 
@@ -87,7 +87,7 @@ void CUITalkDialogWnd::InitTalkDialogWnd()
 	//m_btn_pos[1]				= UIToExitButton.GetWndPos();
 	//m_btn_pos[2].x				= (m_btn_pos[0].x+m_btn_pos[1].x)/2.0f;
 	//m_btn_pos[2].y				= m_btn_pos[0].y;
-	// С€СЂРёС„С‚ РґР»СЏ РёРЅРґРёРєР°С†РёРё РёРјРµРЅРё РїРµСЂСЃРѕРЅР°Р¶Р° РІ РѕРєРЅРµ СЂР°Р·РіРѕРІРѕСЂР°
+	// шрифт для индикации имени персонажа в окне разговора
 	CUIXmlInit::InitFont(*m_uiXml, "font", 0, m_iNameTextColor, m_pNameTextFont);
 
 	CGameFont* pFont = NULL;
@@ -157,8 +157,8 @@ void CUITalkDialogWnd::SetTradeMode()
 	OnTradeClicked(&UIToTradeButton, 0);
 }
 
-//РїРµСЂРµСЃС‹Р»Р°РµРј СЃРѕРѕР±С‰РµРЅРёРµ СЂРѕРґРёС‚РµР»СЊСЃРєРѕРјСѓ РѕРєРЅСѓ РґР»СЏ РѕР±СЂР°Р±РѕС‚РєРё
-//Рё С„РёР»СЊС‚СЂСѓРµРј РµСЃР»Рё РѕРЅРѕ РїСЂРёС€Р»Рѕ РѕС‚ РЅР°С€РµРіРѕ РґРѕС‡РµСЂРЅРµРіРѕ РѕРєРЅР°
+//пересылаем сообщение родительскому окну для обработки
+//и фильтруем если оно пришло от нашего дочернего окна
 void CUITalkDialogWnd::SendMessage(CUIWindow* pWnd, s16 msg, void* pData)
 {
 	CUIWndCallback::OnEvent(pWnd, msg, pData);

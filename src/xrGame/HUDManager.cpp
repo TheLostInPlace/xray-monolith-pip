@@ -271,7 +271,7 @@ void CHUDManager::RenderCamAttachedUI()
 }
 
 extern ENGINE_API BOOL bShowPauseString;
-//Ð¾Ñ‚Ñ€Ð¸ÑÐ¾Ð²ÐºÐ° ÑÐ»ÐµÐ¼ÐµÐ½Ñ‚Ð¾Ð² Ð¸Ð½Ñ‚ÐµÑ€Ñ„ÐµÐ¹ÑÐ°
+//îòðèñîâêà ýëåìåíòîâ èíòåðôåéñà
 void CHUDManager::RenderUI()
 {
 	PROF_EVENT("CHUDManager::RenderUI");
@@ -365,7 +365,7 @@ ICF static BOOL pick_trace_callback(collide::rq_result& result, LPVOID params)
 	}
 	else
 	{
-		//Ð¿Ð¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ Ñ‚Ñ€ÐµÑƒÐ³Ð¾Ð»ÑŒÐ½Ð¸Ðº Ð¸ ÑƒÐ·Ð½Ð°Ñ‚ÑŒ ÐµÐ³Ð¾ Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»
+		//ïîëó÷èòü òðåóãîëüíèê è óçíàòü åãî ìàòåðèàë
 		CDB::TRI* T = Level().ObjectSpace.GetStaticTris() + result.element;
 
 		SGameMtl* mtl = GMLib.GetMaterialByIdx(T->material);

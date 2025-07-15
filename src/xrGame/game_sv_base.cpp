@@ -1106,7 +1106,7 @@ void game_sv_GameState::OnRoundStart()
 		}
 	};
 	rpointsBlocked.clear();
-} // СЃС‚Р°СЂС‚ СЂР°СѓРЅРґР°
+} // старт раунда
 
 void game_sv_GameState::OnRoundEnd()
 {
@@ -1124,7 +1124,7 @@ void game_sv_GameState::OnRoundEnd()
 	{
 		m_bFastRestart = true;
 	}
-} // РєРѕРЅРµС† СЂР°СѓРЅРґР°
+} // конец раунда
 
 void game_sv_GameState::SaveMapList()
 {

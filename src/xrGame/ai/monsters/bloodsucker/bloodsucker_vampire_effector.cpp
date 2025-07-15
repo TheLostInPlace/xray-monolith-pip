@@ -81,10 +81,10 @@ BOOL CVampireCameraEffector::ProcessCam(SCamEffectorInfo& info)
 	if (fLifeTime < 0)
 		return FALSE;
 
-	// Ð¿Ñ€Ð¾Ñ†ÐµÐ½Ñ‚ Ð¾ÑÑ‚Ð°Ð²ÑˆÐµÐ³Ð¾ÑÑ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸
+	// ïðîöåíò îñòàâøåãîñÿ âðåìåíè
 	float time_left_perc = fLifeTime / m_time_total;
 
-	// Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ
+	// Èíèöèàëèçàöèÿ
 	Fmatrix Mdef;
 	Mdef.identity();
 	Mdef.j.set(info.n);
@@ -132,7 +132,7 @@ BOOL CVampireCameraEffector::ProcessCam(SCamEffectorInfo& info)
 
 	//////////////////////////////////////////////////////////////////////////
 
-	// Ð£ÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ ÑƒÐ³Ð»Ñ‹ ÑÐ¼ÐµÑ‰ÐµÐ½Ð¸Ñ
+	// Óñòàíîâèòü óãëû ñìåùåíèÿ
 	Fmatrix R;
 	R.setHPB(dangle_current.x, dangle_current.y, dangle_current.z);
 

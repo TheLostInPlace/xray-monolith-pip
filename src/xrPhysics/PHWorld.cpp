@@ -281,7 +281,7 @@ void CPHWorld::OnFrame()
 {
 	PROF_EVENT("CPHWorld::OnFrame");
 	// Msg									("------------- physics: %d / %d",u32(Device.dwFrame),u32(m_steps_num));
-	//РїСЂРѕСЃС‡РёС‚Р°С‚СЊ РїРѕР»РµС‚ РїСѓР»СЊ
+	//просчитать полет пуль
 	/*
 	Device.Statistic->TEST0.Begin		();
 	Level().BulletManager().Update		();

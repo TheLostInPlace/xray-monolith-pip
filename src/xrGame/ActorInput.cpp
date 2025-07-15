@@ -597,7 +597,7 @@ void CActor::ActorUse()
 				}
 				else if (!bCaptured)
 				{
-					//С‚РѕР»СЊРєРѕ РµСЃР»Рё РЅР°С…РѕРґРёРјСЃСЏ РІ СЂРµР¶РёРјРµ single
+					//только если находимся в режиме single
 					CUIGameSP* pGameSP = smart_cast<CUIGameSP*>(CurrentGameUI());
 					if (pGameSP)
 					{

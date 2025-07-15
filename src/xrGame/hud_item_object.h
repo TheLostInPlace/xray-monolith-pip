@@ -7,7 +7,7 @@ class CHudItemObject :
 	public CInventoryItemObject,
 	public CHudItem
 {
-protected: //С‡С‚РѕР± РЅРµР»СЊР·СЏ Р±С‹Р»Рѕ РІС‹Р·РІР°С‚СЊ РЅР° РїСЂСЏРјСѓСЋ
+protected: //чтоб нельзя было вызвать на прямую
 	CHudItemObject();
 	virtual ~CHudItemObject();
 

@@ -29,7 +29,7 @@ CTelekineticObject* CTelekinesis::activate(CPhysicsShellHolder* obj, float stren
 		return 0;
 	}
 
-	// РґРѕР±Р°РІРёС‚СЊ РѕР±СЉРµРєС‚
+	// добавить объект
 	objects.push_back(tele_object);
 
 	if (!objects.empty()) CPHUpdateObject::Activate();
@@ -45,7 +45,7 @@ void CTelekinesis::deactivate()
 {
 	active = false;
 
-	// РѕС‚РїСѓСЃС‚РёС‚СЊ РІСЃРµ РѕР±СЉРµРєС‚С‹
+	// отпустить все объекты
 	// 
 	for (TELE_OBJECTS_IT it = objects.begin(); it != objects.end(); ++it)
 	{
@@ -61,7 +61,7 @@ void CTelekinesis::clear_deactivate()
 {
 	active = false;
 
-	// РѕС‚РїСѓСЃС‚РёС‚СЊ РІСЃРµ РѕР±СЉРµРєС‚С‹
+	// отпустить все объекты
 	// 
 	for (u32 i = 0; i < objects.size(); i++)
 	{
@@ -85,12 +85,12 @@ struct SFindPred
 
 void CTelekinesis::deactivate(CPhysicsShellHolder* obj)
 {
-	// РЅР°Р№С‚Рё РѕР±СЉРµРєС‚
+	// найти объект
 
 	TELE_OBJECTS_IT it = std::find_if(objects.begin(), objects.end(), SFindPred(obj));
 	if (it == objects.end()) return;
 
-	// РѕС‚РїСѓСЃС‚РёС‚СЊ РѕР±СЉРµРєС‚
+	// отпустить объект
 	(*it)->release();
 
 	//remove from list, delete...
@@ -99,7 +99,7 @@ void CTelekinesis::deactivate(CPhysicsShellHolder* obj)
 
 void CTelekinesis::remove_object(CPhysicsShellHolder* obj)
 {
-	// РЅР°Р№С‚Рё РѕР±СЉРµРєС‚
+	// найти объект
 	TELE_OBJECTS_IT it = std::find_if(objects.begin(), objects.end(), SFindPred(obj));
 	if (it == objects.end()) return;
 	//remove from list, delete...
@@ -111,10 +111,10 @@ void CTelekinesis::remove_object(TELE_OBJECTS_IT it)
 	// release memory
 	xr_delete(*it);
 
-	// СѓРґР°Р»РёС‚СЊ
+	// удалить
 	objects.erase(it);
 
-	// РїСЂРѕРІРµСЂРёС‚СЊ РЅР° РїРѕР»РЅСѓСЋ РґРµР°РєС‚РёРІР°С†РёСЋ
+	// проверить на полную деактивацию
 	if (objects.empty())
 	{
 		clear();
@@ -132,15 +132,15 @@ void CTelekinesis::fire_all(const Fvector& target)
 	deactivate();
 }
 
-// Р±СЂРѕСЃРёС‚СЊ РѕР±СЉРµРєС‚ 'obj' РІ РїРѕР·РёС†РёСЋ 'target' СЃ СѓС‡РµС‚РѕРј РєРѕСЌС„ СЃРёР»С‹ 
+// бросить объект 'obj' в позицию 'target' с учетом коэф силы 
 void CTelekinesis::fire(CPhysicsShellHolder* obj, const Fvector& target, float power)
 {
-	// РЅР°Р№С‚Рё РѕР±СЉРµРєС‚
+	// найти объект
 
 	TELE_OBJECTS_IT it = std::find_if(objects.begin(), objects.end(), SFindPred(obj));
 	if (it == objects.end()) return;
 
-	// Р±СЂРѕСЃРёС‚СЊ РѕР±СЉРµРєС‚
+	// бросить объект
 	(*it)->fire(target, power);
 }
 
@@ -149,13 +149,13 @@ void CTelekinesis::fire_t(CPhysicsShellHolder* obj, const Fvector& target, float
 	TELE_OBJECTS_IT it = std::find_if(objects.begin(), objects.end(), SFindPred(obj));
 	if (it == objects.end()) return;
 
-	// Р±СЂРѕСЃРёС‚СЊ РѕР±СЉРµРєС‚
+	// бросить объект
 	(*it)->fire_t(target, time);
 }
 
 bool CTelekinesis::is_active_object(CPhysicsShellHolder* obj)
 {
-	// РЅР°Р№С‚Рё РѕР±СЉРµРєС‚
+	// найти объект
 	TELE_OBJECTS_IT it = std::find_if(objects.begin(), objects.end(), SFindPred(obj));
 	if (it == objects.end()) return false;
 
@@ -166,7 +166,7 @@ void CTelekinesis::schedule_update()
 {
 	if (!active) return;
 
-	// РѕР±РЅРѕРІРёС‚СЊ СЃРѕСЃС‚РѕСЏРЅРёРµ РѕР±СЉРµРєС‚РѕРІ
+	// обновить состояние объектов
 	for (u32 i = 0; i < objects.size(); i++)
 	{
 		CTelekineticObject* cur_obj = objects[i];
@@ -202,7 +202,7 @@ static bool RemovePred(CTelekineticObject* tele_object)
 
 void CTelekinesis::clear_notrelevant()
 {
-	//СѓР±СЂР°С‚СЊ РІСЃРµ РѕР±СЉРµС‚С‹ СЃРѕ СЃС‚Р°СЂС‹РјРё РїР°СЂР°РјРµС‚СЂР°РјРё
+	//убрать все объеты со старыми параметрами
 	objects.erase(
 		std::remove_if(
 			objects.begin(),
@@ -240,7 +240,7 @@ u32 CTelekinesis::get_objects_count()
 	return count;
 }
 
-// РѕР±СЉРµРєС‚ Р±С‹Р» СѓРґР°Р»РµРЅ - СѓРґР°Р»РёС‚СЊ РІСЃРµ СЃРІСЏР·Рё РЅР° РѕР±СЉРµРєС‚
+// объект был удален - удалить все связи на объект
 void CTelekinesis::remove_links(CObject* O)
 {
 	remove_object(smart_cast<CPhysicsShellHolder *>(O));

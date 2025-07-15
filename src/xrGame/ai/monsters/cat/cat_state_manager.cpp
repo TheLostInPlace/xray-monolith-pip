@@ -82,7 +82,7 @@ void CStateManagerCat::execute()
 
 	select_state(state_id);
 
-	// Ğ²Ñ‹Ğ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ÑŒ Ñ‚ĞµĞºÑƒÑ‰ĞµĞµ ÑĞ¾ÑÑ‚Ğ¾ÑĞ½Ğ¸Ğµ
+	// âûïîëíèòü òåêóùåå ñîñòîÿíèå
 	get_state_current()->execute();
 
 	prev_substate = current_substate;

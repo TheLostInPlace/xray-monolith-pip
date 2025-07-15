@@ -45,7 +45,7 @@ void CMonsterEnemyManager::update()
 	}
 	if (forced)
 	{
-		// Ð¿Ñ€Ð¾Ð²ÐµÑ€Ð¸Ñ‚ÑŒ Ð²Ð°Ð»Ð¸Ð´Ð½Ð¾ÑÑ‚ÑŒ force-Ð¾Ð±ÑŠÐµÐºÑ‚Ð°
+		// ïðîâåðèòü âàëèäíîñòü force-îáúåêòà
 		if (!enemy || enemy->getDestroy() || !enemy->g_Alive())
 		{
 			enemy = 0;
@@ -77,7 +77,7 @@ void CMonsterEnemyManager::update()
 		return;
 	}
 
-	// Ð¾Ð±Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ð¸Ð½Ñ„Ð¾Ñ€Ð¼Ð°Ñ†Ð¸ÑŽ Ð¾ Ð²Ñ€Ð°Ð³Ðµ Ð² ÑÐ¾Ð¾Ñ‚Ð²ÐµÑ‚ÑÑ‚Ð²Ð¸Ð¸ ÑÐ¾ Ð·Ð²ÑƒÐºÐ¾Ð²Ð¾Ð¹ Ð¸Ð½Ñ„Ð¾Ñ€Ð¼Ð°Ñ†Ð¸ÐµÐ¹
+	// îáíîâèòü èíôîðìàöèþ î âðàãå â ñîîòâåòñòâèè ñî çâóêîâîé èíôîðìàöèåé
 	if (monster->SoundMemory.IsRememberSound())
 	{
 		SoundElem sound_elem;
@@ -92,10 +92,10 @@ void CMonsterEnemyManager::update()
 		}
 	}
 
-	// Ð¿Ñ€Ð¾Ð²ÐµÑ€Ð¸Ñ‚ÑŒ Ð²Ð¸Ð´Ð¸Ð¼Ð¾ÑÑ‚ÑŒ
+	// ïðîâåðèòü âèäèìîñòü
 	enemy_see_me = is_faced(enemy, monster);
 
-	// Ð¾Ð±Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ð¾Ð¿Ð°ÑÐ½Ð¾ÑÑ‚ÑŒ Ð²Ñ€Ð°Ð³Ð°
+	// îáíîâèòü îïàñíîñòü âðàãà
 	danger_type = eNone;
 
 	switch (dwfChooseAction(0, monster->panic_threshold(), 0.f, 0.f, 0.f, monster->g_Team(), monster->g_Squad(),
@@ -110,7 +110,7 @@ void CMonsterEnemyManager::update()
 		break;
 	}
 
-	// Ð¾Ð±Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ñ„Ð»Ð°Ð³Ð¸
+	// îáíîâèòü ôëàãè
 	flags.zero();
 
 	if ((prev_enemy == enemy) && (time_last_seen != Device.dwTimeGlobal)) flags.or(FLAG_ENEMY_LOST_SIGHT);
@@ -141,7 +141,7 @@ void CMonsterEnemyManager::update()
 	}
 	else flags.or(FLAG_ENEMY_STATS_NOT_READY);
 
-	// ÑÐ¾Ñ…Ñ€Ð°Ð½Ð¸Ñ‚ÑŒ Ñ‚ÐµÐºÑƒÑ‰ÐµÐ³Ð¾ Ð²Ñ€Ð°Ð³Ð°
+	// ñîõðàíèòü òåêóùåãî âðàãà
 	prev_enemy = enemy;
 	prev_enemy_position = position;
 
@@ -300,7 +300,7 @@ const Fvector& CMonsterEnemyManager::get_enemy_position()
 
 void CMonsterEnemyManager::transfer_enemy(CBaseMonster* friend_monster)
 {
-	// ÐµÑÐ»Ð¸ Ñƒ friend_monster Ð½ÐµÑ‚ Ð²Ñ€Ð°Ð³Ð°
+	// åñëè ó friend_monster íåò âðàãà
 	if (!friend_monster->EnemyMan.get_enemy()) return;
 
 	monster->EnemyMemory.add_enemy(

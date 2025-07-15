@@ -27,7 +27,7 @@ public:
 	virtual void OnStaticFocusReceive(CUIWindow* pWnd);
 	virtual void OnStaticFocusLost(CUIWindow* pWnd);
 
-	// Р”РѕР±Р°РІР»РµРЅРёРµ РєРЅРѕРїРєРё-Р·Р°РєР»Р°РґРєРё РІ СЃРїРёСЃРѕРє Р·Р°РєР»Р°РґРѕРє РєРѕРЅС‚СЂРѕР»Р°
+	// Добавление кнопки-закладки в список закладок контрола
 	bool AddItem(LPCSTR pItemName, LPCSTR pTexName, Fvector2 pos, Fvector2 size);
 	bool AddItem(CUITabButton* pButton);
 
@@ -43,7 +43,7 @@ public:
 	void SetActiveTab_script(LPCSTR sNewTab) { SetActiveTab(sNewTab); };
 	const u32 GetTabsCount() const { return m_TabsArr.size(); }
 
-	// Р РµР¶РёРј РєР»Р°РІРёР»Р°С‚СѓСЂРЅС‹С… Р°РєСЃРµР»РµСЂР°С‚РѕСЂРѕРІ (РІРєР»/РІС‹РєР»)
+	// Режим клавилатурных акселераторов (вкл/выкл)
 	IC bool GetAcceleratorsMode() const { return m_bAcceleratorsEnable; }
 	void SetAcceleratorsMode(bool bEnable) { m_bAcceleratorsEnable = bEnable; }
 
@@ -54,17 +54,17 @@ public:
 
 	void ResetTab();
 protected:
-	// РЎРїРёСЃРѕРє РєРЅРѕРїРѕРє - РїРµСЂРµРєР»СЋС‡Р°С‚РµР»РµР№ Р·Р°РєР»Р°РґРѕРє
+	// Список кнопок - переключателей закладок
 	TABS_VECTOR m_TabsArr;
 
 	shared_str m_sPushedId;
 	shared_str m_sPrevPushedId;
 
-	// Р¦РІРµС‚ РЅРµР°РєС‚РёРІРЅС‹С… СЌР»РµРјРµРЅС‚РѕРІ
+	// Цвет неактивных элементов
 	u32 m_cGlobalTextColor;
 	u32 m_cGlobalButtonColor;
 
-	// Р¦РІРµС‚ РЅР°РґРїРёСЃРё РЅР° Р°РєС‚РёРІРЅРѕРј СЌР»РµРјРµРЅС‚Рµ
+	// Цвет надписи на активном элементе
 	u32 m_cActiveTextColor;
 	u32 m_cActiveButtonColor;
 

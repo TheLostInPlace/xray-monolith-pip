@@ -8,10 +8,10 @@ class CPsyAura : public Feel::Touch, public CEnergyHolder
 {
 	typedef CEnergyHolder inherited;
 
-	// РІР»Р°РґРµР»РµС† РїРѕР»СЏ
+	// владелец поля
 	CBaseMonster* m_object;
 
-	// СЂР°РґРёСѓСЃ РїРѕР»СЏ
+	// радиус поля
 	float m_radius;
 
 public:
@@ -26,7 +26,7 @@ public:
 	{
 	}
 
-	// СЃРІРѕР№СЃС‚РІР° РїРѕР»СЏ
+	// свойства поля
 	void set_radius(float R) { m_radius = R; }
 	float get_radius() { return m_radius; }
 

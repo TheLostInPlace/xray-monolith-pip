@@ -365,7 +365,7 @@ void CUIItemInfo::InitItem(CUICellItem* pCellItem, CInventoryItem* pCompareItem,
 	}
 	if (UIItemImage)
 	{
-		// Ð—Ð°Ð³Ñ€ÑƒÐ¶Ð°ÐµÐ¼ ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÑƒ
+		// Çàãðóæàåì êàðòèíêó
 		if (pSettings->line_exist(m_pInvItem->m_section_id.c_str(), "icons_texture"))
 		{
 			LPCSTR icons_texture = pSettings->r_string(m_pInvItem->m_section_id.c_str(), "icons_texture");

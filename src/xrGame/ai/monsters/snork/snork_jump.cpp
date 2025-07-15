@@ -74,14 +74,14 @@
 //	Fvector target_position;
 //	target->Center				(target_position);
 //
-//	// РїРѕР»СѓС‡РёС‚СЊ РІРµРєС‚РѕСЂ РЅР°РїСЂР°РІР»РµРЅРёСЏ Рё РµРіРѕ РјРёСЂ СѓРіРѕР»
+//	// получить вектор направления и его мир угол
 //	Fvector		dir;
 //	float		dir_yaw, dir_pitch;
 //
 //	dir.sub		(target_position, source_position);
 //	dir.getHP	(dir_yaw, dir_pitch);
 //
-//	// РїСЂРѕРІРµСЂРєР° РЅР° angle Рё РЅР° dist
+//	// проверка на angle и на dist
 //	float yaw_current, yaw_target;
 //	m_object->control().direction().get_heading(yaw_current, yaw_target);
 //	if (angle_difference(yaw_current, -dir_yaw) < PI_DIV_6) {
@@ -107,8 +107,8 @@
 //	float			yaw, pitch;
 //	Fvector().sub	(m_target_object->Position(), m_object->Position()).getHP(yaw, pitch);
 //
-//	// РїРѕР»СѓС‡РёС‚СЊ РІРµРєС‚РѕСЂ РЅР°РїСЂР°РІР»РµРЅРёСЏ Рё РµРіРѕ РјРёСЂ СѓРіРѕР»
-//	//// РїСЂРѕРІРµСЂРєР° РЅР° angle Рё РЅР° dist
+//	// получить вектор направления и его мир угол
+//	//// проверка на angle и на dist
 //	//if (angle_difference(m_object->movement().m_body.current.yaw, -yaw) < PI_DIV_2) {
 //	//	return;
 //	//}

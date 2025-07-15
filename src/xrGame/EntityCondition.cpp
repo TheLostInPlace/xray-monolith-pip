@@ -212,7 +212,7 @@ void CEntityCondition::ChangeEntityMorale(const float value)
 
 void CEntityCondition::ChangeBleeding(const float percent)
 {
-	//Р·Р°С‚СЏРЅСѓС‚СЊ СЂР°РЅС‹
+	//затянуть раны
 	for (WOUND_VECTOR_IT it = m_WoundVector.begin(); m_WoundVector.end() != it; ++it)
 	{
 		(*it)->Incarnation(percent, m_fMinWoundSize);
@@ -233,7 +233,7 @@ bool RemoveWoundPred(CWound* pWound)
 
 void CEntityCondition::UpdateWounds()
 {
-	//СѓР±СЂР°С‚СЊ РІСЃРµ Р·Р°С€РёРІС€РёРµ СЂР°РЅС‹ РёР· СЃРїРёСЃРєР°
+	//убрать все зашившие раны из списка
 	m_WoundVector.erase(
 		std::remove_if(
 			m_WoundVector.begin(),
@@ -273,7 +273,7 @@ void CEntityCondition::UpdateConditionTime()
 	m_iLastTimeCalled = _cur_time;
 }
 
-//РІС‹С‡РёСЃР»РµРЅРёРµ РїР°СЂР°РјРµС‚СЂРѕРІ СЃ С…РѕРґРѕРј РёРіСЂРѕРІРѕРіРѕ РІСЂРµРјРµРЅРё
+//вычисление параметров с ходом игрового времени
 void CEntityCondition::UpdateCondition()
 {
 	if (GetHealth() <= 0) return;
@@ -392,10 +392,10 @@ float CEntityCondition::HitPowerEffect(float power_loss)
 
 CWound* CEntityCondition::AddWound(float hit_power, ALife::EHitType hit_type, u16 element)
 {
-	//РјР°РєСЃРёРјР°Р»СЊРЅРѕРµ С‡РёСЃР»Рѕ РєРѕСЃС‚РѕС‡РµРє 64
+	//максимальное число косточек 64
 	VERIFY(element < 64 || BI_NONE == element);
 
-	//Р·Р°РїРѕРјРЅРёС‚СЊ РєРѕСЃС‚СЊ РїРѕ РєРѕС‚РѕСЂРѕР№ СѓРґР°СЂРёР»Рё Рё СЃРёР»Сѓ СѓРґР°СЂР°
+	//запомнить кость по которой ударили и силу удара
 	WOUND_VECTOR_IT it = m_WoundVector.begin();
 	for (; it != m_WoundVector.end(); it++)
 	{
@@ -405,14 +405,14 @@ CWound* CEntityCondition::AddWound(float hit_power, ALife::EHitType hit_type, u1
 
 	CWound* pWound = NULL;
 
-	//РЅРѕРІР°СЏ СЂР°РЅР°
+	//новая рана
 	if (it == m_WoundVector.end())
 	{
 		pWound = xr_new<CWound>(element);
 		pWound->AddHit(hit_power * ::Random.randF(0.5f, 1.5f), hit_type);
 		m_WoundVector.push_back(pWound);
 	}
-		//СЃС‚Р°СЂР°СЏ 
+		//старая 
 	else
 	{
 		pWound = *it;
@@ -443,7 +443,7 @@ static inline void applyBeforeHitAfterCalcsCallback(CEntityAlive* target, const 
 
 CWound* CEntityCondition::ConditionHit(SHit* pHDS)
 {
-	//РєС‚Рѕ РЅР°РЅРµСЃ РїРѕСЃР»РµРґРЅРёР№ С…РёС‚
+	//кто нанес последний хит
 	m_pWho = pHDS->who;
 	m_iWhoID = (NULL != pHDS->who) ? pHDS->who->ID() : 0;
 
@@ -610,7 +610,7 @@ CWound* CEntityCondition::ConditionHit(SHit* pHDS)
 		    smart_cast<IKinematics*>(m_object->Visual())->LL_BoneName_dbg(pHDS->boneID), m_fHealthLost * 100.0f,
 		    hit_power_org);
 	}
-	//СЂР°РЅС‹ РґРѕР±Р°РІР»СЏСЋС‚СЃСЏ С‚РѕР»СЊРєРѕ Р¶РёРІРѕРјСѓ
+	//раны добавляются только живому
 	if (bAddWound && GetHealth() > 0)
 	{
 		return AddWound(hit_power * m_fWoundBoneScale, pHDS->hit_type, pHDS->boneID);

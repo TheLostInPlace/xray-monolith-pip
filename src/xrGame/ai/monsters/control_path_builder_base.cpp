@@ -120,10 +120,10 @@ void CControlPathBuilderBase::set_target_accessible(STarget& target, const Fvect
 	}
 }
 
-// РѕР±РЅРѕРІРёС‚	СЊ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РїРѕСЃС‚СЂРѕРµРЅРЅРѕРј РїСѓС‚Рё (m_failed)
+// обновит	ь информацию о построенном пути (m_failed)
 void CControlPathBuilderBase::on_path_built()
 {
-	// РїСЂРѕРІРµСЂРєР° РЅР° РєРѕРЅРµС† РїСѓС‚Рё
+	// проверка на конец пути
 	if (!m_man->path_builder().detail().path().empty() &&
 		(m_man->path_builder().detail().curr_travel_point_index() < m_man->path_builder().detail().path().size() - 1))
 		m_path_end = false;
@@ -131,7 +131,7 @@ void CControlPathBuilderBase::on_path_built()
 
 void CControlPathBuilderBase::on_path_updated()
 {
-	// РµСЃР»Рё level_path_manager failed
+	// если level_path_manager failed
 	if (m_man->path_builder().level_path().failed())
 	{
 		m_failed = true;
@@ -139,18 +139,18 @@ void CControlPathBuilderBase::on_path_updated()
 		VERIFY(!m_man->path_builder().level_path().failed());
 	}
 
-	// РµСЃР»Рё level_path_manager failed
+	// если level_path_manager failed
 	if (m_man->path_builder().detail().failed())
 		m_failed = true;
 
 
-	// РїСЂРѕРІРµСЂРєР° РЅР° РєРѕРЅРµС† РїСѓС‚Рё, РµСЃР»Рё СЌС‚РѕС‚ РїСѓС‚СЊ РЅРµ РєРѕРЅРµС‡РЅС‹Р№
+	// проверка на конец пути, если этот путь не конечный
 	if ((m_man->path_builder().detail().path().empty() ||
 			(m_man->path_builder().detail().curr_travel_point_index() >= m_man->path_builder().detail().path().size() -
 				1)) &&
 		m_man->path_builder().detail().actual() &&
 		m_man->path_builder().enabled() &&
-		// РєРѕРЅРµС‡РЅС‹Р№ РїСѓС‚СЊ?
+		// конечный путь?
 		m_target_set.node() != m_object->ai_location().level_vertex_id() && m_target_actual)
 	{
 		m_failed = true;
