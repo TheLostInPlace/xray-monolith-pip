@@ -365,23 +365,23 @@ LPCSTR CAI_Dog::get_current_animation()
 {
 	switch (current_anim)
 	{
-	case 1: return "stand_idle_smelling_up_0"; //РќСЋС…Р°РµС‚ РІРІРµСЂС…
-	case 2: return "stand_idle_smelling_down_0"; //РќСЋС…Р°РµС‚ РІРЅРёР·
-	case 3: return "stand_idle_smelling_look_around_0"; //РќСЋС…Р°РµС‚ РїРѕ РєСЂСѓРіСѓ
-	case 4: return "stand_idle_dig_ground_0"; //РћР±РЅСЋС…РѕРІР°РµС‚ Рё СЂРѕРµС‚ Р·РµРјР»СЋ
-	case 5: return "stand_idle_howl_0"; //Р’РѕРµС‚
-	case 6: return "stand_growl_idle_0"; //Р С‹С‡РёС‚ СЃС‚РѕСЏ
-	case 7: return "stand_idle_shake_0"; //РћС‚СЂСЏС…РёРІР°РµС‚СЃСЏ !!!!!
-	case 8: return "stand_sit_down_0"; //РЎР°РґРёС‚СЊСЃСЏ
-	case 9: return "sit_idle_0"; //CРёРґРёС‚
-	case 10: return "sit_idle_1"; //Р§СѓС…Р°РµС‚СЃСЏ СЃРёРґСЏ
-	case 11: return "sit_idle_2"; //РћРіР»СЏРґС‹РІР°РµС‚СЃСЏ СЃРёРґСЏ
-	case 12: return "sit_stand_up_0"; //Р’СЃС‚Р°РµС‚
-	case 13: return "sit_lie_down_0"; //Р›РѕР¶РёС‚СЃСЏ
-	case 14: return "lie_to_sit_0"; //РџРѕРґС‹РјР°РµС‚СЃСЏ
-	case 15: return "stand_eat_0"; //РћС‚СЂС‹РІР°РµС‚ РєСѓСЃРєРё
-	case 16: return "stand_threaten_0"; //Р›Р°РµС‚
-	default: return "stand_idle_1"; //РќСЋС…Р°РµС‚ РІРїРµСЂРµРґ
+	case 1: return "stand_idle_smelling_up_0"; //Нюхает вверх
+	case 2: return "stand_idle_smelling_down_0"; //Нюхает вниз
+	case 3: return "stand_idle_smelling_look_around_0"; //Нюхает по кругу
+	case 4: return "stand_idle_dig_ground_0"; //Обнюховает и роет землю
+	case 5: return "stand_idle_howl_0"; //Воет
+	case 6: return "stand_growl_idle_0"; //Рычит стоя
+	case 7: return "stand_idle_shake_0"; //Отряхивается !!!!!
+	case 8: return "stand_sit_down_0"; //Садиться
+	case 9: return "sit_idle_0"; //Cидит
+	case 10: return "sit_idle_1"; //Чухается сидя
+	case 11: return "sit_idle_2"; //Оглядывается сидя
+	case 12: return "sit_stand_up_0"; //Встает
+	case 13: return "sit_lie_down_0"; //Ложится
+	case 14: return "lie_to_sit_0"; //Подымается
+	case 15: return "stand_eat_0"; //Отрывает куски
+	case 16: return "stand_threaten_0"; //Лает
+	default: return "stand_idle_1"; //Нюхает вперед
 	}
 }
 

@@ -114,7 +114,7 @@ void CControlAnimationBase::update()
 {
 	if (m_state_attack) return;
 
-	// Ð£ÑÑ‚Ð°Ð½Ð¾Ð²ÐºÐ° Yaw
+	// Óñòàíîâêà Yaw
 	if (m_object->control().path_builder().is_moving_on_path() && m_object->path().enabled())
 	{
 		m_object->dir().use_path_direction(((spec_params & ASP_MOVE_BKWD) == ASP_MOVE_BKWD));
@@ -123,7 +123,7 @@ void CControlAnimationBase::update()
 	SelectAnimation();
 	SelectVelocities();
 
-	// Ð¿Ñ€Ð¸Ð¼ÐµÐ½Ð¸Ñ‚ÑŒ
+	// ïðèìåíèòü
 	if (prev_motion != cur_anim_info().get_motion())
 	{
 		prev_motion = cur_anim_info().get_motion();
@@ -196,7 +196,7 @@ void CControlAnimationBase::set_override_animation(pcstr name)
 //////////////////////////////////////////////////////////////////////////
 // SelectAnimation
 // In:	path, target_yaw, m_tAction
-// Out:	ÑƒÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ð°Ð½Ð¸Ð¼Ð°Ñ†Ð¸ÑŽ Ð² cur_anim_info().motion
+// Out:	óñòàíîâèòü àíèìàöèþ â cur_anim_info().motion
 void CControlAnimationBase::SelectAnimation()
 {
 	// Lain: added
@@ -253,13 +253,13 @@ void CControlAnimationBase::SetTurnAnimation()
 
 //////////////////////////////////////////////////////////////////////////
 // SelectVelocities
-// In:	path, target_yaw, Ð°Ð½Ð¸Ð¼Ð°Ñ†Ð¸Ñ
-// Out:	ÑƒÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ linear Ð¸ angular velocities, 
-//		Ð¿Ð¾ ÑÐºÐ¾Ñ€Ð¾ÑÑ‚Ð¸ Ð´Ð²Ð¸Ð¶ÐµÐ½Ð¸Ñ Ð²Ñ‹Ð±Ñ€Ð°Ñ‚ÑŒ Ñ„Ð¸Ð½Ð°Ð»ÑŒÐ½ÑƒÑŽ Ð°Ð½Ð¸Ð¼Ð°Ñ†Ð¸ÑŽ Ð¸Ð· Velocity_Chain
-//		ÑƒÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ ÑÐºÐ¾Ñ€Ð¾ÑÑ‚ÑŒ Ð°Ð½Ð¸Ð¼Ð°Ñ†Ð¸Ð¸ Ð² ÑÐ¾Ð¾Ñ‚Ð²ÐµÑ‚ÑÑ‚Ð²Ð¸Ðµ Ñ Ñ„Ð¸Ð· ÑÐºÐ¾Ñ€Ð¾ÑÑ‚ÑŒÑŽ
+// In:	path, target_yaw, àíèìàöèÿ
+// Out:	óñòàíîâèòü linear è angular velocities, 
+//		ïî ñêîðîñòè äâèæåíèÿ âûáðàòü ôèíàëüíóþ àíèìàöèþ èç Velocity_Chain
+//		óñòàíîâèòü ñêîðîñòü àíèìàöèè â ñîîòâåòñòâèå ñ ôèç ñêîðîñòüþ
 void CControlAnimationBase::SelectVelocities()
 {
-	// Ð¿Ð¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ ÑÐºÐ¾Ñ€Ð¾ÑÑ‚Ð¸ Ð´Ð²Ð¸Ð¶ÐµÐ½Ð¸Ñ Ð¿Ð¾ Ð¿ÑƒÑ‚Ð¸
+	// ïîëó÷èòü ñêîðîñòè äâèæåíèÿ ïî ïóòè
 	bool b_moving = m_object->control().path_builder().is_moving_on_path();
 	SMotionVel path_vel;
 	path_vel.set(0.f, 0.f);
@@ -278,8 +278,8 @@ void CControlAnimationBase::SelectVelocities()
 			                                                                 ->movement().detail().
 			                                                                 curr_travel_point_index() + 1].velocity;
 
-		// ÐµÑÐ»Ð¸ ÑÐµÐ¹Ñ‡Ð°Ñ ÑÑ‚Ð¾Ð¸Ñ‚ Ð½Ð° Ð¼ÐµÑÑ‚Ðµ Ð¸ ÐµÑÑ‚ÑŒ ÑÐ»ÐµÐ´ Ñ‚Ð¾Ñ‡ÐºÐ° (Ñ‚.Ðµ. Ð´Ð¾Ð»Ð¶ÐµÐ½ Ð±Ñ‹Ñ‚ÑŒ Ð² Ð´Ð²Ð¸Ð¶ÐµÐ½Ð¸Ð¸),
-		// Ñ‚Ð¾ Ñ€ÐµÐ°Ð»Ð¸Ð·Ð¾Ð²Ð°Ñ‚ÑŒ Ð¿Ð¾Ð²Ð¾Ñ€Ð¾Ñ‚ Ð½Ð° Ð¼ÐµÑÑ‚Ðµ, Ð° Ð´Ð°Ð»ÑŒÑˆÐµ Ñ„Ð¾Ñ€ÑÐ¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ ÑÐºÐ¾Ñ€Ð¾ÑÑ‚ÑŒ ÑÐ¾ ÑÐ»ÐµÐ´ÑƒÑŽÑ‰ÐµÐ¹ Ñ‚Ð¾Ñ‡ÐºÐ¸
+		// åñëè ñåé÷àñ ñòîèò íà ìåñòå è åñòü ñëåä òî÷êà (ò.å. äîëæåí áûòü â äâèæåíèè),
+		// òî ðåàëèçîâàòü ïîâîðîò íà ìåñòå, à äàëüøå ôîðñèðîâàòü ñêîðîñòü ñî ñëåäóþùåé òî÷êè
 		if ((cur_point_velocity_index == MonsterMovement::eVelocityParameterStand) && (next_point_velocity_index !=
 			u32(-1)))
 		{
@@ -296,17 +296,17 @@ void CControlAnimationBase::SelectVelocities()
 	SAnimItem* item_it = m_anim_storage[cur_anim_info().get_motion()];
 	VERIFY(item_it);
 
-	// Ð¿Ð¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ ÑÐºÐ¾Ñ€Ð¾ÑÑ‚Ð¸ Ð´Ð²Ð¸Ð¶ÐµÐ½Ð¸Ñ Ð¿Ð¾ Ð°Ð½Ð¸Ð¼Ð°Ñ†Ð¸Ð¸
+	// ïîëó÷èòü ñêîðîñòè äâèæåíèÿ ïî àíèìàöèè
 	anim_vel.set(item_it->velocity.velocity.linear, item_it->velocity.velocity.angular_real);
 
-	//	// Ð¿Ñ€Ð¾Ð²ÐµÑ€Ð¸Ñ‚ÑŒ Ð½Ð° ÑÐ¾Ð²Ð¿Ð°Ð´ÐµÐ½Ð¸Ðµ
+	//	// ïðîâåðèòü íà ñîâïàäåíèå
 	//	R_ASSERT(fsimilar(path_vel.linear,	anim_vel.linear));
 	//	R_ASSERT(fsimilar(path_vel.angular,	anim_vel.angular));
 
-	// ÑƒÑÑ‚Ð°Ð½Ð¾Ð²ÐºÐ° Ð»Ð¸Ð½ÐµÐ¹Ð½Ð¾Ð¹ ÑÐºÐ¾Ñ€Ð¾ÑÑ‚Ð¸	
+	// óñòàíîâêà ëèíåéíîé ñêîðîñòè	
 	if (m_object->state_invisible)
 	{
-		// ÐµÑÐ»Ð¸ Ð½ÐµÐ²Ð¸Ð´Ð¸Ð¼Ñ‹Ð¹, Ñ‚Ð¾ ÑƒÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ ÑÐºÐ¾Ñ€Ð¾ÑÑ‚ÑŒ Ð¸Ð· Ð¿ÑƒÑ‚Ð¸
+		// åñëè íåâèäèìûé, òî óñòàíîâèòü ñêîðîñòü èç ïóòè
 		m_object->move().set_velocity(_abs(path_vel.linear));
 	}
 	else
@@ -314,7 +314,7 @@ void CControlAnimationBase::SelectVelocities()
 		if (fis_zero(_abs(anim_vel.linear))) stop_now();
 		else
 		{
-			// - Ð¿Ñ€Ð¾Ð²ÐµÑ€Ð¸Ñ‚ÑŒ Ð½Ð° Ð²Ð¾Ð·Ð¼Ð¾Ð¶Ð½Ð¾ÑÑ‚ÑŒ Ñ‚Ð¾Ñ€Ð¼Ð¾Ð¶ÐµÐ½Ð¸Ñ
+			// - ïðîâåðèòü íà âîçìîæíîñòü òîðìîæåíèÿ
 			if (!accel_check_braking(-2.f, _abs(anim_vel.linear)))
 			{
 				m_object->move().set_velocity(_abs(anim_vel.linear));
@@ -328,7 +328,7 @@ void CControlAnimationBase::SelectVelocities()
 		}
 	}
 
-	// Ñ„Ð¸Ð½Ð°Ð»ÑŒÐ½Ð°Ñ ÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð¸Ñ€Ð¾Ð²ÐºÐ° ÑÐºÐ¾Ñ€Ð¾ÑÑ‚Ð¸ Ð°Ð½Ð¸Ð¼Ð°Ñ†Ð¸Ð¸ Ð¿Ð¾ Ñ„Ð¸Ð·Ð¸Ñ‡ÐµÑÐºÐ¾Ð¹ ÑÐºÐ¾Ñ€Ð¾ÑÑ‚Ð¸
+	// ôèíàëüíàÿ êîððåêòèðîâêà ñêîðîñòè àíèìàöèè ïî ôèçè÷åñêîé ñêîðîñòè
 
 
 	if (!m_object->state_invisible && !fis_zero(anim_vel.linear))
@@ -352,7 +352,7 @@ void CControlAnimationBase::SelectVelocities()
 
 	set_animation_speed();
 
-	// ÑƒÑÑ‚Ð°Ð½Ð¾Ð²ÐºÐ° ÑƒÐ³Ð»Ð¾Ð²Ð¾Ð¹ ÑÐºÐ¾Ñ€Ð¾ÑÑ‚Ð¸
+	// óñòàíîâêà óãëîâîé ñêîðîñòè
 	if (m_object->state_invisible)
 		m_object->dir().set_heading_speed(path_vel.angular);
 	else

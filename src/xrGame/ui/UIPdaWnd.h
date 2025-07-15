@@ -39,7 +39,7 @@ protected:
 	//	CUIAnimatedStatic*		m_anim_static;
 	CUITextWnd* m_clock;
 
-	// РўРµРєСѓС‰РёР№ Р°РєС‚РёРІРЅС‹Р№ РґРёР°Р»РѕРі
+	// Текущий активный диалог
 	CUIWindow* m_pActiveDialog;
 	shared_str m_sActiveSection;
 

@@ -152,14 +152,14 @@ namespace ALife
 		eCombatTypeDummy = u32(-1),
 	};
 
-	//РІРѕР·РјРѕР¶РЅРѕСЃС‚СЊ РїРѕРґРєР»СЋС‡РµРЅРёСЏ Р°РґРґРѕРЅРѕРІ
+	//возможность подключения аддонов
 	enum EWeaponAddonStatus
 	{
 		eAddonDisabled = 0,
-		//РЅРµР»СЊР·СЏ РїСЂРёСЃРѕРµРґРµРЅРёС‚СЊ
+		//нельзя присоеденить
 		eAddonPermanent = 1,
-		//РїРѕСЃС‚РѕСЏРЅРЅРѕ РїРѕРґРєР»СЋС‡РµРЅРѕ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
-		eAddonAttachable = 2 //РјРѕР¶РЅРѕ РїСЂРёСЃРѕРµРґРёРЅСЏС‚СЊ
+		//постоянно подключено по умолчанию
+		eAddonAttachable = 2 //можно присоединять
 	};
 
 	IC EHitType g_tfString2HitType(LPCSTR caHitType)

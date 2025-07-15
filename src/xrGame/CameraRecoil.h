@@ -8,7 +8,7 @@
 #ifndef CAMERA_RECOIL_H_INCLUDED
 #define CAMERA_RECOIL_H_INCLUDED
 
-//РѕС‚РґР°С‡Р° РїСЂРё СЃС‚СЂРµР»СЊР±Рµ 
+//отдача при стрельбе 
 struct CameraRecoil
 {
 	float RelaxSpeed;

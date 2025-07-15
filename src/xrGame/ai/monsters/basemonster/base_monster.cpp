@@ -79,7 +79,7 @@ CBaseMonster::CBaseMonster() : m_psy_aura(this, "psy"),
 	EnemyMan.init_external(this);
 	CorpseMan.init_external(this);
 
-	// РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РїР°СЂР°РјРµС‚СЂРѕРІ Р°РЅРёРјР°С†РёРё	
+	// Инициализация параметров анимации	
 
 	StateMan = 0;
 
@@ -451,7 +451,7 @@ void CBaseMonster::Hit(SHit* pHDS)
 	{
 		float& hit_power = pHDS->power;
 		float ap = pHDS->armor_piercing;
-		// РїСѓР»СЏ РїСЂРѕР±РёР»Р° С€РєСѓСЂСѓ
+		// пуля пробила шкуру
 		if (!fis_zero(m_fSkinArmor, EPS) && ap > m_fSkinArmor)
 		{
 			float d_hit_power = (ap - m_fSkinArmor) / ap;
@@ -461,11 +461,11 @@ void CBaseMonster::Hit(SHit* pHDS)
 			hit_power *= d_hit_power;
 			VERIFY(hit_power>=0.0f);
 		}
-			// РїСѓР»СЏ РќР• РїСЂРѕР±РёР»Р° С€РєСѓСЂСѓ
+			// пуля НЕ пробила шкуру
 		else
 		{
 			hit_power *= m_fHitFracMonster;
-			pHDS->add_wound = false; //СЂР°РЅС‹ РЅРµС‚
+			pHDS->add_wound = false; //раны нет
 		}
 	}
 
@@ -753,13 +753,13 @@ void CBaseMonster::on_kill_enemy(const CEntity* obj)
 {
 	const CEntityAlive* entity = smart_cast<const CEntityAlive *>(obj);
 
-	// РґРѕР±Р°РІРёС‚СЊ РІ СЃРїРёСЃРѕРє С‚СЂСѓРїРѕРІ	
+	// добавить в список трупов	
 	CorpseMemory.add_corpse(entity);
 
-	// СѓРґР°Р»РёС‚СЊ РІСЃСЋ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С…РёС‚Р°С…
+	// удалить всю информацию о хитах
 	HitMemory.remove_hit_info(entity);
 
-	// СѓРґР°Р»РёС‚СЊ РІСЃСЋ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ Р·РІСѓРєР°С…
+	// удалить всю информацию о звуках
 	SoundMemory.clear();
 }
 
@@ -836,7 +836,7 @@ CParticlesObject* CBaseMonster::PlayParticles(const shared_str& name, const Fvec
 {
 	CParticlesObject* ps = CParticlesObject::Create(name.c_str(), auto_remove);
 
-	// РІС‹С‡РёСЃР»РёС‚СЊ РїРѕР·РёС†РёСЋ Рё РЅР°РїСЂР°РІР»РµРЅРЅРѕСЃС‚СЊ РїР°СЂС‚РёРєР»Р°
+	// вычислить позицию и направленность партикла
 	Fmatrix matrix;
 
 	matrix.identity();

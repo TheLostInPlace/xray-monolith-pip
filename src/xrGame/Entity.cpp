@@ -87,7 +87,7 @@ void CEntity::Die(CObject* who)
 		Level().seniority_holder().team(g_Team()).squad(g_Squad()).group(g_Group()).unregister_member(this);
 }
 
-//РѕР±РЅРѕРІР»РµРЅРёРµ СЃРѕСЃС‚РѕСЏРЅРёСЏ
+//обновление состояния
 float CEntity::CalcCondition(float hit)
 {
 	// If Local() - perform some logic
@@ -148,7 +148,7 @@ void CEntity::Load(LPCSTR section)
 #pragma todo("Jim to Dima: no specific figures or comments needed")
 	m_fMorale = 66.f;
 
-	//РІСЂРµРјСЏ СѓР±РёСЂР°РЅРёСЏ С‚РµР»Р° СЃ СѓСЂРѕРІРЅСЏ
+	//время убирания тела с уровня
 	m_dwBodyRemoveTime = READ_IF_EXISTS(pSettings, r_u32, section, "body_remove_time", BODY_REMOVE_TIME);
 	//////////////////////////////////////
 }

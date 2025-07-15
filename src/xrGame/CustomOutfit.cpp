@@ -169,9 +169,9 @@ float CCustomOutfit::HitThroughArmor(float hit_power, s16 element, float ap, boo
 		float BoneArmor = ba * GetCondition();
 		if (ap <= BoneArmor)
 		{
-			//РїСѓР»СЏ РќР• РїСЂРѕР±РёР»Р° Р±СЂРѕРЅСЊ
+			//пуля НЕ пробила бронь
 			NewHitPower *= m_boneProtection->m_fHitFracActor;
-			//add_wound = false; 	//СЂР°РЅС‹ РЅРµС‚
+			//add_wound = false; 	//раны нет
 
 			if (Core.ParamsData.test(ECoreParams::dbgbullet))
 				Msg("CCustomOutfit::HitThroughArmor AP(%f) <= bone_armor(%f) [HitFracActor=%f] modified hit_power=%f",
@@ -210,7 +210,7 @@ float CCustomOutfit::HitThroughArmor(float hit_power, s16 element, float ap, boo
 			Msg("CCustomOutfit::HitThroughArmor hit_type=%d | After HitTypeProtection(%f) hit_power=%f", (u32)hit_type,
 			    protect * one, NewHitPower);
 	}
-	//СѓРІРµР»РёС‡РёС‚СЊ РёР·РЅРѕС€РµРЅРЅРѕСЃС‚СЊ РєРѕСЃС‚СЋРјР°
+	//увеличить изношенность костюма
 	Hit(hit_power, hit_type);
 
 	if (Core.ParamsData.test(ECoreParams::dbgbullet))

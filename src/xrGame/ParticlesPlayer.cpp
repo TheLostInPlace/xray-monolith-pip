@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////
 // ParticlesPlayer.cpp
-// Ð¸Ð½Ñ‚ÐµÑ€Ñ„ÐµÐ¹Ñ Ð´Ð»Ñ Ð¿Ñ€Ð¾Ð¸Ð³Ñ€Ñ‹Ð²Ð°Ð½Ð¸Ñ Ð¿Ð°Ñ€Ñ‚Ð¸ÐºÐ»Ð¾Ð² Ð½Ð° Ð¾Ð±ÑŠÐµÐºÑ‚Ðµ
+// èíòåðôåéñ äëÿ ïðîèãðûâàíèÿ ïàðòèêëîâ íà îáúåêòå
 ///////////////////////////////////////////////////////////////
 #include "stdafx.h"
 #include "ParticlesPlayer.h"
@@ -82,8 +82,8 @@ void CParticlesPlayer::LoadParticles(IKinematics* K)
 	m_Bones.clear();
 
 
-	//ÑÑ‡Ð¸Ñ‚Ð°Ñ‚ÑŒ ÑÐ¿Ð¸ÑÐ¾Ðº ÐºÐ¾ÑÑ‚Ð¾Ñ‡ÐµÐº Ð¸ ÑÐ¾Ð¾Ñ‚Ð²ÐµÑ‚ÑÑ‚Ð²ÑƒÑŽÑ‰Ð¸Ñ…
-	//Ð¾Ñ„ÑÐµÑ‚Ð¾Ð²  ÐºÑƒÐ´Ð° Ð¼Ð¾Ð¶Ð½Ð¾ Ð²ÐµÑˆÐ°Ñ‚ÑŒ Ð¿Ð°Ñ€Ñ‚Ð¸ÐºÐ»Ñ‹
+	//ñ÷èòàòü ñïèñîê êîñòî÷åê è ñîîòâåòñòâóþùèõ
+	//îôñåòîâ  êóäà ìîæíî âåøàòü ïàðòèêëû
 	CInifile* ini = K->LL_UserData();
 	if (ini && ini->section_exist("particle_bones"))
 	{
@@ -110,7 +110,7 @@ void CParticlesPlayer::LoadParticles(IKinematics* K)
 	}
 }
 
-//ÑƒÐ½Ð¸Ñ‡Ñ‚Ð¾Ð¶ÐµÐ½Ð¸Ðµ Ð¿Ð°Ñ€Ñ‚Ð¸ÐºÐ»Ð¾Ð² Ð½Ð° net_Destroy
+//óíè÷òîæåíèå ïàðòèêëîâ íà net_Destroy
 void CParticlesPlayer::net_DestroyParticles()
 {
 	VERIFY(m_self_object);
@@ -190,7 +190,7 @@ void CParticlesPlayer::StartParticles(const shared_str& ps_name, const Fmatrix& 
 
 		particles_info.life_time = auto_stop ? life_time : u32(-1);
 		xform.getHPB(particles_info.angles);
-		//Ð½Ð°Ñ‡Ð°Ñ‚ÑŒ Ð¸Ð³Ñ€Ð°Ñ‚ÑŒ Ð¿Ð°Ñ€Ñ‚Ð¸ÐºÐ»Ñ‹
+		//íà÷àòü èãðàòü ïàðòèêëû
 
 		Fmatrix m;
 		m.set(xform);
@@ -244,7 +244,7 @@ void CParticlesPlayer::StopParticles(const shared_str& ps_name, u16 bone_id, boo
 	UpdateParticles();
 }
 
-//Ð¾ÑÑ‚Ð°Ð½Ð¾Ð²ÐºÐ° Ð¿Ð°Ñ€Ñ‚Ð¸ÐºÐ»Ð¾Ð², Ð¿Ð¾ Ð¸ÑÑ‚ÐµÑ‡ÐµÐ½Ð¸Ð¸ Ð¸Ñ… Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸ Ð¶Ð¸Ð·Ð½Ð¸
+//îñòàíîâêà ïàðòèêëîâ, ïî èñòå÷åíèè èõ âðåìåíè æèçíè
 void CParticlesPlayer::AutoStopParticles(const shared_str& ps_name, u16 bone_id, u32 life_time)
 {
 	if (BI_NONE == bone_id)
@@ -280,13 +280,13 @@ void CParticlesPlayer::UpdateParticles()
 		{
 			SParticlesInfo& p_info = *p_it;
 			if (!p_info.ps) continue;
-			//Ð¾Ð±Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸ÑŽ Ð¿Ð°Ñ€Ñ‚Ð¸ÐºÐ»Ð¾Ð²
+			//îáíîâèòü ïîçèöèþ ïàðòèêëîâ
 			Fmatrix xform;
 			xform.setHPB(p_info.angles.x, p_info.angles.y, p_info.angles.z);
 			GetBonePos(object, b_info.index, b_info.offset, xform.c);
 			p_info.ps->UpdateParent(xform, parent_vel);
 
-			//Ð¾Ð±Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ð²Ñ€ÐµÐ¼Ñ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð¾Ð²Ð°Ð½Ð¸Ñ
+			//îáíîâèòü âðåìÿ ñóùåñòâîâàíèÿ
 			if (p_info.life_time != u32(-1))
 			{
 				if (p_info.life_time > Device.dwTimeDelta) p_info.life_time -= Device.dwTimeDelta;

@@ -19,7 +19,7 @@ void CStateMonsterAttackRunAbstract::initialize()
 TEMPLATE_SPECIALIZATION
 void CStateMonsterAttackRunAbstract::execute()
 {
-	// ÑƒÑÑ‚Ð°Ð½Ð¾Ð²ÐºÐ° Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð¾Ð² Ñ„ÑƒÐ½ÐºÑ†Ð¸Ð¾Ð½Ð°Ð»ÑŒÐ½Ñ‹Ñ… Ð±Ð»Ð¾ÐºÐ¾Ð²
+	// óñòàíîâêà ïàðàìåòðîâ ôóíêöèîíàëüíûõ áëîêîâ
 	object->anim().accel_activate(eAT_Aggressive);
 	object->anim().accel_set_braking(false);
 
@@ -39,13 +39,13 @@ void CStateMonsterAttackRunAbstract::execute()
 	object->set_state_sound(MonsterSound::eMonsterSoundAggressive);
 	object->path().extrapolate_path(true);
 
-	// Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ð°Ñ‚ÑŒ squad Ð¸Ð½Ñ„Ð¾	
+	// îáðàáîòàòü squad èíôî	
 	object->path().set_use_dest_orient(false);
 
 	CMonsterSquad* squad = monster_squad().get_squad(object);
 	if (squad && squad->SquadActive())
 	{
-		// ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ ÐºÐ¾Ð¼Ð°Ð½Ð´Ñƒ
+		// Ïîëó÷èòü êîìàíäó
 		SSquadCommand command;
 		squad->GetCommand(object, command);
 

@@ -436,7 +436,7 @@ BOOL CControllerPsyHitCamEffector::ProcessCam(SCamEffectorInfo& info)
 
 	//////////////////////////////////////////////////////////////////////////
 
-	// Ð£ÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ ÑƒÐ³Ð»Ñ‹ ÑÐ¼ÐµÑ‰ÐµÐ½Ð¸Ñ
+	// Óñòàíîâèòü óãëû ñìåùåíèÿ
 	Fmatrix R;
 	if (m_time_current > m_time_total)
 		R.identity();

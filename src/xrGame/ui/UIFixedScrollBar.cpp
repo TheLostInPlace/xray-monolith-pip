@@ -75,7 +75,7 @@ void CUIFixedScrollBar::UpdateScrollBar()
 {
 	if (IsShown())
 	{
-		//СѓcС‚Р°РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ Рё РїРѕР»РѕР¶РµРЅРёРµ РєР°СЂРµС‚РєРё
+		//уcтановить размер и положение каретки
 		if (m_iMaxPos == m_iMinPos)
 			m_iMaxPos++;
 		float box_sz = float(m_ScrollWorkArea) * float(m_iPageSize ? m_iPageSize : 1) / float(m_iMaxPos - m_iMinPos);
@@ -288,7 +288,7 @@ void CUIFixedScrollBar::SendMessage(CUIWindow* pWnd, s16 msg, void* pData)
 	{
 		if (msg == SCROLLBOX_MOVE)
 		{
-			//РІС‹С‡РёСЃР»РёС‚СЊ РЅРѕРІРѕРµ РїРѕР»РѕР¶РµРЅРёРµ РїСЂРѕРєСЂСѓС‚РєРё
+			//вычислить новое положение прокрутки
 			ClampByViewRect();
 			if (m_bIsHorizontal)
 			{

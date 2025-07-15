@@ -98,7 +98,7 @@ public:
 	ref_sound m_strange_sound;
 
 	// Movement
-	Fvector m_current_position; // РџРѕР·РёС†РёСЏ РЅР° РЅРѕРґРµ
+	Fvector m_current_position; // Позиция на ноде
 
 	// Dynamic Height
 	u32 time_height_updated;

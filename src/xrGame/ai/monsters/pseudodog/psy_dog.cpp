@@ -263,7 +263,7 @@ void CPsyDogPhantom::Think()
 	Fvector target;
 	target.mad(Position(), Direction(), 10.f);
 
-	// РЅРѕРґР° РІ РїСЂСЏРјРѕР№ РІРёРґРёРјРѕСЃС‚Рё?
+	// нода в прямой видимости?
 	control().path_builder().restrictions().add_border(Position(), target);
 	u32 node = ai().level_graph().check_position_in_direction(ai_location().level_vertex_id(), Position(), target);
 	control().path_builder().restrictions().remove_border();

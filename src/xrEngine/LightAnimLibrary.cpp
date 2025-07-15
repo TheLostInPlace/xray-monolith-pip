@@ -115,24 +115,24 @@ u32 CLAItem::InterpolateRGB(int frame)
 
 	KeyPairIt A = Keys.find(frame);
 	KeyPairIt B;
-	if (A != Keys.end()) // ĞºĞ»ÑÑ‡ - Ğ²Ğ¾Ğ·Ğ²Ñ€Ğ°Ñ‰Ğ°ĞµĞ¼ Ñ†Ğ²ĞµÑ‚ ĞºĞ»ÑÑ‡Ğ°
+	if (A != Keys.end()) // êëş÷ - âîçâğàùàåì öâåò êëş÷à
 	{
 		return A->second;
 	}
-	else // Ğ½Ğµ ĞºĞ»ÑÑ‡
+	else // íå êëş÷
 	{
-		B = Keys.upper_bound(frame); // Ğ¸Ñ‰ĞµĞ¼ ÑĞ»ĞµĞ´ÑƒÑÑ‰Ğ¸Ğ¹ ĞºĞ»ÑÑ‡
-		if (B == Keys.end()) // ĞµÑĞ»Ğ¸ ĞµĞ³Ğ¾ Ğ½ĞµÑ‚ Ğ²ĞµÑ€Ğ½ĞµĞ¼ Ñ†Ğ²ĞµÑ‚ Ğ¿Ğ¾ÑĞ»ĞµĞ´Ğ½ĞµĞ³Ğ¾ ĞºĞ»ÑÑ‡Ğ°
+		B = Keys.upper_bound(frame); // èùåì ñëåäóşùèé êëş÷
+		if (B == Keys.end()) // åñëè åãî íåò âåğíåì öâåò ïîñëåäíåãî êëş÷à
 		{
 			B--;
 			return B->second;
 		}
-		A = B; // Ğ¸Ğ½Ğ°Ñ‡Ğµ Ğ² A Ğ·Ğ°Ğ½ĞµÑĞµĞ¼ Ğ¿Ñ€ĞµĞ´Ñ‹Ğ´ÑƒÑ‰Ğ¸Ğ¹ ĞºĞ»ÑÑ‡
+		A = B; // èíà÷å â A çàíåñåì ïğåäûäóùèé êëş÷
 		A--;
 	}
 
 	R_ASSERT(Keys.size() > 1);
-	// Ğ¸Ğ½Ñ‚ĞµÑ€Ğ¿Ğ¾Ğ»Ğ¸Ñ€ÑƒĞµĞ¼ Ñ†Ğ²ĞµÑ‚
+	// èíòåğïîëèğóåì öâåò
 	Fcolor c, c0, c1;
 	float a0 = (float)A->first;
 	float a1 = (float)B->first;

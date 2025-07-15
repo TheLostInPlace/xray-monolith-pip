@@ -71,7 +71,7 @@ bool CStateControllerControlHitAbstract::check_start_conditions()
 
 	if (!object->EnemyMan.see_enemy_now()) return false;
 
-	// РІСЃС‘ РѕРє, РјРѕР¶РЅРѕ РЅР°С‡Р°С‚СЊ Р°С‚Р°РєСѓ
+	// всё ок, можно начать атаку
 	return true;
 }
 
@@ -110,7 +110,7 @@ void CStateControllerControlHitAbstract::execute_hit_prepare()
 TEMPLATE_SPECIALIZATION
 void CStateControllerControlHitAbstract::execute_hit_continue()
 {
-	// РїСЂРѕРІРµСЂРёС‚СЊ РЅР° РіСЂР°РІРё СѓРґР°СЂ
+	// проверить на грави удар
 	if (time_control_started + CONTROL_PREPARE_TIME < Device.dwTimeGlobal)
 	{
 		m_action = eActionFire;

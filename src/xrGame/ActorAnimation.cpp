@@ -386,12 +386,12 @@ void CActor::g_SetAnimation(u32 mstate_rl)
 		else
 			moving_idx = STorsoWpn::eWalk;
 	}
-	// Р°РЅРёРјР°С†РёРё
+	// анимации
 	MotionID M_legs;
 	MotionID M_torso;
 	MotionID M_head;
 
-	//РµСЃР»Рё РјС‹ РїСЂРѕСЃС‚Рѕ СЃС‚РѕРёРј РЅР° РјРµСЃС‚Рµ
+	//если мы просто стоим на месте
 	bool is_standing = false;
 
 	// Legs
@@ -659,7 +659,7 @@ void CActor::g_SetAnimation(u32 mstate_rl)
 			M_torso = ST->m_torso_idle;
 	}
 
-	// РµСЃС‚СЊ Р°РЅРёРјР°С†РёСЏ РґР»СЏ РІСЃРµРіРѕ - Р·Р°РїСѓСЃС‚РёРј / РёРЅР°С‡Рµ Р·Р°РїСѓСЃС‚РёРј Р°РЅРёРјР°С†РёСЋ РїРѕ С‡Р°СЃС‚СЏРј
+	// есть анимация для всего - запустим / иначе запустим анимацию по частям
 	if (m_current_torso != M_torso)
 	{
 		if (m_bAnimTorsoPlayed)

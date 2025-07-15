@@ -3,7 +3,7 @@
 #include "CameraDefs.h"
 struct SPPInfo;
 
-// РїРѕСЃС‚РїСЂРѕС†РµСЃСЃ
+// постпроцесс
 class ENGINE_API CEffectorPP : public SBaseEffector
 {
 	EEffectorPPType eType;

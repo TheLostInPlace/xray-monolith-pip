@@ -11,7 +11,7 @@ class CPsyDog : public CAI_PseudoDog
 	friend class CPsyDogPhantom;
 	friend class CPsyDogAura;
 
-	// СЌС„С„РµРєС‚РѕСЂ Сѓ Р°РєС‚РµСЂР° РїСЂРё РЅР°С…РѕР¶РґРµРЅРёРё РІ РїРѕР»Рµ
+	// эффектор у актера при нахождении в поле
 	CPsyDogAura* m_aura;
 
 	// enemy transfered from phantom

@@ -34,7 +34,7 @@ void bonesBone::Turn(u32 dt)
 		PI_DIV_2m - PIm * _abs(params.target_yaw - params.cur_yaw) / params.dist_yaw);
 
 	float dy;
-	dy = cur_speed * dt / 1000; // СѓС‡РёС‚С‹РІР°РµРј РјРёР»РёСЃРµРє Рё СЂР°РґРёР°РЅРЅСѓСЋ РјРµСЂС‹
+	dy = cur_speed * dt / 1000; // учитываем милисек и радианную меры
 
 	if (_abs(params.target_yaw - params.cur_yaw) < dy) params.cur_yaw = params.target_yaw;
 	else params.cur_yaw += ((params.target_yaw > params.cur_yaw) ? dy : -dy);
@@ -48,7 +48,7 @@ void bonesBone::Apply()
 	if ((axis & AXIS_Y) == AXIS_Y) y = params.cur_yaw;
 	if ((axis & AXIS_Z) == AXIS_Z) z = params.cur_yaw;
 
-	// СЃРѕР·РґР°С‚СЊ РјР°С‚СЂРёС†Сѓ РІСЂР°С‰РµРЅРёСЏ Рё СѓРјРЅРѕР¶РёС‚СЊ РЅР° mTransform Р±РѕРЅС‹
+	// создать матрицу вращения и умножить на mTransform боны
 	Fmatrix M;
 	M.setHPB(-y, -x, -z);
 	bone->mTransform.mulB_43(M);
@@ -80,7 +80,7 @@ void bonesManipulation::AddBone(CBoneInstance* bone, u8 axis_used)
 void bonesManipulation::SetMotion(CBoneInstance* bone, u8 axis, float target_yaw, float r_speed, u32 t)
 {
 	int index = -1;
-	// РЅР°Р№С‚Рё Р±РѕРЅСѓ bone РІ m_Bones
+	// найти бону bone в m_Bones
 	for (u32 i = 0; i < m_Bones.size(); ++i)
 	{
 		if ((m_Bones[i].bone == bone) && (m_Bones[i].axis == axis))
@@ -104,10 +104,10 @@ void bonesManipulation::SetMotion(CBoneInstance* bone, u8 axis, float target_yaw
 
 void bonesManipulation::Update(CBoneInstance* bone, u32 cur_time)
 {
-	// РїСЂРѕРІРµСЃС‚Рё РѕР±СЂР°Р±РѕС‚РєСѓ РІСЃРµС… РєРѕСЃС‚РµР№
+	// провести обработку всех костей
 	bool bones_were_turned = false;
 
-	// РІС‹С‡РёСЃР»РµРЅРёРµ dt
+	// вычисление dt
 	u32 dt;
 	if (cur_time == time_last_update)
 	{
@@ -126,33 +126,33 @@ void bonesManipulation::Update(CBoneInstance* bone, u32 cur_time)
 		}
 	}
 
-	// РµСЃР»Рё РїСЂРѕС†РµСЃСЃ РІРѕР·РІСЂР°С‚Р° Р·Р°РІРµСЂС€РµРЅ
+	// если процесс возврата завершен
 	if (!bones_were_turned && in_return_state)
 	{
 		Reset();
 		return;
 	}
 
-	// РµСЃР»Рё РЅРёС‡РµРіРѕ РЅРµ РїСЂРѕРёР·РѕС€Р»Рѕ - РІС‹С…РѕРґ
+	// если ничего не произошло - выход
 	if (!bActive && !bones_were_turned) return;
 
-	// РµСЃР»Рё РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ РЅР°СЂР°С‰РёРІР°РЅРёРµ СѓРіР»Р° Рё РЅРё РѕРґРЅР° РєРѕСЃС‚СЊ РЅРµ РїРѕРІРµСЂРЅСѓР»Р°СЃСЊ (РґРѕСЃС‚РёРіР»Рё С‚Р°СЂРіРµС‚Р°...)
+	// если выполняется наращивание угла и ни одна кость не повернулась (достигли таргета...)
 	if (!bones_were_turned && !in_return_state)
 	{
 		if ((0 == time_started) && (freeze_time > 0))
 		{
-			// РЅР°С‡РёРЅР°РµРј Р¶РґР°С‚СЊ
+			// начинаем ждать
 			time_started = cur_time;
 		}
 
 		if ((0 != time_started) && (time_started + freeze_time < cur_time))
 		{
-			// РІСЂРµРјСЏ РІС‹С€Р»Рѕ?
+			// время вышло?
 			time_started = 0;
 
-			// РґРµР»Р°РµРј РІРѕР·РІСЂР°С‚
+			// делаем возврат
 			in_return_state = true;
-			// СѓСЃС‚Р°РЅРѕРІРёС‚СЊ Сѓ РІСЃРµС… РєРѕСЃС‚РµР№ РІ m_Bone С‚Р°СЂРіРµС‚С‹ РІ 0
+			// установить у всех костей в m_Bone таргеты в 0
 			for (u32 i = 0; i < m_Bones.size(); ++i)
 			{
 				m_Bones[i].params.target_yaw = 0.f;
@@ -162,7 +162,7 @@ void bonesManipulation::Update(CBoneInstance* bone, u32 cur_time)
 		}
 	}
 
-	// РЈСЃС‚Р°РЅРѕРІРёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ РёР· m_Bones
+	// Установить параметры из m_Bones
 	for (u32 i = 0; i < m_Bones.size(); ++i)
 	{
 		if (m_Bones[i].bone == bone) m_Bones[i].Apply();
@@ -171,7 +171,7 @@ void bonesManipulation::Update(CBoneInstance* bone, u32 cur_time)
 
 bonesAxis& bonesManipulation::GetBoneParams(CBoneInstance* bone, u8 axis_used)
 {
-	// РЅР°Р№С‚Рё Р±РѕРЅСѓ bone РІ m_Bones
+	// найти бону bone в m_Bones
 	for (u32 i = 0; i < m_Bones.size(); ++i)
 	{
 		if ((m_Bones[i].bone == bone) && (m_Bones[i].axis == axis_used))

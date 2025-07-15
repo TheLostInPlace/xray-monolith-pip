@@ -1229,7 +1229,7 @@ BOOL CPHMovementControl::BorderTraceCallback(collide::rq_result& result, LPVOID 
 	}
 	else
 	{
-		//Ð¿Ð¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ Ñ‚Ñ€ÐµÑƒÐ³Ð¾Ð»ÑŒÐ½Ð¸Ðº Ð¸ ÑƒÐ·Ð½Ð°Ñ‚ÑŒ ÐµÐ³Ð¾ Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»
+		//ïîëó÷èòü òðåóãîëüíèê è óçíàòü åãî ìàòåðèàë
 		T = Level().ObjectSpace.GetStaticTris() + result.element;
 		mtl_idx = T->material;
 	}

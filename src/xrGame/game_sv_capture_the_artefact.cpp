@@ -1269,18 +1269,18 @@ void game_sv_CaptureTheArtefact::LoadSkinsForTeam(const shared_str& caSection, T
 	string256 SkinSingleName;
 	string4096 Skins;
 
-	// РџРѕР»Рµ strSectionName РґРѕР»Р¶РЅРѕ СЃРѕРґРµСЂР¶Р°С‚СЊ РёРјСЏ СЃРµРєС†РёРё
+	// Поле strSectionName должно содержать имя секции
 	VERIFY(xr_strcmp(caSection,""));
 
 	pTeamSkins->clear();
 
-	// РРјСЏ РїРѕР»СЏ
+	// Имя поля
 	if (!pSettings->line_exist(caSection, "skins")) return;
 
-	// Р§РёС‚Р°РµРј РґР°РЅРЅС‹Рµ СЌС‚РѕРіРѕ РїРѕР»СЏ
+	// Читаем данные этого поля
 	xr_strcpy(Skins, pSettings->r_string(caSection, "skins"));
 	u32 count = _GetItemCount(Skins);
-	// С‚РµРїРµСЂСЊ РґР»СЏ РєР°Р¶РґРѕРµ РёРјСЏ РѕСЂСѓР¶РёСЏ, СЂР°Р·РґРµР»РµРЅРЅС‹Рµ Р·Р°РїСЏС‚С‹РјРё, Р·Р°РЅРѕСЃРёРј РІ РјР°СЃСЃРёРІ
+	// теперь для каждое имя оружия, разделенные запятыми, заносим в массив
 	for (u32 i = 0; i < count; ++i)
 	{
 		_GetItem(Skins, i, SkinSingleName);
@@ -1293,18 +1293,18 @@ void game_sv_CaptureTheArtefact::LoadDefItemsForTeam(const shared_str& caSection
 	string256 ItemName;
 	string4096 DefItems;
 
-	// РџРѕР»Рµ strSectionName РґРѕР»Р¶РЅРѕ СЃРѕРґРµСЂР¶Р°С‚СЊ РёРјСЏ СЃРµРєС†РёРё
+	// Поле strSectionName должно содержать имя секции
 	VERIFY(xr_strcmp(caSection,""));
 
 	pDefItems->clear();
 
-	// РРјСЏ РїРѕР»СЏ
+	// Имя поля
 	if (!pSettings->line_exist(caSection, "default_items")) return;
 
-	// Р§РёС‚Р°РµРј РґР°РЅРЅС‹Рµ СЌС‚РѕРіРѕ РїРѕР»СЏ
+	// Читаем данные этого поля
 	xr_strcpy(DefItems, pSettings->r_string(caSection, "default_items"));
 	u32 count = _GetItemCount(DefItems);
-	// С‚РµРїРµСЂСЊ РґР»СЏ РєР°Р¶РґРѕРµ РёРјСЏ РѕСЂСѓР¶РёСЏ, СЂР°Р·РґРµР»РµРЅРЅС‹Рµ Р·Р°РїСЏС‚С‹РјРё, Р·Р°РЅРѕСЃРёРј РІ РјР°СЃСЃРёРІ
+	// теперь для каждое имя оружия, разделенные запятыми, заносим в массив
 	for (u32 i = 0; i < count; ++i)
 	{
 		_GetItem(DefItems, i, ItemName);

@@ -109,11 +109,11 @@ void clean_game_globals()
 	//static shader for blood
 	CEntityAlive::UnloadBloodyWallmarks();
 	CEntityAlive::UnloadFireParticles();
-	//РѕС‡РёС‰РµРЅРёРµ РїР°РјСЏС‚Рё С‚Р°Р±Р»РёС†С‹ СЃС‚СЂРѕРє
+	//очищение памяти таблицы строк
 	CStringTable::Destroy();
-	// РћС‡РёС‰РµРЅРёРµ С‚Р°Р±Р»РёС†С‹ С†РІРµС‚РѕРІ
+	// Очищение таблицы цветов
 	CUIXmlInit::DeleteColorDefs();
-	// РћС‡РёС‰РµРЅРёРµ С‚Р°Р±Р»РёС†С‹ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ СЂР°РЅРіРѕРІ Рё РѕС‚РЅРѕС€РµРЅРёР№ СЃС‚Р°Р»РєРµСЂРѕРІ
+	// Очищение таблицы идентификаторов рангов и отношений сталкеров
 	InventoryUtilities::ClearCharacterInfoStrings();
 
 	xr_delete(g_sound_collection_storage);

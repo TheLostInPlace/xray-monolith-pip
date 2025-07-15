@@ -370,7 +370,7 @@ BOOL CPoltergeist::net_Spawn(CSE_Abstract* DC)
 	VERIFY(character_physics_support());
 	VERIFY(character_physics_support()->movement());
 	character_physics_support()->movement()->DestroyCharacter();
-	// ÑÐ¿Ð°ÑƒÐ½Ð¸Ñ‚ÑÑ Ð½Ð¸Ð²Ð¸Ð´Ð¸Ð¼Ñ‹Ð¼
+	// ñïàóíèòñÿ íèâèäèìûì
 	setVisible(false);
 	ability()->on_hide();
 

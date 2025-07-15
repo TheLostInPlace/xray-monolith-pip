@@ -11,7 +11,7 @@
 #include "actor.h"
 
 
-//Р·Р°РіСЂСѓР·РєР° РёР· XML С„Р°Р№Р»Р°
+//загрузка из XML файла
 void CDialogScriptHelper::Load(CUIXml* uiXml, XML_NODE* phrase_node)
 {
 	LoadSequence(uiXml, phrase_node, "precondition", m_Preconditions);

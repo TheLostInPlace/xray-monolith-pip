@@ -127,7 +127,7 @@ void CBaseGraviZone::Affect(SZoneObjectInfo* O)
 
 
 	//////////////////////////////////////////////////////////////////////////
-	//	Р·Р°С‚СЏРіРёРІР°РµРј РѕР±СЉРµС‚ РїРѕ РЅР°РїСЂР°РІР»РµРЅРёСЋ Рє С†РµРЅС‚СЂСѓ Р·РѕРЅС‹
+	//	затягиваем объет по направлению к центру зоны
 
 	Fvector throw_in_dir;
 	Fvector zone_center;
@@ -153,9 +153,9 @@ void CBaseGraviZone::Affect(SZoneObjectInfo* O)
 	else
 	{
 		//////////////////////////////////////////////////////////////////////////
-		// РІС‹Р±СЂРѕСЃ Р°РЅРѕРјР°Р»РёРё
+		// выброс аномалии
 
-		//РµСЃР»Рё РІСЂРµРјСЏ РІС‹Р±СЂРѕСЃР° РµС‰Рµ РЅРµ РїСЂРёС€Р»Рѕ
+		//если время выброса еще не пришло
 		if (m_dwBlowoutExplosionTime < (u32)m_iPreviousStateTime ||
 			m_dwBlowoutExplosionTime >= (u32)m_iStateTime)
 		{
@@ -223,7 +223,7 @@ void CBaseGraviZone::PlayTeleParticles(CGameObject* pObject)
 
 	shared_str particle_str = NULL;
 
-	//СЂР°Р·РЅС‹Рµ РїР°СЂС‚РёРєР»С‹ РґР»СЏ РѕР±СЉРµРєС‚РѕРІ СЂР°Р·РЅРѕРіРѕ СЂР°Р·РјРµСЂР°
+	//разные партиклы для объектов разного размера
 	if (pObject->Radius() < SMALL_OBJECT_RADIUS)
 	{
 		if (!m_sTeleParticlesSmall) return;
@@ -244,7 +244,7 @@ void CBaseGraviZone::StopTeleParticles(CGameObject* pObject)
 	if (!PP) return;
 	shared_str particle_str = NULL;
 
-	//СЂР°Р·РЅС‹Рµ РїР°СЂС‚РёРєР»С‹ РґР»СЏ РѕР±СЉРµРєС‚РѕРІ СЂР°Р·РЅРѕРіРѕ СЂР°Р·РјРµСЂР°
+	//разные партиклы для объектов разного размера
 	if (pObject->Radius() < SMALL_OBJECT_RADIUS)
 	{
 		if (!m_sTeleParticlesSmall) return;
@@ -256,7 +256,7 @@ void CBaseGraviZone::StopTeleParticles(CGameObject* pObject)
 		particle_str = m_sTeleParticlesBig;
 	}
 
-	//РѕСЃС‚Р°РЅРѕРІРёС‚СЊ РїР°СЂС‚РёРєР»С‹
+	//остановить партиклы
 	PP->StopParticles(particle_str, BI_NONE, true);
 }
 

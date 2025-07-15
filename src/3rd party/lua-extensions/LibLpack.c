@@ -4,7 +4,7 @@
 * Luiz Henrique de Figueiredo <lhf@tecgraf.puc-rio.br>
 * 29 Jun 2007 19:27:20
 * This code is hereby placed in the public domain.
-* with contributions from Ignacio Casta—Åo <castanyo@yahoo.es> and
+* with contributions from Ignacio CastaÒo <castanyo@yahoo.es> and
 * Roberto Ierusalimschy <roberto@inf.puc-rio.br>.
 */ 
 
