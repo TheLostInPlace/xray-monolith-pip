@@ -1,5 +1,3 @@
-#ifndef SoundRender_CoreAH
-#define SoundRender_CoreAH
 #pragma once
 
 #include "SoundRender_Core.h"
@@ -20,6 +18,7 @@
 class CSoundRender_CoreA : public CSoundRender_Core
 {
 	typedef CSoundRender_Core inherited;
+	friend class CNotificationClient;
 	
 	ALCdevice* pDevice;
 	ALCcontext* pContext;
@@ -80,6 +79,10 @@ public:
 
 	virtual void update_listener(const Fvector& P, const Fvector& D, const Fvector& N, float dt);
 
+	// EFX Slots
+	void LoadEffect();
+	void DestroyEffect();
+
 public:
 	CSoundRender_CoreA();
 	virtual ~CSoundRender_CoreA();
@@ -101,4 +104,3 @@ public:
 };
 
 extern CSoundRender_CoreA* SoundRenderA;
-#endif

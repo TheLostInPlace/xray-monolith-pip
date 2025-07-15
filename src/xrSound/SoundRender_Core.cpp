@@ -7,6 +7,8 @@
 #include "SoundRender_Source.h"
 #include "SoundRender_Emitter.h"
 
+#include "NotificationClient.h"
+
 #include <AL/efx.h>
 
 float psSpeedOfSound = 1.f;
@@ -45,6 +47,7 @@ CSoundRender_Core::CSoundRender_Core()
 	fTimer_Value = Timer.GetElapsed_sec();
 	fTimer_Delta = 0.0f;
 	m_iPauseCounter = 1;
+	pSysNotification = xr_new<CNotificationClient>();
 }
 
 CSoundRender_Core::~CSoundRender_Core()
@@ -55,6 +58,7 @@ CSoundRender_Core::~CSoundRender_Core()
 #else
 	xr_delete(geom_ENV);
 	xr_delete(geom_SOM);
+	xr_delete(pSysNotification);
 #endif
 }
 
