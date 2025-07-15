@@ -40,11 +40,47 @@ CSoundRender_CoreA::CSoundRender_CoreA() : CSoundRender_Core()
 
 CSoundRender_CoreA::~CSoundRender_CoreA()
 {
+	DestroyEffect();
+}
+
+void CSoundRender_CoreA::DestroyEffect()
+{
 	if (m_is_supported)
 	{
 		alDeleteEffects(1, &effect);
 		if (alIsAuxiliaryEffectSlot(slot))
 			alDeleteAuxiliaryEffectSlots(1, &slot);
+	}
+}
+
+void CSoundRender_CoreA::LoadEffect()
+{
+	alGenEffects(1, &effect);
+
+	load_reverb(effect, &reverbs[0]);
+
+	// Check if an error occured, and clean up if so.
+	ALenum err = alGetError();
+
+	if (psSoundFlags.test(ss_EFX))
+	{
+		if (err == AL_NO_ERROR)
+		{
+			Msg("SOUND: OpenAL: EFX supported");
+			m_is_supported = true;
+			alGenAuxiliaryEffectSlots(1, &slot);
+		}
+		else
+		{
+			Msg("SOUND: OpenAL: Failed to init EFX: %s", alGetString(err));
+			if (alIsEffect(effect))
+				alDeleteEffects(1, &effect);
+		}
+	}
+	else
+	{
+		Msg("SOUND: OpenAL: EFX disabled");
+		m_is_supported = false;
 	}
 }
 
@@ -267,31 +303,7 @@ void CSoundRender_CoreA::_initialize(int stage)
 	LOAD_PROC(LPALGETAUXILIARYEFFECTSLOTFV, alGetAuxiliaryEffectSlotfv);
 #undef LOAD_PROC
 
-	if (psSoundFlags.test(ss_EFX))
-	{
-		alGenEffects(1, &effect);
-		load_reverb(effect, &reverbs[0]);
-
-		// Check if an error occured, and clean up if so.
-		ALenum err = alGetError();
-		if (err == AL_NO_ERROR)
-		{
-			Msg("SOUND: OpenAL: EFX supported");
-			m_is_supported = true;
-			alGenAuxiliaryEffectSlots(1, &slot);
-		}
-		else
-		{
-			Msg("SOUND: OpenAL: Failed to init EFX:", alGetString(err));
-			if (alIsEffect(effect))
-				alDeleteEffects(1, &effect);
-		}
-	}
-	else
-	{
-		Msg("SOUND: OpenAL: EFX is disabled");
-		m_is_supported = false;
-	}
+	LoadEffect();
 
 	// Init listener struct
 	Listener.position.set(0.0f, 0.0f, 0.0f);

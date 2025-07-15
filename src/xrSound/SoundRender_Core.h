@@ -1,10 +1,10 @@
-#ifndef SoundRender_CoreH
-#define SoundRender_CoreH
 #pragma once
 
 #include "SoundRender.h"
 #include "SoundRender_Environment.h"
 #include "SoundRender_Cache.h"
+
+class CNotificationClient;
 
 class CSoundRender_Core : public CSound_manager_interface
 {
@@ -12,6 +12,7 @@ class CSoundRender_Core : public CSound_manager_interface
 protected:
 	virtual void _create_data(ref_sound_data& S, LPCSTR fName, esound_type sound_type, int game_type);
 	virtual void _destroy_data(ref_sound_data& S);
+	CNotificationClient* pSysNotification = nullptr;
 protected:
 	BOOL bListenerMoved;
 
@@ -127,4 +128,3 @@ public:
 };
 
 extern CSoundRender_Core* SoundRender;
-#endif
