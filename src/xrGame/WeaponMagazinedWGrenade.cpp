@@ -330,7 +330,7 @@ void CWeaponMagazinedWGrenade::state_Fire(float dt)
 {
 	VERIFY(fOneShotTime > 0.f);
 
-	//����� �������� �������������
+	//режим стрельбы подствольника
 	if (m_bGrenadeMode)
 	{
 		/*
@@ -355,7 +355,7 @@ void CWeaponMagazinedWGrenade::state_Fire(float dt)
 		FireEnd();
 		*/
 	}
-		//����� �������� ���������
+		//режим стрельбы очередями
 	else
 		inherited::state_Fire(dt);
 }
@@ -519,7 +519,7 @@ void CWeaponMagazinedWGrenade::ReloadMagazine()
 {
 	inherited::ReloadMagazine();
 
-	//����������� ������������� �����������
+	//перезарядка подствольного гранатомета
 	if (iAmmoElapsed && !getRocketCount() && m_bGrenadeMode)
 	{
 		shared_str fake_grenade_name = pSettings->r_string(m_ammoTypes[m_ammoType].c_str(), "fake_grenade_name");
@@ -615,7 +615,7 @@ bool CWeaponMagazinedWGrenade::Attach(PIItem pIItem, bool b_send_event)
 
 		CRocketLauncher::m_fLaunchSpeed = pGrenadeLauncher->GetGrenadeVel();
 
-		//���������� ������������ �� ���������
+		//уничтожить подствольник из инвентаря
 		if (b_send_event)
 		{
 			if (OnServer())
@@ -726,7 +726,7 @@ float CWeaponMagazinedWGrenade::CurrentZoomFactor()
 	return inherited::CurrentZoomFactor();
 }
 
-//����������� ������� ��� ������������ �������� HUD
+//виртуальные функции для проигрывания анимации HUD
 void CWeaponMagazinedWGrenade::PlayAnimShow()
 {
 	VERIFY(GetState() == eShowing);
