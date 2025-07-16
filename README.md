@@ -209,6 +209,9 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.07.16**
+* Fixed crash due to not clearing pointer to deleted IRenderable in bones calculations
+
 **2025.07.15**
 * Reducing updates of bones calculations instead of disabling them, fixes issues with T-posing corpses
 
