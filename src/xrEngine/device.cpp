@@ -557,13 +557,13 @@ void mt_DiscordThread(void*)
 	}
 }
 
-static void mt_TaskThread(void*)
+static void mt_ParallelRenderThread(void*)
 {
-	PROF_THREAD("X-Ray mt_TaskThread");
+	PROF_THREAD("X-Ray mt_ParallelRenderThread");
 	while (FALSE == Device.mt_bMustExit)
 	{
 		WaitForSingleObject(RenderEventMT, INFINITE);
-		PROF_EVENT("mt_TaskThread CPU Frame: Render");
+		PROF_EVENT("mt_ParallelRenderThread CPU Frame: Render");
 
 		for (u32 pit = 0; pit < Device.seqParallelRender.size(); pit++)
 			Device.seqParallelRender[pit]();
@@ -597,7 +597,7 @@ void CRenderDevice::Run()
 	thread_spawn(mt_FreezeThread, "Freeze detecting thread", 0, 0);
 	thread_spawn(mt_Thread, "X-RAY Secondary thread", 0, this);
 	thread_spawn(mt_DiscordThread, "X-RAY Discord thread", 0, 0);
-	thread_spawn(mt_TaskThread, "X-RAY Task thread", 0, 0);
+	thread_spawn(mt_ParallelRenderThread, "X-RAY Parallel Render thread", 0, 0);
 	// Message cycle
 	seqAppStart.Process(rp_AppStart);
 
