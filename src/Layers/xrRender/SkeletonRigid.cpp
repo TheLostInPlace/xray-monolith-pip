@@ -24,6 +24,8 @@ void CKinematics::CalculateBones(BOOL bForceExact)
 	// skip all the computations - assume nothing changes in a small period of time :)
 	if (RDEVICE.dwTimeGlobal == UCalc_Time) return; // early out for "fast" update
 
+	xrCriticalSectionGuard g(UCalc_Mutex);
+
 	// demonized: reduce calculate bones updates when the object is far away and not in frustum
 	// Available only if can get parent xform
 	// Refactor later for per object basis
@@ -65,7 +67,6 @@ void CKinematics::CalculateBones(BOOL bForceExact)
 		}
 	}
 
-	xrCriticalSectionGuard g(UCalc_Mutex);
 	OnCalculateBones();
 	if (!bForceExact && (RDEVICE.dwTimeGlobal < (UCalc_Time + UCalc_Interval * update_rate_k))) return; // early out for "slow" update
 	if (Update_Visibility) Visibility_Update();
