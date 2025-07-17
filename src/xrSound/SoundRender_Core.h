@@ -17,7 +17,9 @@ protected:
 	BOOL bListenerMoved;
 
 	CSoundRender_Environment e_current;
-	CSoundRender_Environment e_target;
+	CSoundRender_Environment e_identity;
+	CSoundRender_Environment* e_target_ptr;
+
 public:
 	typedef std::pair<ref_sound_data_ptr, float> event;
 	xr_vector<event> s_events;

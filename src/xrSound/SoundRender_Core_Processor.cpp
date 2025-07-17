@@ -108,10 +108,17 @@ void CSoundRender_Core::update(const Fvector& P, const Fvector& D, const Fvector
 		if (bListenerMoved)
 		{
 			bListenerMoved = FALSE;
-			e_target = *get_environment(P);
+			e_target_ptr = get_environment(P);
+			if (!e_target_ptr)
+				e_target_ptr = &e_identity;
 		}
 
-		e_current.lerp(e_current, e_target, dt_sec);
+		// demonized: Interpolate from e_current to 95% of e_target in close to exact time
+		constexpr float percent = 0.95f;
+		float alpha = 1.0f - std::exp(std::log(1.0f - percent) * dt_sec / snd_efx_environment_change_time);
+		clamp(alpha, 0.f, 1.f);
+		//Msg("interpolating from e_current to e_target %.2f", std::min(e_current.Reverb, e_target_ptr->Reverb) / std::max(e_current.Reverb, e_target_ptr->Reverb));
+		e_current.lerp(e_current, *e_target_ptr, alpha);
 
 		set_listener(e_current);
 		commit();
