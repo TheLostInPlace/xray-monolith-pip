@@ -25,6 +25,8 @@ float psSoundVMusic = 1.f;
 float psSoundVMusicFactor = 1.f;
 int psSoundCacheSizeMB = 256;
 
+float snd_efx_environment_change_time = 1.66f;
+
 CSoundRender_Core* SoundRender = nullptr;
 CSound_manager_interface* Sound = nullptr;
 
@@ -40,7 +42,8 @@ CSoundRender_Core::CSoundRender_Core()
 	s_targets_pu = 0;
 	s_emitters_u = 0;
 	e_current.set_identity();
-	e_target.set_identity();
+	e_identity.set_identity();
+	e_target_ptr = &e_identity;
 	bListenerMoved = FALSE;
 	bReady = FALSE;
 	bLocked = FALSE;
