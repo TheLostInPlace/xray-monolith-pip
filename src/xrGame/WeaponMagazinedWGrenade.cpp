@@ -1001,10 +1001,10 @@ bool CWeaponMagazinedWGrenade::TryPlayAnimBore()
 	return false;
 }
 
-void CWeaponMagazinedWGrenade::UpdateSounds()
+void CWeaponMagazinedWGrenade::UpdateSoundsPositionsImpl()
 {
-	inherited::UpdateSounds();
-	Fvector P = get_LastFP();
+	inherited::UpdateSoundsPositionsImpl();
+	auto& P = get_LastFP();
 	m_sounds.SetPosition("sndShotG", P);
 	m_sounds.SetPosition("sndReloadG", P);
 	m_sounds.SetPosition("sndSwitch", P);
