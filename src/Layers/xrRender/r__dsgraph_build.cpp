@@ -835,6 +835,8 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual)
 	if (!!!flags.test(IRenderVisualFlags::eIgnoreOptimization) && !IsValuableToRender(pVisual, false, phase == 1, *val_pTransform))
 		return;
 
+	PROF_EVENT();
+
 	// Visual is 100% visible - simply add it
 	xr_vector<IRenderVisual*>::iterator I, E; // it may be useful for 'hierrarhy' visual
 
@@ -919,6 +921,8 @@ void CRender::add_leafs_Static(dxRender_Visual* pVisual)
 
 	if (!!!flags.test(IRenderVisualFlags::eIgnoreOptimization) && !IsValuableToRender(pVisual, true, phase == 1, *val_pTransform))
 		return;
+
+	PROF_EVENT();
 
 	// Visual is 100% visible - simply add it
 	xr_vector<IRenderVisual*>::iterator I, E; // it may be usefull for 'hierrarhy' visuals
@@ -1017,6 +1021,8 @@ BOOL CRender::add_Dynamic(dxRender_Visual* pVisual, u32 planes)
 
 	if (!!!flags.test(IRenderVisualFlags::eIgnoreOptimization) && !IsValuableToRender(pVisual, false, phase == 1, *val_pTransform))
 		return FALSE;
+
+	PROF_EVENT();
 
 	// Check frustum visibility and calculate distance to visual's center
 	Fvector Tpos; // transformed position
