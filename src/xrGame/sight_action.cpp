@@ -13,6 +13,9 @@
 #include "ai_object_location.h"
 #include "stalker_movement_manager_smart_cover.h"
 #include "inventory.h"
+#include "../xrEngine/CameraBase.h"
+#include "Actor.h"
+void aim_target(shared_str const& aim_bone_id, Fvector &result, const CGameObject *object);
 
 //#define SIGHT_TEST
 
@@ -164,7 +167,25 @@ void CSightAction::execute_position(Fvector const& look_position)
 void CSightAction::execute_object()
 {
 	Fvector look_pos;
-	m_object_to_look->Center(look_pos);
+
+	// demonized: my edit, very ugly but it works
+	const CActor* cpActor = smart_cast<const CActor*>(m_object_to_look);
+	if(cpActor)
+	{
+		CActor* pActor = const_cast<CActor*>(cpActor);
+		if(pActor->HUDview())
+		{
+			look_pos = pActor->cam_FirstEye()->Position();
+			look_pos.y -= 0.9f;
+		}
+		else
+		{
+			::aim_target("bip01_head", look_pos, pActor);
+			look_pos.y -= 0.9f;
+		}
+	}
+	else
+		m_object_to_look->Center(look_pos);
 
 	Fvector my_position = m_object->eye_matrix.c;
 
