@@ -213,16 +213,10 @@ public:
 	//CRegistrator <pureFrame > seqFrame;
 	CRegistrator<pureFrame> seqFrameMT;
 	CRegistrator<pureDeviceReset> seqDeviceReset;
-
-	typedef xr_vector<xr_delegate> delegateVec;
-	delegateVec seqParallel;
-
-	const u8 seqParallelSubMaxThreads = 4;
-	xr_vector<delegateVec> seqParallelSubDelegates;
-	void seqParallelSubInitThreads();
+	xr_vector<xr_delegate> seqParallel;
 
 	// ForserX: Pre-Render sequence
-	delegateVec seqParallelRender;
+	xr_vector<xr_delegate> seqParallelRender;
 
 	// Dependent classes
 	//CResourceManager* Resources;
