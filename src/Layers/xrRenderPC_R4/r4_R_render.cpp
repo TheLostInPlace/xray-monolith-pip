@@ -242,12 +242,28 @@ void CRender::render_main(bool deffered, bool zfill)
 				}
 			}
 		}
-		if (g_pGameLevel && psDeviceFlags.test(rsDrawDynamic) && (phase==PHASE_NORMAL)) g_hud->Render_Last();
+		if (g_pGameLevel && (phase == PHASE_NORMAL))
+		{
+			PROF_EVENT("Render HUD");
+			g_hud->Render_Last();
+			if (g_hud->RenderActiveItemUIQuery())
+				r_dsgraph_render_hud_ui();
+			if (g_hud->RenderCamAttachedUIQuery())
+				r_dsgraph_render_cam_ui();
+		}
 	}
 	else
 	{
 		set_Object(0);
-		if (g_pGameLevel && psDeviceFlags.test(rsDrawDynamic) && (phase==PHASE_NORMAL)) g_hud->Render_Last();
+		if (g_pGameLevel && (phase == PHASE_NORMAL))
+		{
+			PROF_EVENT("Render HUD");
+			g_hud->Render_Last();
+			if (g_hud->RenderActiveItemUIQuery())
+				r_dsgraph_render_hud_ui();
+			if (g_hud->RenderCamAttachedUIQuery())
+				r_dsgraph_render_cam_ui();
+		}
 	}
 }
 

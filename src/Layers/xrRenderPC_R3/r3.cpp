@@ -848,7 +848,7 @@ CRender::CRender()
 
 CRender::~CRender()
 {
-	for (FSlideWindowItem it : SWIs)
+	for (auto& it : SWIs)
 	{
 		xr_free(it.sw);
 		it.sw = nullptr;
