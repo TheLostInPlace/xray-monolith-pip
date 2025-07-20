@@ -213,10 +213,16 @@ public:
 	//CRegistrator <pureFrame > seqFrame;
 	CRegistrator<pureFrame> seqFrameMT;
 	CRegistrator<pureDeviceReset> seqDeviceReset;
-	xr_vector<fastdelegate::FastDelegate0<>> seqParallel;
+
+	typedef xr_vector<xr_delegate> delegateVec;
+	delegateVec seqParallel;
+
+	const u8 seqParallelSubMaxThreads = 4;
+	xr_vector<delegateVec> seqParallelSubDelegates;
+	void seqParallelSubInitThreads();
 
 	// ForserX: Pre-Render sequence
-	xr_vector<fastdelegate::FastDelegate0<>> seqParallelRender;
+	delegateVec seqParallelRender;
 
 	// Dependent classes
 	//CResourceManager* Resources;
@@ -274,7 +280,7 @@ public:
 		
 		m_SecondViewport.SetSVPActive(false);
 		m_SecondViewport.SetSVPFrameDelay(2);
-		m_SecondViewport.isCamReady = false;			
+		m_SecondViewport.isCamReady = false;
 	};
 
 	void Pause(BOOL bOn, BOOL bTimer, BOOL bSound, LPCSTR reason);
@@ -422,9 +428,9 @@ public:
 	xrCriticalSection mt_csLeave;
 	volatile BOOL mt_bMustExit;
 
-	ICF void remove_from_seq_parallel(const fastdelegate::FastDelegate0<>& delegate)
+	ICF void remove_from_seq_parallel(const xr_delegate& delegate)
 	{
-		xr_vector<fastdelegate::FastDelegate0<>>::iterator I = std::find(
+		xr_vector<xr_delegate>::iterator I = std::find(
 			seqParallel.begin(),
 			seqParallel.end(),
 			delegate

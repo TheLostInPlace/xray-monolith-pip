@@ -71,7 +71,7 @@ CWeaponMagazined::~CWeaponMagazined()
 	}
 
 	// sounds
-	auto I = std::find(Device.seqParallel.begin(), Device.seqParallel.end(), fastdelegate::FastDelegate0<>(this, &CWeaponMagazined::UpdateSoundsPositions));
+	auto I = std::find(Device.seqParallel.begin(), Device.seqParallel.end(), xr_delegate(this, &CWeaponMagazined::UpdateSoundsPositions));
 	if (I != Device.seqParallel.end())
 		Device.seqParallel.erase(I);
 }
@@ -780,7 +780,7 @@ void CWeaponMagazined::UpdateSounds()
 	{
 		// Force update of fire dependencies and then put into second thread, fixes flickering limbs
 		get_LastFP();
-		Device.seqParallel.push_back(fastdelegate::FastDelegate0<>(this, &CWeaponMagazined::UpdateSoundsPositions));
+		Device.seqParallel.push_back(xr_delegate(this, &CWeaponMagazined::UpdateSoundsPositions));
 	}
 	else
 	{

@@ -242,12 +242,12 @@ void CDetailManager::Load()
 	swing_desc[1].rot2 = pSettings->r_float("details", "swing_fast_rot2");
 	swing_desc[1].speed = pSettings->r_float("details", "swing_fast_speed");
 
-	Device.seqParallelRender.push_back(fastdelegate::FastDelegate0<>(this, &CDetailManager::MT_CALC));
+	Device.seqParallelRender.push_back(xr_delegate(this, &CDetailManager::MT_CALC));
 }
 #endif
 void CDetailManager::Unload()
 {
-	auto I = std::find(Device.seqParallelRender.begin(), Device.seqParallelRender.end(), fastdelegate::FastDelegate0<>(this, &CDetailManager::MT_CALC));
+	auto I = std::find(Device.seqParallelRender.begin(), Device.seqParallelRender.end(), xr_delegate(this, &CDetailManager::MT_CALC));
 
 	if (I != Device.seqParallelRender.end())
 		Device.seqParallelRender.erase(I);
