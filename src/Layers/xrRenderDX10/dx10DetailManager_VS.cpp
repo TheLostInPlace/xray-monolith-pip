@@ -284,6 +284,14 @@ void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave
 					for (; _iI != _iE; _iI++)
 					{
 						SlotItem& Instance = **_iI;
+
+						if (RImplementation.pOutdoorSector && PortalTraverser.i_marker != RImplementation.pOutdoorSector->r_marker)
+							continue;
+
+						CSector* sector = (CSector*)RImplementation.getSector(Instance.sector_id);
+						if (sector && PortalTraverser.i_marker != sector->r_marker)
+							continue;
+
 						u32 base = dwBatch * 4;
 
 						Instance.alpha += GoToValue(Instance.alpha, Instance.alpha_target);
