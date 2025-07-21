@@ -35,7 +35,8 @@ class CPHObject :
 		st_net_interpolation =(1 << 3),
 		fl_ray_motions =(1 << 4),
 		st_recently_deactivated =(1 << 5),
-		is_deadbody =(1 << 6)
+		is_deadbody =(1 << 6),
+		fl_collision_disable =(1 << 7)
 	};
 
 	CPHIsland m_island;
