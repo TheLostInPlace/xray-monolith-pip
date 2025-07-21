@@ -601,7 +601,10 @@ BOOL CRender::occ_visible(vis_data& P) { return HOM.visible(P); }
 BOOL CRender::occ_visible(sPoly& P) { return HOM.visible(P); }
 BOOL CRender::occ_visible(Fbox& P) { return HOM.visible(P); }
 
-void CRender::add_Visual(IRenderVisual* V) { add_leafs_Dynamic((dxRender_Visual*)V); }
+void CRender::add_Visual(IRenderVisual* V, bool ignore_opt)
+{
+	add_leafs_Dynamic((dxRender_Visual*)V, ignore_opt);
+}
 void CRender::add_Geometry(IRenderVisual* V) { add_Static((dxRender_Visual*)V, View->getMask()); }
 
 // demonized: add user defined rotation to wallmark

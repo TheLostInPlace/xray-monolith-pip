@@ -9,7 +9,7 @@ struct vis_data;
 
 enum IRenderVisualFlags
 {
-	eIgnoreOptimization = (1 << 0),
+	eIgnoreOptimization = (1 << 0), // Used for geometry culling optimization
 	eNoShadow = (1 << 1),
 };
 

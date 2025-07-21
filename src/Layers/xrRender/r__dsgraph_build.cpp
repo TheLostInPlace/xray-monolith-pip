@@ -653,8 +653,11 @@ IC float GetDistFromCamera(const Fvector& from_position)
 	return adjusted_distane;
 }
 
-IC bool IsValuableToRender(dxRender_Visual* pVisual, bool isStatic, bool sm, Fmatrix& transform_matrix)
+IC bool IsValuableToRender(dxRender_Visual* pVisual, bool isStatic, bool sm, Fmatrix& transform_matrix, bool ignore_opt = false)
 {
+	if (ignore_opt || pVisual->flags.test(eIgnoreOptimization))
+		return true;
+
 	if ((isStatic && opt_static >= 1) || (!isStatic && opt_dynamic >= 1))
 	{
 		float sphere_volume = pVisual->getVisData().sphere.volume();
@@ -822,7 +825,7 @@ IC bool IsValuableToRender(dxRender_Visual* pVisual, bool isStatic, bool sm, Fma
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual)
+void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual, bool ignore)
 {
 	if (!pVisual)
 		return;
@@ -832,7 +835,7 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual)
 	if (phase != PHASE_NORMAL && !!flags.test(IRenderVisualFlags::eNoShadow))
 		return;
 
-	if (!!!flags.test(IRenderVisualFlags::eIgnoreOptimization) && !IsValuableToRender(pVisual, false, phase == 1, *val_pTransform))
+	if (!!!flags.test(IRenderVisualFlags::eIgnoreOptimization) && !IsValuableToRender(pVisual, false, phase == 1, *val_pTransform, ignore))
 		return;
 
 	PROF_EVENT();
@@ -849,14 +852,14 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual)
 			for (PS::CParticleGroup::SItemVecIt i_it = pG->items.begin(); i_it != pG->items.end(); ++i_it)
 			{
 				PS::CParticleGroup::SItem& I = *i_it;
-				if (I._effect) add_leafs_Dynamic(I._effect);
+				if (I._effect) add_leafs_Dynamic(I._effect, ignore);
 				for (xr_vector<dxRender_Visual*>::iterator pit = I._children_related.begin(); pit != I
 				                                                                                     ._children_related.
 				                                                                                     end(); ++pit)
-					add_leafs_Dynamic(*pit);
+					add_leafs_Dynamic(*pit, ignore);
 				for (xr_vector<dxRender_Visual*>::iterator pit = I._children_free.begin(); pit != I._children_free.end()
 				     ; ++pit)
-					add_leafs_Dynamic(*pit);
+					add_leafs_Dynamic(*pit, ignore);
 			}
 		}
 		return;
@@ -866,7 +869,7 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual)
 			FHierrarhyVisual* pV = (FHierrarhyVisual*)pVisual;
 			I = pV->children.begin();
 			E = pV->children.end();
-			for (; I != E; ++I) add_leafs_Dynamic((dxRender_Visual*)*I);
+			for (; I != E; ++I) add_leafs_Dynamic((dxRender_Visual*)*I, ignore);
 		}
 		return;
 	case MT_SKELETON_ANIM:
@@ -885,7 +888,7 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual)
 			}
 			if (_use_lod)
 			{
-				add_leafs_Dynamic(pV->m_lod);
+				add_leafs_Dynamic(pV->m_lod, ignore);
 			}
 			else
 			{
@@ -893,7 +896,7 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual)
 				pV->CalculateWallmarks(); //. bug?
 				I = pV->children.begin();
 				E = pV->children.end();
-				for (; I != E; ++I) add_leafs_Dynamic((dxRender_Visual*)*I);
+				for (; I != E; ++I) add_leafs_Dynamic((dxRender_Visual*)*I, ignore);
 			}
 		}
 		return;

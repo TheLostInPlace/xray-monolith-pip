@@ -134,7 +134,7 @@ void script_attachment::Render(IKinematics* model, Fmatrix* mat)
 	}
 
 	::Render->set_Transform(&m_transform);
-	::Render->add_Visual(m_model);
+	::Render->add_Visual(m_model, true);
 
 	if (m_children.size())
 	{
