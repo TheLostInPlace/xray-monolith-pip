@@ -596,7 +596,10 @@ void CRender::Render()
 		PIX_EVENT(DEFER_SUN);
 		RImplementation.stats.l_visible ++;
 		if (!ps_r2_ls_flags_ext.is(R2FLAGEXT_SUN_OLD))
+		{
 			render_sun_cascades();
+			Target->increment_light_marker();
+		}
 		else
 		{
 			render_sun_near();
