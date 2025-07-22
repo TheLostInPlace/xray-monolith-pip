@@ -1034,6 +1034,8 @@ void CGameObject::SetKinematicsCallback(bool set)
 
 void VisualCallback(IKinematics* tpKinematics)
 {
+	if (!tpKinematics) return;
+
 	auto cobj = static_cast<CObject*>(tpKinematics->GetUpdateCallbackParam());
 	if (!cobj) return;
 
