@@ -512,11 +512,11 @@ u32 CUILines::GetColorFromText(const xr_string& str) const
 
 	begin = str.find(BEGIN);
 	end = str.find(END, begin);
-
-	if (begin == npos || end == npos || npos != str.find("%c[default]", begin))
-	{
+	if (begin == npos || end == npos)
 		return m_dwTextColor;
-	}
+	// try default color
+	if (npos != str.find("%c[default]", begin, end - begin))
+		return m_dwTextColor;
 
 	// Try predefined in XML colors
 	for (CUIXmlInit::ColorDefs::const_iterator it = CUIXmlInit::GetColorDefs()->begin(); it != CUIXmlInit::
