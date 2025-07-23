@@ -209,6 +209,10 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.07.23**
+* Various bug fixes and crash fixes
+* ZoulKrystal: Gasmask performance edit and ltx aim fov (https://github.com/themrdemonized/xray-monolith/pull/304)
+
 **2025.07.20**
 * Fixed flickering bones when using `mt_update_weapon_sounds`
 * VodoXleb: Callback for GAME path build fail (https://github.com/themrdemonized/xray-monolith/pull/301)
