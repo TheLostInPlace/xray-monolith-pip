@@ -223,7 +223,11 @@ void __stdcall ActionCallback(IKinematics* tpKinematics)
 		l_tpScriptMonster->vfUpdateSounds();
 		l_tpScriptMonster->vfUpdateParticles();
 	}
-	catch(...)
+	catch (std::exception& e)
+	{
+		Msg("ActionCallback error: %s", e.what());
+	}
+	catch (...)
 	{
 
 	}
