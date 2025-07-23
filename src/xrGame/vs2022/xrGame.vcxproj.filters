@@ -9677,6 +9677,9 @@
     <ClCompile Include="..\CarExhaust.cpp">
       <Filter>Core\Client\Objects\vehicles\Car</Filter>
     </ClCompile>
+    <ClCompile Include="..\CarNew.cpp">
+      <Filter>Core\Client\Objects\vehicles\Car</Filter>
+    </ClCompile>
     <ClCompile Include="..\CarInput.cpp">
       <Filter>Core\Client\Objects\vehicles\Car</Filter>
     </ClCompile>

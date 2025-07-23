@@ -709,6 +709,126 @@ private:
 private:
 	car_memory* m_memory;
 
+#ifdef CAR_NEW
+private:
+	struct SCarFlyBone
+	{
+		u16 bid;
+		bool clockwise;
+		bool spinning;
+		CPhysicsElement *E;
+		CPhysicsJoint *J;
+		SCarFlyBone();
+	};
+
+private:
+	u16 m_type;
+	bool m_remote_control;
+
+	u16 m_camera_bone_def;
+	u16 m_camera_bone_aim;
+	float m_zoom_factor_def;
+	float m_zoom_factor_aim;
+	bool m_zoom_status;
+
+	LPCSTR m_on_before_hit_callback;
+	LPCSTR m_on_before_use_callback;
+	LPCSTR m_on_before_engine_callback;
+	LPCSTR m_on_key_press_callback;
+	LPCSTR m_on_key_release_callback;
+
+	u16 m_body_bid;
+	u16 m_move_bid;
+	xr_vector<SCarFlyBone> m_drive_bones;
+	xr_vector<SCarFlyBone> m_rotor_bones;
+	float m_rotor_force_max;
+	float m_rotor_speed_max;
+	void RotorUpdate();
+
+	u16 m_control_ele; /* Elevating */
+	u16 m_control_pit; /* Pitch */
+	u16 m_control_rol; /* Roll */
+	u16 m_control_yaw; /* Yaw */
+
+	float m_control_neutral;
+	float m_control_ele_max;
+	float m_control_pit_max;
+	float m_control_rol_max;
+	float m_control_yaw_max;
+
+	float m_control_ele_inc;
+	float m_control_pit_inc;
+	float m_control_rol_inc;
+	float m_control_yaw_inc;
+
+	void Fly_Load(LPCSTR section);
+	BOOL Fly_net_Spawn(CSE_Abstract *DC);
+	bool Fly_attach_Actor(CGameObject *actor);
+	void Fly_detach_Actor();
+	void Fly_VisualUpdate(float fov);
+	void Fly_PhDataUpdate(float step);
+	void Fly_OnMouseMove(int dx, int dy);
+	void Fly_OnKeyboardPress(int dik);
+	void Fly_OnKeyboardRelease(int dik);
+	void Fly_OnKeyboardHold(int dik);
+
+public:
+	u16 GetType() { return m_type; }
+
+	enum eCarType
+	{
+		eCarTypeDef = 0,
+		eCarTypeFly,
+	};
+
+	enum eControlEle
+	{
+		eControlEle_NA = 0,
+		eControlEle_UP,
+		eControlEle_DW,
+	};
+	enum eControlYaw
+	{
+		eControlYaw_NA = 0,
+		eControlYaw_RS,
+		eControlYaw_LS,
+	};
+	enum eControlPit
+	{
+		eControlPit_NA = 0,
+		eControlPit_FS,
+		eControlPit_BS,
+	};
+	enum eControlRol
+	{
+		eControlRol_NA = 0,
+		eControlRol_RS,
+		eControlRol_LS,
+	};
+
+	u16 GetControlEle() { return m_control_ele; };
+	u16 GetControlYaw() { return m_control_yaw; };
+	u16 GetControlPit() { return m_control_pit; };
+	u16 GetControlRol() { return m_control_rol; };
+	void SetControlEle(u16 val) { m_control_ele = val; };
+	void SetControlYaw(u16 val) { m_control_yaw = val; };
+	void SetControlPit(u16 val) { m_control_pit = val; };
+	void SetControlRol(u16 val) { m_control_rol = val; };
+
+	float GetControlEleScale() { return m_control_ele_max; };
+	float GetControlYawScale() { return m_control_yaw_max; };
+	float GetControlPitScale() { return m_control_pit_max; };
+	float GetControlRolScale() { return m_control_rol_max; };
+	void SetControlEleScale(float val) { m_control_ele_max = val; };
+	void SetControlYawScale(float val) { m_control_yaw_max = val; };
+	void SetControlPitScale(float val) { m_control_pit_max = val; };
+	void SetControlRolScale(float val) { m_control_rol_max = val; };
+
+	void ResetControl();
+	bool IsCameraZoom();
+	void SetUseAction(LPCSTR txt);
+#endif
+
 public:
 DECLARE_SCRIPT_REGISTER_FUNCTION
 };

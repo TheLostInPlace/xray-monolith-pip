@@ -53,6 +53,11 @@ void CCar::script_register(lua_State* L)
 		.def("GetRPM", &CCar::GetRPM)
 		.def("SetRPM", &CCar::SetRPM)
 		/*************************************************** added by Ray Twitty (aka Shadows) END ***************************************************/
+		
+#ifdef CAR_NEW
+		.def("SetUseAction", &CCar::SetUseAction)
+		
+#endif
 		.def(constructor<>())
 	];
 }

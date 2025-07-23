@@ -43,6 +43,7 @@
 //-TWEAKS
 
 #define HOLDERCUSTOM_NEW								// Upgrade CHolderCustom.
+#define CAR_NEW                                         // Upgrade CCar.
 #define STATIONARYMGUN_NEW								// Upgrade CSE_ALifeStationaryMgun and CWeaponStatMgun.
 #define FEEL_ENHANCED									// Upgrade Feel.
 

@@ -22,6 +22,14 @@ void CCar::OnMouseMove(int dx, int dy)
 {
 	if (Remote()) return;
 
+#ifdef CAR_NEW
+	if (m_type == eCarTypeFly)
+	{
+		Fly_OnMouseMove(dx, dy);
+		return;
+	}
+#endif
+
 	CCameraBase* C = active_camera;
 	float scale = (C->f_fov / g_fov) * psMouseSens * psMouseSensScale / 50.f;
 	if (dx)
@@ -143,6 +151,23 @@ void CCar::OnKeyboardPress(int cmd)
 {
 	if (Remote()) return;
 
+#ifdef CAR_NEW
+	if (m_on_key_press_callback && strlen(m_on_key_press_callback))
+	{
+		luabind::functor<void> lua_function;
+		if (ai().script_engine().functor(m_on_key_press_callback, lua_function))
+		{
+			lua_function(lua_game_object(), cmd);
+		}
+	}
+
+	if (m_type == eCarTypeFly)
+	{
+		Fly_OnKeyboardPress(cmd);
+		return;
+	}
+#endif
+
 	switch (cmd)
 	{
 	case kCAM_1: OnCameraChange(ectFirst);
@@ -183,6 +208,24 @@ void CCar::OnKeyboardPress(int cmd)
 void CCar::OnKeyboardRelease(int cmd)
 {
 	if (Remote()) return;
+
+#ifdef CAR_NEW
+	if (m_on_key_release_callback && strlen(m_on_key_release_callback))
+	{
+		luabind::functor<void> lua_function;
+		if (ai().script_engine().functor(m_on_key_release_callback, lua_function))
+		{
+			lua_function(lua_game_object(), cmd);
+		}
+	}
+
+	if (m_type == eCarTypeFly)
+	{
+		Fly_OnKeyboardRelease(cmd);
+		return;
+	}
+#endif
+
 	switch (cmd)
 	{
 	case kACCEL: break;
@@ -206,6 +249,14 @@ void CCar::OnKeyboardRelease(int cmd)
 void CCar::OnKeyboardHold(int cmd)
 {
 	if (Remote()) return;
+
+#ifdef CAR_NEW
+	if (m_type == eCarTypeFly)
+	{
+		Fly_OnKeyboardHold(cmd);
+		return;
+	}
+#endif
 
 	switch (cmd)
 	{
