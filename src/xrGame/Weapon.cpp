@@ -1235,12 +1235,14 @@ void CWeapon::OnH_A_Independent()
 	inherited::OnH_A_Independent();
 	Light_Destroy();
 	UpdateAddonsVisibility();
+	//Engine.Sheduler.Register(this);
 };
 
 void CWeapon::OnH_A_Chield()
 {
 	inherited::OnH_A_Chield();
 	UpdateAddonsVisibility();
+	//Engine.Sheduler.Unregister(this);
 };
 
 void CWeapon::OnActiveItem()
@@ -1254,7 +1256,7 @@ void CWeapon::OnActiveItem()
 	//-
 
 	inherited::OnActiveItem();
-	//åñëè ìû çàíðóæàåìñÿ è îðóæèå áûëî â ðóêàõ
+	//если мы заряжаемся и оружие было в руках
 	//.	SetState					(eIdle);
 	//.	SetNextState				(eIdle);
 }

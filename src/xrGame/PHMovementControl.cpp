@@ -1274,7 +1274,7 @@ void CPHMovementControl::UpdateObjectBox(CPHCharacter* ach)
 		return;
 
 	Fvector cbox;
-	PKinematics(pObject->Visual())->CalculateBones();
+	//PKinematics(pObject->Visual())->CalculateBones();
 	pObject->BoundingBox().getradius(cbox);
 
 	const Fvector& pa = ach->BodyPosition();

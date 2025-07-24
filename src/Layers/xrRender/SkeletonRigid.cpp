@@ -37,14 +37,13 @@ void CKinematics::CalculateBones(BOOL bForceExact)
 			xForm.value().transform_tiny(p, vis.sphere.P);
 
 			// Perceivable distance depending on FOV, so that objects will behave normal in binoculars
-			float dist = Device.vCameraPosition.distance_to(p);
-			float fov_rad = deg2rad(Device.fFOV); // Make sure Device.fFOV is in degrees
-			float perceived_dist = dist / tanf(fov_rad * 0.5f);
-			float dist_k = perceived_dist / dist;
+			float dist = 0.f;
+			float perceived_dist = Device.GetPerceivedDist(p, &dist);
+			float dist_k = dist / perceived_dist;
 			update_rate_k = _max(1.f, dist / (IK_CALC_DIST * dist_k));
 
 			// Visibility check, perform always
-			bool visibleCheck = (dist < IK_ALWAYS_CALC_DIST * dist_k) || ::Render->ViewBase.testSphere_dirty(p, vis.sphere.R);
+			bool visibleCheck = (perceived_dist < IK_ALWAYS_CALC_DIST) || ::Render->ViewBase.testSphere_dirty(p, vis.sphere.R);
 			if (!visibleCheck)
 			{
 				bForceExact = FALSE;
@@ -57,7 +56,7 @@ void CKinematics::CalculateBones(BOOL bForceExact)
 			}
 
 			// distance check, perform when cvar is enabled and can be optimized
-			if (r_optimize_calculate_bones && canBeOptimized() && (dist > IK_CALC_DIST * dist_k))
+			if (r_optimize_calculate_bones && canBeOptimized() && (perceived_dist > IK_CALC_DIST))
 			{
 				bForceExact = FALSE;
 

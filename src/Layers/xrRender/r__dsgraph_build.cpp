@@ -892,13 +892,10 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual, bool ignore)
 			}
 			else
 			{
-#if RENDER!=R_R1
-				if (phase == PHASE_NORMAL)
+#if RENDER==R_R1
+				pV->CalculateBones(TRUE);
+				pV->CalculateWallmarks();
 #endif
-				{
-					pV->CalculateBones(TRUE);
-					pV->CalculateWallmarks(); //. bug?
-				}
 				I = pV->children.begin();
 				E = pV->children.end();
 				for (; I != E; ++I) add_leafs_Dynamic((dxRender_Visual*)*I, ignore);
@@ -969,10 +966,9 @@ void CRender::add_leafs_Static(dxRender_Visual* pVisual)
 		{
 			// Add all children, doesn't perform any tests
 			CKinematics* pV = (CKinematics*)pVisual;
-#if RENDER!=R_R1
-			if(phase==PHASE_NORMAL)
+#if RENDER==R_R1
+			pV->CalculateBones(TRUE);
 #endif
-				pV->CalculateBones(TRUE);
 			I = pV->children.begin();
 			E = pV->children.end();
 			for (; I != E; ++I) add_leafs_Static((dxRender_Visual*)*I);
@@ -1120,13 +1116,10 @@ BOOL CRender::add_Dynamic(dxRender_Visual* pVisual, u32 planes)
 			}
 			else
 			{
-#if RENDER!=R_R1
-				if(phase==PHASE_NORMAL)
+#if RENDER==R_R1
+				pV->CalculateBones(TRUE);
+				pV->CalculateWallmarks(); //. bug?
 #endif
-				{
-					pV->CalculateBones(TRUE);
-					pV->CalculateWallmarks(); //. bug?
-				}
 				I = pV->children.begin();
 				E = pV->children.end();
 				for (; I != E; ++I) add_leafs_Dynamic((dxRender_Visual*)*I);
@@ -1239,10 +1232,9 @@ void CRender::add_Static(dxRender_Visual* pVisual, u32 planes)
 		{
 			// Add all children, doesn't perform any tests
 			CKinematics* pV = (CKinematics*)pVisual;
-#if RENDER!=R_R1
-			if(phase==PHASE_NORMAL)
-#endif
-				pV->CalculateBones(TRUE);
+#if RENDER==R_R1
+			pV->CalculateBones(TRUE);
+#endif	
 			if (VIS == fcvPartial)
 			{
 				for (IRenderVisual* childRenderable : pV->children)

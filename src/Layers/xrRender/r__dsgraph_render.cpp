@@ -8,6 +8,11 @@
 
 #include "FBasicVisual.h"
 
+#include "fhierrarhyvisual.h"
+#include "SkeletonCustom.h"
+#include "../../xrEngine/fmesh.h"
+#include "flod.h"
+
 using namespace R_dsgraph;
 
 extern float r_ssaDISCARD;
@@ -878,6 +883,7 @@ void R_dsgraph_structure::r_dsgraph_render_subspace(IRender_Sector* _sector, Fma
 }
 
 // sub-space rendering - main procedure
+extern float IK_CALC_DIST;
 void R_dsgraph_structure::r_dsgraph_render_subspace(IRender_Sector* _sector, CFrustum* _frustum, Fmatrix& mCombined,
                                                     Fvector& _cop, BOOL _dynamic, BOOL _precise_portals)
 {
@@ -954,7 +960,27 @@ void R_dsgraph_structure::r_dsgraph_render_subspace(IRender_Sector* _sector, CFr
 				// renderable
 				IRenderable* renderable = spatial->dcast_Renderable();
 				if (0 == renderable) continue; // unknown, but renderable object (r1_glow???)
-
+#if RENDER!=R_R1
+				float perceived_dist = Device.GetPerceivedDist(renderable->renderable.xform.c);
+				if(perceived_dist <= IK_CALC_DIST)
+				{
+					CKinematics* pKin = (CKinematics*)renderable->renderable.visual;
+					if(pKin)
+					{
+						if(spatial->spatial.type&STYPE_RENDERABLESHADOW)
+						{
+							pKin->CalculateBones(TRUE);
+						}
+						if(spatial->spatial.type&STYPE_RENDERABLE)
+						{
+							if(0==ViewSave.testSphere_dirty(spatial->spatial.sphere.P, spatial->spatial.sphere.R))
+							{
+								pKin->CalculateBones(TRUE);
+							}
+						}
+					}
+				}
+#endif
 				renderable->renderable_Render();
 			}
 		}
@@ -964,11 +990,6 @@ void R_dsgraph_structure::r_dsgraph_render_subspace(IRender_Sector* _sector, CFr
 	ViewBase = ViewSave;
 	View = 0;
 }
-
-#include "fhierrarhyvisual.h"
-#include "SkeletonCustom.h"
-#include "../../xrEngine/fmesh.h"
-#include "flod.h"
 
 void R_dsgraph_structure::r_dsgraph_render_R1_box(IRender_Sector* _S, Fbox& BB, int sh)
 {

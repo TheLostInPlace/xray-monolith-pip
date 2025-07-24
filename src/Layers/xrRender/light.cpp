@@ -41,6 +41,7 @@ light::light(void) : ISpatial(g_SpatialSpace)
 	vis.query_order = 0;
 	vis.visible = true;
 	vis.pending = false;
+	m_sectors = {};
 #endif // (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 }
 
@@ -55,6 +56,7 @@ light::~light()
 #if (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 	for (u32 it = 0; it < RImplementation.Lights_LastFrame.size(); it++)
 		if (this == RImplementation.Lights_LastFrame[it]) RImplementation.Lights_LastFrame[it] = 0;
+	m_sectors.clear();
 #endif // (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 }
 
@@ -165,6 +167,56 @@ void light::set_rotation(const Fvector& D, const Fvector& R)
 	if (!fsimilar(1.f, old_D.dotproduct(D))) spatial_move();
 }
 
+void light::set_shadow(bool b)						
+{ 
+	flags.bShadow=b;
+#if RENDER!=R_R1
+	if (flags.type==IRender_Light::POINT)
+	{
+		if(flags.bShadow)
+		{
+			// tough: create 6 shadowed lights
+			if (0==omnipart[0])
+			{
+				for (int f=0; f<6; f++)
+					omnipart[f] = xr_new<light> ();
+			}
+		}
+		else
+		{
+			// tough: delete 6 shadowed lights
+			if (0!=omnipart[0])
+			{
+				for (int f=0; f<6; f++)	xr_delete(omnipart[f]);
+			}
+		}
+	}
+#endif
+}
+
+#if RENDER!=R_R1
+void light::get_sectors()
+{
+	if(0==spatial.sector)
+		spatial_updatesector();
+
+	CSector* sector = (CSector*)spatial.sector;
+	if(0==sector) return;
+
+	if(flags.type == IRender_Light::SPOT || flags.type == IRender_Light::OMNIPART)
+	{
+		CFrustum temp = CFrustum();
+		temp.CreateFromMatrix			(X.S.combine, FRUSTUM_P_ALL);
+
+		m_sectors = RImplementation.detectSectors_frustum(sector, &temp);
+	}
+	if(flags.type == IRender_Light::POINT)
+	{
+		m_sectors = RImplementation.detectSectors_sphere(sector, position, Fvector().set(range, range, range));
+	}
+}
+#endif
+
 void light::spatial_move()
 {
 	switch (flags.type)
@@ -212,6 +264,7 @@ void light::spatial_move()
 #if (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 	if (flags.bActive) gi_generate();
 	svis.invalidate();
+	if (RImplementation.Sectors.size() > 1) get_sectors();
 #endif // (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 }
 
@@ -331,8 +384,7 @@ void light::export_(light_Package& package)
 		{
 		case IRender_Light::POINT:
 			{
-				// tough: create/update 6 shadowed lights
-				if (0 == omnipart[0]) for (int f = 0; f < 6; f++) omnipart[f] = xr_new<light>();
+				// tough: update 6 shadowed lights
 				for (int f = 0; f < 6; f++)
 				{
 					light* L = omnipart[f];

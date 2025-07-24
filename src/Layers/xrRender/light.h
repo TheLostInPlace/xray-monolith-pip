@@ -44,6 +44,10 @@ public:
 	float distance;
 	float distance_lpos;
 
+#if RENDER!=R_R1
+	xr_vector<IRender_Sector*> m_sectors;
+#endif	//	RENDER!=R_R1
+
 	float m_volumetric_quality;
 	float m_volumetric_intensity;
 	float m_volumetric_distance;
@@ -115,11 +119,11 @@ public:
 	virtual void set_active(bool b);
 	virtual bool get_active() { return flags.bActive; }
 
-	virtual void set_shadow(bool b)
-	{
-		flags.bShadow = b;
-	}
+#if RENDER!=R_R1
+	void get_sectors();
+#endif	//	RENDER!=R_R1
 
+	virtual void set_shadow(bool b);
 	virtual void set_volumetric(bool b)
 	{
 		if (ps_ssfx_volumetric.x > 0)
@@ -155,7 +159,7 @@ public:
 
 	virtual IRender_Light* dcast_Light() { return this; }
 
-	vis_data& get_homdata();
+	virtual vis_data& get_homdata();
 #if (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 	void			gi_generate				();
 	void			xform_calc				();

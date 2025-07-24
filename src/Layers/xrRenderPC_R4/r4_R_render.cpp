@@ -3,6 +3,7 @@
 #include "../xrRender/FBasicVisual.h"
 #include "../../xrEngine/customhud.h"
 #include "../../xrEngine/xr_object.h"
+#include "../xrRender/SkeletonCustom.h"
 
 #include "../xrRender/QueryHelper.h"
 
@@ -121,64 +122,30 @@ void CRender::render_main(bool deffered, bool zfill)
 			if (0==sector) continue;
 			Fbox sp_box;
 			sp_box.setb(spatial->spatial.sphere.P,Fvector().set(spatial->spatial.sphere.R, spatial->spatial.sphere.R, spatial->spatial.sphere.R));
-			if(!HOM.visible(sp_box)) continue;
+			HOM.Enable();
+            if(!HOM.visible(sp_box)) continue;
 
 			if ((spatial->spatial.type & STYPE_LIGHTSOURCE) && deffered)
 			{
 				// lightsource
-				if(light* L = (light*)(spatial->dcast_Light()))
+				if (light* L = (light*)(spatial->dcast_Light()))
 				{
-					if (L->get_LOD()>EPS_L)
+					if (L->get_LOD() > EPS_L)
 					{
 						if (dont_test_sectors)
+						{
 							Lights.add_light(L);
+						}
 						else
 						{
-							xr_vector<IRender_Sector*> m_sectors = {};
-							bool traversed = false;
-							if(L->flags.type == IRender_Light::SPOT || L->flags.type == IRender_Light::DIRECT)
+							for (u32 s_it = 0; s_it < L->m_sectors.size(); s_it++)
 							{
-								LR.compute_xf_spot(L);
-								CFrustum temp;
-								temp.CreateFromMatrix(L->X.S.combine, FRUSTUM_P_ALL &(~FRUSTUM_P_NEAR));
-								m_sectors = detectSectors_frustum(sector, &temp);
-								for (u32 s_it = 0; s_it < m_sectors.size(); s_it++)
+								CSector* sector_ = (CSector*)L->m_sectors[s_it];
+								if (PortalTraverser.i_marker == sector_->r_marker)
 								{
-									CSector* sector_ = (CSector*)m_sectors[s_it];
-									if(PortalTraverser.i_marker == sector_->r_marker)
-										traversed = true;
+									Lights.add_light(L);
+									break;
 								}
-								
-							}
-							else
-							{
-								m_sectors = detectSectors_sphere(sector, L->position, Fvector().set(L->range, L->range, L->range));
-								for (u32 s_it = 0; s_it < m_sectors.size(); s_it++)
-								{
-									CSector* sector_ = (CSector*)m_sectors[s_it];
-									if(PortalTraverser.i_marker == sector_->r_marker)
-										traversed = true;
-								}
-							}
-
-							if(!m_sectors.size())
-								traversed = true;
-							else
-							{
-								if(L->flags.type == IRender_Light::POINT && spatial->spatial.sphere.P.distance_to_sqr(Device.vCameraPosition) < _sqr(spatial->spatial.sphere.R))
-									traversed = true;
-							}
-							
-
-
-							if(traversed)
-							{
-								//dbg_light_renderer(L, color_rgba(0,255,100,255), m_sectors.size());
-								Lights.add_light(L);
-							}
-							else
-							{
-								//dbg_light_renderer(L, color_rgba(255,0,100,255), m_sectors.size());
 							}
 						}
 					}
@@ -192,10 +159,35 @@ void CRender::render_main(bool deffered, bool zfill)
 					// renderable
 					if (IRenderable* renderable = spatial->dcast_Renderable())
 					{
-						// Rendering
-						set_Object(renderable);
-						renderable->renderable_Render();
-						set_Object(0);
+						if (Device.vCameraPosition.distance_to(spatial->spatial.sphere.P) < (g_pGamePersistent->Environment().CurrentEnv->fog_distance))
+						{
+							if (Device.CalcSSADynamic(spatial->spatial.sphere.P, spatial->spatial.sphere.R) > 0.002f && Device.GetPerceivedDist(spatial->spatial.sphere.P) < 220.f)
+							{
+								if (deffered)
+								{
+									CKinematics* pKin = (CKinematics*)renderable->renderable.visual;
+									if (pKin)
+									{
+										pKin->CalculateBones(TRUE);
+										pKin->CalculateWallmarks();
+									}
+								}
+								if (spatial->spatial.sphere.R > 1.f)
+								{
+									// Rendering
+									set_Object(renderable);
+									renderable->renderable_Render();
+									set_Object(0);
+								}
+							}
+							if (spatial->spatial.sphere.R <= 1.f)
+							{
+								// Rendering
+								set_Object(renderable);
+								renderable->renderable_Render();
+								set_Object(0);
+							}
+						}
 					}
 				}
 				if (spatial->spatial.type & STYPE_PARTICLE && !deffered)
@@ -222,10 +214,35 @@ void CRender::render_main(bool deffered, bool zfill)
 						// renderable
 						if (IRenderable* renderable = spatial->dcast_Renderable())
 						{
-							// Rendering
-							set_Object(renderable);
-							renderable->renderable_Render();
-							set_Object(0);
+							if (Device.vCameraPosition.distance_to(spatial->spatial.sphere.P) < (g_pGamePersistent->Environment().CurrentEnv->fog_distance))
+							{
+								if (Device.CalcSSADynamic(spatial->spatial.sphere.P, spatial->spatial.sphere.R) > 0.002f && Device.GetPerceivedDist(spatial->spatial.sphere.P) < 220.f)
+								{
+									if (deffered)
+									{
+										CKinematics* pKin = (CKinematics*)renderable->renderable.visual;
+										if (pKin)
+										{
+											pKin->CalculateBones(TRUE);
+											pKin->CalculateWallmarks();
+										}
+									}
+									if (spatial->spatial.sphere.R > 1.f)
+									{
+										// Rendering
+										set_Object(renderable);
+										renderable->renderable_Render();
+										set_Object(0);
+									}
+								}
+								if (spatial->spatial.sphere.R <= 1.f)
+								{
+									// Rendering
+									set_Object(renderable);
+									renderable->renderable_Render();
+									set_Object(0);
+								}
+							}
 						}
 					}
 					if (spatial->spatial.type & STYPE_PARTICLE && !deffered)

@@ -72,6 +72,7 @@ public:
 	virtual void set_hud_mode(bool b) = 0;
 	virtual bool get_hud_mode() = 0;
 	virtual void set_is_playerlight(bool b) = 0;
+	virtual vis_data& get_homdata() = 0;
 	virtual ~IRender_Light();
 };
 
