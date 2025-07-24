@@ -214,7 +214,7 @@ void CWeapon::UpdateXForm()
 		boneL = boneR2;
 
 	V->CalculateBones_Invalidate();
-	V->CalculateBones(TRUE);
+	// V->CalculateBones(TRUE);
 
 	Fmatrix& mL = V->LL_GetTransform(u16(boneL));
 	Fmatrix& mR = V->LL_GetTransform(u16(boneR));
