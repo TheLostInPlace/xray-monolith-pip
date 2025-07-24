@@ -97,6 +97,18 @@ void CMissile::Load(LPCSTR section)
 
 	if (pSettings->line_exist(section, "snd_checkout"))
 		m_sounds.LoadSound(section, "snd_checkout", "sndCheckout", false, SOUND_TYPE_WEAPON_RECHARGING);
+
+	if (pSettings->line_exist(section, "checkout_bones"))
+	{
+		m_sCheckoutBones.clear();
+		LPCSTR lineStr = pSettings->r_string(section, "checkout_bones");
+		for (int j = 0, cnt = _GetItemCount(lineStr); j < cnt; ++j)
+		{
+			string128 bone_name;
+			_GetItem(lineStr, j, bone_name);
+			m_sCheckoutBones.push_back(bone_name);
+		}
+	}
 }
 
 BOOL CMissile::net_Spawn(CSE_Abstract* DC)

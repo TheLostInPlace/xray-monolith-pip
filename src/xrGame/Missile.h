@@ -78,6 +78,8 @@ protected:
 
 	CMissile* m_fake_missile;
 
+	xr_vector<shared_str> m_sCheckoutBones;
+
 	u32 dwUpdateSounds_Frame = 0;
 
 	//параметры броска
