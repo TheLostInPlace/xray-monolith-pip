@@ -103,11 +103,13 @@ xr_vector<IRender_Sector*> CRender::detectSectors_sphere(CSector* sector, const 
                 continue;
             CSector *pFront = pPortal->Front();
             CSector *pBack = pPortal->Back();
-
-            if(pFront)
+            if(sector != pFront && sector != pBack)
+                continue;
+            auto itfr = std::find(m_sectors.begin(), m_sectors.end(), pFront);
+            if(itfr == m_sectors.end())
                 m_sectors.push_back(pFront);
-
-            if(pBack)
+            auto itbc = std::find(m_sectors.begin(), m_sectors.end(), pBack);
+            if(itbc == m_sectors.end())
                 m_sectors.push_back(pBack);
         }
     }
@@ -129,11 +131,13 @@ xr_vector<IRender_Sector*> CRender::detectSectors_frustum(CSector* sector, CFrus
                 continue;
             CSector *pFront = pPortal->Front();
             CSector *pBack = pPortal->Back();
-
-            if(pFront)
+            if(sector != pFront && sector != pBack)
+                continue;
+            auto itfr = std::find(m_sectors.begin(), m_sectors.end(), pFront);
+            if(itfr == m_sectors.end())
                 m_sectors.push_back(pFront);
-
-            if(pBack)
+            auto itbc = std::find(m_sectors.begin(), m_sectors.end(), pBack);
+            if(itbc == m_sectors.end())
                 m_sectors.push_back(pBack);
         }
     }
