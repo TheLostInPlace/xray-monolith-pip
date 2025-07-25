@@ -342,7 +342,7 @@ R_constant_table* CResourceManager::_CreateConstantTable(R_constant_table& C)
 		if (v_constant_tables[it]->equal(C))
 			return v_constant_tables[it];
 
-	auto NewElem = xr_new<R_constant_table>(C);
+	auto NewElem = xr_new<R_constant_table>();
 	NewElem->_copy(C);
 	NewElem->dwFlags |= xr_resource_flagged::RF_REGISTERED;
 	v_constant_tables.push_back(NewElem);
@@ -595,7 +595,8 @@ STextureList* CResourceManager::_CreateTextureList(STextureList& L)
 		STextureList* base = lst_textures[it];
 		if (L.equal(*base)) return base;
 	}
-	STextureList* lst = xr_new<STextureList>(L);
+	STextureList* lst = xr_new<STextureList>();
+	lst->_copy(L);
 	lst->dwFlags |= xr_resource_flagged::RF_REGISTERED;
 	lst_textures.push_back(lst);
 	return lst;

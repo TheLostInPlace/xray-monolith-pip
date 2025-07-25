@@ -1,6 +1,5 @@
-#ifndef xr_resourceH
-#define xr_resourceH
 #pragma once
+#include "_thread_types.h"
 
 // resource itself, the base class for all derived resources
 class XRCORE_API xr_resource
@@ -9,11 +8,8 @@ public:
 	enum { RF_REGISTERED = 1 << 0 };
 
 public:
-	u32 dwReference;
-
-	xr_resource() : dwReference(0)
-	{
-	}
+	xr_atomic_u32 dwReference = 0;
+	xr_resource() {}
 };
 
 class XRCORE_API xr_resource_flagged : public xr_resource
@@ -192,5 +188,3 @@ resptr_core<T, D> static_pointer_cast(resptr_core<U, D> const& p) { return stati
 
 template <class T, class U, typename D>
 resptr_core<T, D> dynamic_pointer_cast(resptr_core<U, D> const& p) { return dynamic_cast<T*>(p.get()); }
-
-#endif //xr_resourceH

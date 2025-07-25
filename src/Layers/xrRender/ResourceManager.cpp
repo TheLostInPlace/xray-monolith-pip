@@ -150,7 +150,8 @@ ShaderElement* CResourceManager::_CreateElement(ShaderElement& S)
 		if (S.equal(*(v_elements[it]))) return v_elements[it];
 
 	// Create _new_ entry
-	ShaderElement* N = xr_new<ShaderElement>(S);
+	ShaderElement* N = xr_new<ShaderElement>();
+	N->_copy(S);
 	N->dwFlags |= xr_resource_flagged::RF_REGISTERED;
 	v_elements.push_back(N);
 	return N;
@@ -478,7 +479,7 @@ void CResourceManager::_DumpMemoryUsage()
 		{
 			u32 m = I->second->flags.MemoryUsage;
 			shared_str n = I->second->cName;
-			mtex.insert(mk_pair(m, mk_pair(I->second->dwReference, n)));
+			mtex.insert(mk_pair(m, mk_pair((u32)I->second->dwReference, n)));
 		}
 	}
 
