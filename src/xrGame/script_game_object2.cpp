@@ -747,13 +747,15 @@ CScriptGameObject* CScriptGameObject::get_talking_npc() {
 
 	::luabind::object staticChildren = ::luabind::newtable(ai().script_engine().lua());
 
-	for (int i = 0; i < zoomTextureWndList.size(); i++) {
-		CUIStatic* staticWnd = smart_cast<CUIStatic*>(zoomTextureWndList[i]);
+	int i = 1;
+	for (auto it = zoomTextureWndList.begin(); it != zoomTextureWndList.end(); it++) {
+		CUIStatic* staticWnd = smart_cast<CUIStatic*>(*(it));
 		if (!staticWnd) {
 			ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError,
 											"CScriptGameObject : get_scope_ui, can't cast scope texture %d to CUIStatic for %s!", i, weapon->cNameSect().c_str());
 		} else {
-			staticChildren[i + 1] = staticWnd;
+			staticChildren[i] = staticWnd;
+			i++;
 		}
 	}
 
