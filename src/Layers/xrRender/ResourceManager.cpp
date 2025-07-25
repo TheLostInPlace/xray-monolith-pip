@@ -145,13 +145,15 @@ ShaderElement* CResourceManager::_CreateElement(ShaderElement& S)
 {
 	if (S.passes.empty()) return 0;
 
+	xrCriticalSectionGuard guard(creationGuard);
+
 	// Search equal in shaders array
 	for (u32 it = 0; it < v_elements.size(); it++)
 		if (S.equal(*(v_elements[it]))) return v_elements[it];
 
 	// Create _new_ entry
-	ShaderElement* N = xr_new<ShaderElement>();
-	N->_copy(S);
+	ShaderElement* N = xr_new<ShaderElement>(S);
+	//N->_copy(S);
 	N->dwFlags |= xr_resource_flagged::RF_REGISTERED;
 	v_elements.push_back(N);
 	return N;
@@ -437,8 +439,8 @@ Shader* CResourceManager::_CreateShader(Shader* InShader)
 	}
 
 	// Create _new_ entry
-	Shader* N = xr_new<Shader>();
-	N->_copy(*InShader);
+	Shader* N = xr_new<Shader>(*InShader);
+	//N->_copy(*InShader);
 	N->dwFlags |= xr_resource_flagged::RF_REGISTERED;
 	v_shaders.push_back(N);
 

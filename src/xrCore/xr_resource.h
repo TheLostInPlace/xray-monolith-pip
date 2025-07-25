@@ -8,8 +8,11 @@ public:
 	enum { RF_REGISTERED = 1 << 0 };
 
 public:
-	xr_atomic_u32 dwReference = 0;
-	xr_resource() {}
+	u32 dwReference;
+
+	xr_resource() : dwReference(0)
+	{
+	}
 };
 
 class XRCORE_API xr_resource_flagged : public xr_resource

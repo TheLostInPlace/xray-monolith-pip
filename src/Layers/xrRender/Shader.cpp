@@ -210,18 +210,18 @@ u32 STextureList::find_texture_stage(const shared_str& TexName) const
 	return dwTextureStage;
 }
 
-STextureList::STextureList()
-{
-}
+//STextureList::STextureList()
+//{
+//}
 
 void STextureList::_copy(const STextureList& Other)
 {
 	assign(Other.begin(), Other.end());
 }
 
-Shader::Shader()
-{
-}
+//Shader::Shader()
+//{
+//}
 
 void Shader::_copy(Shader& Other)
 {
@@ -231,9 +231,9 @@ void Shader::_copy(Shader& Other)
 	}
 }
 
-SConstantList::SConstantList()
-{
-}
+//SConstantList::SConstantList()
+//{
+//}
 
 void SConstantList::_copy(const SConstantList& Other)
 {
@@ -253,9 +253,9 @@ void SMatrixList::_copy(const SMatrixList& Other)
 	}
 }
 
-SMatrixList::SMatrixList()
-{
-}
+//SMatrixList::SMatrixList()
+//{
+//}
 
 void ShaderElement::_copy(const ShaderElement& Other)
 {

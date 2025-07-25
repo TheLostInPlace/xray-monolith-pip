@@ -342,8 +342,8 @@ R_constant_table* CResourceManager::_CreateConstantTable(R_constant_table& C)
 		if (v_constant_tables[it]->equal(C))
 			return v_constant_tables[it];
 
-	auto NewElem = xr_new<R_constant_table>();
-	NewElem->_copy(C);
+	auto NewElem = xr_new<R_constant_table>(C);
+	//NewElem->_copy(C);
 	NewElem->dwFlags |= xr_resource_flagged::RF_REGISTERED;
 	v_constant_tables.push_back(NewElem);
 	return NewElem;
@@ -595,8 +595,8 @@ STextureList* CResourceManager::_CreateTextureList(STextureList& L)
 		STextureList* base = lst_textures[it];
 		if (L.equal(*base)) return base;
 	}
-	STextureList* lst = xr_new<STextureList>();
-	lst->_copy(L);
+	STextureList* lst = xr_new<STextureList>(L);
+	//lst->_copy(L);
 	lst->dwFlags |= xr_resource_flagged::RF_REGISTERED;
 	lst_textures.push_back(lst);
 	return lst;
@@ -628,8 +628,8 @@ SMatrixList* CResourceManager::_CreateMatrixList(SMatrixList& L)
 		SMatrixList* base = lst_matrices[it];
 		if (L.equal(*base)) return base;
 	}
-	SMatrixList* lst = xr_new<SMatrixList>();
-	lst->_copy(L);
+	SMatrixList* lst = xr_new<SMatrixList>(L);
+	//lst->_copy(L);
 	lst->dwFlags |= xr_resource_flagged::RF_REGISTERED;
 	lst_matrices.push_back(lst);
 	return lst;
@@ -661,8 +661,8 @@ SConstantList* CResourceManager::_CreateConstantList(SConstantList& L)
 		SConstantList* base = lst_constants[it];
 		if (L.equal(*base)) return base;
 	}
-	SConstantList* lst = xr_new<SConstantList>();
-	lst->_copy(L);
+	SConstantList* lst = xr_new<SConstantList>(L);
+	//lst->_copy(L);
 	lst->dwFlags |= xr_resource_flagged::RF_REGISTERED;
 	lst_constants.push_back(lst);
 	return lst;

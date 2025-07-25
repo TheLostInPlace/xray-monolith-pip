@@ -49,8 +49,8 @@ struct ECORE_API STextureList :
 	//	If possible use precompiled texture list.
 	u32 find_texture_stage(const shared_str& TexName) const;
 
-	STextureList();
-	STextureList& operator=(const STextureList& Other) = delete;
+	//STextureList();
+	//STextureList& operator=(const STextureList& Other) = delete;
 
 	void _copy(const STextureList& Other);
 };
@@ -59,8 +59,8 @@ typedef	resptr_core<STextureList, resptr_base<STextureList>> ref_texture_list;
 //////////////////////////////////////////////////////////////////////////
 struct ECORE_API SMatrixList : public xr_resource_flagged, public svector<ref_matrix, 4>
 {
-	SMatrixList();
-	SMatrixList& operator=(const SMatrixList& Other) = delete;
+	//SMatrixList();
+	//SMatrixList& operator=(const SMatrixList& Other) = delete;
 	~SMatrixList();
 
 	void _copy(const SMatrixList& Other);
@@ -71,9 +71,9 @@ typedef	resptr_core<SMatrixList, resptr_base<SMatrixList>> ref_matrix_list;
 struct  ECORE_API SConstantList : public xr_resource_flagged, public svector<ref_constant_obsolette, 4>
 {
 	~SConstantList();
-	SConstantList();
+	//SConstantList();
 
-	SConstantList& operator=(const SConstantList& Other) = delete;
+	//SConstantList& operator=(const SConstantList& Other) = delete;
 	void _copy(const SConstantList& Other);
 };
 
@@ -87,7 +87,7 @@ struct ECORE_API SGeometry : public xr_resource_flagged
 	ID3DIndexBuffer* ib;
 	u32 vb_stride;
 	~SGeometry();
-	SGeometry& operator=(const SGeometry& Other) = delete;
+	//SGeometry& operator=(const SGeometry& Other) = delete;
 };
 
 struct ECORE_API resptrcode_geom : public resptr_base<SGeometry>
@@ -155,7 +155,7 @@ public:
 	ShaderElement();
 	~ShaderElement();
 
-	ShaderElement& operator=(const ShaderElement& Other) = delete;
+	//ShaderElement& operator=(const ShaderElement& Other) = delete;
 
 	BOOL equal(ShaderElement& S);
 	BOOL equal(ShaderElement* S);
@@ -170,8 +170,8 @@ struct ECORE_API Shader : public xr_resource_flagged
 public:
 	ref_selement E [SHADER_ELEMENTS_MAX]; // R1 - 0=norm_lod0(det),	1=norm_lod1(normal),	2=L_point,		3=L_spot,	4=L_for_models,	
 	// R2 - 0=deffer,			1=norm_lod1(normal),	2=psm,			3=ssm,		4=dsm
-	Shader();
-	Shader& operator=(const Shader& Other) = delete;
+	//Shader();
+	//Shader& operator=(const Shader& Other) = delete;
 
 	~Shader();
 	BOOL equal(Shader& S);
