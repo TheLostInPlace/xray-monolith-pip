@@ -811,15 +811,15 @@ void CAI_Stalker::net_Destroy()
 	m_pPhysics_support->in_NetDestroy();
 
 	Device.remove_from_seq_parallel(
-		xr_delegate(
+		fastdelegate::FastDelegate0<>(
 			this,
 			&CAI_Stalker::update_object_handler
 		)
 	);
 
 #ifdef DEBUG
-	xr_delegate	f = xr_delegate(this,&CAI_Stalker::update_object_handler);
-	xr_vector<xr_delegate >::const_iterator	I;
+	fastdelegate::FastDelegate0<>	f = fastdelegate::FastDelegate0<>(this,&CAI_Stalker::update_object_handler);
+	xr_vector<fastdelegate::FastDelegate0<> >::const_iterator	I;
 	I	= std::find(Device.seqParallel.begin(),Device.seqParallel.end(),f);
 	VERIFY							(I == Device.seqParallel.end());
 #endif // DEBUG
@@ -1010,15 +1010,15 @@ void CAI_Stalker::UpdateCL()
 			{
 				if (g_mt_config.test(mtObjectHandler) && CObjectHandler::planner().initialized())
 				{
-					xr_delegate f = xr_delegate(
+					fastdelegate::FastDelegate0<> f = fastdelegate::FastDelegate0<>(
 						this, &CAI_Stalker::update_object_handler);
 #ifdef DEBUG
-			xr_vector<xr_delegate >::const_iterator	I;
+			xr_vector<fastdelegate::FastDelegate0<> >::const_iterator	I;
 			I	= std::find(Device.seqParallel.begin(),Device.seqParallel.end(),f);
 			VERIFY							(I == Device.seqParallel.end());
 #endif
 					Device.seqParallel.push_back(
-						xr_delegate(this, &CAI_Stalker::update_object_handler));
+						fastdelegate::FastDelegate0<>(this, &CAI_Stalker::update_object_handler));
 				}
 				else
 				{
@@ -1156,7 +1156,7 @@ void CAI_Stalker::shedule_Update(u32 DT)
 #endif
 				if (g_mt_config.test(mtAiVision))
 				{
-					Device.seqParallel.push_back(xr_delegate(this, &CCustomMonster::Exec_Visibility));
+					Device.seqParallel.push_back(fastdelegate::FastDelegate0<>(this, &CCustomMonster::Exec_Visibility));
 				}	
 				else
 				{

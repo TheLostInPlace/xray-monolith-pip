@@ -77,7 +77,7 @@ CALifeUpdateManager::~CALifeUpdateManager()
 {
 	shedule_unregister();
 	Device.remove_from_seq_parallel(
-		xr_delegate(
+		fastdelegate::FastDelegate0<>(
 			this,
 			&CALifeUpdateManager::update
 		)
@@ -127,7 +127,7 @@ void CALifeUpdateManager::shedule_Update(u32 dt)
 	if (!m_first_time && g_mt_config.test(mtALife))
 	{
 		Device.seqParallel.push_back(
-			xr_delegate(
+			fastdelegate::FastDelegate0<>(
 				this,
 				&CALifeUpdateManager::update
 			)

@@ -128,7 +128,7 @@ void CHOM::Load()
 	S->close();
 	FS.r_close(fs);
 
-	Device.seqParallelRender.push_back(xr_delegate(this, &CHOM::MT_RENDER));
+	Device.seqParallelRender.push_back(fastdelegate::FastDelegate0<>(this, &CHOM::MT_RENDER));
 }
 
 void CHOM::Unload()
@@ -137,7 +137,7 @@ void CHOM::Unload()
 	xr_free(m_pTris);
 	bEnabled = FALSE;
 
-	auto I = std::find(Device.seqParallelRender.begin(), Device.seqParallelRender.end(), xr_delegate(this, &CHOM::MT_RENDER));
+	auto I = std::find(Device.seqParallelRender.begin(), Device.seqParallelRender.end(), fastdelegate::FastDelegate0<>(this, &CHOM::MT_RENDER));
 
 	if (I != Device.seqParallelRender.end())
 		Device.seqParallelRender.erase(I);

@@ -213,10 +213,10 @@ public:
 	//CRegistrator <pureFrame > seqFrame;
 	CRegistrator<pureFrame> seqFrameMT;
 	CRegistrator<pureDeviceReset> seqDeviceReset;
-	xr_vector<xr_delegate> seqParallel;
+	xr_vector<fastdelegate::FastDelegate0<>> seqParallel;
 
 	// ForserX: Pre-Render sequence
-	xr_vector<xr_delegate> seqParallelRender;
+	xr_vector<fastdelegate::FastDelegate0<>> seqParallelRender;
 
 	// Dependent classes
 	//CResourceManager* Resources;
@@ -422,9 +422,9 @@ public:
 	xrCriticalSection mt_csLeave;
 	volatile BOOL mt_bMustExit;
 
-	ICF void remove_from_seq_parallel(const xr_delegate& delegate)
+	ICF void remove_from_seq_parallel(const fastdelegate::FastDelegate0<>& delegate)
 	{
-		xr_vector<xr_delegate>::iterator I = std::find(
+		xr_vector<fastdelegate::FastDelegate0<>>::iterator I = std::find(
 			seqParallel.begin(),
 			seqParallel.end(),
 			delegate

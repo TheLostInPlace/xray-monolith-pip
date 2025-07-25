@@ -33,7 +33,7 @@ class CGamePersistent :
 	EVENT eQuickLoad;
 	Fvector m_dof [4]; // 0-dest 1-current 2-from 3-original
 
-	xr_delegate m_intro_event;
+	fastdelegate::FastDelegate0<> m_intro_event;
 
 	void xr_stdcall start_logo_intro();
 	void xr_stdcall update_logo_intro();

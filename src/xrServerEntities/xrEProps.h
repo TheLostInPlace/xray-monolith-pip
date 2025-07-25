@@ -22,12 +22,12 @@ enum EItemType
 };
 
 typedef fastdelegate::FastDelegate1<ListItemsVec&> TOnILItemsFocused;
-typedef xr_delegate TOnILCloseEvent;
+typedef fastdelegate::FastDelegate0<> TOnILCloseEvent;
 typedef fastdelegate::FastDelegate3<LPCSTR, LPCSTR, EItemType> TOnItemRename;
 typedef fastdelegate::FastDelegate3<LPCSTR, EItemType, bool&> TOnItemRemove;
-typedef xr_delegate TOnItemAfterRemove;
-typedef xr_delegate TOnCloseEvent;
-typedef xr_delegate TOnModifiedEvent;
+typedef fastdelegate::FastDelegate0<> TOnItemAfterRemove;
+typedef fastdelegate::FastDelegate0<> TOnCloseEvent;
+typedef fastdelegate::FastDelegate0<> TOnModifiedEvent;
 
 #ifdef __BORLANDC__
 #	include "mxPlacemnt.hpp"

@@ -31,7 +31,7 @@ private:
 
 	void UpdateFlyMedia();
 
-	xr_delegate UpdateEvent;
+	fastdelegate::FastDelegate0<> UpdateEvent;
 private:
 	struct SStateData
 	{

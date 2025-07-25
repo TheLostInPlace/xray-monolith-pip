@@ -25,9 +25,6 @@ inline void xr_parallel_for(Index Begin, Index End, Body Functor)
     tbb::parallel_for_each(Begin, End, Functor);
 }
 
-// FastDelegate
-typedef fastdelegate::FastDelegate0<> xr_delegate;
-
 // Atomic types
 using xr_atomic_u32 = std::atomic_uint32_t;
 using xr_atomic_s32 = std::atomic_int;

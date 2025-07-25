@@ -35,7 +35,7 @@ private:
 	{
 		shared_str FDirectory;
 		void* FWaitHandle;
-		xr_delegate FChangeEvent;
+		fastdelegate::FastDelegate0<> FChangeEvent;
 		BOOL bRecurse;
 	};
 
