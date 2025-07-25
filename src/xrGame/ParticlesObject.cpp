@@ -306,6 +306,24 @@ void CParticlesObject::SetHudMode(bool bHudMode)
 	V->SetHudMode(bHudMode);
 }
 
+void CParticlesObject::SetLiveUpdate(BOOL b)
+{
+	if(g_dedicated_server)		return;
+
+	IParticleCustom* V = smart_cast<IParticleCustom*>(renderable.visual);
+	VERIFY(V);
+	V->SetLiveUpdate(b);
+}
+
+BOOL CParticlesObject::GetLiveUpdate()
+{
+	if(g_dedicated_server)		return FALSE;
+
+	IParticleCustom* V = smart_cast<IParticleCustom*>(renderable.visual);
+	VERIFY(V);
+	return V->GetLiveUpdate();
+}
+
 //играются ли партиклы, отличается от PSI_Alive, тем что после
 //остановки Stop партиклы могут еще доигрывать анимацию IsPlaying = true
 bool CParticlesObject::IsPlaying()

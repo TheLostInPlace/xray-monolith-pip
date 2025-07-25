@@ -72,11 +72,15 @@ BOOL ParticleEffect::Add(const pVector& pos, const pVector& posB,
 		return FALSE;
 
 	Particle& P = particles[p_count];
-	P.pos = pos;
-	P.posB = posB;
-	P.size = size;
-	P.rot.x = rot.x;
-	P.vel = vel;
+	P.pos 		= pos;
+	P.posI		= pos;
+	P.posB 		= posB;
+	P.size 		= size;
+	P.sizeI 	= size;
+	P.rot.x 	= rot.x;
+	P.rotI.x 	= rot.x;
+	P.vel 		= vel;
+	P.velI 		= vel;
 	float f = float(1.0) / float(255.0);
 	P.colorA = f * ((color >> 24) & 0xff);
 	P.colorR = f * ((color >> 16) & 0xff);
