@@ -499,6 +499,9 @@
 	<string id="ui_mm_modded_exes_sound_sound_delay_snd_pitch_variation_power">
 		<text>Вариация тона звуков (snd_pitch_variation_power)</text>
 	</string>
+	<string id="ui_mm_modded_exes_sound_sound_delay_snd_efx_environment_change_time">
+		<text>Время для смены звуковой среды (snd_efx_environment_change_time)</text>
+	</string>
 	
 	<!-- Control -->
 	<string id="ui_mm_menu_control">
