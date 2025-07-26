@@ -122,7 +122,7 @@ xr_vector<IRender_Sector*> CRender::detectSectors_frustum(CSector* sector, CFrus
 	m_sectors.push_back(sector);
 	if (rmPortals)
 	{
-		Sectors_xrc.box_options(CDB::OPT_FULL_TEST);
+		Sectors_xrc.frustum_options(CDB::OPT_FULL_TEST);
         Sectors_xrc.frustum_query(rmPortals,*_frustum);
         for (int K=0; K<Sectors_xrc.r_count(); K++)
         {
