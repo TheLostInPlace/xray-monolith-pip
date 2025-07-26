@@ -123,60 +123,60 @@ void CObjectList::SingleUpdate(CObject* O)
 	Device.Statistic->UpdateClient_updated++;
 	O->dwFrame_UpdateCL = Device.dwFrame;
 
-	// Msg ("[%d][0x%08x]IAmNotACrowAnyMore (CObjectList::SingleUpdate)", Device.dwFrame, dynamic_cast<void*>(O));
+	// Msg ("[%d][0x%08x]IAmNotACrowAnyMore (CObjectList::SingleUpdate)", Device.dwFrame, fast_dynamic_cast<void*>(O));
 
 	O->UpdateCL();
 #ifdef DEBUG
 	VERIFY3(O->dbg_update_cl == Device.dwFrame, "Broken sequence of calls to 'UpdateCL'", *O->cName());
 #endif
 #if 0//ndef DEBUG
-    __try
-    {
-#endif
-	if (O->H_Parent() && (O->H_Parent()->getDestroy() || O->H_Root()->getDestroy()))
+	__try
 	{
-		// Push to destroy-queue if it isn't here already
-		Msg("! ERROR: incorrect destroy sequence for object[%d:%s], section[%s], parent[%d:%s]", O->ID(), *O->cName(),
-		    *O->cNameSect(), O->H_Parent()->ID(), *O->H_Parent()->cName());
-	}
+#endif
+		if (O->H_Parent() && (O->H_Parent()->getDestroy() || O->H_Root()->getDestroy()))
+		{
+			// Push to destroy-queue if it isn't here already
+			Msg("! ERROR: incorrect destroy sequence for object[%d:%s], section[%s], parent[%d:%s]", O->ID(), *O->cName(),
+				*O->cNameSect(), O->H_Parent()->ID(), *O->H_Parent()->cName());
+		}
 #if 0//ndef DEBUG
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-        CObject* parent_obj = O->H_Parent();
-        CObject* root_obj = O->H_Root();
-        Msg ("! ERROR: going to crush: [%d:%s], section[%s], parent_obj_addr[0x%08x], root_obj_addr[0x%08x]",O->ID(),*O->cName(),*O->cNameSect(), *((u32*)&parent_obj), *((u32*)&root_obj));
-        if (parent_obj)
-        {
-            __try
-            {
-                Msg("! Parent object: [%d:%s], section[%s]",
-                    parent_obj->ID(),
-                    parent_obj->cName().c_str(),
-                    parent_obj->cNameSect().c_str());
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		CObject* parent_obj = O->H_Parent();
+		CObject* root_obj = O->H_Root();
+		Msg("! ERROR: going to crush: [%d:%s], section[%s], parent_obj_addr[0x%08x], root_obj_addr[0x%08x]", O->ID(), *O->cName(), *O->cNameSect(), *((u32*)&parent_obj), *((u32*)&root_obj));
+		if (parent_obj)
+		{
+			__try
+			{
+				Msg("! Parent object: [%d:%s], section[%s]",
+					parent_obj->ID(),
+					parent_obj->cName().c_str(),
+					parent_obj->cNameSect().c_str());
 
-            }
-            __except (EXCEPTION_EXECUTE_HANDLER)
-            {
-                Msg("! Failed to get parent object info.");
-            }
-        }
-        if (root_obj)
-        {
-            __try
-            {
-                Msg("! Root object: [%d:%s], section[%s]",
-                    root_obj->ID(),
-                    root_obj->cName().c_str(),
-                    root_obj->cNameSect().c_str());
-            }
-            __except (EXCEPTION_EXECUTE_HANDLER)
-            {
-                Msg("! Failed to get root object info.");
-            }
-        }
-        R_ASSERT(false);
-    } //end of __except
+			}
+			__except (EXCEPTION_EXECUTE_HANDLER)
+			{
+				Msg("! Failed to get parent object info.");
+			}
+		}
+		if (root_obj)
+		{
+			__try
+			{
+				Msg("! Root object: [%d:%s], section[%s]",
+					root_obj->ID(),
+					root_obj->cName().c_str(),
+					root_obj->cNameSect().c_str());
+			}
+			__except (EXCEPTION_EXECUTE_HANDLER)
+			{
+				Msg("! Failed to get root object info.");
+			}
+		}
+		R_ASSERT(false);
+	} //end of __except
 #endif
 
 #ifdef DEBUG
@@ -189,7 +189,7 @@ void CObjectList::clear_crow_vec(Objects& o)
 {
 	for (u32 _it = 0; _it < o.size(); _it++)
 	{
-		// Msg ("[%d][0x%08x]IAmNotACrowAnyMore (clear_crow_vec)", Device.dwFrame, dynamic_cast<void*>(o[_it]));
+		// Msg ("[%d][0x%08x]IAmNotACrowAnyMore (clear_crow_vec)", Device.dwFrame, fast_dynamic_cast<void*>(o[_it]));
 		o[_it]->IAmNotACrowAnyMore();
 	}
 	o.clear_not_free();
@@ -235,10 +235,10 @@ void CObjectList::Update(bool bForce)
 					PROF_EVENT("CObjectList::Update/CopyWorkload");
 					workload = *required_workload;
 				}
-				
+
 				crows.clear_not_free();
 
-				for (const auto obj: workload)
+				for (const auto obj : workload)
 				{
 					obj->IAmNotACrowAnyMore();
 					obj->dwFrame_AsCrow = u32(-1);
@@ -264,7 +264,7 @@ void CObjectList::Update(bool bForce)
 		for (int it = destroy_queue.size() - 1; it >= 0; it--)
 		{
 			auto obj = destroy_queue[it];
-			for (const auto oit: objects_active)
+			for (const auto oit : objects_active)
 				oit->net_Relcase(obj);
 
 			for (const auto oit : objects_sleeping)
@@ -283,7 +283,7 @@ void CObjectList::Update(bool bForce)
 
 #ifdef DEBUG
 			if (debug_destroy)
-				Msg("Destroying object[%x][%x] [%d][%s] frame[%d]", dynamic_cast<void*>(obj), obj, obj->ID(), *obj->cName(), Device.dwFrame);
+				Msg("Destroying object[%x][%x] [%d][%s] frame[%d]", fast_dynamic_cast<void*>(obj), obj, obj->ID(), *obj->cName(), Device.dwFrame);
 #endif // DEBUG
 
 			obj->net_Destroy();

@@ -1,5 +1,6 @@
 #pragma once
 #include "_thread_types.h"
+#include <fast_dynamic_cast/fast_dynamic_cast.hpp>
 
 // resource itself, the base class for all derived resources
 class XRCORE_API xr_resource
@@ -190,4 +191,4 @@ template <class T, class U, typename D>
 resptr_core<T, D> static_pointer_cast(resptr_core<U, D> const& p) { return static_cast<T*>(p.get()); }
 
 template <class T, class U, typename D>
-resptr_core<T, D> dynamic_pointer_cast(resptr_core<U, D> const& p) { return dynamic_cast<T*>(p.get()); }
+resptr_core<T, D> dynamic_pointer_cast(resptr_core<U, D> const& p) { return fast_dynamic_cast<T*>(p.get()); }
