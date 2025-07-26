@@ -1,8 +1,8 @@
-#ifndef PH_COMMANDER_H
-#define PH_COMMANDER_H
+#pragma once
+#include "../xrPhysics/IPHWorld.h"
+
 class CPHReqBase;
 class CPHReqComparerV;
-#include "../xrphysics/iphworld.h"
 class CPhysicsShell;
 
 class CPHReqBase
@@ -15,7 +15,6 @@ public:
 	virtual bool obsolete() const =0;
 	virtual bool compare(const CPHReqComparerV* v) const { return false; } ;
 };
-
 
 class CPHCondition :
 	public CPHReqBase
@@ -126,4 +125,3 @@ private:
 	virtual void update_step() { update_threadsafety(); }
 	virtual void phys_shell_relcase(CPhysicsShell* sh);
 };
-#endif

@@ -101,16 +101,14 @@ void CPHCommander::update()
 
 void CPHCommander::update_threadsafety()
 {
-	lock.Enter();
+	xrCriticalSectionGuard g(lock);
 	update();
-	lock.Leave();
 }
 
 void CPHCommander::add_call_threadsafety(CPHCondition* condition, CPHAction* action)
 {
-	lock.Enter();
+	xrCriticalSectionGuard g(lock);
 	add_call(condition, action);
-	lock.Leave();
 }
 
 void CPHCommander::add_call(CPHCondition* condition, CPHAction* action, PHCALL_STORAGE& cs)
@@ -271,9 +269,8 @@ void CPHCommander::remove_calls(CPHReqComparerV* cmp_object, PHCALL_STORAGE& cs)
 
 void CPHCommander::remove_calls_threadsafety(CPHReqComparerV* cmp_object)
 {
-	lock.Enter();
+	xrCriticalSectionGuard g(lock);
 	remove_calls(cmp_object);
-	lock.Leave();
 }
 
 void CPHCommander::remove_calls(CPHReqComparerV* cmp_object)
