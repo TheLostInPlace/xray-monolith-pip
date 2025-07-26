@@ -179,7 +179,7 @@ CSpaceRestrictionManager::CRestrictionPtr CSpaceRestrictionManager::restriction(
 	out_restrictors = normalize_string(out_restrictors);
 	in_restrictors = normalize_string(in_restrictors);
 
-	strconcat(sizeof(m_temp), m_temp, *out_restrictors, "\x01", *in_restrictors);
+	xr_strconcat(m_temp, *out_restrictors, "\x01", *in_restrictors);
 	shared_str space_restrictions = m_temp;
 
 	SPACE_RESTRICTIONS::const_iterator I = m_space_restrictions.find(space_restrictions);
@@ -187,7 +187,7 @@ CSpaceRestrictionManager::CRestrictionPtr CSpaceRestrictionManager::restriction(
 		return ((*I).second);
 
 	CSpaceRestriction* client_restriction = xr_new<CSpaceRestriction>(this, out_restrictors, in_restrictors);
-	m_space_restrictions.insert(std::make_pair(space_restrictions, client_restriction));
+	m_space_restrictions[space_restrictions] = client_restriction;
 	return (client_restriction);
 }
 
