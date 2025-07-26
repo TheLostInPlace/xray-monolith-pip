@@ -607,7 +607,7 @@ bool CUICellContainer::AddSimilar(CUICellItem* itm)
 
 CUICellItem* CUICellContainer::FindSimilar(CUICellItem* itm)
 {
-	for (WINDOW_LIST_it it = m_ChildWndList.begin(); m_ChildWndList.end() != it; ++it)
+	for (WINDOW_LIST_it it = GetChildWndList().begin(); GetChildWndList().end() != it; ++it)
 	{
 #ifdef DEBUG
 		CUICellItem* i = smart_cast<CUICellItem*>(*it);
@@ -653,7 +653,7 @@ void CUICellContainer::PlaceItemAtPos(CUICellItem* itm, Ivector2& cell_pos)
 	itm->SetWndSize(Fvector2().set((m_cellSize.x * cs.x), (m_cellSize.y * cs.y)));
 	if (!m_pParentDragDropList->GetVirtualCells())
 		itm->SetWndPos(Fvector2().set(((m_cellSpacing.x + m_cellSize.x) * cell_pos.x),
-		                              ((m_cellSpacing.y + m_cellSize.y) * cell_pos.y)));
+			((m_cellSpacing.y + m_cellSize.y) * cell_pos.y)));
 	else
 	{
 		Ivector2 alignment_vec = m_pParentDragDropList->GetVirtualCellsAlignment();
@@ -677,14 +677,14 @@ void CUICellContainer::PlaceItemAtPos(CUICellItem* itm, Ivector2& cell_pos)
 
 CUICellItem* CUICellContainer::RemoveItem(CUICellItem* itm, bool force_root)
 {
-	for (WINDOW_LIST_it it = m_ChildWndList.begin(); m_ChildWndList.end() != it; ++it)
+	for (WINDOW_LIST_it it = GetChildWndList().begin(); GetChildWndList().end() != it; ++it)
 	{
 		CUICellItem* i = (CUICellItem*)(*it);
 
 		if (i->HasChild(itm))
 		{
 			CUICellItem* iii = i->PopChild(itm);
-			R_ASSERT(0==iii->ChildsCount());
+			R_ASSERT(0 == iii->ChildsCount());
 			return iii;
 		}
 	}
@@ -692,7 +692,7 @@ CUICellItem* CUICellContainer::RemoveItem(CUICellItem* itm, bool force_root)
 	if (!force_root && itm->ChildsCount())
 	{
 		CUICellItem* iii = itm->PopChild(NULL);
-		R_ASSERT(0==iii->ChildsCount());
+		R_ASSERT(0 == iii->ChildsCount());
 		return iii;
 	}
 
@@ -889,9 +889,9 @@ void CUICellContainer::ClearAll(bool bDestroy)
 		for (; it != it_e; ++it)
 			(*it).Clear();
 	}
-	while (!m_ChildWndList.empty())
+	while (!GetChildWndList().empty())
 	{
-		CUIWindow* w = m_ChildWndList.back();
+		CUIWindow* w = GetChildWndList().back();
 		CUICellItem* wc = smart_cast<CUICellItem*>(w);
 		VERIFY(!wc->IsAutoDelete());
 		DetachChild(wc);

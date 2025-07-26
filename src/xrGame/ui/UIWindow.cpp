@@ -148,6 +148,8 @@ CUIWindow::~CUIWindow()
 	if (GetPPMode())
 		MainMenu()->UnregisterPPDraw(this);
 
+	FreeDeletedChildWnd();
+
 #ifdef LOG_ALL_WNDS
 	xr_vector<DBGList>::iterator _it = dbg_list_wnds.begin();
 	bool bOK = false;
@@ -261,7 +263,8 @@ void CUIWindow::DetachChild(CUIWindow* pChild)
 	pChild->SetParent(NULL);
 
 	if (pChild->IsAutoDelete())
-		xr_delete(pChild);
+		m_DeletedChildWndList.push_back(pChild);
+		//xr_delete(pChild);
 }
 
 void CUIWindow::DetachAll()
@@ -270,6 +273,15 @@ void CUIWindow::DetachAll()
 	{
 		DetachChild(m_ChildWndList.back());
 	}
+}
+
+void CUIWindow::FreeDeletedChildWnd()
+{
+	for (auto c : m_DeletedChildWndList)
+	{
+		xr_delete(c);
+	}
+	m_DeletedChildWndList.clear();
 }
 
 void CUIWindow::GetAbsoluteRect(Frect& r)

@@ -229,10 +229,6 @@ public:
 	virtual bool NeedCursor() const { return true; }
 
 
-	DEF_UILIST(WINDOW_LIST, CUIWindow*);
-	WINDOW_LIST& GetChildWndList() { return m_ChildWndList; }
-
-
 	IC bool IsAutoDelete() { return m_bAutoDelete; }
 	IC void SetAutoDelete(bool auto_delete) { m_bAutoDelete = auto_delete; }
 
@@ -248,6 +244,8 @@ public:
 	IC bool GetCustomDraw() const { return m_bCustomDraw; }
 	IC void SetCustomDraw(bool b) { m_bCustomDraw = b; }
 
+	DEF_UILIST(WINDOW_LIST, CUIWindow*);
+
 protected:
 	IC void SafeRemoveChild(CUIWindow* child)
 	{
@@ -256,8 +254,6 @@ protected:
 	};
 
 	shared_str m_windowName;
-	//список дочерних окон
-	WINDOW_LIST m_ChildWndList;
 
 	//указатель на родительское окно
 	CUIWindow* m_pParentWnd;
@@ -288,6 +284,16 @@ protected:
 	// Если курсор над окном
 	bool m_bCursorOverWindow;
 	bool m_bCustomDraw;
+
+private:
+	//список дочерних окон
+	WINDOW_LIST m_ChildWndList;
+	WINDOW_LIST m_DeletedChildWndList;
+	void FreeDeletedChildWnd();
+
+public:
+	WINDOW_LIST& GetChildWndList() { FreeDeletedChildWnd(); return m_ChildWndList; }
+	const WINDOW_LIST& GetChildWndList() const { return m_ChildWndList; }
 
 #ifdef DEBUG
 	int m_dbg_id;
