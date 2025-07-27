@@ -133,9 +133,9 @@ void CRender::render_lights(light_Package& LP)
 			// render
 			phase = PHASE_SMAP;
 			r_pmask(true, !!RImplementation.o.Tshadows);
-			L->svis.begin();
 			PIX_EVENT(SHADOWED_LIGHTS_RENDER_SUBSPACE);
 			r_dsgraph_render_subspace(L->spatial.sector, L->X.S.combine, L->position, TRUE);
+			L->svis.begin();
 			bool bNormal = mapNormalPasses[0][0].size() || mapMatrixPasses[0][0].size();
 			bool bSpecial = mapNormalPasses[1][0].size() || mapMatrixPasses[1][0].size() || mapSorted.size();
 			if (bNormal || bSpecial)
