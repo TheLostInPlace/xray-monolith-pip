@@ -8,9 +8,6 @@
 #include "../../xrEngine/IRenderable.h"
 #include <optional>
 
-// consts
-extern xrCriticalSection UCalc_Mutex;
-
 // refs
 class CKinematics;
 class CInifile;
@@ -18,12 +15,6 @@ class CBoneData;
 struct SEnumVerticesCallback;
 
 class IRenderable;
-// MT-locker
-struct UCalc_mtlock
-{
-	UCalc_mtlock() { UCalc_Mutex.Enter(); }
-	~UCalc_mtlock() { UCalc_Mutex.Leave(); }
-};
 
 #pragma warning(push)
 #pragma warning(disable:4275)
@@ -127,12 +118,7 @@ public:
 #ifdef OPTIMIZE_CALCULATE_BONES
 	IC bool canBeOptimized()
 	{
-		return renderableParent && renderableParent->canOptimizeCalculateBones();
-	}
-
-	IC auto getXForm()
-	{
-		return renderableParent ? std::optional<const Fmatrix>(renderableParent->renderable.xform) : std::nullopt;
+		return spatialParent && spatialParent->canOptimizeCalculateBones();
 	}
 #endif
 
@@ -158,6 +144,9 @@ protected:
 	u32 UCalc_Time;
 	s32 UCalc_Visibox;
 	bool UCalc_ThisFrame;
+
+	xrCriticalSection UCalc_Mutex;
+	xrCriticalSection UCalc_Mutex2;
 
 	Flags64 visimask;
 	Flags64 hidden_bones;
