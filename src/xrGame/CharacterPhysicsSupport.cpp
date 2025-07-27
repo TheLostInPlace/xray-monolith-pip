@@ -52,6 +52,7 @@ extern	BOOL death_anim_debug;
 
 float IK_CALC_DIST = 100.f;
 float IK_ALWAYS_CALC_DIST = 20.f;
+float IK_CALC_SSA = 0.006f;
 
 //void  NodynamicsCollide( bool& do_colide, bool bo1, dContact& c, SGameMtl * /*material_1*/, SGameMtl * /*material_2*/ )
 //{
@@ -655,11 +656,12 @@ void CCharacterPhysicsSupport::in_UpdateCL()
 
 		m_EntityAlife.XFORM().transform_tiny(p, vis.sphere.P);
 
-		// demonized: replace dist with FOV adjusted distance
+		// demonized: use screen space area to check if need update
 		float perceived_dist = Device.GetPerceivedDist(p);
-		if (perceived_dist < IK_CALC_DIST)
+		float ssa = Device.CalcSSADynamic(m_EntityAlife.spatial.sphere.P, m_EntityAlife.spatial.sphere.R);
+		if (ssa > IK_CALC_SSA)
 		{
-			if (view_frust.testSphere_dirty(p, vis.sphere.R) || perceived_dist < IK_ALWAYS_CALC_DIST)
+			if (view_frust.testSphere_dirty(m_EntityAlife.spatial.sphere.P, m_EntityAlife.spatial.sphere.R) || perceived_dist < IK_ALWAYS_CALC_DIST)
 			{
 				update_interactive_anims();
 				ik_controller()->Update();

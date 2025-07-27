@@ -118,12 +118,7 @@ public:
 #ifdef OPTIMIZE_CALCULATE_BONES
 	IC bool canBeOptimized()
 	{
-		return renderableParent && renderableParent->canOptimizeCalculateBones();
-	}
-
-	IC auto getXForm()
-	{
-		return renderableParent ? std::optional<Fmatrix>(renderableParent->renderable.xform) : std::nullopt;
+		return spatialParent && spatialParent->canOptimizeCalculateBones();
 	}
 #endif
 

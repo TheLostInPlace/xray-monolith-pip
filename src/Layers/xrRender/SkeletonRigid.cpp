@@ -12,6 +12,7 @@ void check_kinematics(CKinematics* _k, LPCSTR s);
 
 extern float IK_CALC_DIST;
 extern float IK_ALWAYS_CALC_DIST;
+extern float IK_CALC_SSA;
 extern ENGINE_API BOOL g_bootComplete;
 BOOL r_optimize_calculate_bones = TRUE;
 
@@ -33,19 +34,19 @@ void CKinematics::CalculateBones(BOOL bForceExact)
 #ifdef OPTIMIZE_CALCULATE_BONES
 	if (g_bootComplete)
 	{
-		if (auto xForm = getXForm())
+		if (spatialParent)
 		{
-			Fvector p;
-			xForm.value().transform_tiny(p, vis.sphere.P);
+			auto& sphere = spatialParent->spatial.sphere;
 
-			// Perceivable distance depending on FOV, so that objects will behave normal in binoculars
 			float dist = 0.f;
-			float perceived_dist = Device.GetPerceivedDist(p, &dist);
+			float perceived_dist = Device.GetPerceivedDist(sphere.P, &dist);
 			float dist_k = dist / perceived_dist;
-			update_rate_k = _max(1.f, dist / (IK_CALC_DIST * dist_k));
+			float ssa = Device.CalcSSADynamic(sphere.P, sphere.R);
+			float ssa_k = IK_CALC_SSA / ssa;
+			update_rate_k = _max(1.f, ssa_k);
 
 			// Visibility check, perform always
-			bool visibleCheck = (perceived_dist < IK_ALWAYS_CALC_DIST) || ::Render->ViewBase.testSphere_dirty(p, vis.sphere.R);
+			bool visibleCheck = (perceived_dist < IK_ALWAYS_CALC_DIST) || ::Render->ViewBase.testSphere_dirty(sphere.P, sphere.R);
 			if (!visibleCheck)
 			{
 				bForceExact = FALSE;
@@ -57,15 +58,15 @@ void CKinematics::CalculateBones(BOOL bForceExact)
 				}*/
 			}
 
-			// distance check, perform when cvar is enabled and can be optimized
-			if (r_optimize_calculate_bones && canBeOptimized() && (perceived_dist > IK_CALC_DIST))
+			// screen space area check, perform when cvar is enabled and can be optimized
+			if (r_optimize_calculate_bones && canBeOptimized() && (ssa < IK_CALC_SSA))
 			{
 				bForceExact = FALSE;
 
-				/*if (RDEVICE.dwTimeGlobal % 100 < 10)
+				if (RDEVICE.dwTimeGlobal % 100 < 10)
 				{
-					Msg("CKinematics::CalculateBones, object canBeOptimized and dist > IK_CALC_DIST * dist_k, dist %.2f, update_rate_k %.2f", dist / dist_k, update_rate_k);
-				}*/
+					Msg("CKinematics::CalculateBones, object canBeOptimized and dist > IK_CALC_DIST * dist_k, dist %.2f, update_rate_k %.2f, ssa %.4f", dist / dist_k, update_rate_k, ssa);
+				}
 			}
 		}
 	}
