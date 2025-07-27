@@ -67,7 +67,7 @@ private:
 
 	void CalculateRenderTextureSize(int screenWidth, int screenHeight);
 	void CreateRayDataResources(int width, int height);
-	void PrepareCBuffer(const dx103DFluidData &FluidData, u32 RTWidth, u32 RTHeight);
+	void PrepareCBuffer(const dx103DFluidData &FluidData, u32 RTWidth, u32 RTHeight, bool SizeOnly = false);
 
     void ComputeRayData(const dx103DFluidData &FluidData);
     void ComputeEdgeTexture(const dx103DFluidData &FluidData);
