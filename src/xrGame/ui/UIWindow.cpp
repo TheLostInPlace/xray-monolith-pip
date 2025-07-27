@@ -277,9 +277,22 @@ void CUIWindow::DetachAll()
 
 void CUIWindow::FreeDeletedChildWnd()
 {
-	for (auto c : m_DeletedChildWndList)
+	for (auto &c : m_DeletedChildWndList)
 	{
-		xr_delete(c);
+		try
+		{
+			if (c)
+				xr_delete(c);
+		}
+		catch (std::exception& e)
+		{
+			Msg(e.what());
+		}
+		catch (...)
+		{
+			//
+		}
+			
 	}
 	m_DeletedChildWndList.clear();
 }
