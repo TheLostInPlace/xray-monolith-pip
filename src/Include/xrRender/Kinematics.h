@@ -10,7 +10,7 @@ class CBoneData;
 class IBoneData;
 class IKinematicsAnimated;
 class IRenderVisual;
-class IRenderable;
+class ISpatial;
 class CBoneInstance;
 struct SEnumVerticesCallback;
 
@@ -32,7 +32,7 @@ public:
 public:
 
 #ifdef OPTIMIZE_CALCULATE_BONES
-	IRenderable* renderableParent = nullptr;
+	ISpatial* spatialParent = nullptr;
 #endif
 
 	virtual void Bone_Calculate(CBoneData* bd, Fmatrix* parent) = 0;
