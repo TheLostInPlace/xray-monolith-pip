@@ -105,6 +105,7 @@ AddScriptCallback("bullet_on_remove")
 -- target_id = game object id of entity the bullet hit (it will be 65535 if bullet hit the terrain or vanished)
 -- material = name of material that bullet hit
 -- life_time = time of bullet fly
+-- element - bone_id if the target hit is object, triangle number if its static geometry. -1 if nothing was hit
 
 -- Called when bullet is shot from the weapon
 _G.CBulletOnInit = function(bullet)
