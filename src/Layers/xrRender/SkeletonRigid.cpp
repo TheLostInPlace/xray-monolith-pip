@@ -65,10 +65,10 @@ void CKinematics::CalculateBones(BOOL bForceExact)
 			{
 				bForceExact = FALSE;
 
-				if (RDEVICE.dwTimeGlobal % 100 < 10)
+				/*if (RDEVICE.dwTimeGlobal % 100 < 10)
 				{
 					Msg("CKinematics::CalculateBones, object canBeOptimized and dist > IK_CALC_DIST * dist_k, dist %.2f, update_rate_k %.2f, ssa %.4f", dist / dist_k, update_rate_k, ssa);
-				}
+				}*/
 			}
 		}
 	}
