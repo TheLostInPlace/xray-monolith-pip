@@ -884,6 +884,7 @@ void R_dsgraph_structure::r_dsgraph_render_subspace(IRender_Sector* _sector, Fma
 
 // sub-space rendering - main procedure
 extern float IK_CALC_DIST;
+extern float IK_CALC_SSA;
 void R_dsgraph_structure::r_dsgraph_render_subspace(IRender_Sector* _sector, CFrustum* _frustum, Fmatrix& mCombined,
                                                     Fvector& _cop, BOOL _dynamic, BOOL _precise_portals)
 {
@@ -961,8 +962,8 @@ void R_dsgraph_structure::r_dsgraph_render_subspace(IRender_Sector* _sector, CFr
 				IRenderable* renderable = spatial->dcast_Renderable();
 				if (0 == renderable) continue; // unknown, but renderable object (r1_glow???)
 #if RENDER!=R_R1
-				float perceived_dist = Device.GetPerceivedDist(renderable->renderable.xform.c);
-				if(perceived_dist <= IK_CALC_DIST)
+				float ssa = Device.CalcSSADynamic(spatial->spatial.sphere.P, spatial->spatial.sphere.R);
+				if (ssa >= IK_CALC_SSA)
 				{
 					CKinematics* pKin = (CKinematics*)renderable->renderable.visual;
 					if(pKin)
