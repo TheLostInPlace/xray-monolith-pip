@@ -526,7 +526,7 @@ end
 
 -- Force update close enough traders
 function npc_on_update(npc)
-	if npc:position():distance_to_sqr(db.actor:position()) < 100*100 then
+	if npc:position():distance_to_sqr(db.actor:position()) < 30^2 then
 		trade_manager.update(npc)
 	end
 end
