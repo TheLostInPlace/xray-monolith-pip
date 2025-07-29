@@ -4,10 +4,48 @@
 #include "Level.h"
 #include "../Include/xrRender/Kinematics.h"
 
+#include "script_game_object.h"
 #include "CameraFirstEye.h"
 #include "cameralook.h"
 #include "xr_level_controller.h"
 
+bool CCar::is_ai_obstacle() const
+{
+	/* npcs will try to walk around car when it is on the way. */
+	return true;
+}
+
+bool CCar::IsCameraZoom()
+{
+	return m_zoom_status;
+}
+
+void CCar::SetUseAction(LPCSTR txt)
+{
+	m_sUseAction._set(txt);
+}
+
+void CCar::LoadExplosiveSection(LPCSTR section, bool is_load_from_model_custom_data)
+{
+	if (is_load_from_model_custom_data)
+	{
+		CInifile *ini = Visual()->dcast_PKinematics()->LL_UserData();
+		CExplosive::Load(ini, section);
+	}
+	else
+	{
+		CExplosive::Load(pSettings, section);
+	}
+}
+
+void CCar::InitExplosiveSection()
+{
+	LoadExplosiveSection("explosion", true);
+}
+
+/*------------------------------------------------------------------------------------------------------------------------
+    Fly
+------------------------------------------------------------------------------------------------------------------------*/
 void CCar::Fly_Load(LPCSTR section)
 {
 	m_control_neutral = READ_IF_EXISTS(pSettings, r_float, section, "control_neutral", 0.0F);
@@ -15,45 +53,63 @@ void CCar::Fly_Load(LPCSTR section)
 	m_control_pit_max = READ_IF_EXISTS(pSettings, r_float, section, "control_pit_max", 0.0F);
 	m_control_rol_max = READ_IF_EXISTS(pSettings, r_float, section, "control_rol_max", 0.0F);
 	m_control_yaw_max = deg2rad(READ_IF_EXISTS(pSettings, r_float, section, "control_yaw_max", 0.0F));
-
 	m_control_ele_inc = READ_IF_EXISTS(pSettings, r_float, section, "control_ele_inc", 0.0F);
 	m_control_pit_inc = READ_IF_EXISTS(pSettings, r_float, section, "control_pit_inc", 0.0F);
 	m_control_rol_inc = READ_IF_EXISTS(pSettings, r_float, section, "control_rol_inc", 0.0F);
 	m_control_yaw_inc = deg2rad(READ_IF_EXISTS(pSettings, r_float, section, "control_yaw_inc", 0.0F));
+
+	m_fly_weight_min = READ_IF_EXISTS(pSettings, r_float, section, "fly_weight_min", 1.0F);
+	m_fly_weight_min = (m_fly_weight_min > 0.0F) ? m_fly_weight_min : 1.0F;
 }
 
 BOOL CCar::Fly_net_Spawn(CSE_Abstract *DC)
 {
 	IKinematics *K = Visual()->dcast_PKinematics();
 	CInifile *ini = K->LL_UserData();
-	const LPCSTR cfg = "fly_definition";
+	const LPCSTR fly_sec = "fly_definition";
 
-	/* body_bone is for applying torque, move_bone is for applying force. */
-	m_body_bid = ini->line_exist(cfg, "body_bone") ? K->LL_BoneID(ini->r_string(cfg, "body_bone")) : BI_NONE;
-	m_move_bid = ini->line_exist(cfg, "move_bone") ? K->LL_BoneID(ini->r_string(cfg, "move_bone")) : BI_NONE;
+	/* body_bone is for applying torque. */
+	m_body_bid = ini->line_exist(fly_sec, "body_bone") ? K->LL_BoneID(ini->r_string(fly_sec, "body_bone")) : BI_NONE;
 
 	{
 		m_rotor_bones.clear();
 		int n = ini->line_count("rotors");
 		for (int k = 0; k < n; k++)
 		{
-			LPCSTR bone_name, direction;
-			ini->r_line("rotors", k, &bone_name, &direction);
+			LPCSTR bone_name, str;
+			ini->r_line("rotors", k, &bone_name, &str);
 			u16 bone_id = K->LL_BoneID(bone_name);
 			if (bone_id != BI_NONE)
 			{
 				m_rotor_bones.push_back(SCarFlyBone());
 				SCarFlyBone &I = m_rotor_bones.back();
-				I.clockwise = strcmp(direction, "c") == 0;
 				I.E = m_pPhysicsShell->get_Element(bone_id);
 				I.J = m_pPhysicsShell->get_Joint(bone_id);
+
+				string64 tmp, key, val;
+				for (int c = 0; c < _GetItemCount(str); ++c)
+				{
+					memset(tmp, 0, sizeof(tmp));
+					_GetItem(str, c, tmp);
+					if (strlen(tmp) && _GetItemCount(tmp, ':') == 2)
+					{
+						memset(key, 0, sizeof(key));
+						memset(val, 0, sizeof(val));
+						_GetItem(tmp, 0, key, ':');
+						_GetItem(tmp, 1, val, ':');
+						if (strcmp(key, "clockwise") == 0)
+						{
+							I.clockwise = strcmp(val, "true") == 0;
+						}
+					}
+				}
 			}
 		}
 		R_ASSERT3(m_rotor_bones.size(), "fly_definition no rotors", cNameSect_str());
 	}
 	{
 		m_drive_bones.clear();
-		LPCSTR str = READ_IF_EXISTS(ini, r_string, cfg, "drive_bones", NULL);
+		LPCSTR str = READ_IF_EXISTS(ini, r_string, fly_sec, "drive_bones", NULL);
 		int n = _GetItemCount(str);
 		string64 bone_name;
 		for (int k = 0; k < n; ++k)
@@ -72,21 +128,21 @@ BOOL CCar::Fly_net_Spawn(CSE_Abstract *DC)
 		R_ASSERT3(m_drive_bones.size(), "fly_definition no drive_bones", cNameSect_str());
 	}
 
-	m_rotor_force_max = READ_IF_EXISTS(ini, r_float, cfg, "rotor_force_max", 0.0F);
-	m_rotor_speed_max = READ_IF_EXISTS(ini, r_float, cfg, "rotor_speed_max", 0.0F) * PI_MUL_2 / 60;
+	m_rotor_force_max = READ_IF_EXISTS(ini, r_float, fly_sec, "rotor_force_max", 0.0F);
+	m_rotor_speed_max = READ_IF_EXISTS(ini, r_float, fly_sec, "rotor_speed_max", 0.0F);
 
 	return TRUE;
 }
 
 bool CCar::Fly_attach_Actor(CGameObject *actor)
 {
-	ResetControl();
+	FlyResetControl();
 	return true;
 }
 
 void CCar::Fly_detach_Actor()
 {
-	ResetControl();
+	FlyResetControl();
 }
 
 void CCar::Fly_VisualUpdate(float fov)
@@ -103,27 +159,21 @@ void CCar::Fly_VisualUpdate(float fov)
 void CCar::Fly_PhDataUpdate(float step)
 {
 	/* Only update physic. Don't calculate bones. */
-	if (m_pPhysicsShell == NULL)
+	if (m_pPhysicsShell == nullptr)
 		return;
 
-	RotorUpdate();
-	if (b_engine_on)
+	Fly_RotorUpdate();
+	if (b_engine_on && m_rotor_bones.size() && m_drive_bones.size())
 	{
-		CPhysicsElement *bone_move = m_pPhysicsShell->get_Element(m_move_bid);
 		CPhysicsElement *bone_body = m_pPhysicsShell->get_Element(m_body_bid);
-		if (bone_move == NULL)
-		{
-			bone_move = m_pPhysicsShell->get_ElementByStoreOrder(0);
-		}
-		if (bone_body == NULL)
+		if (bone_body == nullptr)
 		{
 			bone_body = m_pPhysicsShell->get_ElementByStoreOrder(0);
 		}
 
 		float mass = m_pPhysicsShell->getMass();
 
-		/* Make it float in mid air. */
-		if (m_rotor_bones.size())
+		/* Make it float in mid air. Must be m_rotor_bones, not m_drive_bones. */
 		{
 			float force = mass * EffectiveGravity() / m_rotor_bones.size();
 			Fvector vec = Fvector().set(0.0F, 1.0F, 0.0F).mul(force);
@@ -139,8 +189,9 @@ void CCar::Fly_PhDataUpdate(float step)
 			m_pPhysicsShell->get_LinearVel(velocity);
 			if (velocity.magnitude() > EPS_L)
 			{
-				float force = mass * __min(velocity.magnitude(), m_control_neutral);
-				m_pPhysicsShell->applyForce(Fvector().set(velocity).invert().normalize_safe(), force);
+				float force = mass * FlyWeightScale() * __min(velocity.magnitude(), m_control_neutral);
+				Fvector vec = Fvector().invert(velocity).normalize_safe().mul(force);
+				m_pPhysicsShell->applyRelForce(vec.x, vec.y, vec.z);
 			}
 		}
 
@@ -150,8 +201,12 @@ void CCar::Fly_PhDataUpdate(float step)
 		case eControlEle_UP:
 		case eControlEle_DW:
 		{
-			float force = mass * m_control_ele_max;
-			bone_move->applyRelForce(Fvector().set(0.0F, 1.0F, 0.0F), (m_control_ele == eControlEle_UP) ? force : -force);
+			float force = mass * FlyWeightScale() * m_control_ele_max / m_drive_bones.size();
+			Fvector vec = Fvector().set(0.0F, 1.0F, 0.0F).mul((m_control_ele == eControlEle_UP) ? force : -force);
+			for (auto &I : m_drive_bones)
+			{
+				I.E->applyRelForce(vec.x, vec.y, vec.z);
+			}
 			break;
 		}
 		}
@@ -161,17 +216,12 @@ void CCar::Fly_PhDataUpdate(float step)
 		case eControlPit_FS:
 		case eControlPit_BS:
 		{
-#if 1
-			float force = mass * m_control_pit_max / m_drive_bones.size();
+			float force = mass * FlyWeightScale() * m_control_pit_max / m_drive_bones.size();
 			Fvector vec = Fvector().set(0.0F, 0.0F, 1.0F).mul((m_control_pit == eControlPit_FS) ? force : -force);
 			for (auto &I : m_drive_bones)
 			{
 				I.E->applyRelForce(vec.x, vec.y, vec.z);
 			}
-#else
-			float force = mass * m_control_pit_max;
-			bone_move->applyRelForce(Fvector().set(0.0F, 0.0F, 1.0F), (m_control_pit == eControlPit_FS) ? force : -force);
-#endif
 			break;
 		}
 		}
@@ -181,17 +231,12 @@ void CCar::Fly_PhDataUpdate(float step)
 		case eControlRol_RS:
 		case eControlRol_LS:
 		{
-#if 1
-			float force = mass * m_control_rol_max / m_drive_bones.size();
+			float force = mass * FlyWeightScale() * m_control_rol_max / m_drive_bones.size();
 			Fvector vec = Fvector().set(1.0F, 0.0F, 0.0F).mul((m_control_rol == eControlRol_RS) ? force : -force);
 			for (auto &I : m_drive_bones)
 			{
 				I.E->applyRelForce(vec.x, vec.y, vec.z);
 			}
-#else
-			float force = mass * m_control_rol_max;
-			bone_move->applyRelForce(Fvector().set(1.0F, 0.0F, 0.0F), (m_control_rol == eControlRol_RS) ? force : -force);
-#endif
 			break;
 		}
 		}
@@ -201,39 +246,52 @@ void CCar::Fly_PhDataUpdate(float step)
 		case eControlYaw_RS:
 		case eControlYaw_LS:
 		{
-			float force = mass * m_control_yaw_max;
-			bone_body->applyRelTorque(Fvector().set(0.0F, 1.0F, 0.0F), (m_control_yaw == eControlYaw_RS) ? force : -force);
+			float force = mass * FlyWeightScale() * m_control_yaw_max;
+			Fvector vec = Fvector().set(0.0F, 1.0F, 0.0F).mul((m_control_yaw == eControlYaw_RS) ? force : -force);
+			bone_body->applyRelTorque(vec.x, vec.y, vec.z);
 			break;
 		}
 		}
 	}
 }
 
-void CCar::RotorUpdate()
+void CCar::Fly_RotorUpdate()
 {
 	if (b_engine_on)
 	{
 		for (auto &I : m_rotor_bones)
 		{
-			float direction = (I.clockwise) ? 1 : -1;
-			I.J->SetForceAndVelocity(m_rotor_force_max, m_rotor_speed_max * direction, 1);
-			I.spinning = true;
+			if (I.spinning != true)
+			{
+				I.spinning = true;
+				I.J->SetForceAndVelocity(m_rotor_force_max, m_rotor_speed_max * ((I.clockwise) ? 1 : -1), 1);
+			}
 		}
 	}
 	else
 	{
 		for (auto &I : m_rotor_bones)
 		{
-			if (I.spinning)
+			if (I.spinning == true)
 			{
-				I.J->SetForceAndVelocity(0.0F, 0.0F, 1);
 				I.spinning = false;
+				I.J->SetForceAndVelocity(0, 0, 1);
 			}
 		}
 	}
 }
 
-void CCar::ResetControl()
+float CCar::FlyWeightScale()
+{
+    return m_fly_weight_min / (m_fly_weight_min + m_fly_weight_add);
+}
+
+void CCar::SetFlyWeightAdd(float val)
+{
+	m_fly_weight_add = (val > 0.0F) ? val : 0.0F;
+}
+
+void CCar::FlyResetControl()
 {
 	m_control_ele = eControlEle_NA;
 	m_control_yaw = eControlYaw_NA;
@@ -291,11 +349,15 @@ void CCar::Fly_OnKeyboardPress(int dik)
 		m_control_yaw = (m_control_yaw == eControlYaw_LS) ? eControlYaw_NA : eControlYaw_RS;
 		break;
 	/* Action. */
-	case kWPN_ZOOM_INC:
-		m_zoom_status = true;
-		break;
-	case kWPN_ZOOM_DEC:
-		m_zoom_status = false;
+	case kWPN_ZOOM:
+		if (!psActorFlags.test(AF_AIM_TOGGLE))
+		{
+			m_zoom_status = true;
+		}
+		else
+		{
+			m_zoom_status = (m_zoom_status) ? false : true;
+		}
 		break;
 	};
 }
@@ -331,6 +393,12 @@ void CCar::Fly_OnKeyboardRelease(int dik)
 		m_control_yaw = (m_control_yaw == eControlYaw_RS) ? eControlYaw_NA : eControlYaw_LS;
 		break;
 	/* Action. */
+	case kWPN_ZOOM:
+		if (!psActorFlags.test(AF_AIM_TOGGLE))
+		{
+			m_zoom_status = false;
+		}
+		break;
 	case kDETECTOR:
 		SwitchEngine();
 		break;
@@ -351,25 +419,16 @@ void CCar::Fly_OnKeyboardHold(int dik)
 {
 }
 
-bool CCar::IsCameraZoom()
-{
-	return m_zoom_status;
-}
-
-void CCar::SetUseAction(LPCSTR txt)
-{
-	m_sUseAction._set(txt);
-}
-
 /*----------------------------------------------------------------------------------------------------
 	SCarFlyBone
 ----------------------------------------------------------------------------------------------------*/
 CCar::SCarFlyBone::SCarFlyBone()
 {
 	bid = BI_NONE;
-	clockwise = false;
-	spinning = false;
 	E = nullptr;
 	J = nullptr;
+	clockwise = false;
+	axis = 0;
+	spinning = false;
 }
 #endif

@@ -39,7 +39,7 @@ void CCameraBase::Load(LPCSTR section)
 	lim_yaw = pSettings->r_fvector2(section, "lim_yaw");
 	lim_pitch = pSettings->r_fvector2(section, "lim_pitch");
 
-#ifdef STATIONARYMGUN_NEW
+#if 1
 	if (READ_IF_EXISTS(pSettings, r_bool, section, "lim_deg", false))
 	{
 		lim_yaw.x = deg2rad(lim_yaw.x);

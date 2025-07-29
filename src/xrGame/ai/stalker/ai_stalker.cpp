@@ -1729,6 +1729,7 @@ bool CAI_Stalker::attach_Holder(CHolderCustom *holder)
 	if (m_holder)
 		return false;
 
+#ifdef STATIONARYMGUN_NEW
 	CWeaponStatMgun *stm = smart_cast<CWeaponStatMgun *>(holder);
 	if (stm)
 	{
@@ -1745,6 +1746,7 @@ bool CAI_Stalker::attach_Holder(CHolderCustom *holder)
 		}
 		return false;
 	}
+#endif
 
 	return false;
 }
@@ -1754,11 +1756,13 @@ void CAI_Stalker::detach_Holder()
 	if (m_holder == nullptr)
 		return;
 
+#ifdef STATIONARYMGUN_NEW
 	CWeaponStatMgun *stm = smart_cast<CWeaponStatMgun *>(m_holder);
 	if (stm)
 	{
 		ForceTransform(Fmatrix().set(XFORM()).translate_over(stm->ExitPosition()));
 	}
+#endif
 
 	m_holder->detach_Actor();
 	m_holder = nullptr;

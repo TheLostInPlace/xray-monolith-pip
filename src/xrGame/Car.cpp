@@ -37,6 +37,7 @@ BONE_P_MAP CCar::bone_map = BONE_P_MAP();
 //extern CPHWorld*	ph_world;
 
 #ifdef CAR_NEW
+#include "script_game_object.h"
 #include "script_hit.h"
 #endif
 
@@ -128,15 +129,15 @@ CCar::CCar()
 	m_control_yaw_inc = 0.0F;
 
 	m_body_bid = BI_NONE;
-	m_move_bid = BI_NONE;
 	m_rotor_force_max = 0.0F;
 	m_rotor_speed_max = 0.0F;
+	m_fly_weight_min = 1.0F;
+	m_fly_weight_add = 0.0F;
 
 	m_on_before_hit_callback = NULL;
 	m_on_before_use_callback = NULL;
 	m_on_before_engine_callback = NULL;
-	m_on_key_press_callback = NULL;
-	m_on_key_release_callback = NULL;
+	m_on_key_board_callback = NULL;
 #endif
 }
 
@@ -222,8 +223,7 @@ void CCar::Load(LPCSTR section)
 	m_on_before_hit_callback = READ_IF_EXISTS(pSettings, r_string, section, "on_before_hit", nullptr);
 	m_on_before_use_callback = READ_IF_EXISTS(pSettings, r_string, section, "on_before_use", nullptr);
 	m_on_before_engine_callback = READ_IF_EXISTS(pSettings, r_string, section, "on_before_engine", nullptr);
-	m_on_key_press_callback = READ_IF_EXISTS(pSettings, r_string, section, "on_key_press", nullptr);
-	m_on_key_release_callback = READ_IF_EXISTS(pSettings, r_string, section, "on_key_release", nullptr);
+	m_on_key_board_callback = READ_IF_EXISTS(pSettings, r_string, section, "on_key_board", nullptr);
 
 	if (pSettings->line_exist(section, "use_action_hint"))
 	{
@@ -361,6 +361,15 @@ void CCar::net_Destroy()
 #ifdef DEBUG
 	DBgClearPlots();
 #endif
+
+#ifdef CAR_NEW
+	StopEngine();
+	if (OwnerActor())
+	{
+		OwnerActor()->use_HolderEx(nullptr, true);
+	}
+#endif
+
 	IKinematics* pKinematics = smart_cast<IKinematics*>(Visual());
 	if (m_bone_steer != BI_NONE)
 	{
@@ -692,7 +701,7 @@ void CCar::Hit(SHit* pHDS)
 #ifdef CAR_NEW
 	if (m_on_before_hit_callback && strlen(m_on_before_hit_callback))
 	{
-		luabind::functor<bool> lua_function;
+		::luabind::functor<bool> lua_function;
 		if (ai().script_engine().functor(m_on_before_hit_callback, lua_function))
 		{
 			CScriptHit tLuaHit(&HDS);
@@ -796,6 +805,10 @@ bool CCar::attach_Actor(CGameObject* actor)
 	if (Owner() || CPHDestroyable::Destroyed()) return false;
 	CHolderCustom::attach_Actor(actor);
 
+#ifdef CAR_NEW
+	if (m_type == eCarTypeDef)
+	{
+#endif
 	IKinematics* K = smart_cast<IKinematics*>(Visual());
 	CInifile* ini = K->LL_UserData();
 	int id;
@@ -808,6 +821,10 @@ bool CCar::attach_Actor(CGameObject* actor)
 	}
 	CBoneInstance& instance = K->LL_GetBoneInstance(u16(id));
 	m_sits_transforms.push_back(instance.mTransform);
+#ifdef CAR_NEW
+	}
+#endif
+
 	OnCameraChange(ectFirst);
 	PPhysicsShell()->Enable();
 	PPhysicsShell()->add_ObjectContactCallback(ActorObstacleCallback);
@@ -1654,7 +1671,7 @@ bool CCar::Use(const Fvector& pos, const Fvector& dir, const Fvector& foot_pos)
 #ifdef CAR_NEW
 	if (m_on_before_use_callback && strlen(m_on_before_use_callback))
 	{
-		luabind::functor<bool> lua_function;
+		::luabind::functor<bool> lua_function;
 		if (ai().script_engine().functor(m_on_before_use_callback, lua_function))
 		{
 			if (!lua_function(lua_game_object(), pos, dir, foot_pos))
@@ -1997,11 +2014,18 @@ u16 CCar::DriverAnimationType()
 
 void CCar::OnAfterExplosion()
 {
+#ifdef CAR_NEW
+	CExplosive::OnAfterExplosion();
+#endif
 }
 
 void CCar::OnBeforeExplosion()
 {
+#ifdef CAR_NEW
+	CExplosive::OnBeforeExplosion();
+#else
 	setEnabled(FALSE);
+#endif
 }
 
 void CCar::CarExplode()
@@ -2022,6 +2046,10 @@ void CCar::CarExplode()
 
 	if (CPHDestroyable::CanDestroy())
 		CPHDestroyable::Destroy(ID(), "physic_destroyable_object");
+
+#ifdef CAR_NEW
+	StopEngine();
+#endif
 }
 
 //void CCar::object_contactCallbackFun(bool& do_colide,dContact& c,SGameMtl * ,SGameMtl * )
@@ -2343,14 +2371,6 @@ bool CCar::isActiveEngine()
 /*************************************************** added by Ray Twitty (aka Shadows) END ***************************************************/
 Fvector CCar::ExitPosition()
 {
-#ifdef CAR_NEW
-	if (Owner() && m_remote_control)
-	{
-		m_exit_position.set(Owner()->Position());
-		return m_exit_position;
-	}
-#endif
-
 	if (!m_doors.empty())m_doors.begin()->second.GetExitPosition(m_exit_position);
 	else m_exit_position.set(Position());
 	return m_exit_position;

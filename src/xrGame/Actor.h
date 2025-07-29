@@ -514,7 +514,7 @@ public:
 	float get_additional_weight() const;
 	
 #ifdef STATIONARYMGUN_NEW
-	virtual float GetWeaponAccuracyStm();
+	float GetWeaponAccuracyStm();
 #endif
 
 protected:
