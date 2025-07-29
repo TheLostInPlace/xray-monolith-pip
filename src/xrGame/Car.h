@@ -714,10 +714,11 @@ private:
 	struct SCarFlyBone
 	{
 		u16 bid;
-		bool clockwise;
-		bool spinning;
 		CPhysicsElement *E;
 		CPhysicsJoint *J;
+		bool clockwise;
+		u8 axis;
+		bool spinning;
 		SCarFlyBone();
 	};
 
@@ -734,16 +735,13 @@ private:
 	LPCSTR m_on_before_hit_callback;
 	LPCSTR m_on_before_use_callback;
 	LPCSTR m_on_before_engine_callback;
-	LPCSTR m_on_key_press_callback;
-	LPCSTR m_on_key_release_callback;
+	LPCSTR m_on_key_board_callback;
 
 	u16 m_body_bid;
-	u16 m_move_bid;
 	xr_vector<SCarFlyBone> m_drive_bones;
 	xr_vector<SCarFlyBone> m_rotor_bones;
 	float m_rotor_force_max;
 	float m_rotor_speed_max;
-	void RotorUpdate();
 
 	u16 m_control_ele; /* Elevating */
 	u16 m_control_pit; /* Pitch */
@@ -761,6 +759,10 @@ private:
 	float m_control_rol_inc;
 	float m_control_yaw_inc;
 
+	float m_fly_weight_min;
+	float m_fly_weight_add;
+	float FlyWeightScale();
+
 	void Fly_Load(LPCSTR section);
 	BOOL Fly_net_Spawn(CSE_Abstract *DC);
 	bool Fly_attach_Actor(CGameObject *actor);
@@ -771,9 +773,15 @@ private:
 	void Fly_OnKeyboardPress(int dik);
 	void Fly_OnKeyboardRelease(int dik);
 	void Fly_OnKeyboardHold(int dik);
+	void Fly_RotorUpdate();
 
 public:
+	virtual bool is_ai_obstacle() const;
 	u16 GetType() { return m_type; }
+	void SetUseAction(LPCSTR txt);
+	virtual void SetInitiator(u16 id) { CExplosive::SetInitiator(id); }
+	void LoadExplosiveSection(LPCSTR section, bool is_load_from_model_custom_data = false);
+	void InitExplosiveSection();
 
 	enum eCarType
 	{
@@ -814,7 +822,6 @@ public:
 	void SetControlYaw(u16 val) { m_control_yaw = val; };
 	void SetControlPit(u16 val) { m_control_pit = val; };
 	void SetControlRol(u16 val) { m_control_rol = val; };
-
 	float GetControlEleScale() { return m_control_ele_max; };
 	float GetControlYawScale() { return m_control_yaw_max; };
 	float GetControlPitScale() { return m_control_pit_max; };
@@ -824,9 +831,11 @@ public:
 	void SetControlPitScale(float val) { m_control_pit_max = val; };
 	void SetControlRolScale(float val) { m_control_rol_max = val; };
 
-	void ResetControl();
+	void FlyResetControl();
 	bool IsCameraZoom();
-	void SetUseAction(LPCSTR txt);
+	bool IsRemoteControl() { return m_remote_control; };
+	float GetFlyWeightAdd() { return m_fly_weight_add; };
+	void SetFlyWeightAdd(float val);
 #endif
 
 public:

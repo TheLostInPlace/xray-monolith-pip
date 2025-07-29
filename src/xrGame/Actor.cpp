@@ -1486,7 +1486,7 @@ bool CActor::attach_Vehicle(CHolderCustom *object, bool bForce)
 	{
 		Fvector center;
 		Center(center);
-		if (bForce || object->Use(Device.vCameraPosition, Device.vCameraDirection, center) && object->attach_Actor(this))
+		if ((bForce || object->Use(Device.vCameraPosition, Device.vCameraDirection, center)) && object->attach_Actor(this))
 		{
 			inventory().SetPrevActiveSlot(inventory().GetActiveSlot());
 			inventory().SetActiveSlot(NO_ACTIVE_SLOT);
@@ -1512,7 +1512,11 @@ bool CActor::attach_Vehicle(CHolderCustom *object, bool bForce)
 			K->LL_GetBoneInstance(K->LL_BoneID("bip01_spine2")).reset_callback();
 
 			CCar *car = smart_cast<CCar *>(object);
+#ifdef CAR_NEW
+			if (car && car->IsRemoteControl() == false)
+#else
 			if (car)
+#endif
 			{
 				u16 anim_type = car->DriverAnimationType();
 				SVehicleAnimCollection &anims = m_vehicle_anims->m_vehicles_type_collections[anim_type];
@@ -1546,7 +1550,7 @@ void CActor::detach_Vehicle(bool bForce)
 	if (!m_holder)
 		return;
 
-	if (!m_holder->ExitLocked() || bForce)
+	if (bForce || !m_holder->ExitLocked())
 	{
 		CGameObject *GO = smart_cast<CGameObject *>(m_holder);
 		CPhysicsShellHolder *pholder = smart_cast<CPhysicsShellHolder *>(GO);
@@ -1566,10 +1570,16 @@ void CActor::detach_Vehicle(bool bForce)
 		inventory().SetPrevActiveSlot(NO_ACTIVE_SLOT);
 
 		character_physics_support()->movement()->CreateCharacter();
-		character_physics_support()->movement()->SetPosition(m_holder->ExitPosition());
-		character_physics_support()->movement()->SetVelocity(m_holder->ExitVelocity());
 
-		cam_Active()->Direction().set(Fvector().setHP(GO->Direction().getH(), 0.0F));
+		CCar *car = smart_cast<CCar *>(m_holder);
+#ifdef CAR_NEW
+		if (car && car->IsRemoteControl() == false)
+#endif
+		{
+			character_physics_support()->movement()->SetPosition(m_holder->ExitPosition());
+			character_physics_support()->movement()->SetVelocity(m_holder->ExitVelocity());
+			cam_Active()->Direction().set(Fvector().setHP(GO->Direction().getH(), 0.0F));
+		}
 
 		m_holder->detach_Actor();
 		m_holder = NULL;

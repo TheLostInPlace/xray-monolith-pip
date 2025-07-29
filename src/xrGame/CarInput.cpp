@@ -152,12 +152,15 @@ void CCar::OnKeyboardPress(int cmd)
 	if (Remote()) return;
 
 #ifdef CAR_NEW
-	if (m_on_key_press_callback && strlen(m_on_key_press_callback))
+	if (m_on_key_board_callback && strlen(m_on_key_board_callback))
 	{
-		luabind::functor<void> lua_function;
-		if (ai().script_engine().functor(m_on_key_press_callback, lua_function))
+		::luabind::functor<bool> lua_function;
+		if (ai().script_engine().functor(m_on_key_board_callback, lua_function))
 		{
-			lua_function(lua_game_object(), cmd);
+			if (lua_function(lua_game_object(), cmd, true) == false)
+			{
+				return;
+			}
 		}
 	}
 
@@ -210,12 +213,15 @@ void CCar::OnKeyboardRelease(int cmd)
 	if (Remote()) return;
 
 #ifdef CAR_NEW
-	if (m_on_key_release_callback && strlen(m_on_key_release_callback))
+	if (m_on_key_board_callback && strlen(m_on_key_board_callback))
 	{
-		luabind::functor<void> lua_function;
-		if (ai().script_engine().functor(m_on_key_release_callback, lua_function))
+		::luabind::functor<bool> lua_function;
+		if (ai().script_engine().functor(m_on_key_board_callback, lua_function))
 		{
-			lua_function(lua_game_object(), cmd);
+			if (lua_function(lua_game_object(), cmd, false) == false)
+			{
+				return;
+			}
 		}
 	}
 

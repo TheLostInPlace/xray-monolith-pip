@@ -439,6 +439,7 @@ void CWeaponStatMgun::net_Destroy()
 	}
 
 #ifdef HOLDERCUSTOM_NEW
+#ifdef STATIONARYMGUN_NEW
 	if (Owner())
 	{
 		if (Owner()->cast_stalker() && !Owner()->cast_stalker()->g_Alive())
@@ -446,6 +447,7 @@ void CWeaponStatMgun::net_Destroy()
 			Owner()->cast_stalker()->detach_Holder();
 		}
 	}
+#endif
 #endif
 
 #ifdef STATIONARYMGUN_NEW
@@ -562,12 +564,14 @@ void CWeaponStatMgun::UpdateEx(float fov)
 		return;
 
 #ifdef HOLDERCUSTOM_NEW
+#ifdef STATIONARYMGUN_NEW
 	/* Dead owner. Kick out. Just in case. We kick them out when on death callback already. */
 	if (Owner()->cast_stalker() && !Owner()->cast_stalker()->g_Alive())
 	{
 		Owner()->cast_stalker()->detach_Holder();
 		return;
 	}
+#endif
 #endif
 
 	/* Update owner position. */

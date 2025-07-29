@@ -56,7 +56,11 @@ void CCar::script_register(lua_State* L)
 		
 #ifdef CAR_NEW
 		.def("SetUseAction", &CCar::SetUseAction)
-		
+		.def("SetInitiator", &CCar::SetInitiator)
+		.def("LoadExplosiveSection", &CCar::LoadExplosiveSection)
+		.def("InitExplosiveSection", &CCar::InitExplosiveSection)
+		.def("GetFlyWeightAdd", &CCar::GetFlyWeightAdd)
+		.def("SetFlyWeightAdd", &CCar::SetFlyWeightAdd)
 #endif
 		.def(constructor<>())
 	];
