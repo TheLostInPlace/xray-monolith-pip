@@ -53,6 +53,13 @@ public:
 	static xr_string ToString(const Dvector& Value);
 
 	using xrStringVector = xr_vector<xr_string>;
+
+	xrStringVector SplitStringMulti(xr_string separator = " ", bool includeSeparators = false, bool trimStrings = false) const;
+	xrStringVector SplitStringLimit(xr_string separator = " ", int limit = 0, bool trimStrings = false) const;
+	xr_string Trim(const char* t = " \t\n\r\f\v") const;
+	xr_string ToLowerCase() const;
+	xr_string ReplaceAll(const xr_string& from, const xr_string& to) const;
+
 	static xr_string Join(xrStringVector::iterator beginIter, xrStringVector::iterator endIter, const char delimeter = '\0');
 };
 

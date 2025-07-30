@@ -2,6 +2,7 @@
 #pragma hdrstop
 
 #include "xrstring.h"
+#include <sstream>
 
 #include "FS_impl.h"
 
@@ -655,4 +656,102 @@ xr_string xr_string::Join(xrStringVector::iterator beginIter, xrStringVector::it
 	}
 
 	return Result;
+}
+
+// String utils
+SStringVec xr_string::SplitStringMulti(xr_string separator, bool includeSeparators, bool trimStrings) const {
+	std::stringstream stringStream(std::string(this->c_str()));
+	xr_string line;
+	SStringVec wordVector;
+
+	while (std::getline(stringStream, line))
+	{
+		std::size_t prev = 0, pos;
+		while ((pos = line.find_first_of(separator, prev)) != xr_string::npos)
+		{
+			if (pos > prev)
+				wordVector.push_back(line.substr(prev, pos - prev));
+
+			if (includeSeparators)
+				wordVector.push_back(line.substr(pos, 1));
+
+			prev = pos + 1;
+		}
+		if (prev < line.length())
+			wordVector.push_back(line.substr(prev, xr_string::npos));
+	}
+	if (trimStrings) {
+		for (auto& s : wordVector) {
+			s = s.Trim();
+		}
+	}
+	return wordVector;
+}
+
+SStringVec xr_string::SplitStringLimit(xr_string separator, int limit, bool trimStrings) const
+{
+	std::stringstream stringStream(std::string(this->c_str()));
+	xr_string line;
+	SStringVec wordVector;
+
+	while (std::getline(stringStream, line))
+	{
+		std::size_t prev = 0, pos;
+		while ((pos = line.find_first_of(separator, prev)) != xr_string::npos)
+		{
+			if (pos > prev)
+				wordVector.push_back(line.substr(prev, pos - prev));
+
+			prev = pos + 1;
+			if (limit > 0) {
+				if (wordVector.size() >= limit) {
+					wordVector.push_back(line.substr(prev, xr_string::npos));
+					return wordVector;
+				}
+			}
+		}
+		if (prev < line.length())
+			wordVector.push_back(line.substr(prev, xr_string::npos));
+	}
+	if (trimStrings) {
+		for (auto& s : wordVector) {
+			s = s.Trim();
+		}
+	}
+	return wordVector;
+}
+
+xr_string xr_string::Trim(const char* t) const
+{
+	xr_string result = *this;
+	result.erase(result.find_last_not_of(t) + 1);
+	result.erase(0, result.find_first_not_of(t));
+	return result;
+};
+
+
+xr_string xr_string::ToLowerCase() const
+{
+	xr_string result = *this;
+	std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c)
+	{
+		return std::tolower(c);
+	});
+	return result;
+}
+
+xr_string xr_string::ReplaceAll(const xr_string& from, const xr_string& to) const
+{
+	xr_string result = *this;
+	if (from.empty())
+		return result;
+
+	size_t start_pos = 0;
+	while ((start_pos = result.find(from, start_pos)) != xr_string::npos)
+	{
+		result.replace(start_pos, from.length(), to);
+		start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+	}
+
+	return result;
 }
