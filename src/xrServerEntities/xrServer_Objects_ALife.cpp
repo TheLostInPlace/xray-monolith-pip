@@ -2125,13 +2125,13 @@ void CSE_ALifeMountedWeapon::FillProps			(LPCSTR pref, PropItemVec& values)
 }
 #endif // #ifndef XRGAME_EXPORTS
 
-#ifdef SE_STATIONARYMGUN_NEW
+#ifdef STATIONARYMGUN_NEW
 CSE_ALifeStationaryMgun::CSE_ALifeStationaryMgun(LPCSTR caSection) : CSE_ALifeDynamicObjectVisual(caSection), CSE_PHSkeleton(caSection)
 #else
 CSE_ALifeStationaryMgun::CSE_ALifeStationaryMgun(LPCSTR caSection) : CSE_ALifeDynamicObjectVisual(caSection)
 #endif
 {
-#ifdef SE_STATIONARYMGUN_NEW
+#ifdef STATIONARYMGUN_NEW
 	ammo_type = 0;
 	a_elapsed = 0;
 #endif
@@ -2277,7 +2277,7 @@ void CSE_ALifeStationaryMgun::STATE_Write(NET_Packet& tNetPacket)
 #ifndef XRGAME_EXPORTS
 void CSE_ALifeStationaryMgun::FillProps			(LPCSTR pref, PropItemVec& values)
 {
-#ifdef SE_STATIONARYMGUN_NEW
+#ifdef STATIONARYMGUN_NEW
 	inherited1::FillProps			(pref,values);
 	inherited2::FillProps			(pref,values);
 #else

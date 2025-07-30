@@ -367,7 +367,7 @@ BOOL CWeaponStatMgun::net_Spawn(CSE_Abstract* DC)
 	CSE_ALifeStationaryMgun *E = smart_cast<CSE_ALifeStationaryMgun *>(DC);
 	VERIFY3(E, cNameSect_str(), "No CSE_ALifeStationaryMgun");
 
-#ifdef STATIONARYMGUN_ERR
+#ifdef STATIONARYMGUN_NEW
 	{
 		SetAmmoElapsed(0);
 		SetAmmoType(E->ammo_type);
@@ -379,7 +379,8 @@ BOOL CWeaponStatMgun::net_Spawn(CSE_Abstract* DC)
 				m_barrels.at(idx).SetAmmoElapsed(E->m_barrels.at(idx).a_elapsed);
 			}
 		}
-		SetAmmoElapsed(E->a_elapsed);
+		iAmmoElapsed = E->a_elapsed;
+		SetAmmoElapsed(iAmmoElapsed);
 	}
 #endif
 
