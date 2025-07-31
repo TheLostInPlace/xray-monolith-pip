@@ -170,6 +170,11 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.07.31**
+* Use x64 toolchain for compiling
+* Orleonn: Lua export: CUIDialogWnd::AllowWorkInPause and render_device:pause_ex (https://github.com/themrdemonized/xray-monolith/pull/308)
+* NLTP_ASHES: Add fail-safe in CGameObject::net_Spawn to try to update a missing model (https://github.com/themrdemonized/xray-monolith/pull/311)
+
 **2025.07.29**
 * Bone calc optimizations
   * Usage of Screen Space Area (SSA) instead of distance check, works better with larger objects such as pseudogiants
