@@ -156,7 +156,7 @@ void CRender::render_main(bool deffered, bool zfill)
 					{
 						if (Device.vCameraPosition.distance_to(spatial->spatial.sphere.P) < (g_pGamePersistent->Environment().CurrentEnv->fog_distance))
 						{
-							if (Device.CalcSSADynamic(spatial->spatial.sphere.P, spatial->spatial.sphere.R) > 0.002f && Device.GetPerceivedDist(spatial->spatial.sphere.P) < 220.f)
+							if (Device.CalcSSADynamic(spatial->spatial.sphere.P, spatial->spatial.sphere.R) > 0.002f && Device.GetPerceivedDist(spatial->spatial.sphere.P) < 350.f)
 							{
 								if (deffered)
 								{
@@ -212,7 +212,7 @@ void CRender::render_main(bool deffered, bool zfill)
 						{
 							if (Device.vCameraPosition.distance_to(spatial->spatial.sphere.P) < (g_pGamePersistent->Environment().CurrentEnv->fog_distance))
 							{
-								if (Device.CalcSSADynamic(spatial->spatial.sphere.P, spatial->spatial.sphere.R) > 0.002f && Device.GetPerceivedDist(spatial->spatial.sphere.P) < 220.f)
+								if (Device.CalcSSADynamic(spatial->spatial.sphere.P, spatial->spatial.sphere.R) > 0.002f && Device.GetPerceivedDist(spatial->spatial.sphere.P) < 350.f)
 								{
 									if (deffered)
 									{
