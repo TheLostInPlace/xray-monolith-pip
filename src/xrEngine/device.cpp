@@ -40,6 +40,7 @@ ENGINE_API CLoadScreenRenderer load_screen_renderer;
 
 
 ENGINE_API BOOL g_bRendering = FALSE;
+extern ENGINE_API float psHUD_FOV;
 
 static HANDLE RenderEventMT = nullptr;
 
@@ -373,12 +374,21 @@ void CRenderDevice::on_idle()
 	mFullTransformHud.mul(mProjectHud, mView);
 	m_pRender->SetCacheXform(mView, mProject);
 
+	mViewHud_prev = mViewHud;
+	mProjectHud_prev = mProjectHud;
+	mFullTransformHud_prev = mFullTransformHud;
+
 	// Previous frame data -- 
 	mView_prev = mView_saved;
 	mProject_prev = mProject_saved;
-	//mFullTransform_prev = mFullTransform_saved; // Unused?
+	mFullTransform_prev = mFullTransform_saved; // Unused?
 
 	m_pRender->SetCacheXform_prev(mView_prev, mProject_prev);
+
+	mProjectHud.build_projection(deg2rad(psHUD_FOV * 83.f), Device.fASPECT, R_VIEWPORT_NEAR, g_pGamePersistent->Environment().CurrentEnv->far_plane);
+	
+	mViewHud.set(mView);
+	mFullTransformHud.mul(mProjectHud, mViewHud);
 
 	// Save previous frame grass benders data
 	IGame_Persistent::grass_data& GData = g_pGamePersistent->grass_shader_data;

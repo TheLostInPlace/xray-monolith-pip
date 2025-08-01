@@ -73,13 +73,18 @@ public:
 	Fvector vCameraRight;
 
 	Fmatrix mView;
+	Fmatrix mViewHud;
 	Fmatrix mProject;
 	Fmatrix mProjectHud;
 	Fmatrix mFullTransform;
 	Fmatrix mFullTransformHud;
 
 	Fmatrix mView_prev;
+	Fmatrix mViewHud_prev;
 	Fmatrix mProject_prev;
+	Fmatrix mProjectHud_prev;
+	Fmatrix mFullTransform_prev;
+	Fmatrix mFullTransformHud_prev;
 
 	Fvector4 wind_anim_prev;
 	Fvector4 wind_anim_saved;
