@@ -7,6 +7,7 @@
 #include "../../xrEngine/CustomHUD.h"
 
 #include "FBasicVisual.h"
+#include "CHudInitializer.h"
 
 #include "fhierrarhyvisual.h"
 #include "SkeletonCustom.h"
@@ -588,17 +589,7 @@ void R_dsgraph_structure::r_dsgraph_render_graph(u32 _priority, bool _clear)
 // HUD render
 void R_dsgraph_structure::r_dsgraph_render_hud(bool NoPS)
 {
-	//PIX_EVENT(r_dsgraph_render_hud);
-
-	// Change projection
-	Fmatrix FTold = Device.mFullTransform;
-
-	Device.mFullTransform = Device.mFullTransformHud;
-	RCache.set_xform_project(Device.mProjectHud);
-
-	// Apply HUD Matrix
-	Fmatrix Pold_prev = Device.mProject_prev;
-	RCache.set_xform_project_prev(Device.mProjectHud);
+	CHudInitializer initializer(true);
 
 	// Rendering
 	rmNear();
@@ -630,14 +621,7 @@ void R_dsgraph_structure::r_dsgraph_render_hud(bool NoPS)
 			rmNear();
 
 			// Change projection
-			Fmatrix camproj;
-			camproj.build_projection(
-				deg2rad(83.f),
-				Device.fASPECT, R_VIEWPORT_NEAR,
-				g_pGamePersistent->Environment().CurrentEnv->far_plane);
-
-			Device.mFullTransform.mul(camproj, Device.mView);
-			RCache.set_xform_project(camproj);
+			initializer.SetCamMode();
 
 			// Rendering
 			mapCamAttached.traverseLR(sorted_L1);
@@ -656,14 +640,7 @@ void R_dsgraph_structure::r_dsgraph_render_hud(bool NoPS)
 			rmNear();
 
 			// Change projection
-			Fmatrix camproj;
-			camproj.build_projection(
-				deg2rad(83.f),
-				Device.fASPECT, R_VIEWPORT_NEAR,
-				g_pGamePersistent->Environment().CurrentEnv->far_plane);
-
-			Device.mFullTransform.mul(camproj, Device.mView);
-			RCache.set_xform_project(camproj);
+			initializer.SetCamMode();
 
 			// Rendering
 			HUDMaskCamAttached.traverseLR(hud_node);
@@ -672,55 +649,27 @@ void R_dsgraph_structure::r_dsgraph_render_hud(bool NoPS)
 
 		rmNormal();
 	}*/
-
-
-	// Restore projection
-	Device.mFullTransform = FTold;
-	RCache.set_xform_project(Device.mProject);
-
-	// Restore Prev Matrix
-	RCache.set_xform_project_prev(Pold_prev);
 }
 
 void R_dsgraph_structure::r_dsgraph_render_hud_ui()
 {
-	// Change projection
-	Fmatrix FTold = Device.mFullTransform;
+	CHudInitializer initializer(true);
 
-	Device.mFullTransform = Device.mFullTransformHud;
-	RCache.set_xform_project(Device.mProjectHud);
-
+	// Rendering
 	rmNear();
 	g_hud->RenderActiveItemUI();
 	rmNormal();
-
-	// Restore projection
-	Device.mFullTransform = FTold;
-	RCache.set_xform_project(Device.mProject);
 }
 
 void R_dsgraph_structure::r_dsgraph_render_cam_ui()
 {
 	// Change projection
-	Fmatrix FTold = Device.mFullTransform;
-
-	Fmatrix camproj;
-	camproj.build_projection(
-		deg2rad(83.f),
-		Device.fASPECT, R_VIEWPORT_NEAR,
-		g_pGamePersistent->Environment().CurrentEnv->far_plane);
-
-	Device.mFullTransform.mul(camproj, Device.mView);
-	RCache.set_xform_project(camproj);
-
+	CHudInitializer initializer(2);
+	
 	// Rendering
 	rmNear();
 	g_hud->RenderCamAttachedUI();
 	rmNormal();
-
-	// Restore projection
-	Device.mFullTransform = FTold;
-	RCache.set_xform_project(Device.mProject);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -732,11 +681,7 @@ void R_dsgraph_structure::r_dsgraph_render_sorted()
 	mapSorted.traverseRL(sorted_L1);
 	mapSorted.clear();
 
-	// Change projection
-	Fmatrix FTold = Device.mFullTransform;
-
-	Device.mFullTransform = Device.mFullTransformHud;
-	RCache.set_xform_project(Device.mProjectHud);
+	CHudInitializer initializer(true);
 
 	// Rendering
 	rmNear();
@@ -747,25 +692,14 @@ void R_dsgraph_structure::r_dsgraph_render_sorted()
 	if (mapCamAttachedSorted.size())
 	{
 		// Change projection
-		Fmatrix camproj;
-		camproj.build_projection(
-			deg2rad(83.f),
-			Device.fASPECT, R_VIEWPORT_NEAR,
-			g_pGamePersistent->Environment().CurrentEnv->far_plane);
-
-		Device.mFullTransform.mul(camproj, Device.mView);
-		RCache.set_xform_project(camproj);
-
+		initializer.SetCamMode();
+		
 		// Rendering
 		mapCamAttachedSorted.traverseRL(sorted_L1);
 		mapCamAttachedSorted.clear();
 	}
 
 	rmNormal();
-
-	// Restore projection
-	Device.mFullTransform = FTold;
-	RCache.set_xform_project(Device.mProject);
 }
 
 #if defined(USE_DX11)
@@ -774,20 +708,13 @@ void R_dsgraph_structure::r_dsgraph_render_sorted()
 void R_dsgraph_structure::r_dsgraph_render_ScopeSorted()  //  Redotix99: for 3D Shader Based Scopes 	
 {
 	// Change projection
-	Fmatrix FTold = Device.mFullTransform;
-
-	Device.mFullTransform = Device.mFullTransformHud;
-	RCache.set_xform_project(Device.mProjectHud);
+	CHudInitializer initializer(true);
 
 	// Rendering
 	rmNear();
 	mapScopeHUDSorted.traverseRL(sorted_L1);
 	mapScopeHUDSorted.clear();
 	rmNormal();
-
-	// Restore projection
-	Device.mFullTransform = FTold;
-	RCache.set_xform_project(Device.mProject);
 }
 #endif
 
@@ -801,11 +728,7 @@ void R_dsgraph_structure::r_dsgraph_render_emissive(bool clear, bool renderHUD)
 	if (clear)
 		mapEmissive.clear();
 
-	// Change projection
-	Fmatrix FTold = Device.mFullTransform;
-	
-	Device.mFullTransform = Device.mFullTransformHud;
-	RCache.set_xform_project(Device.mProjectHud);
+	CHudInitializer initializer(true);
 
 	// Rendering
 	rmNear();
@@ -819,10 +742,6 @@ void R_dsgraph_structure::r_dsgraph_render_emissive(bool clear, bool renderHUD)
 		mapHUDSorted.traverseRL(sorted_L1);
 
 	rmNormal();
-
-	// Restore projection
-	Device.mFullTransform = FTold;
-	RCache.set_xform_project(Device.mProject);
 #endif
 }
 
@@ -857,18 +776,12 @@ void R_dsgraph_structure::r_dsgraph_render_distort()
 	mapDistort.clear();
 
 	// Change projection
-	Fmatrix FTold = Device.mFullTransform;
-	Device.mFullTransform = Device.mFullTransformHud;
-	RCache.set_xform_project(Device.mProjectHud);
+	CHudInitializer initializer(true);
 
 	rmNear();
 	mapHUDDistort.traverseLR(sorted_L1);
 	mapHUDDistort.clear();
 	rmNormal();
-
-	// Restore projection
-	Device.mFullTransform = FTold;
-	RCache.set_xform_project(Device.mProject);
 }
 
 //////////////////////////////////////////////////////////////////////////

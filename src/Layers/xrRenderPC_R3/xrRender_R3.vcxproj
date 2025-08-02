@@ -366,6 +366,7 @@
     <ClInclude Include="..\xrRender\Blender_Particle.h" />
     <ClInclude Include="..\xrRender\Blender_Screen_SET.h" />
     <ClInclude Include="..\xrRender\Blender_tree.h" />
+    <ClInclude Include="..\xrRender\CHudInitializer.h" />
     <ClInclude Include="..\xrRender\ColorMapManager.h" />
     <ClInclude Include="..\xrRender\D3DUtils.h" />
     <ClInclude Include="..\xrRender\Debug\dxPixEventWrapper.h" />
@@ -543,6 +544,7 @@
     <ClCompile Include="..\xrRender\Blender_Recorder_StandartBinding.cpp" />
     <ClCompile Include="..\xrRender\Blender_Screen_SET.cpp" />
     <ClCompile Include="..\xrRender\Blender_tree.cpp" />
+    <ClCompile Include="..\xrRender\CHudInitializer.cpp" />
     <ClCompile Include="..\xrRender\ColorMapManager.cpp" />
     <ClCompile Include="..\xrRender\D3DUtils.cpp" />
     <ClCompile Include="..\xrRender\Debug\dxPixEventWrapper.cpp" />

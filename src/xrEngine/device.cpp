@@ -372,11 +372,15 @@ void CRenderDevice::on_idle()
 	START_PROFILE("Matrices");
 	mFullTransform.mul(mProject, mView);
 	mFullTransformHud.mul(mProjectHud, mView);
+	mFullTransformCam.mul(mProjectCam, mView);
 	m_pRender->SetCacheXform(mView, mProject);
 
 	mViewHud_prev = mViewHud;
 	mProjectHud_prev = mProjectHud;
 	mFullTransformHud_prev = mFullTransformHud;
+	mViewCam_prev = mViewCam;
+	mProjectCam_prev = mProjectCam;
+	mFullTransformCam_prev = mFullTransformCam;
 
 	// Previous frame data -- 
 	mView_prev = mView_saved;
@@ -385,10 +389,13 @@ void CRenderDevice::on_idle()
 
 	m_pRender->SetCacheXform_prev(mView_prev, mProject_prev);
 
-	mProjectHud.build_projection(deg2rad(psHUD_FOV * 83.f), Device.fASPECT, R_VIEWPORT_NEAR, g_pGamePersistent->Environment().CurrentEnv->far_plane);
+	mProjectHud.build_projection(deg2rad(psHUD_FOV * 83.f), fASPECT, R_VIEWPORT_NEAR, g_pGamePersistent->Environment().CurrentEnv->far_plane);
+	mProjectCam.build_projection(deg2rad(83.f), fASPECT, R_VIEWPORT_NEAR, g_pGamePersistent->Environment().CurrentEnv->far_plane);
 	
 	mViewHud.set(mView);
+	mViewCam.set(mView);
 	mFullTransformHud.mul(mProjectHud, mViewHud);
+	mFullTransformCam.mul(mProjectCam, mViewCam);
 
 	// Save previous frame grass benders data
 	IGame_Persistent::grass_data& GData = g_pGamePersistent->grass_shader_data;

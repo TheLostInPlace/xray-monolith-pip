@@ -2,6 +2,7 @@
 #pragma hdrstop
 
 #include "ParticleEffect.h"
+#include "CHudInitializer.h"
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
 
@@ -677,11 +678,10 @@ void CParticleEffect::Render(float)
 			if (dwCount)
 			{
 #ifndef _EDITOR
-				Fmatrix FTold = Device.mFullTransform;
+				CHudInitializer initalizer(false);
 				if (GetHudMode())
 				{
-					Device.mFullTransform = Device.mFullTransformHud;
-					RCache.set_xform_project(Device.mProjectHud);
+					initalizer.SetHudMode();
 					RImplementation.rmNear();
 					ApplyTexgen(Device.mFullTransform);
 				}
@@ -699,8 +699,7 @@ void CParticleEffect::Render(float)
 				if (GetHudMode())
 				{
 					RImplementation.rmNormal();
-					Device.mFullTransform = FTold;
-					RCache.set_xform_project(Device.mProject);
+					initalizer.SetDefaultMode();
 					ApplyTexgen(Device.mFullTransform);
 				}
 #endif
@@ -843,12 +842,11 @@ void CParticleEffect::Render(float )
 			if (dwCount)    
 			{
 #ifndef _EDITOR
-				Fmatrix FTold						= Device.mFullTransform;
-				if(GetHudMode())
+				CHudInitializer initalizer(false);
+				if (GetHudMode())
 				{
-					Device.mFullTransform = Device.mFullTransformHud;
-					RCache.set_xform_project(Device.mProjectHud);
-					RImplementation.rmNear		();
+					initalizer.SetHudMode();
+					RImplementation.rmNear();
 					ApplyTexgen(Device.mFullTransform);
 				}
 #endif
@@ -862,9 +860,8 @@ void CParticleEffect::Render(float )
 #ifndef _EDITOR
 				if(GetHudMode())
 				{
-					RImplementation.rmNormal	();
-					Device.mFullTransform		= FTold;
-					RCache.set_xform_project	(Device.mProject);
+					RImplementation.rmNormal();
+					initalizer.SetDefaultMode();
 					ApplyTexgen(Device.mFullTransform);
 				}
 #endif
