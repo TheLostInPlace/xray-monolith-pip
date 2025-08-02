@@ -143,6 +143,9 @@ CUIWindow::~CUIWindow()
 	if (parent && !ad)
 		parent->CUIWindow::DetachChild(this);
 
+	if (parent)
+		parent->RemoveFromDeletedChildWnd(this);
+
 	DetachAll();
 
 	if (GetPPMode())
@@ -277,11 +280,19 @@ void CUIWindow::DetachAll()
 
 void CUIWindow::FreeDeletedChildWnd()
 {
-	for (auto c : m_DeletedChildWndList)
+	for (auto& c : m_DeletedChildWndList)
 	{
-		xr_delete(c);
+		if (c)
+			xr_delete(c);
 	}
 	m_DeletedChildWndList.clear();
+}
+
+void CUIWindow::RemoveFromDeletedChildWnd(CUIWindow* w)
+{
+	auto it = std::find(m_DeletedChildWndList.begin(), m_DeletedChildWndList.end(), w);
+	if (it != m_DeletedChildWndList.end())
+		m_DeletedChildWndList.erase(it);
 }
 
 void CUIWindow::GetAbsoluteRect(Frect& r)

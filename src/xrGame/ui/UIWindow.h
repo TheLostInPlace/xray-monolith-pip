@@ -191,8 +191,11 @@ public:
 	//убрать/показать окно и его дочерние окна
 	virtual void Show(bool status)
 	{
+		auto oldStatus = IsEnabled();
 		SetVisible(status);
 		Enable(status);
+		if (!status && oldStatus)
+			FreeDeletedChildWnd();
 	}
 
 	IC bool IsShown() { return GetVisible(); }
@@ -290,9 +293,10 @@ private:
 	WINDOW_LIST m_ChildWndList;
 	WINDOW_LIST m_DeletedChildWndList;
 	void FreeDeletedChildWnd();
+	void RemoveFromDeletedChildWnd(CUIWindow* w);
 
 public:
-	WINDOW_LIST& GetChildWndList() { FreeDeletedChildWnd(); return m_ChildWndList; }
+	WINDOW_LIST& GetChildWndList() { return m_ChildWndList; }
 	const WINDOW_LIST& GetChildWndList() const { return m_ChildWndList; }
 
 #ifdef DEBUG
