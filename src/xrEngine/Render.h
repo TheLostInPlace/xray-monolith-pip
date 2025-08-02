@@ -27,6 +27,7 @@ struct ENGINE_API FSlideWindowItem;
 class IRenderVisual;
 class IKinematics;
 class CGameFont;
+class CObject;
 //class IRenderDetailModel;
 
 #ifndef _EDITOR
@@ -73,6 +74,16 @@ public:
 	virtual bool get_hud_mode() = 0;
 	virtual void set_is_playerlight(bool b) = 0;
 	virtual vis_data& get_homdata() = 0;
+
+	virtual void	set_occq_mode						(bool b)							= 0;
+	virtual bool	get_occq_mode						()									= 0;
+
+	virtual void	set_ignore_object					(CObject* O)						= 0;
+	virtual CObject* get_ignore_object					()									= 0;
+	
+	virtual void	set_decor_object					(CObject* O, int index = 0)			= 0;
+	virtual CObject* get_decor_object					(int index = 0)						= 0;
+
 	virtual ~IRender_Light();
 };
 

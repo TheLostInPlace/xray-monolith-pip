@@ -117,6 +117,20 @@ void CRender::render_main(bool deffered, bool zfill)
 			if (0==spatial) continue; spatial->spatial_updatesector();
 			CSector* sector = (CSector*)spatial->spatial.sector;
 			if (0==sector) continue;
+
+			if ((spatial->spatial.type & STYPE_LIGHTSOURCE) && deffered)
+			{
+				// hud lightsource
+				if(light* L = (light*)(spatial->dcast_Light()))
+				{
+					if(L->flags.bHudMode)
+					{
+						Lights.add_light(L);
+						continue;
+					}
+				}
+			}
+
 			Fbox sp_box;
 			sp_box.setb(spatial->spatial.sphere.P,Fvector().set(spatial->spatial.sphere.R, spatial->spatial.sphere.R, spatial->spatial.sphere.R));
 			HOM.Enable();
@@ -125,9 +139,9 @@ void CRender::render_main(bool deffered, bool zfill)
 			if ((spatial->spatial.type & STYPE_LIGHTSOURCE) && deffered)
 			{
 				// lightsource
-				if(light* L = (light*)(spatial->dcast_Light()))
+				if (light* L = (light*)(spatial->dcast_Light()))
 				{
-					if (L->get_LOD()>EPS_L)
+					if (L->get_LOD()>EPS_L && !L->flags.bHudMode)
 					{
 						if (dont_test_sectors)
 							Lights.add_light(L);
@@ -136,7 +150,7 @@ void CRender::render_main(bool deffered, bool zfill)
 							for (u32 s_it = 0; s_it < L->m_sectors.size(); s_it++)
 							{
 								CSector* sector_ = (CSector*)L->m_sectors[s_it];
-								if(PortalTraverser.i_marker == sector_->r_marker)
+								if (PortalTraverser.i_marker == sector_->r_marker)
 								{
 									Lights.add_light(L);
 									break;
@@ -185,7 +199,6 @@ void CRender::render_main(bool deffered, bool zfill)
 						}
 					}
 				}
-
 				if (spatial->spatial.type & STYPE_PARTICLE && !deffered)
 				{
 					// renderable
@@ -479,23 +492,38 @@ void CRender::Render()
 			if (it < LP.v_point.size())
 			{
 				light* L = LP.v_point[it];
-				L->vis_prepare();
-				if (L->vis.pending) LP_pending.v_point.push_back(L);
-				else LP_normal.v_point.push_back(L);
+				if(L->flags.bOccq&&!L->flags.bHudMode)
+				{
+					L->vis_prepare		();
+					if (L->vis.pending)	LP_pending.v_point.push_back	(L);
+					else				LP_normal.v_point.push_back		(L);
+				}
+				else
+					LP_normal.v_point.push_back		(L);
 			}
 			if (it < LP.v_spot.size())
 			{
 				light* L = LP.v_spot[it];
-				L->vis_prepare();
-				if (L->vis.pending) LP_pending.v_spot.push_back(L);
-				else LP_normal.v_spot.push_back(L);
+				if(L->flags.bOccq&&!L->flags.bHudMode)
+				{
+					L->vis_prepare		();
+					if (L->vis.pending)	LP_pending.v_spot.push_back		(L);
+					else				LP_normal.v_spot.push_back		(L);
+				}
+				else
+					LP_normal.v_spot.push_back		(L);
 			}
 			if (it < LP.v_shadowed.size())
 			{
 				light* L = LP.v_shadowed[it];
-				L->vis_prepare();
-				if (L->vis.pending) LP_pending.v_shadowed.push_back(L);
-				else LP_normal.v_shadowed.push_back(L);
+				if(L->flags.bOccq&&!L->flags.bHudMode)
+				{
+					L->vis_prepare		();
+					if (L->vis.pending)	LP_pending.v_shadowed.push_back	(L);
+					else				LP_normal.v_shadowed.push_back	(L);
+				}
+				else
+					LP_normal.v_shadowed.push_back	(L);
 			}
 		}
 	}

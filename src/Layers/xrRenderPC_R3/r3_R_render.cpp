@@ -120,22 +120,34 @@ void CRender::render_main(bool deffered, bool zfill)
 			if (0==spatial) continue; spatial->spatial_updatesector();
 			CSector* sector = (CSector*)spatial->spatial.sector;
 			if (0==sector) continue;
+
+			if ((spatial->spatial.type & STYPE_LIGHTSOURCE) && deffered)
+			{
+				// hud lightsource
+				if(light* L = (light*)(spatial->dcast_Light()))
+				{
+					if(L->flags.bHudMode)
+					{
+						Lights.add_light(L);
+						continue;
+					}
+				}
+			}
+
 			Fbox sp_box;
 			sp_box.setb(spatial->spatial.sphere.P,Fvector().set(spatial->spatial.sphere.R, spatial->spatial.sphere.R, spatial->spatial.sphere.R));
 			HOM.Enable();
-            if(!HOM.visible(sp_box)) continue;
+			if(!HOM.visible(sp_box)) continue;
 
 			if ((spatial->spatial.type & STYPE_LIGHTSOURCE) && deffered)
 			{
 				// lightsource
 				if (light* L = (light*)(spatial->dcast_Light()))
 				{
-					if (L->get_LOD() > EPS_L)
+					if (L->get_LOD()>EPS_L && !L->flags.bHudMode)
 					{
 						if (dont_test_sectors)
-						{
 							Lights.add_light(L);
-						}
 						else
 						{
 							for (u32 s_it = 0; s_it < L->m_sectors.size(); s_it++)
@@ -509,23 +521,38 @@ void CRender::Render()
 			if (it < LP.v_point.size())
 			{
 				light* L = LP.v_point[it];
-				L->vis_prepare();
-				if (L->vis.pending) LP_pending.v_point.push_back(L);
-				else LP_normal.v_point.push_back(L);
+				if(L->flags.bOccq&&!L->flags.bHudMode)
+				{
+					L->vis_prepare		();
+					if (L->vis.pending)	LP_pending.v_point.push_back	(L);
+					else				LP_normal.v_point.push_back		(L);
+				}
+				else
+					LP_normal.v_point.push_back		(L);
 			}
 			if (it < LP.v_spot.size())
 			{
 				light* L = LP.v_spot[it];
-				L->vis_prepare();
-				if (L->vis.pending) LP_pending.v_spot.push_back(L);
-				else LP_normal.v_spot.push_back(L);
+				if(L->flags.bOccq&&!L->flags.bHudMode)
+				{
+					L->vis_prepare		();
+					if (L->vis.pending)	LP_pending.v_spot.push_back		(L);
+					else				LP_normal.v_spot.push_back		(L);
+				}
+				else
+					LP_normal.v_spot.push_back		(L);
 			}
 			if (it < LP.v_shadowed.size())
 			{
 				light* L = LP.v_shadowed[it];
-				L->vis_prepare();
-				if (L->vis.pending) LP_pending.v_shadowed.push_back(L);
-				else LP_normal.v_shadowed.push_back(L);
+				if(L->flags.bOccq&&!L->flags.bHudMode)
+				{
+					L->vis_prepare		();
+					if (L->vis.pending)	LP_pending.v_shadowed.push_back	(L);
+					else				LP_normal.v_shadowed.push_back	(L);
+				}
+				else
+					LP_normal.v_shadowed.push_back	(L);
 			}
 		}
 	}
@@ -537,6 +564,7 @@ void CRender::Render()
 	{
 		PIX_EVENT(DEFER_PART1_SPLIT);
 		// skybox can be drawn here
+		
 		if (0)
 		{
 			if (!RImplementation.o.dx10_msaa)
@@ -714,3 +742,4 @@ void CRender::RenderToTarget(RRT target)
 	HW.pDevice->CopyResource((*RT)->pSurface, pBuffer);
 	pBuffer->Release();
 }
+
