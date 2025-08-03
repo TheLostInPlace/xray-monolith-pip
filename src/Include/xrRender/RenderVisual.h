@@ -28,7 +28,7 @@ public:
 	Flags16 flags;
 
 #ifdef DEBUG
-	virtual shared_str	_BCL	getDebugName() = 0;
+	virtual shared_str getDebugName() = 0;
 #endif
 	virtual LPCSTR _BCL getDebugShader() { return nullptr; }
 	virtual LPCSTR _BCL getDebugTexture() { return nullptr; }

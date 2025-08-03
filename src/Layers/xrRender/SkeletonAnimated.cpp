@@ -215,7 +215,7 @@ MotionID CKinematicsAnimated::ID_Cycle_Safe(LPCSTR N)
 MotionID CKinematicsAnimated::ID_Cycle(shared_str N)
 {
 	MotionID motion_ID = ID_Cycle_Safe(N);
-	R_ASSERT3(motion_ID.valid(), "! MODEL: can't find cycle: ", N.c_str());
+	R_ASSERT2(motion_ID.valid(), make_string("! MODEL [%s]: can't find cycle: [%s]", dbg_name.c_str(), N.c_str()).c_str());
 	return motion_ID;
 }
 
@@ -238,7 +238,7 @@ MotionID CKinematicsAnimated::ID_Cycle_Safe(shared_str N)
 MotionID CKinematicsAnimated::ID_Cycle(LPCSTR N)
 {
 	MotionID motion_ID = ID_Cycle_Safe(N);
-	R_ASSERT3(motion_ID.valid(), "! MODEL: can't find cycle: ", N);
+	R_ASSERT2(motion_ID.valid(), make_string("! MODEL [%s]: can't find cycle: [%s]", dbg_name.c_str(), N).c_str());
 	return motion_ID;
 }
 
@@ -431,7 +431,7 @@ CBlend* CKinematicsAnimated::PlayCycle(LPCSTR N, BOOL bMixIn, PlayCallback Callb
 	if (motion_ID.valid()) return PlayCycle(motion_ID, bMixIn, Callback, CallbackParam, channel);
 	else
 	{
-		Debug.fatal(DEBUG_INFO, "! MODEL: can't find cycle: %s", N);
+		Debug.fatal(DEBUG_INFO, "! MODEL [%s]: can't find cycle: [%s]", dbg_name.c_str(), N);
 		return 0;
 	}
 }

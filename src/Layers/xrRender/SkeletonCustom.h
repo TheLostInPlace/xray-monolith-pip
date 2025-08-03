@@ -305,7 +305,7 @@ public:
 	void							DebugRender			(Fmatrix& XFORM);
 #endif
 protected:
-	virtual shared_str		_BCL	getDebugName()	{ return dbg_name; }
+	virtual shared_str getDebugName() { return dbg_name; }
 public:
 
 	// General "Visual" stuff
