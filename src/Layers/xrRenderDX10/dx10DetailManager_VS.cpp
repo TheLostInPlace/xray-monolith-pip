@@ -67,7 +67,7 @@ void CDetailManager::hw_Load_Shaders()
 	hwc_s_array = T1.get("array");
 }
 
-void CDetailManager::hw_Render()
+void CDetailManager::hw_Render(light* L)
 {
 	PROF_EVENT("CDetailManager::hw_Render");
 	// Render-prepare
@@ -105,7 +105,7 @@ void CDetailManager::hw_Render()
 	//RCache.set_c			(&*hwc_wave,	wave.div(PI_MUL_2));	// wave
 	//RCache.set_c			(&*hwc_wind,	dir1);																					// wind-dir
 	//hw_Render_dump			(&*hwc_array,	1, 0, c_hdr );
-	hw_Render_dump(consts, wave.div(PI_MUL_2), dir1, prev_wave.div(PI_MUL_2), prev_dir1, 1, 0);
+	hw_Render_dump(consts, wave.div(PI_MUL_2), dir1, prev_wave.div(PI_MUL_2), prev_dir1, 1, 0, L);
 
 	// Wave1
 	//wave.set				(1.f/3.f,		1.f/7.f,	1.f/5.f,	Device.fTimeGlobal*swing_current.speed);
@@ -114,14 +114,14 @@ void CDetailManager::hw_Render()
 	//RCache.set_c			(&*hwc_wave,	wave.div(PI_MUL_2));	// wave
 	//RCache.set_c			(&*hwc_wind,	dir2);																					// wind-dir
 	//hw_Render_dump			(&*hwc_array,	2, 0, c_hdr );
-	hw_Render_dump(consts, wave.div(PI_MUL_2), dir2, prev_wave.div(PI_MUL_2), prev_dir2, 2, 0);
+	hw_Render_dump(consts, wave.div(PI_MUL_2), dir2, prev_wave.div(PI_MUL_2), prev_dir2, 2, 0, L);
 
 	// Still
 	consts.set(scale, scale, scale, 1.f);
 	//RCache.set_c			(&*hwc_s_consts,scale,		scale,		scale,				1.f);
 	//RCache.set_c			(&*hwc_s_xform,	Device.mFullTransform);
 	//hw_Render_dump			(&*hwc_s_array,	0, 1, c_hdr );
-	hw_Render_dump(consts, wave.div(PI_MUL_2), dir2, prev_wave.div(PI_MUL_2), prev_dir2, 0, 1);
+	hw_Render_dump(consts, wave.div(PI_MUL_2), dir2, prev_wave.div(PI_MUL_2), prev_dir2, 0, 1, L);
 
 	if (prev_frame != Device.dwFrame) 
 	{
@@ -137,8 +137,11 @@ void CDetailManager::hw_Render()
 }
 
 void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave, const Fvector4& wind, 
-									const Fvector4& prev_wave, const Fvector4& prev_wind, u32 var_id, u32 lod_id)
+									const Fvector4& prev_wave, const Fvector4& prev_wind, u32 var_id, u32 lod_id, light* L)
 {
+	if (RImplementation.phase == CRender::PHASE_SMAP && var_id == 0)
+		return;
+
 	static shared_str strConsts("consts");
 	static shared_str strWave("wave");
 	static shared_str strDir2D("dir2D");
@@ -292,11 +295,17 @@ void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave
 						if (sector && PortalTraverser.i_marker != sector->r_marker)
 							continue;
 
+						if (RImplementation.phase == CRender::PHASE_SMAP && L)
+						{
+							if (L->position.distance_to_sqr(Instance.mRotY.c) >= _sqr(L->range))
+								continue;
+						}
+
 						u32 base = dwBatch * 4;
 
 						Instance.alpha += GoToValue(Instance.alpha, Instance.alpha_target);
 
-						float scale = Instance.scale_calculated;
+						float scale = 1.f;
 
 						// Sort of fade using the scale
 						// fade_distance == -1 use light_position to define "fade", anything else uses fade_distance
@@ -309,8 +318,7 @@ void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave
 							break;
 
 						// Build matrix ( 3x4 matrix, last row - color )
-						//float scale = Instance.scale_calculated;
-						Fmatrix& M = Instance.mRotY;
+						Fmatrix& M = Instance.mRotY_calculated;
 						c_storage[base + 0].set(M._11 * scale, M._21 * scale, M._31 * scale, M._41);
 						c_storage[base + 1].set(M._12 * scale, M._22 * scale, M._32 * scale, M._42);
 						c_storage[base + 2].set(M._13 * scale, M._23 * scale, M._33 * scale, M._43);
