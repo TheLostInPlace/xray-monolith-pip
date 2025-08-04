@@ -306,6 +306,7 @@ void CTorch::SwitchLightOnly()
 
 void CTorch::UpdateCL()
 {
+	PROF_EVENT();
 	inherited::UpdateCL();
 
 	if (!m_switched_on) return;

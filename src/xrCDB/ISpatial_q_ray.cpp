@@ -334,6 +334,7 @@ public:
 void ISpatial_DB::q_ray(xr_vector<ISpatial*>& R, u32 _o, u32 _mask_and, const Fvector& _start, const Fvector& _dir,
                         float _range)
 {
+	PROF_EVENT("ISpatial_DB::q_ray");
 	xrSRWLockGuard guard(&db_lock, true);
 	qr_result = &R;
 	qr_result->clear();

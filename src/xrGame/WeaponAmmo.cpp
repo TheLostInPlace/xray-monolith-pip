@@ -219,6 +219,7 @@ void CWeaponAmmo::renderable_Render()
 
 void CWeaponAmmo::UpdateCL()
 {
+	PROF_EVENT();
 	VERIFY2(_valid(renderable.xform), *cName());
 	inherited::UpdateCL();
 	VERIFY2(_valid(renderable.xform), *cName());

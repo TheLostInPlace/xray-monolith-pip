@@ -683,6 +683,7 @@ void CWeaponMagazined::on_b_hud_detach()
 extern ENGINE_API BOOL g_bootComplete;
 void CWeaponMagazined::UpdateCL()
 {
+	PROF_EVENT();
 	inherited::UpdateCL();
 	float dt = Device.fTimeDelta;
 

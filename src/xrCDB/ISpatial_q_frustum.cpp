@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "ISpatial.h"
 #include "frustum.h"
-#include "../xrCore/profiler.h"
 
 extern Fvector c_spatial_offset[8];
 thread_local xr_vector<ISpatial*>* qf_result;
@@ -58,6 +57,7 @@ public:
 
 void ISpatial_DB::q_frustum(xr_vector<ISpatial*>& R, u32 _o, u32 _mask, const CFrustum& _frustum)
 {
+	PROF_EVENT("ISpatial_DB::q_frustum");
 	xrSRWLockGuard guard(&db_lock, true);
 	if (!m_root)
 	{

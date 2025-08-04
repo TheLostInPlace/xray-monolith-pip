@@ -326,6 +326,7 @@ void CBaseMonster::update_enemy_accessible_and_at_home_info()
 
 void CBaseMonster::UpdateCL()
 {
+	PROF_EVENT();
 #ifdef DEBUG
 	if ( Level().CurrentEntity() == this )
 	{

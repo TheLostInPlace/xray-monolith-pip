@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "ISpatial.h"
-#include "../xrCore/profiler.h"
 
 extern Fvector c_spatial_offset[8];
 thread_local xr_vector<ISpatial*>* qb_result;
@@ -65,6 +64,7 @@ public:
 
 void ISpatial_DB::q_box(xr_vector<ISpatial*>& R, u32 _o, u32 _mask, const Fvector& _center, const Fvector& _size)
 {
+	PROF_EVENT();
 	xrSRWLockGuard guard(&db_lock, true);
 	qb_result = &R;
 	qb_result->clear();

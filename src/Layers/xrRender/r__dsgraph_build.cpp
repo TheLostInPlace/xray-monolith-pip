@@ -655,6 +655,7 @@ IC float GetDistFromCamera(const Fvector& from_position)
 
 IC bool IsValuableToRender(dxRender_Visual* pVisual, bool isStatic, bool sm, Fmatrix& transform_matrix, bool ignore_opt = false)
 {
+	PROF_EVENT("IsValuableToRender");
 	if (ignore_opt || pVisual->flags.test(eIgnoreOptimization))
 		return true;
 
@@ -827,6 +828,7 @@ IC bool IsValuableToRender(dxRender_Visual* pVisual, bool isStatic, bool sm, Fma
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual, bool ignore)
 {
+	PROF_EVENT("add_leafs_Dynamic");
 	if (!pVisual)
 		return;
 
@@ -916,6 +918,7 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual, bool ignore)
 
 void CRender::add_leafs_Static(dxRender_Visual* pVisual)
 {
+	PROF_EVENT("add_leafs_Static");
 	if (!HOM.visible(pVisual->vis))
 		return;
 
@@ -1021,6 +1024,7 @@ void CRender::add_leafs_Static(dxRender_Visual* pVisual)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 BOOL CRender::add_Dynamic(dxRender_Visual* pVisual, u32 planes)
 {
+	PROF_EVENT("add_Dynamic");
 	Flags16& flags = pVisual->dcast_RenderVisual()->flags;
 
 	if (phase != PHASE_NORMAL && !!flags.test(IRenderVisualFlags::eNoShadow))
@@ -1147,6 +1151,7 @@ BOOL CRender::add_Dynamic(dxRender_Visual* pVisual, u32 planes)
 
 void CRender::add_Static(dxRender_Visual* pVisual, u32 planes)
 {
+	PROF_EVENT("add_Static");
 	Flags16& flags = pVisual->dcast_RenderVisual()->flags;
 
 	if (phase != PHASE_NORMAL && !!flags.test(IRenderVisualFlags::eNoShadow))
