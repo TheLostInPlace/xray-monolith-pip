@@ -170,6 +170,10 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.08.04**
+* Debug renderer supports strings as ids for primitives
+* Moved new ammo aggregation script into item_weapon, directly replacing the old implementation
+
 **2025.08.01**
 * Fixed missing `ik_calc_ssa` setting in Modded Exes menu
 * Fixed crash with certain mods that misuse ammo aggregation function
