@@ -267,7 +267,6 @@ void CUIWindow::DetachChild(CUIWindow* pChild)
 
 	if (pChild->IsAutoDelete())
 	{
-		xrCriticalSectionGuard g(DeletedChildWndListGuard);
 		m_DeletedChildWndList.insert(pChild);
 		//xr_delete(pChild);
 	}
@@ -283,7 +282,6 @@ void CUIWindow::DetachAll()
 
 void CUIWindow::FreeDeletedChildWnd()
 {
-	xrCriticalSectionGuard g(DeletedChildWndListGuard);
 	for (auto& c : m_DeletedChildWndList)
 	{
 		if (c)
@@ -294,7 +292,6 @@ void CUIWindow::FreeDeletedChildWnd()
 
 void CUIWindow::RemoveFromDeletedChildWnd(CUIWindow* w)
 {
-	xrCriticalSectionGuard g(DeletedChildWndListGuard);
 	auto it = std::find(m_DeletedChildWndList.begin(), m_DeletedChildWndList.end(), w);
 	if (it != m_DeletedChildWndList.end())
 		m_DeletedChildWndList.erase(it);

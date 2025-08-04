@@ -294,7 +294,6 @@ protected:
 	xr_unordered_set<CUIWindow*> m_DeletedChildWndList;
 	void FreeDeletedChildWnd();
 	void RemoveFromDeletedChildWnd(CUIWindow* w);
-	xrCriticalSection DeletedChildWndListGuard;
 
 public:
 	WINDOW_LIST& GetChildWndList() { return m_ChildWndList; }

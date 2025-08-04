@@ -208,6 +208,7 @@ void CUIScrollView::SetFixedScrollBar(bool b)
 	m_flags.set(eFixedScrollBar, b);
 }
 
+extern xrCriticalSection script_gc_guard;
 void CUIScrollView::Draw()
 {
 	if (m_flags.test(eNeedRecalc))
@@ -235,7 +236,7 @@ void CUIScrollView::Draw()
 		}
 	}
 	else
-		xrCriticalSectionGuard g(DeletedChildWndListGuard);
+		xrCriticalSectionGuard g(script_gc_guard);
 		for (int idx = 0; it != m_pad->GetChildWndList().end(); ++it, ++idx)
 		{
 			Frect item_rect;
