@@ -487,7 +487,7 @@ int CScriptStorage::vscript_log(ScriptStorage::ELuaMessageType tLuaMessageType, 
 	//return		(0);
 	//#else //PRINT_CALL_STACK
 #   ifndef NO_XRGAME_SCRIPT_ENGINE
-	//AVO: allow LUA debug prints (i.e.: ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "CWeapon : cannot access class member Weapon_IsScopeAttached!");)
+	//AVO: allow LUA debug prints (i.e.: ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, make_string("CWeapon [%s]: cannot access class member Weapon_IsScopeAttached!", object().cNameSect().c_str()).c_str());)
 #       ifndef DEBUG
 
 	if (!strstr(Core.Params, "-dbg"))
