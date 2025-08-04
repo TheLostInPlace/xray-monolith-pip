@@ -129,8 +129,8 @@ extern ECORE_API float ps_r2_ssaLOD_B;
 extern ECORE_API BOOL ps_r2_particle_dt;
 
 // R2-specific
-extern ECORE_API Flags32 ps_r2_ls_flags; // r2-only
-extern ECORE_API Flags32 ps_r2_ls_flags_ext;
+extern ECORE_API Flags64 ps_r2_ls_flags; // r2-only
+extern ECORE_API Flags64 ps_r2_ls_flags_ext;
 extern ECORE_API Flags32 ps_r2_anomaly_flags;
 extern ECORE_API float ps_r2_df_parallax_h; // r2-only
 extern ECORE_API float ps_r2_df_parallax_range; // r2-only
@@ -282,66 +282,67 @@ extern ECORE_API int ps_r3_dyn_wet_surf_sm_res; // 256
 extern ECORE_API int opt_static;
 extern ECORE_API int opt_dynamic;
 
-enum
+enum : u64
 {
-	R2FLAG_SUN = (1 << 0),
-	R2FLAG_SUN_FOCUS = (1 << 1),
-	R2FLAG_SUN_TSM = (1 << 2),
-	R2FLAG_SUN_DETAILS = (1 << 3),
-	R2FLAG_TONEMAP = (1 << 4),
-	R2FLAG_AA = (1 << 5),
-	R2FLAG_GI = (1 << 6),
-	R2FLAG_FASTBLOOM = (1 << 7),
-	R2FLAG_GLOBALMATERIAL = (1 << 8),
-	R2FLAG_ZFILL = (1 << 9),
-	R2FLAG_R1LIGHTS = (1 << 10),
-	R2FLAG_SUN_IGNORE_PORTALS = (1 << 11),
+	R2FLAG_SUN = (1ull << 0),
+	R2FLAG_SUN_FOCUS = (1ull << 1),
+	R2FLAG_SUN_TSM = (1ull << 2),
+	R2FLAG_SUN_DETAILS = (1ull << 3),
+	R2FLAG_TONEMAP = (1ull << 4),
+	R2FLAG_AA = (1ull << 5),
+	R2FLAG_GI = (1ull << 6),
+	R2FLAG_FASTBLOOM = (1ull << 7),
+	R2FLAG_GLOBALMATERIAL = (1ull << 8),
+	R2FLAG_ZFILL = (1ull << 9),
+	R2FLAG_R1LIGHTS = (1ull << 10),
+	R2FLAG_SUN_IGNORE_PORTALS = (1ull << 11),
 
-	R2FLAG_EXP_SPLIT_SCENE = (1 << 12),
-	R2FLAG_EXP_DONT_TEST_UNSHADOWED = (1 << 13),
-	R2FLAG_EXP_DONT_TEST_SHADOWED = (1 << 14),
+	R2FLAG_EXP_SPLIT_SCENE = (1ull << 12),
+	R2FLAG_EXP_DONT_TEST_UNSHADOWED = (1ull << 13),
+	R2FLAG_EXP_DONT_TEST_SHADOWED = (1ull << 14),
 
-	R2FLAG_USE_NVDBT = (1 << 15),
-	R2FLAG_USE_NVSTENCIL = (1 << 16),
+	R2FLAG_USE_NVDBT = (1ull << 15),
+	R2FLAG_USE_NVSTENCIL = (1ull << 16),
 
-	R2FLAG_EXP_MT_CALC = (1 << 17),
+	R2FLAG_EXP_MT_CALC = (1ull << 17),
 
-	R2FLAG_SOFT_WATER = (1 << 18),
+	R2FLAG_SOFT_WATER = (1ull << 18),
 	//	Igor: need restart
-	R2FLAG_SOFT_PARTICLES = (1 << 19),
+	R2FLAG_SOFT_PARTICLES = (1ull << 19),
 	//	Igor: need restart
-	R2FLAG_VOLUMETRIC_LIGHTS = (1 << 20),
-	R2FLAG_STEEP_PARALLAX = (1 << 21),
-	R2FLAG_DOF = (1 << 22),
+	R2FLAG_VOLUMETRIC_LIGHTS = (1ull << 20),
+	R2FLAG_STEEP_PARALLAX = (1ull << 21),
+	R2FLAG_DOF = (1ull << 22),
 
-	R1FLAG_DETAIL_TEXTURES = (1 << 23),
+	R1FLAG_DETAIL_TEXTURES = (1ull << 23),
 
-	R2FLAG_DETAIL_BUMP = (1 << 24),
+	R2FLAG_DETAIL_BUMP = (1ull << 24),
 
-	R3FLAG_DYN_WET_SURF = (1 << 25),
-	R3FLAG_VOLUMETRIC_SMOKE = (1 << 26),
+	R3FLAG_DYN_WET_SURF = (1ull << 25),
+	R3FLAG_VOLUMETRIC_SMOKE = (1ull << 26),
 
-	//R3FLAG_MSAA					= (1<<28),
-	R3FLAG_MSAA_HYBRID = (1 << 27),
-	R3FLAG_MSAA_OPT = (1 << 28),
-	R2FLAG_TERRAIN_PREPASS = (1 << 29),
-	R3FLAG_USE_DX10_1 = (1 << 30),
-	R2FLAG_LIGHTS_DETAILS		= (1<<31)
-	//R3FLAG_MSAA_ALPHATEST		= (1<<31),
+	//R3FLAG_MSAA					= (1ull<<28),
+	R3FLAG_MSAA_HYBRID = (1ull << 27),
+	R3FLAG_MSAA_OPT = (1ull << 28),
+	R2FLAG_TERRAIN_PREPASS = (1ull << 29),
+	R3FLAG_USE_DX10_1 = (1ull << 30),
+	R2FLAG_LIGHTS_DETAILS	= (1ull<<31),
+	R2FLAG_FAST_DETAILS_UPDATE = (1ull<<32)
+	//R3FLAG_MSAA_ALPHATEST		= (1ull<<31),
 };
 
-enum
+enum: u64
 {
-	R2FLAGEXT_SSAO_BLUR = (1 << 0),
-	R2FLAGEXT_SSAO_OPT_DATA = (1 << 1),
-	R2FLAGEXT_SSAO_HALF_DATA = (1 << 2),
-	R2FLAGEXT_SSAO_HBAO = (1 << 3),
-	R2FLAGEXT_SSAO_HDAO = (1 << 4),
-	R2FLAGEXT_ENABLE_TESSELLATION = (1 << 5),
-	R2FLAGEXT_WIREFRAME = (1 << 6),
-	R_FLAGEXT_HOM_DEPTH_DRAW = (1 << 7),
-	R2FLAGEXT_SUN_ZCULLING = (1 << 8),
-	R2FLAGEXT_SUN_OLD = (1 << 9),
+	R2FLAGEXT_SSAO_BLUR = (1ull << 0),
+	R2FLAGEXT_SSAO_OPT_DATA = (1ull << 1),
+	R2FLAGEXT_SSAO_HALF_DATA = (1ull << 2),
+	R2FLAGEXT_SSAO_HBAO = (1ull << 3),
+	R2FLAGEXT_SSAO_HDAO = (1ull << 4),
+	R2FLAGEXT_ENABLE_TESSELLATION = (1ull << 5),
+	R2FLAGEXT_WIREFRAME = (1ull << 6),
+	R_FLAGEXT_HOM_DEPTH_DRAW = (1ull << 7),
+	R2FLAGEXT_SUN_ZCULLING = (1ull << 8),
+	R2FLAGEXT_SUN_OLD = (1ull << 9),
 };
 
 enum
