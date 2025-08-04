@@ -36,7 +36,7 @@ CTorch::CTorch(void)
 	light_render->set_shadow(true);
 	light_omni = ::Render->light_create();
 	light_omni->set_type(IRender_Light::POINT);
-	light_omni->set_shadow(!!psDeviceFlags.test(rsR4));
+	light_omni->set_shadow(false);
 
 	m_switched_on = false;
 	glow_render = ::Render->glow_create();
@@ -157,7 +157,6 @@ void CTorch::Switch(bool light_on)
 
 		// CActor *pA = smart_cast<CActor *>(H_Parent());
 		//if(!pA)
-		light_omni->set_decor_object(H_Parent());
 		light_omni->set_active(light_on);
 	}
 	glow_render->set_active(light_on);
@@ -361,19 +360,6 @@ void CTorch::UpdateCL()
 				                                 m_torch_inertion_speed_max, m_torch_inertion_clamp, Device.fTimeDelta);
 				m_prev_hp.y = angle_inertion_var(m_prev_hp.y, -actor->cam_FirstEye()->pitch, m_torch_inertion_speed_min,
 				                                 m_torch_inertion_speed_max, m_torch_inertion_clamp, Device.fTimeDelta);
-			}
-
-			if (actor->active_cam()==eacFirstEye)
-			{
-				light_render->set_ignore_object(H_Parent());
-				light_omni->set_ignore_object(H_Parent());
-				light_omni->set_decor_object(nullptr);
-			}
-			else
-			{
-				light_render->set_ignore_object(nullptr);
-				light_omni->set_ignore_object(nullptr);
-				light_omni->set_decor_object(H_Parent());
 			}
 
 			Fvector dir, right, up;
