@@ -11,7 +11,6 @@
 #include "../xrEngine/render.h"
 #include "../xrEngine/IGame_Persistent.h"
 #include "../xrEngine/environment.h"
-
 #include "_thread_types.h"
 
 #include "../xrCore/profiler.h"
@@ -83,6 +82,7 @@ void CParticlesObject::Init(LPCSTR p_name, IRender_Sector* S, BOOL bAutoRemove)
 //----------------------------------------------------
 CParticlesObject::~CParticlesObject()
 {
+	WaitForParticles();
 	AllParticleObjects.remove(this);
 }
 
