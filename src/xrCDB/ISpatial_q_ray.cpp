@@ -200,6 +200,7 @@ ICF BOOL isect_sse(const aabb_t& box, const ray_t& ray, float& dist)
 }
 
 extern Fvector c_spatial_offset[8];
+thread_local xr_vector<ISpatial*>* qr_result;
 
 template <bool b_use_sse, bool b_first, bool b_nearest>
 class _MM_ALIGN16 walker
@@ -312,7 +313,7 @@ public:
 					}
 					range2 = range * range;
 				}
-				space->q_result->push_back(S);
+				qr_result->push_back(S);
 				if (b_first) return;
 			}
 		}
@@ -325,7 +326,7 @@ public:
 			Fvector c_C;
 			c_C.mad(n_C, c_spatial_offset[octant], c_R);
 			walk(N->children[octant], c_C, c_R);
-			if (b_first && !space->q_result->empty()) return;
+			if (b_first && !qr_result->empty()) return;
 		}
 	}
 };
@@ -333,9 +334,10 @@ public:
 void ISpatial_DB::q_ray(xr_vector<ISpatial*>& R, u32 _o, u32 _mask_and, const Fvector& _start, const Fvector& _dir,
                         float _range)
 {
-	cs.Enter();
-	q_result = &R;
-	q_result->clear_not_free();
+	xrSRWLockGuard guard(&db_lock, true);
+	qr_result = &R;
+	qr_result->clear();
+
 	if (CPU::ID.feature & _CPU_FEATURE_SSE)
 	{
 		if (_o & O_ONLYFIRST)
@@ -394,5 +396,4 @@ void ISpatial_DB::q_ray(xr_vector<ISpatial*>& R, u32 _o, u32 _mask_and, const Fv
 			}
 		}
 	}
-	cs.Leave();
 }
