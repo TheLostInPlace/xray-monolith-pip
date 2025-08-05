@@ -185,6 +185,7 @@ public:
 	void			vis_update				();
 	void			export_					(light_Package& dest);
 	void			set_attenuation_params	(float a0, float a1, float a2, float fo);
+	void			optimize_smap_size		();
 #endif // (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 
 	float get_LOD();
