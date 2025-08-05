@@ -46,6 +46,8 @@ light::light(void) : ISpatial(g_SpatialSpace)
 	vis.visible = true;
 	vis.pending = false;
 	m_sectors = {};
+	b_need_recompute_xform = true;
+	b_need_detect_sectors = true;
 #endif // (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 }
 
@@ -211,8 +213,6 @@ void light::get_sectors()
 
 	if(flags.type == IRender_Light::SPOT)
 	{
-		if (X.S.combine.has_inited())
-			RImplementation.LR.compute_xf_spot(this);
 		CFrustum temp = CFrustum();
 		temp.CreateFromMatrix			(X.S.combine, FRUSTUM_P_ALL);
 
@@ -272,7 +272,8 @@ void light::spatial_move()
 #if (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 	if (flags.bActive) gi_generate();
 	svis.invalidate();
-	if (RImplementation.Sectors.size() > 1) get_sectors();
+	b_need_detect_sectors = true;
+	b_need_recompute_xform = true;
 #endif // (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 }
 
@@ -374,6 +375,22 @@ void light::xform_calc()
 		m_xform.identity();
 		break;
 	}
+
+	if(flags.type==IRender_Light::SPOT||flags.type==IRender_Light::OMNIPART)
+	{
+		// make N pixel border
+		X.S.view.build_camera_dir	(position,L_dir,L_up);
+
+		// _min(L->cone + deg2rad(4.5f), PI*0.98f) - Here, it is needed to enlarge the shadow map frustum to include also 
+		// displaced pixels and the pixels neighbor to the examining one.
+		X.S.project.build_projection		(_min(cone + deg2rad(5.f), PI*0.98f), 1.f,virtual_size,range+EPS_S);
+
+		X.S.combine.mul(X.S.project,X.S.view);
+
+		X.S.posX	= 0;
+		X.S.posY	= 0;
+		X.S.size	= SMAP_adapt_max;
+	}
 }
 
 //								+X,				-X,				+Y,				-Y,			+Z,				-Z
@@ -386,6 +403,12 @@ static Fvector cmDir[6] = {
 
 void light::export_(light_Package& package)
 {
+	if (b_need_recompute_xform && ((!flags.bShadow && flags.type == IRender_Light::POINT) || flags.type == IRender_Light::SPOT))
+	{
+		xform_calc();
+		b_need_recompute_xform = false;
+	}
+
 	if (flags.bShadow)
 	{
 		switch (flags.type)
@@ -446,6 +469,12 @@ void light::export_(light_Package& package)
 
 					L->set_hud_mode(flags.bHudMode);
 					L->set_occq_mode(flags.bOccq);
+
+					if(L->b_need_recompute_xform)
+					{
+						L->xform_calc();
+						L->b_need_recompute_xform = false;
+					}
 
 					package.v_shadowed.push_back(L);
 				}

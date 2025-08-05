@@ -44,7 +44,6 @@ void CRenderTarget::accum_spot(light* L)
 	BOOL bIntersect = FALSE; //enable_scissor(L);
 	{
 		// setup xform
-		L->xform_calc();
 		RCache.set_xform_world(L->m_xform);
 		RCache.set_xform_view(Device.mView);
 		RCache.set_xform_project(Device.mProject);
@@ -337,7 +336,6 @@ void CRenderTarget::accum_volumetric(light* L)
 	BOOL bIntersect = FALSE; //enable_scissor(L);
 	{
 		// setup xform
-		L->xform_calc();
 		RCache.set_xform_world(L->m_xform);
 		RCache.set_xform_view(Device.mView);
 		RCache.set_xform_project(Device.mProject);

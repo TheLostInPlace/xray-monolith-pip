@@ -225,9 +225,6 @@
     <ClInclude Include="..\xrRender\Light_Package.h">
       <Filter>Lights</Filter>
     </ClInclude>
-    <ClInclude Include="Light_Render_Direct.h">
-      <Filter>Lights</Filter>
-    </ClInclude>
     <ClInclude Include="light_smapvis.h">
       <Filter>Lights</Filter>
     </ClInclude>
@@ -786,12 +783,6 @@
       <Filter>Lights</Filter>
     </ClCompile>
     <ClCompile Include="..\xrRender\Light_Package.cpp">
-      <Filter>Lights</Filter>
-    </ClCompile>
-    <ClCompile Include="Light_Render_Direct.cpp">
-      <Filter>Lights</Filter>
-    </ClCompile>
-    <ClCompile Include="Light_Render_Direct_ComputeXFS.cpp">
       <Filter>Lights</Filter>
     </ClCompile>
     <ClCompile Include="light_smapvis.cpp">
