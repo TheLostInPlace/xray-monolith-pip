@@ -704,9 +704,6 @@
     <ClCompile Include="r2_loader.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="r2_R_calculate.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="r2_R_lights.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -1235,6 +1232,9 @@
     </ClCompile>
     <ClCompile Include="..\xrRender\r__sector_detect.cpp">
       <Filter>Visibility\Sector/Portal</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xrRender\R_calculate.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

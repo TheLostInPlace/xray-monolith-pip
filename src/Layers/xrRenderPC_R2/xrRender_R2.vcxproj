@@ -565,6 +565,7 @@
     <ClCompile Include="..\xrRender\R_Backend_Runtime.cpp" />
     <ClCompile Include="..\xrRender\R_Backend_tree.cpp" />
     <ClCompile Include="..\xrRender\R_Backend_xform.cpp" />
+    <ClCompile Include="..\xrRender\R_calculate.cpp" />
     <ClCompile Include="..\xrRender\r_constants.cpp" />
     <ClCompile Include="..\xrRender\R_DStreams.cpp" />
     <ClCompile Include="..\xrRender\r__dsgraph_build.cpp" />
@@ -645,7 +646,6 @@
     <ClCompile Include="r2_rendertarget_phase_smap_D.cpp" />
     <ClCompile Include="r2_rendertarget_phase_smap_S.cpp" />
     <ClCompile Include="r2_rendertarget_phase_ssao.cpp" />
-    <ClCompile Include="r2_R_calculate.cpp" />
     <ClCompile Include="r2_R_lights.cpp" />
     <ClCompile Include="r2_R_render.cpp" />
     <ClCompile Include="r2_R_sun.cpp" />
