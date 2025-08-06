@@ -387,6 +387,7 @@ protected:
 
 private:
 	FS_FileSet m_file_set;
+	IRender_Sector* detectLastSectorImpl(const Fvector& P, const Fvector& dir);
 };
 
 extern CRender RImplementation;

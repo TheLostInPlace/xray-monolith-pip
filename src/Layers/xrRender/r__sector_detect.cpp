@@ -45,54 +45,54 @@ IRender_Sector* CRender::detectSector(const Fvector& P)
 	return S;
 }
 
-IRender_Sector* CRender::detectLastSector(const Fvector& P)
+IRender_Sector* CRender::detectLastSectorImpl(const Fvector& P, const Fvector& dir)
 {
-	if(SectorsCount()==1)
-		return pOutdoorSector;
+	Sectors_xrc.ray_options(CDB::OPT_ONLYNEAREST);
 
-	auto detectSector = [&](const Fvector& P, Fvector& dir) -> IRender_Sector*
+	// Portals model
+	if (rmPortals)
 	{
-		Sectors_xrc.ray_options		(CDB::OPT_ONLYNEAREST);
-		// Portals model
-		if (rmPortals)	
-		{
-			Sectors_xrc.ray_query	(rmPortals,P,dir,1000.f);
-			if (Sectors_xrc.r_count()) {
-				CDB::RESULT *RP = Sectors_xrc.r_begin();
-				CDB::TRI*	pTri	= rmPortals->get_tris() + RP->id;
-				CPortal*	pPortal	= (CPortal*) Portals[pTri->dummy];
-				CSector* S = pPortal->getSectorFacing(P);
-				FHierrarhyVisual* pV = (FHierrarhyVisual*)S->root();
-				if(pV)
-				{
-					if(pV->vis.box.contains(P))
-						return S;
-				}
+		Sectors_xrc.ray_query(rmPortals, P, dir, 1000.f);
+		if (Sectors_xrc.r_count()) {
+			CDB::RESULT* RP = Sectors_xrc.r_begin();
+			CDB::TRI* pTri = rmPortals->get_tris() + RP->id;
+			CPortal* pPortal = (CPortal*)Portals[pTri->dummy];
+			CSector* S = pPortal->getSectorFacing(P);
+			FHierrarhyVisual* pV = (FHierrarhyVisual*)S->root();
+			if (pV)
+			{
+				if (pV->vis.box.contains(P))
+					return S;
 			}
 		}
+	}
 
-		// Geometry model
-		Sectors_xrc.ray_query	(g_pGameLevel->ObjectSpace.GetStaticModel(),P,dir,1000.f);
-		if (Sectors_xrc.r_count()) {
-			CDB::RESULT *RP = Sectors_xrc.r_begin();
-			return getSector(RP->sector);
-		}
+	// Geometry model
+	Sectors_xrc.ray_query(g_pGameLevel->ObjectSpace.GetStaticModel(), P, dir, 1000.f);
+	if (Sectors_xrc.r_count()) {
+		CDB::RESULT* RP = Sectors_xrc.r_begin();
+		return getSector(RP->sector);
+	}
 
-		return nullptr;
-	};
+	return nullptr;
+};
 
-	IRender_Sector*	S	= nullptr;	
-	Fvector			dir; 
+IRender_Sector* CRender::detectLastSector(const Fvector& P)
+{
+	if (SectorsCount() == 1)
+		return pOutdoorSector;
 
-	dir.set				(0,-1,0);
-	S					= detectSector(P,dir);
-	if (nullptr==S)		
+	IRender_Sector* S = nullptr;
+	Fvector dir;
+	dir.set(0, -1, 0);
+
+	S = detectLastSectorImpl(P, dir);
+	if (!S)
 	{
-		dir.set				(0,1,0);
-		S					= detectSector(P,dir);
+		dir.set(0, 1, 0);
+		S = detectLastSectorImpl(P, dir);
 	}
 	return S;
-
 }
 
 IRender_Sector* CRender::detectSector(const Fvector& P, Fvector& dir)
