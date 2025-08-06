@@ -153,6 +153,7 @@ public:
 	virtual IRender_Sector* getSector(int id);
 	virtual IRenderVisual* getVisual(int id);
 	virtual IRender_Sector* detectSector(const Fvector& P);
+	IRender_Sector* detectLastSector(const Fvector& P);
 	IRender_Sector* detectSector(const Fvector& P, Fvector& D);
 	xr_vector<IRender_Sector*>		detectSectors_sphere(CSector* sector, const Fvector&
 		b_center, const Fvector& b_dim);
