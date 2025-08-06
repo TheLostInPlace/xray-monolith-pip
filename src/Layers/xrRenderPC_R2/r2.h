@@ -328,6 +328,8 @@ public:
 	// Constructor/destructor/loader
 	CRender();
 	virtual ~CRender();
+
+	virtual size_t SectorsCount() { return Sectors.size(); }
 protected:
 	virtual void ScreenshotImpl(ScreenshotMode mode, LPCSTR name, CMemoryWriter* memory_writer);
 

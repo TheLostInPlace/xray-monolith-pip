@@ -253,6 +253,8 @@ public:
 	virtual void level_Load(IReader*) = 0;
 	virtual void level_Unload() = 0;
 
+	virtual size_t SectorsCount() { return size_t(0); }
+
 	//virtual IDirect3DBaseTexture9* texture_load (LPCSTR fname, u32& msize) = 0;
 	void shader_option_skinning(s32 mode) { m_skinning = mode; }
 	virtual HRESULT shader_compile(

@@ -1,5 +1,14 @@
 #include "stdafx.h"
+
+#if (RENDER==R_R4)
 #include "r4.h"
+#elif (RENDER==R_R3)
+#include "r3.h"
+#elif (RENDER==R_R2)
+#include "r2.h"
+#elif (RENDER==R_R1)
+#include "FStaticRender.h"
+#endif
 
 int CRender::translateSector(IRender_Sector* pSector)
 {
@@ -24,7 +33,6 @@ IRender_Sector* CRender::detectSector(const Fvector& P)
 {
 	IRender_Sector* S = NULL;
 	Fvector dir;
-	Sectors_xrc.ray_options(CDB::OPT_ONLYNEAREST);
 
 	dir.set(0, -1, 0);
 	S = detectSector(P, dir);
@@ -38,6 +46,10 @@ IRender_Sector* CRender::detectSector(const Fvector& P)
 
 IRender_Sector* CRender::detectSector(const Fvector& P, Fvector& dir)
 {
+	if (SectorsCount() == 1)
+		return pOutdoorSector;
+
+	Sectors_xrc.ray_options(CDB::OPT_ONLYNEAREST);
 	// Portals model
 	int id1 = -1;
 	float range1 = 500.f;

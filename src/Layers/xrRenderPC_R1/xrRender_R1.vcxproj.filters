@@ -641,9 +641,6 @@
     <ClCompile Include="FStaticRender_Blenders.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="FStaticRender_DetectSector.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="FStaticRender_Loader.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -1031,6 +1028,9 @@
     <ClCompile Include="..\xrRenderDX9\dx9Texture.cpp" />
     <ClCompile Include="..\xrRender\CHudInitializer.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xrRender\r__sector_detect.cpp">
+      <Filter>Visibility\Sector/Portal</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

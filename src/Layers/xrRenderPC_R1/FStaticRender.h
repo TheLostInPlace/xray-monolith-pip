@@ -153,6 +153,10 @@ public:
 	virtual IRender_Sector* getSector(int id);
 	virtual IRenderVisual* getVisual(int id);
 	virtual IRender_Sector* detectSector(const Fvector& P);
+	IRender_Sector* detectSector(const Fvector& P, Fvector& D);
+	xr_vector<IRender_Sector*>		detectSectors_sphere(CSector* sector, const Fvector&
+		b_center, const Fvector& b_dim);
+	xr_vector<IRender_Sector*>		detectSectors_frustum(CSector* sector, CFrustum* _frustum);
 	int translateSector(IRender_Sector* pSector);
 	virtual IRender_Target* getTarget();
 
@@ -230,6 +234,8 @@ public:
 	// Constructor/destructor/loader
 	CRender();
 	virtual ~CRender();
+
+	virtual size_t SectorsCount() { return Sectors.size(); }
 protected:
 	virtual void ScreenshotImpl(ScreenshotMode mode, LPCSTR name, CMemoryWriter* memory_writer);
 

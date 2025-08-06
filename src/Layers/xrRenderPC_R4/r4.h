@@ -408,6 +408,8 @@ public:
 	void addShaderOption(const char* name, const char* value);
 	void clearAllShaderOptions() { m_ShaderOptions.clear(); }
 
+	virtual size_t SectorsCount() { return Sectors.size(); }
+
 private:
 	xr_vector<D3D_SHADER_MACRO> m_ShaderOptions;
 
