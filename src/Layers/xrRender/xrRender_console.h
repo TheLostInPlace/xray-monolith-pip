@@ -372,6 +372,9 @@ enum
 
 //-Swartz
 
+// demonized:
+extern ECORE_API BOOL occq_debug;
+
 extern void xrRender_initconsole();
 extern BOOL xrRender_test_hw();
 

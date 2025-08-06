@@ -3,7 +3,7 @@
 
 #include "QueryHelper.h"
 
-BOOL occq_debug = FALSE;
+extern ECORE_API BOOL occq_debug;
 
 R_occlusion::R_occlusion(void)
 {

@@ -118,8 +118,6 @@ xr_token screenshot_mode_token [ ] = {
 extern int psSkeletonUpdate;
 extern float r__dtex_range;
 
-extern BOOL occq_debug;
-
 Flags32 ps_r__common_flags = {/*RFLAG_NO_RAM_TEXTURES*/ }; // All renders
 
 //int		ps_r__Supersample			= 1		;
@@ -515,6 +513,9 @@ xr_token ext_quality_token[] = {
 float ps_r2_gloss_factor = 4.0f;
 float ps_r2_gloss_min = 0.0f;
 //- Mad Max
+
+// demonized
+BOOL occq_debug = FALSE;
 
 int opt_static = 2;
 int opt_dynamic = 2;
@@ -1123,6 +1124,8 @@ void xrRender_initconsole()
 	//no ram textures should be enabled by default on r3/r4
 	if (RENDER == R_R3 || RENDER == R_R4) ps_r__common_flags.set(RFLAG_NO_RAM_TEXTURES, TRUE);
 
+	CMD4(CCC_Integer, "r__occq_debug", &occq_debug, 0, 1);
+
 	CMD3(CCC_Mask, "r__no_ram_textures", &ps_r__common_flags, RFLAG_NO_RAM_TEXTURES);
 	CMD2(CCC_tf_Aniso, "r__tf_aniso", &ps_r__tf_Anisotropic); //	{1..16}
 	CMD2(CCC_tf_MipBias, "r__tf_mipbias", &ps_r__tf_Mipbias); // {-3 +3}
@@ -1538,7 +1541,6 @@ void xrRender_initconsole()
 	CMD3(CCC_Token, "r3_minmax_sm", &ps_r3_minmax_sm, qminmax_sm_token);
 
 	CMD3(CCC_Mask64, "r__fast_details_update" ,&ps_r2_ls_flags, R2FLAG_FAST_DETAILS_UPDATE);
-	CMD4(CCC_Integer, "r__occq_debug", &occq_debug, 0, 1);
 
 #ifdef DETAIL_RADIUS
 	CMD4(CCC_detail_radius, "r__detail_radius", &ps_r__detail_radius, 0, 250);
