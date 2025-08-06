@@ -596,7 +596,7 @@ void CRender::reset_begin()
 	if (b_loaded && ((dm_current_size != dm_size) || (ps_r__Detail_density != ps_current_detail_density) || (
 		ps_r__Detail_height != ps_current_detail_height)))
 	{
-		Device.remove_from_seq_parallel(fastdelegate::FastDelegate0<>(Details, &CDetailManager::MT_CALC));
+		Device.remove_from_seq_parallel(xr_make_delegate(Details, &CDetailManager::MT_CALC));
 		Details->Unload();
 		xr_delete(Details);
 	}
@@ -650,7 +650,7 @@ void CRender::OnFrame()
 Models->DeleteQueue			();
 if (ps_r2_ls_flags.test(R2FLAG_EXP_MT_CALC))	{
 Device.seqParallel.insert	(Device.seqParallel.begin(),
-fastdelegate::FastDelegate0<>(&HOM,&CHOM::MT_RENDER));
+xr_make_delegate(&HOM,&CHOM::MT_RENDER));
 }
 }*/
 void CRender::OnFrame()

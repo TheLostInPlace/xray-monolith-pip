@@ -408,9 +408,6 @@
     <ClInclude Include="clsid.h">
       <Filter>Math\Extensions</Filter>
     </ClInclude>
-    <ClInclude Include="fastdelegate.h">
-      <Filter>Math\Extensions</Filter>
-    </ClInclude>
     <ClInclude Include="string_concatenations.h">
       <Filter>Math\Extensions</Filter>
     </ClInclude>
@@ -624,6 +621,9 @@
     </ClInclude>
     <ClInclude Include="TimeUtils.h" />
     <ClInclude Include="xrParams.h" />
+    <ClInclude Include="xr_delegate.h">
+      <Filter>Kernel</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="xrCore.rc" />

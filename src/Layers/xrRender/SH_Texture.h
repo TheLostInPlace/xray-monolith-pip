@@ -89,7 +89,7 @@ public: //	Public class members (must be encapsulated furthur)
 #endif	//	USE_DX10
 	} flags;
 
-	fastdelegate::FastDelegate1<u32> bind;
+	xr_delegate<void(u32)> bind;
 
 
 	CAviPlayerCustom* pAVI;

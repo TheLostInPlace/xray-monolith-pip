@@ -51,7 +51,7 @@ protected:
 	void xr_stdcall press_tab();
 
 protected:
-	typedef fastdelegate::FastDelegate0<void> Callback;
+	typedef xr_delegate<void()> Callback;
 
 	enum { EDIT_BUF_SIZE = 256 };
 

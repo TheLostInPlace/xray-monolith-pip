@@ -1,7 +1,7 @@
 #ifndef xr_iniH
 #define xr_iniH
 
-#include "fastdelegate.h"
+#include "xr_delegate.h"
 
 #ifdef USE_ROBINHOOD
 #include "robin_hood.h"
@@ -50,7 +50,7 @@ public:
 	typedef Root::const_iterator RootCIt;
 
 #ifndef _EDITOR
-	typedef fastdelegate::FastDelegate1<LPCSTR, bool> allow_include_func_t;
+	typedef xr_delegate<bool(LPCSTR)> allow_include_func_t;
 #endif
 	static CInifile* Create(LPCSTR szFileName, BOOL ReadOnly = TRUE);
 	static void Destroy(CInifile*);

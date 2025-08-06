@@ -575,7 +575,6 @@
     <ClInclude Include="compression_ppmd_stream_inline.h" />
     <ClInclude Include="cpuid.h" />
     <ClInclude Include="dump_string.h" />
-    <ClInclude Include="fastdelegate.h" />
     <CustomBuild Include="FileSystem.h" />
     <ClInclude Include="file_stream_reader.h" />
     <ClInclude Include="FixedMap.h" />
@@ -645,6 +644,7 @@
     <ClInclude Include="xrsharedmem.h" />
     <ClInclude Include="xrstring.h" />
     <ClInclude Include="xrSyncronize.h" />
+    <ClInclude Include="xr_delegate.h" />
     <ClInclude Include="xr_ini.h" />
     <ClInclude Include="xr_resource.h" />
     <ClInclude Include="xr_shared.h" />
