@@ -50,7 +50,7 @@ IRender_Sector* CRender::detectLastSector(const Fvector& P)
 	if(SectorsCount()==1)
 		return pOutdoorSector;
 
-	auto detectSector = [&](const Fvector& P, Fvector& dir)
+	auto detectSector = [&](const Fvector& P, Fvector& dir) -> IRender_Sector*
 	{
 		Sectors_xrc.ray_options		(CDB::OPT_ONLYNEAREST);
 		// Portals model
@@ -66,7 +66,7 @@ IRender_Sector* CRender::detectLastSector(const Fvector& P)
 				if(pV)
 				{
 					if(pV->vis.box.contains(P))
-						return (IRender_Sector*)S;
+						return S;
 				}
 			}
 		}
@@ -77,6 +77,8 @@ IRender_Sector* CRender::detectLastSector(const Fvector& P)
 			CDB::RESULT *RP = Sectors_xrc.r_begin();
 			return getSector(RP->sector);
 		}
+
+		return nullptr;
 	};
 
 	IRender_Sector*	S	= nullptr;	
