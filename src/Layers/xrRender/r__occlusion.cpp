@@ -3,6 +3,8 @@
 
 #include "QueryHelper.h"
 
+BOOL occq_debug = FALSE;
+
 R_occlusion::R_occlusion(void)
 {
 	enabled = TRUE;
@@ -46,6 +48,29 @@ void R_occlusion::occq_destroy()
 	fids.clear();
 }
 
+void R_occlusion::occq_refresh()
+{
+	if (!enabled) return;
+	
+	PROF_EVENT("R_occlusion::occq_refresh");
+	if (!used.empty())
+	{
+		while	(!used.empty())	{
+			_RELEASE(used.back().Q);
+			used.pop_back	();
+		}
+		used.clear	();
+	}
+	if (!fids.empty())
+		fids.clear	();
+}
+
+void R_occlusion::occq_stats()
+{
+	if (occq_debug)
+		Msg("R_occlusion::occq_stats: pool: %d fids: %d used: %d", pool.size(), fids.size(), used.size());
+}
+
 u32 R_occlusion::occq_begin(u32& ID)
 {
 	PROF_EVENT("R_occlusion::occq_begin");
@@ -54,9 +79,20 @@ u32 R_occlusion::occq_begin(u32& ID)
 	//	Igor: prevent release crash if we issue too many queries
 	if (pool.empty())
 	{
-		//		if ((Device.dwFrame % 40) == 0)
-		//			Msg(" RENDER [Warning]: Too many occlusion queries were issued(>1536)!!!");
+		if (occq_debug && Device.dwFrame % 40 == 0)
+			Msg(" RENDER [Warning]: Too many occlusion queries were issued(>1536)!!!");
 		ID = iInvalidHandle;
+
+		//HACK: recreate HWOCC
+		occq_destroy();
+		occq_create(occq_size);
+
+		if (pool.empty()) //error in recreating stage :(
+		{
+			occq_destroy();
+			enabled = FALSE;
+		}
+
 		return 0;
 	}
 

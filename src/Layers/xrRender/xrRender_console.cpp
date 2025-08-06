@@ -118,6 +118,8 @@ xr_token screenshot_mode_token [ ] = {
 extern int psSkeletonUpdate;
 extern float r__dtex_range;
 
+extern BOOL occq_debug;
+
 Flags32 ps_r__common_flags = {/*RFLAG_NO_RAM_TEXTURES*/ }; // All renders
 
 //int		ps_r__Supersample			= 1		;
@@ -1536,6 +1538,7 @@ void xrRender_initconsole()
 	CMD3(CCC_Token, "r3_minmax_sm", &ps_r3_minmax_sm, qminmax_sm_token);
 
 	CMD3(CCC_Mask64, "r__fast_details_update" ,&ps_r2_ls_flags, R2FLAG_FAST_DETAILS_UPDATE);
+	CMD4(CCC_Integer, "r__occq_debug", &occq_debug, 0, 1);
 
 #ifdef DETAIL_RADIUS
 	CMD4(CCC_detail_radius, "r__detail_radius", &ps_r__detail_radius, 0, 250);

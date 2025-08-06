@@ -540,16 +540,20 @@ void CRender::Render()
 		HW.pContext->CopyResource(RImplementation.Target->rt_tempzb->pSurface, zbuffer_res);
 	}
 
-	//******* Occlusion testing of volume-limited light-sources
-	Target->phase_occq();
-	LP_normal.clear();
-	LP_pending.clear();
 	if (RImplementation.o.dx10_msaa)
 		RCache.set_ZB(RImplementation.Target->rt_MSAADepth->pZRT);
+
+	if(Lights.package.v_point.empty()&&Lights.package.v_spot.empty()&&Lights.package.v_shadowed.empty())
+		HWOCC.occq_refresh();
+	else
 	{
 		PIX_EVENT(DEFER_TEST_LIGHT_VIS);
+		//******* Occlusion testing of volume-limited light-sources
+		Target->phase_occq();
+		LP_normal.clear();
+		LP_pending.clear();
+
 		// perform tests
-		u32 count = 0;
 		light_Package& LP = Lights.package;
 
 		// stats
@@ -558,51 +562,49 @@ void CRender::Render()
 		stats.l_total = stats.l_shadowed + stats.l_unshadowed;
 
 		// perform tests
-		count = _max(count, LP.v_point.size());
-		count = _max(count, LP.v_spot.size());
-		count = _max(count, LP.v_shadowed.size());
+		u32 count = std::max({ u32(0), LP.v_point.size(), LP.v_spot.size(), LP.v_shadowed.size() });
 		for (u32 it = 0; it < count; it++)
 		{
 			if (it < LP.v_point.size())
 			{
 				light* L = LP.v_point[it];
-				if(L->flags.bOccq&&!L->flags.bHudMode)
+				if (L->flags.bOccq && !L->flags.bHudMode)
 				{
-					L->vis_prepare		();
-					if (L->vis.pending)	LP_pending.v_point.push_back	(L);
-					else				LP_normal.v_point.push_back		(L);
+					L->vis_prepare();
+					if (L->vis.pending)	LP_pending.v_point.push_back(L);
+					else				LP_normal.v_point.push_back(L);
 				}
 				else
-					LP_normal.v_point.push_back		(L);
+					LP_normal.v_point.push_back(L);
 			}
 			if (it < LP.v_spot.size())
 			{
 				light* L = LP.v_spot[it];
-				if(L->flags.bOccq&&!L->flags.bHudMode)
+				if (L->flags.bOccq && !L->flags.bHudMode)
 				{
-					L->vis_prepare		();
-					if (L->vis.pending)	LP_pending.v_spot.push_back		(L);
-					else				LP_normal.v_spot.push_back		(L);
+					L->vis_prepare();
+					if (L->vis.pending)	LP_pending.v_spot.push_back(L);
+					else				LP_normal.v_spot.push_back(L);
 				}
 				else
-					LP_normal.v_spot.push_back		(L);
+					LP_normal.v_spot.push_back(L);
 			}
 			if (it < LP.v_shadowed.size())
 			{
 				light* L = LP.v_shadowed[it];
-				if(L->flags.bOccq&&!L->flags.bHudMode)
+				if (L->flags.bOccq && !L->flags.bHudMode)
 				{
-					L->vis_prepare		();
-					if (L->vis.pending)	LP_pending.v_shadowed.push_back	(L);
-					else				LP_normal.v_shadowed.push_back	(L);
+					L->vis_prepare();
+					if (L->vis.pending)	LP_pending.v_shadowed.push_back(L);
+					else				LP_normal.v_shadowed.push_back(L);
 				}
 				else
-					LP_normal.v_shadowed.push_back	(L);
+					LP_normal.v_shadowed.push_back(L);
 			}
 		}
+		LP_normal.sort();
+		LP_pending.sort();
 	}
-	LP_normal.sort();
-	LP_pending.sort();
 
 	//******* Main render :: PART-1 (second)
 	if (split_the_scene_to_minimize_wait)
@@ -808,6 +810,8 @@ void CRender::Render()
 		Details->details_clear();
 
 	VERIFY(0 == mapDistort.size() + mapHUDDistort.size());
+	
+	//HWOCC.occq_stats();
 }
 
 void CRender::render_forward()
