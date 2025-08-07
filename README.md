@@ -170,6 +170,10 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.08.07**
+* VodoXleb: Add scope_dynamic_zoom = off for binoculars
+* Ncenka: Dynamic Devices turn on/off (https://github.com/themrdemonized/xray-monolith/pull/318)
+
 **2025.08.04**
 * Debug renderer supports strings as ids for primitives
 * Moved new ammo aggregation script into item_weapon, directly replacing the old implementation
