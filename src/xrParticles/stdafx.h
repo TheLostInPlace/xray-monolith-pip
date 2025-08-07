@@ -4,12 +4,8 @@
 //
 // Third generation by Oles.
 
-#ifndef stdafxH
-#define stdafxH
-
 #pragma once
 
 #include "../xrEngine/stdafx.h"
 #include "psystem.h"
-
-#endif //stdafxH
+#include "../xrServerEntities/smart_cast.h"

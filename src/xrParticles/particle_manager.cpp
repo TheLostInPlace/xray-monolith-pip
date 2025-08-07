@@ -1,11 +1,11 @@
 //---------------------------------------------------------------------------
 #include "stdafx.h"
-#pragma hdrstop
 
 #include "particle_manager.h"
 #include "particle_effect.h"
 #include "particle_actions_collection.h"
 #include "../xrGame/ParticlesObject.h"
+#include "ParticlesAsyncManager.h"
 
 using namespace PAPI;
 
@@ -344,5 +344,5 @@ void CParticleManager::SaveActions(int alist_id, IWriter& W)
 
 void PAPI::CParticleManager::OnFrame()
 {
-	CParticlesObject::UpdateAllAsync();
+	CParticlesAsync::Play();
 }
