@@ -20,11 +20,9 @@
 #include "ui/uitexturemaster.h"
 
 
-CGameTask::CGameTask()
+CGameTask::CGameTask() :
+	m_map_object_id(0), m_TimeToComplete(0), m_priority(0)
 {
-	m_map_object_id = 0;
-	m_TimeToComplete = 0;
-	m_priority = 0;
 	m_ReceiveTime = 0;
 	m_FinishTime = 0;
 	m_timer_finish = 0;
