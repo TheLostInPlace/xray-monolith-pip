@@ -1,7 +1,13 @@
 #pragma once
 #include <fast_delegate/fastdelegate.h>
 
-//template <typename RetType, typename... Args>
-//using xr_delegate = xr_delegate<RetType(Args...)>;
-#define xr_delegate fastdelegate::FastDelegate
+namespace
+{
+	//template <typename RetType, typename... Args>
+	//using xr_delegate = xr_delegate<RetType(Args...)>;
+
+	template <typename Functor>
+	using xr_delegate = fastdelegate::FastDelegate<Functor>;
+};
+
 #define xr_make_delegate fastdelegate::MakeDelegate
