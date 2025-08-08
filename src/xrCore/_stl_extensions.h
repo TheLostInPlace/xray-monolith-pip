@@ -320,6 +320,9 @@ using xr_pair = robin_hood::pair<K, V>;
 template <class T, class Hasher = std::hash<T>>
 using xr_unordered_set = robin_hood::unordered_set<T, Hasher>;
 
+template <class T>
+using xr_hash = robin_hood::hash<T>;
+
 #else
 
 template <typename K, class V, class Hasher = std::hash<K>, class Traits = std::equal_to<K>,
@@ -331,6 +334,9 @@ using xr_pair = std::pair<K, V>;
 
 template <class T, class Hasher = std::hash<T>>
 using xr_unordered_set = std::unordered_set<T, Hasher>;
+
+template <class T>
+using xr_hash = std::hash<T>;
 
 #endif //USE_ROBINHOOD
 
