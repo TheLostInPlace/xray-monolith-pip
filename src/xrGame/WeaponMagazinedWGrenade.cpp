@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
 #include <build_config_defines.h>
-#include <MathUtils.h>
+#include "../xrPhysics/MathUtils.h"
 
 #include "WeaponMagazinedWGrenade.h"
 #include "entity.h"
