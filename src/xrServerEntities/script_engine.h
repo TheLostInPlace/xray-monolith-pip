@@ -98,10 +98,7 @@ private:
 
 		bool operator==(const FunctorCacheKey& other) const
 		{
-			int name_cmp = xr_strcmp(function_name.c_str(), other.function_name.c_str());
-			if (name_cmp == 0)
-				return true;
-			return result_type_hash == other.result_type_hash;
+			return function_name == other.function_name && result_type_hash == other.result_type_hash;
 		}
 	};
 
@@ -112,7 +109,7 @@ private:
 			// Compute individual hash values for first,
 			// second and combine them using XOR
 			// and bit shifting:
-			size_t h1 = std::hash<xr_string>()(s.function_name);
+			size_t h1 = xr_hash<xr_string>()(s.function_name);
 			size_t h2 = s.result_type_hash;
 
 			return h1 ^ (h2 << 1);
