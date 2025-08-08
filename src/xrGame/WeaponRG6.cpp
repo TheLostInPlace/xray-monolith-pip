@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-#include <MathUtils.h>
+#include "../xrPhysics/MathUtils.h"
 
 #include "WeaponRG6.h"
 #include "entity.h"
