@@ -391,11 +391,16 @@ bool LoadKernelScriptToGlobal(lua_State* L, const char* name)
 };
 
 BOOL lua_debug = FALSE;
+
+#ifdef USE_LUA_FUNCTOR_CACHE
+BOOL lua_use_functor_cache = FALSE;
+#endif
+
 void CScriptStorage::reinit()
 {
 	if (m_virtual_machine)
 		lua_close(m_virtual_machine);
-
+	
 #ifdef USE_GSC_MEM_ALLOC
     m_virtual_machine = lua_newstate(lua_alloc, NULL);
 #else

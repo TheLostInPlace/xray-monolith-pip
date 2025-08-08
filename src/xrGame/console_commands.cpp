@@ -173,6 +173,8 @@ extern float IK_CALC_SSA;
 extern float IK_ALWAYS_CALC_DIST;
 extern BOOL r_optimize_calculate_bones;
 
+extern BOOL lua_use_functor_cache;
+
 extern CrosshairSettings g_crosshair_camera_near;
 extern CrosshairSettings g_crosshair_camera_far;
 extern CrosshairSettings g_crosshair_weapon_near;
@@ -2485,6 +2487,7 @@ void CCC_RegisterCommands()
     // Moved lua_gcstep outside of DEBUG to allow for easier experimentation.
 	CMD4(CCC_Integer, "lua_gcstep", &psLUA_GCSTEP, 1, 1000);
 	CMD4(CCC_Integer, "lua_debug", &lua_debug, 0, 1);
+	CMD4(CCC_Integer, "lua_use_functor_cache", &lua_use_functor_cache, 0, 1);
 
 #ifdef DEBUG
 	CMD3(CCC_Mask, "ai_debug", &psAI_Flags, aiDebug);
