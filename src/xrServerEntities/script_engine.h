@@ -107,7 +107,7 @@ private:
 
 	struct FunctorCacheKeyHash
 	{
-		std::size_t operator()(const FunctorCacheKey& s) const noexcept
+		size_t operator()(const FunctorCacheKey& s) const noexcept
 		{
 			// Compute individual hash values for first,
 			// second and combine them using XOR
