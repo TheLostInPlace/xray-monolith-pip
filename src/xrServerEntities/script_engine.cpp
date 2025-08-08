@@ -141,6 +141,10 @@ CScriptEngine::CScriptEngine()
 	m_last_no_file_length = 0;
 	*m_last_no_file = 0;
 
+#ifdef USE_LUA_FUNCTOR_CACHE
+	m_cache_valid = true;
+#endif
+
 #ifdef USE_DEBUGGER
 #	ifndef USE_LUA_STUDIO
     m_scriptDebugger	= NULL;
@@ -153,6 +157,11 @@ CScriptEngine::CScriptEngine()
 
 CScriptEngine::~CScriptEngine()
 {
+
+#ifdef USE_LUA_FUNCTOR_CACHE
+	m_cache_valid = false;
+#endif
+
 	while (!m_script_processes.empty())
 		remove_script_process(m_script_processes.begin()->first);
 
@@ -351,6 +360,11 @@ void CScriptEngine::init()
         m_lua_studio_world->remove		(lua());
 #endif // #ifdef USE_LUA_STUDIO
 
+	// Invalidate functor cache as the Lua state is being recreated
+#ifdef USE_LUA_FUNCTOR_CACHE
+	invalidate_functor_cache();
+#endif
+
 	CScriptStorage::reinit();
 
 #ifdef USE_LUA_STUDIO
@@ -402,6 +416,10 @@ void CScriptEngine::init()
 	load_common_scripts();
 #endif
 	m_stack_level = lua_gettop(lua());
+	
+#ifdef USE_LUA_FUNCTOR_CACHE
+	m_cache_valid = true;
+#endif
 }
 
 void CScriptEngine::remove_script_process(const EScriptProcessors& process_id)
