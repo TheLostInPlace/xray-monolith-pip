@@ -9,6 +9,10 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-AVX|x64">
+      <Configuration>Release-AVX</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Verified|x64">
       <Configuration>Verified</Configuration>
       <Platform>x64</Platform>
@@ -37,6 +41,10 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\Common.props" />
   </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release-AVX|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\Common.props" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ProfiledDX11|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\Common.props" />
@@ -47,26 +55,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <!-- Override output to place lua51.lib next to project so existing link search paths can find it. -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(ProjectDir)</OutDir>
-    <IntDir>$(ProjectDir)intermediate\$(Platform)\$(Configuration)\</IntDir>
+  <PropertyGroup>
     <TargetName>lua51</TargetName>
     <TargetExt>.lib</TargetExt>
-    <ExtensionsToDeleteOnClean>$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ProfiledDX11|x64'">
     <OutDir>$(ProjectDir)</OutDir>
     <IntDir>$(ProjectDir)intermediate\$(Platform)\$(Configuration)\</IntDir>
-    <TargetName>lua51</TargetName>
-    <TargetExt>.lib</TargetExt>
-    <ExtensionsToDeleteOnClean>$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Verified|x64'">
-    <OutDir>$(ProjectDir)</OutDir>
-    <IntDir>$(ProjectDir)intermediate\$(Platform)\$(Configuration)\</IntDir>
-    <TargetName>lua51</TargetName>
-    <TargetExt>.lib</TargetExt>
-    <ExtensionsToDeleteOnClean>$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -115,6 +108,28 @@
       <AdditionalOptions>/Ob3 %(AdditionalOptions)</AdditionalOptions>
       <StringPooling>true</StringPooling>
       <FunctionLevelLinking>true</FunctionLevelLinking>
+    </ClCompile>
+    <Lib>
+      <LinkTimeCodeGeneration>true</LinkTimeCodeGeneration>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-AVX|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <StringPooling>true</StringPooling>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <AdditionalOptions>/Ob3 %(AdditionalOptions)</AdditionalOptions>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <Lib>
       <LinkTimeCodeGeneration>true</LinkTimeCodeGeneration>
