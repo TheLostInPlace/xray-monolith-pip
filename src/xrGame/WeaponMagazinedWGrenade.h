@@ -10,6 +10,10 @@ class CWeaponMagazinedWGrenade : public CWeaponMagazined,
                                  public CRocketLauncher
 {
 	typedef CWeaponMagazined inherited;
+
+private:
+	virtual bool is_grenade(const char* sect);
+
 public:
 	CWeaponMagazinedWGrenade(ESoundTypes eSoundType = SOUND_TYPE_WEAPON_SUBMACHINEGUN);
 	virtual ~CWeaponMagazinedWGrenade();
