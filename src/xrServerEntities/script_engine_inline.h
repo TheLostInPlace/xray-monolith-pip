@@ -46,6 +46,7 @@ IC void CScriptEngine::parse_script_namespace(LPCSTR function_to_call, LPSTR nam
 
 #ifdef USE_LUA_FUNCTOR_CACHE
 extern BOOL lua_use_functor_cache;
+extern BOOL g_bootComplete;
 IC void CScriptEngine::invalidate_functor_cache()
 {
 	m_functor_cache.clear();
@@ -63,7 +64,7 @@ IC bool CScriptEngine::functor(LPCSTR function_to_call, ::luabind::functor<_resu
 	{
 		invalidate_functor_cache();
 	}
-	else if (lua_use_functor_cache)
+	else if (lua_use_functor_cache && g_bootComplete)
 	{
 		// PROF_EVENT("CScriptEngine::functor cached");
 
@@ -74,15 +75,8 @@ IC bool CScriptEngine::functor(LPCSTR function_to_call, ::luabind::functor<_resu
 		auto it = m_functor_cache.find(key);
 		if (it != m_functor_cache.end())
 		{
-			try
-			{
-				lua_function = ::luabind::object_cast<::luabind::functor<_result_type>>(it->second);
-				return true;
-			}
-			catch (...)
-			{
-				m_functor_cache.erase(it); // Cache entry is invalid, remove it
-			}
+			lua_function = ::luabind::object_cast<::luabind::functor<_result_type>>(it->second);
+			return true;
 		}
 	}
 #endif
@@ -105,7 +99,7 @@ IC bool CScriptEngine::functor(LPCSTR function_to_call, ::luabind::functor<_resu
 
 #ifdef USE_LUA_FUNCTOR_CACHE
 	// Store in cache
-	if (m_cache_valid && lua_use_functor_cache)
+	if (lua_use_functor_cache && m_cache_valid && g_bootComplete)
 	{
 		FunctorCacheKey key{ function_to_call, typeid(_result_type).hash_code() };
 		m_functor_cache.insert({ key, object });
