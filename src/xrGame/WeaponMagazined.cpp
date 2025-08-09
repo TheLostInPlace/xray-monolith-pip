@@ -718,50 +718,8 @@ BOOL mt_UpdateWeaponSounds = TRUE;
 void CWeaponMagazined::UpdateSoundsPositionsImpl()
 {
 	PROF_EVENT();
-
 	auto& P = get_LastFP();
-	m_sounds.SetPosition("sndShow", P);
-	m_sounds.SetPosition("sndHide", P);
-	m_sounds.SetPosition("sndReload", P);
-
-	// New Sounds
-	if (m_sounds.FindSoundItem("sndReloadEmpty", false))
-		m_sounds.SetPosition("sndReloadEmpty", P);
-	if (m_sounds.FindSoundItem("sndReloadMisfire", false))
-		m_sounds.SetPosition("sndReloadMisfire", P);
-	if (m_sounds.FindSoundItem("sndReloadActor", false))
-		m_sounds.SetPosition("sndReloadActor", P);
-	if (m_sounds.FindSoundItem("sndReloadEmptyActor", false))
-		m_sounds.SetPosition("sndReloadEmptyActor", P);
-	if (m_sounds.FindSoundItem("sndReloadMisfireActor", false))
-		m_sounds.SetPosition("sndReloadMisfireActor", P);
-	if (m_sounds.FindSoundItem("sndEmptyClickActor", false))
-		m_sounds.SetPosition("sndEmptyClickActor", P);
-	if (m_sounds.FindSoundItem("sndShowActor", false))
-		m_sounds.SetPosition("sndShowActor", P);
-	if (m_sounds.FindSoundItem("sndHideActor", false))
-		m_sounds.SetPosition("sndHideActor", P);
-	if (m_sounds.FindSoundItem("sndClickMisfire", false))
-		m_sounds.SetPosition("sndClickMisfire", P);
-	if (m_sounds.FindSoundItem("sndClickMisfireActor", false))
-		m_sounds.SetPosition("sndClickMisfireActor", P);
-	if (m_sounds.FindSoundItem("sndShotMisfire", false))
-		m_sounds.SetPosition("sndShotMisfire", P);
-	if (m_sounds.FindSoundItem("sndShotMisfireActor", false))
-		m_sounds.SetPosition("sndShotMisfireActor", P);
-	if (m_sounds.FindSoundItem("sndShotActorFirst", false))
-		m_sounds.SetPosition("sndShotActorFirst", P);
-	// Indoors
-	if (m_sounds.FindSoundItem("sndShotIndoor", false))
-		m_sounds.SetPosition("sndShotIndoor", P);
-	if (m_sounds.FindSoundItem("sndShotActorIndoor", false))
-		m_sounds.SetPosition("sndShotActorIndoor", P);
-	if (m_sounds.FindSoundItem("sndShotActorFirstIndoor", false))
-		m_sounds.SetPosition("sndShotActorFirstIndoor", P);
-	if (m_sounds.FindSoundItem("sndShotMisfireIndoor", false))
-		m_sounds.SetPosition("sndShotMisfireIndoor", P);
-	if (m_sounds.FindSoundItem("sndShotMisfireActorIndoor", false))
-		m_sounds.SetPosition("sndShotMisfireActorIndoor", P);
+	m_sounds.UpdateAllSoundsPositions(P);
 }
 
 void CWeaponMagazined::UpdateSoundsPositions()

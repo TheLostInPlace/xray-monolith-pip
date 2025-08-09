@@ -1001,15 +1001,6 @@ bool CWeaponMagazinedWGrenade::TryPlayAnimBore()
 	return false;
 }
 
-void CWeaponMagazinedWGrenade::UpdateSoundsPositionsImpl()
-{
-	inherited::UpdateSoundsPositionsImpl();
-	auto& P = get_LastFP();
-	m_sounds.SetPosition("sndShotG", P);
-	m_sounds.SetPosition("sndReloadG", P);
-	m_sounds.SetPosition("sndSwitch", P);
-}
-
 void CWeaponMagazinedWGrenade::UpdateGrenadeVisibility(bool visibility)
 {
 	if (!GetHUDmode()) return;
