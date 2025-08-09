@@ -368,7 +368,7 @@ void CScriptEngine::init()
 	CScriptStorage::reinit();
 
 #ifdef USE_LUA_STUDIO
-    if (m_lua_studio_world || strstr(Core.Params, "-lua_studio")) {
+    if (m_lua_studio_world || Core.ParamsData.test(ECoreParams::lua_studio) {
         if (!lua_studio_connected)
             try_connect_to_debugger		();
         else {
