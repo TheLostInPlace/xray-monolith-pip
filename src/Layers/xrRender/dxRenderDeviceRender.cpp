@@ -3,9 +3,6 @@
 
 #include "ResourceManager.h"
 
-#include "../../xrGame/ParticlesObject.h"
-#include "../../xrParticles/ParticlesAsyncManager.h"
-
 dxRenderDeviceRender::dxRenderDeviceRender()
 	: Resources(0)
 {
@@ -351,8 +348,6 @@ void dxRenderDeviceRender::Begin()
 #if !defined(USE_DX10) && !defined(USE_DX11)
 	CHK_DX(HW.pDevice->BeginScene());
 #endif	//	USE_DX10
-
-	CParticlesAsync::Wait();
 
 	RCache.OnFrameBegin();
 	RCache.set_CullMode(CULL_CW);

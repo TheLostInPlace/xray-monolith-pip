@@ -28,7 +28,7 @@ public:
 
 	virtual bool shedule_Needed() { return true; };
 	virtual float shedule_Scale();
-	virtual void shedule_Update(u32 dt);
+	void Update(u32 dt);
 	virtual void renderable_Render();
 	void PerformAllTheWork();
 

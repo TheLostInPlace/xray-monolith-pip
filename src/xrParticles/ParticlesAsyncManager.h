@@ -11,10 +11,15 @@ public:
 
 	static bool Push(CParticlesObject* Obj);
 	static void Pop(CParticlesObject* Obj);
-	
+
 	static void ForceUpdate(CParticlesObject* Obj);
+
 private:
 	void UpdateParticle(CParticlesObject* particle) const;
+	static void Start();
+
+public:
+	CParticlesAsync();
 
 private:
 	xr_list<CParticlesObject*> Particles;

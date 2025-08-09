@@ -4,6 +4,7 @@
 #include "../../xrEngine/customhud.h"
 #include "../../xrEngine/xr_object.h"
 #include "../xrRender/SkeletonCustom.h"
+#include "../../xrParticles/ParticlesAsyncManager.h"
 
 #include "../xrRender/QueryHelper.h"
 
@@ -404,6 +405,8 @@ void CRender::Render()
 		HOM.Enable();
 		HOM.Render(ViewBase);
 	}
+
+	CParticlesAsync::Wait();
 
 	//******* Z-prefill calc - DEFERRER RENDERER
 	if (ps_r2_ls_flags.test(R2FLAG_ZFILL))

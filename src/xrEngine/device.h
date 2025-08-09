@@ -233,6 +233,8 @@ public:
 	// ForserX: Pre-Render sequence
 	xr_vector<xr_delegate<void()>> seqParallelRender;
 
+	std::function<void()> ParticleWorkerCallback;
+
 	// Dependent classes
 	//CResourceManager* Resources;
 
@@ -510,6 +512,7 @@ private:
 };
 
 extern ENGINE_API CRenderDevice Device;
+extern ENGINE_API CRenderDevice* DevicePtr;
 
 #ifndef _EDITOR
 #define RDEVICE Device

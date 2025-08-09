@@ -37,7 +37,7 @@
 
 ENGINE_API CRenderDevice Device;
 ENGINE_API CLoadScreenRenderer load_screen_renderer;
-
+ENGINE_API CRenderDevice* DevicePtr = nullptr;
 
 ENGINE_API BOOL g_bRendering = FALSE;
 extern ENGINE_API float psHUD_FOV;
@@ -308,8 +308,6 @@ void mt_FreezeThread(void *ptr) {
 
 void CRenderDevice::on_idle()
 {
-	PROF_THREAD("X-Ray Primary Thread");
-	PROF_FRAME("X-Ray Primary Thread");
 
 	FreezeTimer.Start();
 
@@ -318,6 +316,9 @@ void CRenderDevice::on_idle()
 		Sleep(100);
 		return;
 	}
+
+	PROF_THREAD("X-Ray Primary Thread");
+	PROF_FRAME("X-Ray Primary Thread");
 
 #ifdef DEDICATED_SERVER
     u32 FrameStartTime = TimerGlobal.GetElapsed_ms();
@@ -422,6 +423,7 @@ void CRenderDevice::on_idle()
 	mView_saved = mView;
 	mProject_saved = mProject;
 
+	// TODO: Try to move this upper
 	SetEvent(RenderEventMT);
 	STOP_PROFILE;
 
@@ -580,8 +582,14 @@ static void mt_ParallelRenderThread(void*)
 	while (FALSE == Device.mt_bMustExit)
 	{
 		WaitForSingleObject(RenderEventMT, INFINITE);
-		PROF_EVENT("mt_ParallelRenderThread CPU Frame: Render");
 
+		if (Device.ParticleWorkerCallback)
+		{
+			PROF_EVENT("mt_ParallelRenderThread Process Particles");
+			Device.ParticleWorkerCallback();
+		}
+
+		PROF_EVENT("mt_ParallelRenderThread seqParallelRender");
 		for (u32 pit = 0; pit < Device.seqParallelRender.size(); pit++)
 			Device.seqParallelRender[pit]();
 

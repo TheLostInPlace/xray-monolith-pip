@@ -20,7 +20,7 @@
 #include "../../xrCPU_Pipe/ttapi.h"
 #endif
 
-
+#include "../../xrParticles/ParticlesAsyncManager.h"
 using namespace R_dsgraph;
 
 CRender RImplementation;
@@ -705,7 +705,7 @@ void CRender::Render()
 		return;
 	}
 
-
+	CParticlesAsync::Wait();
 	Device.Statistic->RenderDUMP.Begin();
 	// Begin
 	Target->Begin();

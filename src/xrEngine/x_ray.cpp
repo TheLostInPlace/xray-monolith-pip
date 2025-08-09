@@ -165,6 +165,8 @@ ENGINE_API string_path g_sLaunchWorkingFolder;
 // startup point
 void InitEngine()
 {
+	DevicePtr = &Device;
+
 	Engine.Initialize();
 	while (!g_bIntroFinished) Sleep(100);
 	Device.Initialize();
@@ -303,6 +305,7 @@ void destroyEngine()
 	xrLogger::FlushLog();
 
 	Engine.Destroy();
+	DevicePtr = nullptr;
 }
 
 void execUserScript()

@@ -5,33 +5,41 @@
 #include "../Include/xrRender/RenderVisual.h"
 
 static CParticlesAsync Instance;
-static xr_task_group ParticleObjectTasks;
+//static xr_task_group ParticleObjectTasks;
 
 void CParticlesAsync::Play()
 {
-	PROF_EVENT();
+	if (DevicePtr && !Device.ParticleWorkerCallback)
+		Device.ParticleWorkerCallback = Start;
+
+	if (!psDeviceFlags.test(mtParticles))
+	{
+		Instance.Start();
+	}
+}
+
+void CParticlesAsync::Start()
+{
 	Instance.IsStarted = true;
 
-	for (CParticlesObject* particle : Instance.Particles)
 	{
-		if (particle->m_bDead)
-			continue;
+		PROF_EVENT("Particle Update");
+		for (CParticlesObject* particle : Instance.Particles)
+		{
+			if (particle->m_bDead)
+				continue;
 
-		if (psDeviceFlags.test(mtParticles))
-		{
-			ParticleObjectTasks.run
-			(
-				[particle]()
-				{
-					Instance.UpdateParticle(particle);
-				}
-			);
-		}
-		else
-		{
 			Instance.UpdateParticle(particle);
 		}
 	}
+
+	PROF_EVENT("Particle Shedule");
+	for (CParticlesObject* particle : Instance.Particles)
+	{
+		particle->Update(Device.dwTimeDelta);
+	}
+
+	Instance.IsStarted = false;
 }
 
 void CParticlesAsync::Wait()
@@ -39,10 +47,12 @@ void CParticlesAsync::Wait()
 	if (psDeviceFlags.test(mtParticles))
 	{
 		PROF_EVENT("Particles Wait");
-		ParticleObjectTasks.wait();
+		while (Instance.IsStarted)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(0));
+		}
+		//ParticleObjectTasks.wait();
 	}
-
-	Instance.IsStarted = false;
 }
 
 bool CParticlesAsync::Push(CParticlesObject* Obj)
@@ -67,9 +77,16 @@ void CParticlesAsync::ForceUpdate(CParticlesObject* Obj)
 	Instance.UpdateParticle(Obj);
 }
 
+CParticlesAsync::CParticlesAsync()
+{
+	if (!DevicePtr)
+		return;
+
+	Device.ParticleWorkerCallback = Start;
+}
+
 void CParticlesAsync::UpdateParticle(CParticlesObject* particle) const
 {
-	PROF_THREAD("Particles Worker");
 	u32 dt = Device.dwTimeGlobal - particle->dwLastTime;
 	IParticleCustom* V = smart_cast<IParticleCustom*>(particle->renderable.visual);
 
