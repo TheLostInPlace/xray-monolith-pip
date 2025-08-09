@@ -302,6 +302,7 @@ DEFINE_VECTOR(xr_rtoken, RTokenVec, RTokenVecIt);
 #include "FileSystem.h"
 #include "FTimer.h"
 #include "xr_delegate.h"
+#include "_noncopyable.h"
 #include "intrusive_ptr.h"
 
 #include "net_utils.h"

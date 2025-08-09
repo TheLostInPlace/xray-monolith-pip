@@ -1,13 +1,13 @@
 #ifndef SERVER_INFO_UPLOADER
 #define SERVER_INFO_UPLOADER
 
-#include <boost/noncopyable.hpp>
+
 #include "../xrCore/xr_delegate.h"
 #include "file_transfer.h"
 
 typedef xr_delegate<void (ClientID const&)> svinfo_upload_complete_cb;
 
-class server_info_uploader : boost::noncopyable
+class server_info_uploader : xray::noncopyable
 {
 	enum ESvInfoUploadState
 	{

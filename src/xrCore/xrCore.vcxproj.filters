@@ -627,6 +627,9 @@
     <ClInclude Include="_global_functions.h">
       <Filter>Kernel</Filter>
     </ClInclude>
+    <ClInclude Include="_noncopyable.h">
+      <Filter>Kernel</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="xrCore.rc" />
