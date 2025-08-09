@@ -19,6 +19,7 @@
 #ifdef USE_LUA_FUNCTOR_CACHE
 #include <typeinfo>
 #include <luabind/luabind.hpp>
+#include <_global_functions.h>
 #endif
 
 //AVO: lua re-org
@@ -106,13 +107,9 @@ private:
 	{
 		size_t operator()(const FunctorCacheKey& s) const noexcept
 		{
-			// Compute individual hash values for first,
-			// second and combine them using XOR
-			// and bit shifting:
 			size_t h1 = xr_hash<xr_string>()(s.function_name);
 			size_t h2 = s.result_type_hash;
-
-			return h1 ^ (h2 << 1);
+			return hash_combine(0, h1, h2);
 		}
 	};
 	
