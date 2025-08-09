@@ -177,7 +177,7 @@ void CRender::create()
 {
 	Device.seqFrame.Add(this,REG_PRIORITY_HIGH + 0x12345678);
 
-	m_skinning = -1;
+	Engine.External.SetSkinningMode();
 	m_MSAASample = -1;
 
 	// hardware
@@ -1118,6 +1118,7 @@ HRESULT CRender::shader_compile(
 	char sh_name[MAX_PATH] = "";
 	u32 len = 0;
 	// options
+	const int m_skinning = Engine.External.GetSkinningMode();
 	{
 		xr_sprintf(c_smapsize, "%04d", u32(o.smapsize));
 		defines[def_it].Name = "SMAP_size";

@@ -148,15 +148,17 @@ void CResourceManager::_DeleteDecl(const SDeclaration* dcl)
 #ifndef _EDITOR
 SVS* CResourceManager::_CreateVS(LPCSTR _name)
 {
-	string_path name;
-	xr_strcpy(name, _name);
-	if (0 == ::Render->m_skinning) xr_strcat(name, "_0");
-	if (1 == ::Render->m_skinning) xr_strcat(name, "_1");
-	if (2 == ::Render->m_skinning) xr_strcat(name, "_2");
-	if (3 == ::Render->m_skinning) xr_strcat(name, "_3");
-	if (4 == ::Render->m_skinning) xr_strcat(name, "_4");
-	LPSTR N = LPSTR(name);
 	xrCriticalSectionGuard guard(creationGuard);
+	xr_string res_name = _name;
+
+	const int m_skinning = Engine.External.GetSkinningMode();
+	if (m_skinning > 0)
+	{
+		res_name += "_" + xr_string::ToString(m_skinning);
+	}
+
+	LPCSTR name = res_name.c_str();
+	LPSTR N = LPSTR(name);
 	map_VS::iterator I = m_vs.find(N);
 	if (I != m_vs.end()) return I->second;
 	else

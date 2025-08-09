@@ -144,21 +144,22 @@ void CResourceManager::_DeletePass(const SPass* P)
 SVS* CResourceManager::_CreateVS(LPCSTR _name)
 {
 	xrCriticalSectionGuard guard(creationGuard);
-	int skinning = -1;
-	string_path name;
-	xr_strcpy(name, _name);
-	if (0 == ::Render->m_skinning) { xr_strcat(name, "_0"); skinning = 0; }
-	if (1 == ::Render->m_skinning) { xr_strcat(name, "_1"); skinning = 1; }
-	if (2 == ::Render->m_skinning) { xr_strcat(name, "_2"); skinning = 2; }
-	if (3 == ::Render->m_skinning) { xr_strcat(name, "_3"); skinning = 3; }
-	if (4 == ::Render->m_skinning) { xr_strcat(name, "_4"); skinning = 4; }
+	xr_string res_name = _name;
+
+	const int m_skinning = Engine.External.GetSkinningMode();
+	if (m_skinning > 0)
+	{
+		res_name += "_" + xr_string::ToString(m_skinning);
+	}
+
+	LPCSTR name = res_name.c_str();
 	LPSTR N = LPSTR(name);
 	map_VS::iterator I = m_vs.find(N);
 	if (I != m_vs.end()) return I->second;
 	else
 	{
 		SVS* _vs = xr_new<SVS>();
-		_vs->skinning = skinning;
+		_vs->skinning = m_skinning;
 		_vs->dwFlags |= xr_resource_flagged::RF_REGISTERED;
 		m_vs.insert(mk_pair(_vs->set_name(name), _vs));
 		//_vs->vs				= NULL;

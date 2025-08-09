@@ -43,7 +43,7 @@ void dxRender_Visual::Release()
 void dxRender_Visual::Load(const char* N, IReader* data, u32)
 {
 	dbg_name = N;
-	skinning = ::Render->m_skinning;
+	skinning = Engine.External.GetSkinningMode();
 
 	// header
 	VERIFY(data);
@@ -143,7 +143,7 @@ void dxRender_Visual::SetShaderTexture(LPCSTR s_shader, LPCSTR s_texture)
 		dbg_texture = s_texture;
 	}
 
-	::Render->m_skinning = skinning;
+	Engine.External.SetSkinningMode(skinning);
 	shader.create(*dbg_shader, *dbg_texture);
 }
 

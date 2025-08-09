@@ -226,7 +226,6 @@ public:
 public:
 	// options
 	bool hud_loading;
-	s32 m_skinning;
 	s32 m_MSAASample;
 
 	BENCH_SEC_SCRAMBLEMEMBER1
@@ -256,7 +255,6 @@ public:
 	virtual size_t SectorsCount() { return size_t(0); }
 
 	//virtual IDirect3DBaseTexture9* texture_load (LPCSTR fname, u32& msize) = 0;
-	void shader_option_skinning(s32 mode) { m_skinning = mode; }
 	virtual HRESULT shader_compile(
 		LPCSTR name,
 		DWORD const* pSrcData,
