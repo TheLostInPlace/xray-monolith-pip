@@ -1967,6 +1967,7 @@
     <ClInclude Include="WeaponCustomPistol.h" />
     <ClInclude Include="WeaponFN2000.h" />
     <ClInclude Include="WeaponFORT.h" />
+    <ClInclude Include="WeaponGrenadeLauncher.h" />
     <ClInclude Include="WeaponGroza.h" />
     <ClInclude Include="WeaponHPSA.h" />
     <ClInclude Include="WeaponKnife.h" />
@@ -4200,6 +4201,7 @@
       <PrecompiledHeaderFile>pch_script.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
+    <ClCompile Include="WeaponGrenadeLauncher.cpp" />
     <ClCompile Include="WeaponGroza.cpp">
       <PrecompiledHeaderFile>pch_script.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
