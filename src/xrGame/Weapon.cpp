@@ -1440,6 +1440,7 @@ void CWeapon::UpdatePosition(const Fmatrix& trans)
 	VERIFY(!fis_zero(DET(renderable.xform)));
 }
 
+BOOL interruptFireOnAimToggle = FALSE;
 bool CWeapon::Action(u16 cmd, u32 flags)
 {
 	if (inherited::Action(cmd, flags)) return true;
@@ -1495,7 +1496,7 @@ bool CWeapon::Action(u16 cmd, u32 flags)
 
 							if (GetState() != eAimStart && HudAnimationExist("anm_idle_aim_start"))
 								SwitchState(eAimStart);
-							else if (GetState() != eIdle)
+							else if (interruptFireOnAimToggle && GetState() != eIdle)
 								SwitchState(eIdle);
 
 							OnZoomIn();
@@ -1521,7 +1522,7 @@ bool CWeapon::Action(u16 cmd, u32 flags)
 
 						if (GetState() != eAimStart && HudAnimationExist("anm_idle_aim_start"))
 							SwitchState(eAimStart);
-						else if (GetState() != eIdle)
+						else if (interruptFireOnAimToggle && GetState() != eIdle)
 							SwitchState(eIdle);
 
 						OnZoomIn();
