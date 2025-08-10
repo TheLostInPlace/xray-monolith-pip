@@ -7392,6 +7392,9 @@
     <ClInclude Include="..\3rd party\fast_dynamic_cast\fast_dynamic_cast.hpp">
       <Filter>Core\Common\SmartCast</Filter>
     </ClInclude>
+    <ClInclude Include="..\3rd party\fastdelegate\fastdelegate.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="damage_manager.cpp">
