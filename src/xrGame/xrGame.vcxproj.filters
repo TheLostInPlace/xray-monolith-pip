@@ -7350,9 +7350,6 @@
     <ClInclude Include="..\Include\xrRender\DrawUtils.h">
       <Filter>Core\Server\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="..\xrCore\FastDelegate.h">
-      <Filter>Core\Server\Editor</Filter>
-    </ClInclude>
     <ClInclude Include="CustomDevice.h">
       <Filter>Core\Client\Objects\items &amp; weapons\Devices</Filter>
     </ClInclude>
@@ -7394,6 +7391,9 @@
     </ClInclude>
     <ClInclude Include="..\3rd party\fast_dynamic_cast\fast_dynamic_cast.hpp">
       <Filter>Core\Common\SmartCast</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rd party\fastdelegate\fastdelegate.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
