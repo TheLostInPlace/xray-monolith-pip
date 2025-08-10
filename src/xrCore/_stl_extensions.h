@@ -4,6 +4,8 @@
 using std::swap;
 
 #include <functional>
+#include <unordered_map>
+#include <unordered_set>
 #include "_type_traits.h"
 
 #ifdef __BORLANDC__
@@ -273,14 +275,11 @@ protected:
 	_C c;
 };
 
-#include <unordered_map>
-#include <unordered_set>
-
 #define USE_ROBINHOOD
 
 #ifdef USE_ROBINHOOD
 
-#include "robin_hood.h"
+#include <robin_hood/robin_hood.h>
 template <class T>
 using xr_hash = robin_hood::hash<T>;
 
