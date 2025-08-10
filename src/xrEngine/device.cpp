@@ -320,6 +320,12 @@ void CRenderDevice::on_idle()
 	PROF_THREAD("X-Ray Primary Thread");
 	PROF_FRAME("X-Ray Primary Thread");
 
+	if (g_pGamePersistent != nullptr)
+	{
+		PROF_EVENT("Update Particles");
+		g_pGamePersistent->UpdateParticles();
+	}
+
 #ifdef DEDICATED_SERVER
     u32 FrameStartTime = TimerGlobal.GetElapsed_ms();
 #endif
@@ -337,14 +343,6 @@ void CRenderDevice::on_idle()
 			g_loading_events.pop_front();
 		pApp->LoadDraw();
 		return;
-	}
-	else
-	{
-		if (g_pGamePersistent != nullptr)
-		{
-			PROF_EVENT("Update Particles");
-			g_pGamePersistent->UpdateParticles();
-		}
 	}
 
 	if (!Device.dwPrecacheFrame && !g_SASH.IsBenchmarkRunning() && g_bLoaded)
