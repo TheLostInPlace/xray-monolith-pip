@@ -16,7 +16,7 @@
 
 BOOL g_launcher_dynamic_range = FALSE;
 BOOL g_launcher_dynamic_range_zoom = TRUE;
-BOOL g_launcher_dynamic_range_mode = FALSE;
+BOOL g_launcher_dynamic_range_mode = TRUE;
 float g_launcher_dynamic_range_max = 300.0f;
 
 BOOL CWeaponGrenadeLauncher::use_dynamic_range(CWeapon* wpn)
