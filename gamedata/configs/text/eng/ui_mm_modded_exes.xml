@@ -613,10 +613,6 @@
 	<string id="ui_mm_modded_exes_gameplay_gameplay_general_g_progressive_stamina_cost_desc">
 		<text>Stamina will drain linearly with current weight instead of cutoff point</text>
 	</string>
-	<string id="ui_mm_modded_exes_gameplay_gameplay_general_g_auto_reload">
-		<text>Automatically reload weapon when ammo is depleted (g_auto_reload)</text>
-	</string>
-
 	<!-- Aim -->
 	<string id="ui_mm_menu_aim">
 		<text>Aim</text>
@@ -699,27 +695,31 @@
 		<text>Item</text>
 	</string>
 
-	<!-- Launchers -->
-	<string id="ui_mm_menu_launchers">
-		<text>Launchers</text>
+	<!-- Weapons -->
+	<string id="ui_mm_menu_weapons">
+		<text>Weapons</text>
 	</string>
-	<string id="ui_mm_launchers_modded_exes">
-		<text>Launchers</text>
+	<string id="ui_mm_weapons_modded_exes">
+		<text>Weapons</text>
+	</string>
+
+	<string id="ui_mm_modded_exes_gameplay_weapons_g_auto_reload">
+		<text>Automatically reload weapon when ammo is depleted (g_auto_reload)</text>
 	</string>
 	
-	<string id="ui_mm_modded_exes_gameplay_launchers_g_fire_reloads_ubgl">
+	<string id="ui_mm_modded_exes_gameplay_weapons_g_fire_reloads_ubgl">
 		<text>Reload under-barrel launchers with fire input (g_fire_reloads_ubgl)</text>
 	</string>
-	<string id="ui_mm_modded_exes_gameplay_launchers_g_launcher_dynamic_range">
+	<string id="ui_mm_modded_exes_gameplay_weapons_g_launcher_dynamic_range">
 		<text>Apply launcher assist while unaimed (g_launcher_dynamic_range)</text>
 	</string>
-	<string id="ui_mm_modded_exes_gameplay_launchers_g_launcher_dynamic_range_zoom">
+	<string id="ui_mm_modded_exes_gameplay_weapons_g_launcher_dynamic_range_zoom">
 		<text>Apply launcher assist while aimed (g_launcher_dynamic_range_zoom)</text>
 	</string>
-	<string id="ui_mm_modded_exes_gameplay_launchers_g_launcher_dynamic_range_mode">
+	<string id="ui_mm_modded_exes_gameplay_weapons_g_launcher_dynamic_range_mode">
 		<text>Target dynamic objects with launcher assist (g_launcher_dynamic_range_mode)</text>
 	</string>
-	<string id="ui_mm_modded_exes_gameplay_launchers_g_launcher_dynamic_range_max">
+	<string id="ui_mm_modded_exes_gameplay_weapons_g_launcher_dynamic_range_max">
 		<text>Maximum launcher assist range (g_launcher_dynamic_range_max)</text>
 	</string>
 
