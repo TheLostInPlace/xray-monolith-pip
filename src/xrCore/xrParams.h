@@ -92,7 +92,8 @@ enum class ECoreParams : u8
 	ignore_save_incompatibility,
 	sound_constant_speed,
 	savescreenshots,
-	lua_studio
+	lua_studio,
+	clear_cs_constants
 };
 
 namespace xrParams {
