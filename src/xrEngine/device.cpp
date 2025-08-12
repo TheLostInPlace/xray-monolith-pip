@@ -326,6 +326,8 @@ void CRenderDevice::on_idle()
 		g_pGamePersistent->UpdateParticles();
 	}
 
+	SetEvent(RenderEventMT);
+
 #ifdef DEDICATED_SERVER
     u32 FrameStartTime = TimerGlobal.GetElapsed_ms();
 #endif
@@ -421,8 +423,6 @@ void CRenderDevice::on_idle()
 	mView_saved = mView;
 	mProject_saved = mProject;
 
-	// TODO: Try to move this upper
-	SetEvent(RenderEventMT);
 	STOP_PROFILE;
 
 	// *** Resume threads
