@@ -632,6 +632,7 @@ void CRenderDevice::Run()
 	SetEvent(RenderEventMT); // Important for correct thread closing!!!
 	mt_csEnter.Leave();
 	while (mt_bMustExit) Sleep(0);
+	ParticleWorkerCallback = nullptr;
 	// DeleteCriticalSection (&mt_csEnter);
 	// DeleteCriticalSection (&mt_csLeave);
 }
