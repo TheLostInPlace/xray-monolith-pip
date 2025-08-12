@@ -3295,3 +3295,14 @@ Fmatrix CWeapon::RayTransform()
 
 	return matrix;
 }
+
+// v2v3v4: fix ctd when into about to be destroyed object with detector scopes
+void CWeapon::net_Relcase(CObject* object)
+{
+	CHudItem::net_Relcase(object);
+
+	if (!m_zoom_params.m_pVision)
+		return;
+
+	m_zoom_params.m_pVision->remove_links(object);
+}
