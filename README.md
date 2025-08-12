@@ -170,6 +170,9 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.08.12**
+* Fix issue https://github.com/themrdemonized/xray-monolith/issues/332
+
 **2025.08.11**
 * Small reorganization of 3rd party files
 * `g_interrupt_fire_on_aim_toggle` cvar to set stop firing when pressed aim, default enabled addresses issue https://github.com/themrdemonized/xray-monolith/issues/327
