@@ -170,6 +170,10 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.08.12u1**
+* Fix issue https://github.com/themrdemonized/xray-monolith/issues/333
+* v2v3v4: fix ctd when zooming into about to be destroyed object with detector scopes
+
 **2025.08.12**
 * Fix issue https://github.com/themrdemonized/xray-monolith/issues/332
 
