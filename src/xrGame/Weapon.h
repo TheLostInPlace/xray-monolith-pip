@@ -28,7 +28,7 @@ class CNightVisionEffector;
 
 extern float f_weapon_deterioration;
 
-extern std::map<shared_str, float> listScopeRadii;
+extern xr_map<shared_str, float> listScopeRadii;
 
 extern float scope_scrollpower;
 extern float sens_multiple;
