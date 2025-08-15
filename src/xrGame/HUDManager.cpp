@@ -23,6 +23,8 @@
 #include "player_hud.h"
 #include "script_attachment_manager.h"
 
+#include "GametaskManager.h"
+
 extern CUIGameCustom* CurrentGameUI()
 {
 	return g_hud ? HUD().GetGameUI() : nullptr;
@@ -154,19 +156,33 @@ CHUDManager::~CHUDManager()
 //--------------------------------------------------------------------
 void CHUDManager::OnFrame()
 {
+	if (!b_online)						
+		return;
+
 	PROF_EVENT("CHUDManager::OnFrame");
-	if (!psHUD_Flags.is(HUD_DRAW_RT2))
+}
+
+xrCriticalSection ui_lock;
+void CHUDManager::OnFrameMT()
+{
+	if (!psHUD_Flags.is(HUD_DRAW_RT2))	
 		return;
 
 	if (!b_online)
 		return;
 
-	if (pUIGame)
-		pUIGame->OnFrame();
+	PROF_EVENT("CHUDManager::OnFrameMT");
+
+	if (Device.dwPrecacheFrame == 0)
+		Level().GameTaskManager().UpdateTasks();
 
 	PP.CameraPick();
 	g_player_hud->OnFrame();
 	DoPick(PP);
+
+	xrCriticalSectionGuard guard(&ui_lock);
+	if (pUIGame) 
+		pUIGame->OnFrame();
 }
 
 //--------------------------------------------------------------------
@@ -284,7 +300,10 @@ void CHUDManager::RenderUI()
 	{
 		HitMarker.Render();
 		if (pUIGame)
+		{
+			xrCriticalSectionGuard guard(&ui_lock);
 			pUIGame->Render();
+		}
 
 		UI().RenderFont();
 	}

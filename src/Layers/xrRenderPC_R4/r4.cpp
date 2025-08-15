@@ -648,6 +648,13 @@ void CRender::OnFrame()
 	PROF_EVENT("CRender::OnFrame()");
 	Models->DeleteQueue();
 
+	{
+		//Lights Delete queue
+		for (light* L : v_all_lights_dque)
+			xr_delete(L);
+		v_all_lights_dque.clear();
+	}
+
 	if (Details)
 		g_pGamePersistent->GrassBendersUpdateAnimations();
 }
@@ -677,10 +684,17 @@ IRenderVisual* CRender::model_Create(LPCSTR name, IReader* data) { return Models
 IRenderVisual* CRender::model_CreateChild(LPCSTR name, IReader* data) { return Models->CreateChild(name, data); }
 IRenderVisual* CRender::model_Duplicate(IRenderVisual* V) { return Models->Instance_Duplicate((dxRender_Visual*)V); }
 
-void CRender::model_Delete(IRenderVisual* & V, BOOL bDiscard)
+void CRender::model_Delete(IRenderVisual*& V, BOOL bDiscard)
 {
 	dxRender_Visual* pVisual = (dxRender_Visual*)V;
 	Models->Delete(pVisual, bDiscard);
+	V = 0;
+}
+
+void CRender::model_Delete_Deffered(IRenderVisual*& V)
+{
+	dxRender_Visual* pVisual = (dxRender_Visual*)V;
+	Models->DeleteDeffered(pVisual);
 	V = 0;
 }
 
@@ -740,8 +754,10 @@ IRender_Portal* CRender::getPortal(int id)
 
 IRender_Sector* CRender::getSector(int id)
 {
-	VERIFY(id<int(Sectors.size()));
-	return Sectors[id];
+	if (id >= 0 && id < int(Sectors.size()))
+		return Sectors[id];
+
+	return NULL;
 }
 
 IRender_Sector* CRender::getSectorActive() { return pLastSector; }

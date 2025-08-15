@@ -22,7 +22,7 @@ ITEM_INFO::ITEM_INFO()
 ITEM_INFO::~ITEM_INFO()
 {
 	if (pParticle)
-		CParticlesObject::Destroy(pParticle);
+		Particles::Details::Destroy(pParticle);
 }
 
 CCustomDetector::CCustomDetector(){}

@@ -157,7 +157,8 @@ public:
 	void OnBuildVersionChallenge();
 	void OnConnectResult(NET_Packet* P);
 	// Static particles
-	DEFINE_VECTOR(CParticlesObject*, POVec, POIt);
+	using POVec = xr_vector<xr_shared_ptr<CParticlesObject>>;
+	using POIt = POVec::iterator;
 	POVec m_StaticParticles;
 	game_cl_GameState* game = nullptr;
 	bool m_bGameConfigStarted = false;

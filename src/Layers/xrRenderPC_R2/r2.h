@@ -141,6 +141,9 @@ public:
 
 	xr_vector<sun::cascade> m_sun_cascades;
 
+	xr_list<light*>												v_all_lights_dque;
+	xr_list<light*>												v_all_lights;
+
 private:
 	// Loading / Unloading
 	void LoadBuffers(CStreamReader* fs, BOOL _alternative);
@@ -300,6 +303,7 @@ public:
 	virtual IRenderVisual* model_Duplicate(IRenderVisual* V);
 	virtual void model_Delete(IRenderVisual* & V, BOOL bDiscard);
 	virtual void model_Delete(IRender_DetailModel* & F);
+	virtual void model_Delete_Deffered(IRenderVisual* &	V);
 	virtual void model_Logging(BOOL bEnable) { Models->Logging(bEnable); }
 	virtual void models_Prefetch();
 	virtual void models_PrefetchOne(LPCSTR name, bool assert = true);

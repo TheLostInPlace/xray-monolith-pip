@@ -383,7 +383,7 @@ void CExplosive::Explode()
 	explode_matrix.c.set(pos);
 
 	CParticlesObject* pStaticPG;
-	pStaticPG = CParticlesObject::Create(*m_sExplodeParticles, !m_bDynamicParticles);
+	pStaticPG = Particles::Details::Create(*m_sExplodeParticles,!m_bDynamicParticles).get();
 	if (m_bDynamicParticles) m_pExpParticle = pStaticPG;
 	pStaticPG->UpdateParent(explode_matrix, vel);
 	pStaticPG->Play(false);
@@ -563,7 +563,7 @@ void CExplosive::OnAfterExplosion()
 	if (m_pExpParticle)
 	{
 		m_pExpParticle->Stop();
-		CParticlesObject::Destroy(m_pExpParticle);
+		Particles::Details::Destroy(m_pExpParticle);
 		m_pExpParticle = NULL;
 	}
 	//ликвидировать сам объект 

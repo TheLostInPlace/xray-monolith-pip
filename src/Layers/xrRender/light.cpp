@@ -46,9 +46,12 @@ light::light(void) : ISpatial(g_SpatialSpace)
 	vis.visible = true;
 	vis.pending = false;
 	m_sectors = {};
-	b_need_recompute_xform = true;
-	b_need_detect_sectors = true;
+	X.S.posX = 0;
+	X.S.posY = 0;
+	X.S.size = SMAP_adapt_max;
 #endif // (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
+	b_spatial_move = true;
+	RImplementation.v_all_lights.push_back(this);
 }
 
 light::~light()
@@ -66,6 +69,19 @@ light::~light()
 #endif // (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 	ignore_object = nullptr;
 	for (int f=0; f<6; f++) decor_object[f] = nullptr;
+	RImplementation.v_all_lights.remove(this);
+}
+
+void light::destroy(bool deffered)
+{
+	set_active(false);
+	if (deffered)
+	{
+		if (std::find(RImplementation.v_all_lights_dque.begin(), RImplementation.v_all_lights_dque.end(), this) == RImplementation.v_all_lights_dque.end())
+			RImplementation.v_all_lights_dque.push_back(this);
+	}
+	else
+		xr_delete(this);
 }
 
 #if (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
@@ -123,8 +139,8 @@ void light::set_active(bool a)
 		if (flags.bActive) return;
 		flags.bActive = true;
 		spatial_register();
-		spatial_move();
-		//Msg								("!!! L-register: %X",u32(this));
+		b_spatial_move = true;
+		//Msg("!!! L-register: %X",u32(this));
 
 #ifdef DEBUG
 		Fvector	zero = {0,-1000,0}			;
@@ -137,7 +153,6 @@ void light::set_active(bool a)
 	{
 		if (!flags.bActive) return;
 		flags.bActive = false;
-		spatial_move();
 		spatial_unregister();
 		//Msg								("!!! L-unregister: %X",u32(this));
 	}
@@ -148,7 +163,7 @@ void light::set_position(const Fvector& P)
 	float eps = EPS_L; //_max	(range*0.001f,EPS_L);
 	if (position.similar(P, eps))return;
 	position.set(P);
-	spatial_move();
+	b_spatial_move = true;
 }
 
 void light::set_range(float R)
@@ -156,7 +171,7 @@ void light::set_range(float R)
 	float eps = _max(range * 0.1f, EPS_L);
 	if (fsimilar(range, R, eps)) return;
 	range = R;
-	spatial_move();
+	b_spatial_move = true;
 };
 
 void light::set_cone(float angle)
@@ -164,7 +179,7 @@ void light::set_cone(float angle)
 	if (fsimilar(cone, angle)) return;
 	VERIFY(cone < deg2rad(121.f)); // 120 is hard limit for lights
 	cone = angle;
-	spatial_move();
+	b_spatial_move = true;
 }
 
 void light::set_rotation(const Fvector& D, const Fvector& R)
@@ -172,7 +187,7 @@ void light::set_rotation(const Fvector& D, const Fvector& R)
 	Fvector old_D = direction;
 	direction.normalize(D);
 	right.normalize(R);
-	if (!fsimilar(1.f, old_D.dotproduct(D))) spatial_move();
+	if (!fsimilar(1.f, old_D.dotproduct(D), EPS_S)) b_spatial_move = true;
 }
 
 void light::set_shadow(bool b)						
@@ -211,11 +226,10 @@ void light::get_sectors()
 	CSector* sector = (CSector*)spatial.sector;
 	if(0==sector) return;
 
-	if(flags.type == IRender_Light::SPOT)
+	if(flags.type == IRender_Light::SPOT || flags.type == IRender_Light::OMNIPART)
 	{
 		CFrustum temp = CFrustum();
-		temp.CreateFromMatrix			(X.S.combine, FRUSTUM_P_ALL);
-
+		temp.CreateFromMatrix(X.S.combine, FRUSTUM_P_ALL);
 		m_sectors = RImplementation.detectSectors_frustum(sector, &temp);
 	}
 	if(flags.type == IRender_Light::POINT)
@@ -227,43 +241,45 @@ void light::get_sectors()
 
 void light::spatial_move()
 {
+	if(!b_spatial_move) return;
+	b_spatial_move = false;
 	switch (flags.type)
 	{
-	case IRender_Light::REFLECTED:
-	case IRender_Light::POINT:
-		{
-			spatial.sphere.set(position, range);
-		}
-		break;
-	case IRender_Light::SPOT:
-		{
-			// minimal enclosing sphere around cone
-			VERIFY2(cone < deg2rad(121.f), "Too large light-cone angle. Maybe you have passed it in 'degrees'?");
-			if (cone >= PI_DIV_2)
+		case IRender_Light::REFLECTED:
+		case IRender_Light::POINT:
 			{
-				// obtused-angled
-				spatial.sphere.P.mad(position, direction, range);
-				spatial.sphere.R = range * tanf(cone / 2.f);
+				spatial.sphere.set(position, range);
 			}
-			else
+			break;
+		case IRender_Light::SPOT:
 			{
-				// acute-angled
-				spatial.sphere.R = range / (2.f * _sqr(_cos(cone / 2.f)));
-				spatial.sphere.P.mad(position, direction, spatial.sphere.R);
+				// minimal enclosing sphere around cone
+				VERIFY2(cone < deg2rad(121.f), "Too large light-cone angle. Maybe you have passed it in 'degrees'?");
+				if (cone >= PI_DIV_2)
+				{
+					// obtused-angled
+					spatial.sphere.P.mad(position, direction, range);
+					spatial.sphere.R = range * tanf(cone / 2.f);
+				}
+				else
+				{
+					// acute-angled
+					spatial.sphere.R = range / (2.f * _sqr(_cos(cone / 2.f)));
+					spatial.sphere.P.mad(position, direction, spatial.sphere.R);
+				}
 			}
-		}
-		break;
-	case IRender_Light::OMNIPART:
-		{
-			// is it optimal? seems to be...
-			//spatial.sphere.P.mad		(position,direction,range);
-			//spatial.sphere.R			= range;
-			// This is optimal.
-			const float fSphereR = range * RSQRTDIV2;
-			spatial.sphere.P.mad(position, direction, fSphereR);
-			spatial.sphere.R = fSphereR;
-		}
-		break;
+			break;
+		case IRender_Light::OMNIPART:
+			{
+				// is it optimal? seems to be...
+				//spatial.sphere.P.mad		(position,direction,range);
+				//spatial.sphere.R			= range;
+				// This is optimal.
+				const float fSphereR = range * RSQRTDIV2;
+				spatial.sphere.P.mad(position, direction, fSphereR);
+				spatial.sphere.R = fSphereR;
+			}
+			break;
 	}
 
 	// update spatial DB
@@ -272,13 +288,14 @@ void light::spatial_move()
 #if (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 	if (flags.bActive) gi_generate();
 	svis.invalidate();
-	b_need_detect_sectors = true;
-	b_need_recompute_xform = true;
-
-	X.S.posX = 0;
-	X.S.posY = 0;
-	X.S.size = SMAP_adapt_max;
+	xform_calc();
+	get_sectors();
 #endif // (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
+}
+
+void light::spatial_updatesector_internal()
+{
+	ISpatial::spatial_updatesector_internal();
 }
 
 vis_data& light::get_homdata()
@@ -447,12 +464,6 @@ static Fvector cmDir[6] = {
 
 void light::export_(light_Package& package)
 {
-	if (b_need_recompute_xform && ((!flags.bShadow && flags.type == IRender_Light::POINT) || flags.type == IRender_Light::SPOT))
-	{
-		xform_calc();
-		b_need_recompute_xform = false;
-	}
-
 	if (flags.bShadow)
 	{
 		switch (flags.type)
@@ -472,11 +483,11 @@ void light::export_(light_Package& package)
 					//L->set_cone(PI_DIV_2 + 0.5f); // SSS : Deprecated
 					L->set_cone(PI_DIV_2);
 					L->set_range(range);
+					L->set_virtual_size(virtual_size); //Set virtual size
 					L->set_color(color);
 					L->spatial.sector = spatial.sector; //. dangerous?
 					L->s_spot = s_spot;
 					L->s_point = s_point;
-					L->set_virtual_size(virtual_size); //Set virtual size
 					L->set_hud_mode(get_hud_mode());
 					L->omnipart_num = f;
 					L->omipart_parent = omnipart[0];
@@ -513,13 +524,6 @@ void light::export_(light_Package& package)
 
 					L->set_hud_mode(flags.bHudMode);
 					L->set_occq_mode(flags.bOccq);
-
-					if(L->b_need_recompute_xform)
-					{
-						L->xform_calc();
-						L->b_need_recompute_xform = false;
-					}
-
 					package.v_shadowed.push_back(L);
 				}
 			}

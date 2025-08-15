@@ -187,7 +187,7 @@ void CGamePersistent::Start(LPCSTR op)
 void CGamePersistent::Disconnect()
 {
 	// destroy ambient particles
-	CParticlesObject::Destroy(ambient_particles);
+	Particles::Details::Destroy(ambient_particles);
 
 	inherited::Disconnect();
 	// stop all played emitters
@@ -359,7 +359,7 @@ void CGamePersistent::WeathersUpdate()
 						wind_blast_out_time;
 					ambient_effect_wind_on = true;
 
-					ambient_particles = CParticlesObject::Create(eff->particles.c_str(), FALSE, false);
+					ambient_particles	= Particles::Details::Create(eff->particles.c_str(),FALSE,false);
 					Fvector pos;
 					pos.add(Device.vCameraPosition, eff->offset);
 					ambient_particles->play_at_pos(pos);
@@ -449,7 +449,7 @@ void CGamePersistent::WeathersUpdate()
 
 		// if particles not playing - destroy
 		if (ambient_particles && !ambient_particles->IsPlaying())
-			CParticlesObject::Destroy(ambient_particles);
+			Particles::Details::Destroy(ambient_particles);
 	}
 }
 
@@ -732,8 +732,6 @@ void CGamePersistent::OnFrame()
 
 	if (!Device.Paused())
 	{
-		Engine.Sheduler.Update();
-
 		// update weathers ambient
 		WeathersUpdate();
 	}

@@ -87,17 +87,16 @@ public:
 	bool add_call_unique(CPHCondition* condition, CPHReqComparerV* cmp_condition, CPHAction* action,
 	                     CPHReqComparerV* cmp_action);
 	void add_call(CPHCondition* condition, CPHAction* action);
-	void add_call_threadsafety(CPHCondition* condition, CPHAction* action);
+
 
 	void remove_call(PHCALL_I i);
 	bool has_call(CPHReqComparerV* cmp_condition, CPHReqComparerV* cmp_action);
 	PHCALL_I find_call(CPHReqComparerV* cmp_condition, CPHReqComparerV* cmp_action);
 	void remove_call(CPHReqComparerV* cmp_condition, CPHReqComparerV* cmp_action);
 	void remove_calls(CPHReqComparerV* cmp_object);
-	void remove_calls_threadsafety(CPHReqComparerV* cmp_object);
+
 
 	void update();
-	void update_threadsafety();
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	void add_call_unique_as(CPHCondition* condition, CPHReqComparerV* cmp_condition, CPHAction* action,
 	                        CPHReqComparerV* cmp_action);
@@ -122,6 +121,6 @@ private:
 	IC void remove_call(CPHReqComparerV* cmp_condition, CPHReqComparerV* cmp_action, PHCALL_STORAGE& cs);
 	IC void remove_calls(CPHReqComparerV* cmp_object, PHCALL_STORAGE& cs);
 private:
-	virtual void update_step() { update_threadsafety(); }
+	virtual void update_step() { update(); }
 	virtual void phys_shell_relcase(CPhysicsShell* sh);
 };

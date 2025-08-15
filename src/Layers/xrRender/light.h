@@ -60,6 +60,8 @@ public:
 
 	float virtual_size;
 
+	bool b_spatial_move;
+
 #if (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 	float			falloff;			// precalc to make light equal to zero at light range
 	float	        attenuation0;		// Constant attenuation		
@@ -84,9 +86,6 @@ public:
 
 	u32				m_xform_frame;
 	Fmatrix			m_xform;
-
-	bool b_need_recompute_xform;
-	bool b_need_detect_sectors;
 
 	struct _vis		{
 		u32			frame2test;		// frame the test is sheduled to
@@ -174,6 +173,7 @@ public:
 
 	virtual void spatial_move();
 	virtual Fvector spatial_sector_point();
+	virtual void spatial_updatesector_internal();
 
 	virtual IRender_Light* dcast_Light() { return this; }
 
@@ -192,6 +192,7 @@ public:
 
 	light();
 	virtual ~light();
+	virtual void destroy(bool deffered = true);
 };
 
 #endif // #define LAYERS_XRRENDER_LIGHT_H_INCLUDED

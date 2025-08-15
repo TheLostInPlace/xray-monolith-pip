@@ -286,7 +286,7 @@ CLevel::~CLevel()
 	}
 	// destroy PSs
 	for (POIt p_it = m_StaticParticles.begin(); m_StaticParticles.end() != p_it; ++p_it)
-		CParticlesObject::Destroy(*p_it);
+		Particles::Details::Destroy(*p_it);
 	m_StaticParticles.clear();
 	// Unload sounds
 	// unload prefetched sounds
@@ -951,17 +951,6 @@ void CLevel::OnFrame()
 			Device.seqParallel.push_back(xr_make_delegate(m_map_manager, &CMapManager::Update));
 		else
 			MapManager().Update();
-		if (IsGameTypeSingle() && Device.dwPrecacheFrame == 0)
-		{
-			// XXX nitrocaster: was enabled in x-ray 1.5; to be restored or removed
-			//if (g_mt_config.test(mtMap))
-			//{
-			//    Device.seqParallel.push_back(xr_make_delegate(
-			//    m_game_task_manager,&CGameTaskManager::UpdateTasks));
-			//}
-			//else
-			GameTaskManager().UpdateTasks();
-		}
 	}
 	// Inherited update
 	inherited::OnFrame();

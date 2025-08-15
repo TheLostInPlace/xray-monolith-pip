@@ -85,11 +85,12 @@ public:
 	virtual CObject* get_decor_object					(int index = 0)						= 0;
 
 	virtual ~IRender_Light();
+	virtual void destroy(bool deffered = true) = 0;
 };
 
 struct ENGINE_API resptrcode_light : public resptr_base<IRender_Light>
 {
-	void destroy() { _set(NULL); }
+	void destroy() { if(p_){p_->destroy(); p_ = NULL;} }
 };
 
 typedef resptr_core<IRender_Light, resptrcode_light> ref_light;
@@ -337,6 +338,7 @@ public:
 	virtual IRenderVisual* model_Duplicate(IRenderVisual* V) = 0;
 	//virtual void model_Delete (IRenderVisual* & V, BOOL bDiscard=FALSE) = 0;
 	virtual void model_Delete(IRenderVisual*& V, BOOL bDiscard = FALSE) = 0;
+	virtual void model_Delete_Deffered(IRenderVisual*& V) = 0;
 	// virtual void model_Delete (IRender_DetailModel* & F) = 0;
 	virtual void model_Logging(BOOL bEnable) = 0;
 	virtual void models_Prefetch() = 0;

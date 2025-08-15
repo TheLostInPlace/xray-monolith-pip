@@ -339,6 +339,13 @@ BOOL CHOM::visible(Fbox2& B, float depth)
 	return Raster.test(B.min.x, B.min.y, B.max.x, B.max.y, depth);
 }
 
+BOOL CHOM::visible(Fsphere& S)
+{
+	Fbox B;
+	B.setb(S.P,Fvector().set(S.R, S.R, S.R));
+	return visible(B);
+}
+
 BOOL CHOM::visible(vis_data& vis)
 {
 	if (Device.dwFrame < vis.hom_frame) return TRUE; // not at this time :)

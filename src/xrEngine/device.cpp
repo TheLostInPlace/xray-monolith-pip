@@ -33,13 +33,16 @@
 #include "xrSash.h"
 #include "igame_persistent.h"
 
+#include "CustomHUD.h"
+#include "IGame_Level.h"
+
 #pragma comment( lib, "d3dx9.lib" )
 
 ENGINE_API CRenderDevice Device;
 ENGINE_API CLoadScreenRenderer load_screen_renderer;
 ENGINE_API CRenderDevice* DevicePtr = nullptr;
 
-ENGINE_API BOOL g_bRendering = FALSE;
+ENGINE_API xr_atomic_bool g_bRendering = false;
 extern ENGINE_API float psHUD_FOV;
 
 static HANDLE RenderEventMT = nullptr;
@@ -88,7 +91,7 @@ BOOL CRenderDevice::Begin()
 	m_pRender->Begin();
 
 	FPU::m24r();
-	g_bRendering = TRUE;
+	g_bRendering = true;
 #endif
 	return TRUE;
 }
@@ -154,7 +157,7 @@ void CRenderDevice::End(void)
 		}
 	}
 
-	g_bRendering = FALSE;
+	g_bRendering = false;
 	// end scene
 	// Present goes here, so call OA Frame end.
 	if (g_SASH.IsBenchmarkRunning())
@@ -185,6 +188,13 @@ static void mt_Thread(void* ptr)
 			// we has granted permission to execute
 			mt_Thread_marker = Device.dwFrame;
 			{
+				if (g_hud)
+					g_hud->OnFrameMT();
+				if (g_pGameLevel && g_pGameLevel->bReady)
+					g_pGameLevel->SoundEvent_Dispatch();
+
+				if (!Device.Paused())
+					Engine.Sheduler.Update();
 				PROF_EVENT("Parallel Sync");
 				for (u32 pit = 0; pit < Device.seqParallel.size(); pit++)
 					Device.seqParallel[pit]();
@@ -492,6 +502,9 @@ void CRenderDevice::on_idle()
 	if (dwFrame != mt_Thread_marker)
 	{
 		PROF_EVENT("Execute second thread");
+		if (!Device.Paused())
+			Engine.Sheduler.Update();
+
 		for (u32 pit = 0; pit < seqParallel.size(); pit++)
 			seqParallel[pit]();
 		seqParallel.clear_not_free();
@@ -581,15 +594,17 @@ static void mt_ParallelRenderThread(void*)
 	{
 		WaitForSingleObject(RenderEventMT, INFINITE);
 
+		{
+			PROF_EVENT("mt_ParallelRenderThread seqParallelRender");
+			for (auto& it : Device.seqParallelRender)
+				it();
+		}
+
 		if (Device.ParticleWorkerCallback)
 		{
 			PROF_EVENT("mt_ParallelRenderThread Process Particles");
 			Device.ParticleWorkerCallback();
 		}
-
-		PROF_EVENT("mt_ParallelRenderThread seqParallelRender");
-		for (u32 pit = 0; pit < Device.seqParallelRender.size(); pit++)
-			Device.seqParallelRender[pit]();
 
 		ResetEvent(RenderEventMT);
 	}

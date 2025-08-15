@@ -72,7 +72,7 @@ private:
 	float m_overheat_decr_quant;
 	float m_overheat_threshold;
 	shared_str m_overheat_particles;
-	CParticlesObject* p_overheat;
+	xr_shared_ptr<CParticlesObject> p_overheat;
 protected:
 	void UpdateBarrelDir();
 	virtual const Fvector& get_CurrentFirePoint();
