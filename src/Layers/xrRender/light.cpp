@@ -58,7 +58,6 @@ light::~light()
 {
 #if (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 	for (int f = 0; f < 6; f++) xr_delete(omnipart[f]);
-	RImplementation.v_all_lights.remove(this);
 #endif // (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 	set_active(false);
 
@@ -70,6 +69,7 @@ light::~light()
 #endif // (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 	ignore_object = nullptr;
 	for (int f=0; f<6; f++) decor_object[f] = nullptr;
+	RImplementation.v_all_lights.remove(this);
 }
 
 void light::destroy(bool deffered)
