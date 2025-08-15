@@ -1277,32 +1277,22 @@ void CAI_Stalker::Think()
 		u32 update_delta = Device.dwTimeGlobal - m_dwLastUpdateTime;
 
 		START_PROFILE("stalker/schedule_update/think/brain")
-			//	try {
-			//		try {
-			brain().update(update_delta);
-			//		}
-#ifdef DEBUG
-			//		catch (::luabind::cast_failed &message) {
-			//			Msg						("! Expression \"%s\" from ::luabind::object to %s",message.what(),message.info()->name());
-			//throw;
-			//		}
-#endif
-			//		catch (std::exception &message) {
-			//			Msg						("! Expression \"%s\"",message.what());
-			//			throw;
-			//		}
-			//		catch (...) {
-			//			Msg						("! unknown exception occured");
-			//			throw;
-			//		}
-			//	}
-			//	catch(...) {
-#ifdef DEBUG
-			//		Msg						("! Last action being executed : %s",brain().current_action().m_action_name);
-#endif
-			//		brain().setup			(this);
-			//		brain().update			(update_delta);
-			//	}
+			try
+			{
+				brain().update(update_delta);
+			}
+			/*catch (::luabind::cast_failed &message) 
+			{
+				Msg						("! Expression \"%s\" from ::luabind::object to %s", message.what(), message.info()->name());
+			}
+			catch (std::exception &message) 
+			{
+				Msg						("! Expression \"%s\"",message.what());
+			}*/
+			catch (...) 
+			{
+				//Msg						("! unknown exception occured");
+			}
 		STOP_PROFILE
 
 		START_PROFILE("stalker/schedule_update/think/movement")

@@ -262,5 +262,5 @@ void CScriptGameObject::set_const_force(const Fvector& dir, float value, u32 tim
 	CPHExpireOnStepCondition* cn = xr_new<CPHExpireOnStepCondition>();
 	cn->set_time_interval(time_interval);
 	//ph_world->AddCall(cn,a);
-	Level().ph_commander_physics_worldstep().add_call_threadsafety(cn, a);
+	Level().ph_commander_physics_worldstep().add_call(cn, a);
 }

@@ -20,10 +20,8 @@ protected:
 
 	bool NeedUpdate = false;
 	
-protected:
-	virtual ~CParticlesObject();
-
 public:
+	virtual ~CParticlesObject();
 	CParticlesObject(LPCSTR p_name, BOOL bAutoRemove, bool destroy_on_game_load);
 
 	virtual bool shedule_Needed() { return true; };
@@ -52,13 +50,14 @@ public:
 	void SetLiveUpdate(BOOL b);
 	BOOL GetLiveUpdate();
 
-public:
-	static CParticlesObject* Create(LPCSTR p_name, BOOL bAutoRemove = TRUE, bool remove_on_game_load = true)
-	{
-		return xr_new<CParticlesObject>(p_name, bAutoRemove, remove_on_game_load);
-	}
+};
 
-	static void Destroy(CParticlesObject*& p)
+namespace Particles::Details
+{
+	xr_shared_ptr<CParticlesObject> Create(LPCSTR p_name, BOOL bAutoRemove = TRUE, bool remove_on_game_load = true);
+
+	template <class T>
+	static void Destroy(T& p)
 	{
 		if (p)
 		{
@@ -66,6 +65,6 @@ public:
 			p = 0;
 		}
 	}
-};
+}
 
 #endif /*ParticlesObjectH*/

@@ -51,6 +51,7 @@ private:
 	BOOL bLogging;
 	BOOL bForceDiscard;
 	BOOL bAllowChildrenDuplicate;
+	xrCriticalSection deffered_del_lock;
 
 	void Destroy();
 public:
@@ -67,6 +68,7 @@ public:
 	dxRender_Visual* CreatePG(PS::CPGDef* source);
 	dxRender_Visual* Create(LPCSTR name, IReader* data = 0, bool assert = true);
 	dxRender_Visual* CreateChild(LPCSTR name, IReader* data);
+	void DeleteDeffered(dxRender_Visual* &V);
 	void Delete(dxRender_Visual* & V, BOOL bDiscard = FALSE);
 	void Discard(dxRender_Visual* & V, BOOL b_complete);
 	void DeleteInternal(dxRender_Visual* & V, BOOL bDiscard = FALSE);

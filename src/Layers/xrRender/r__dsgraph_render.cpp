@@ -487,7 +487,7 @@ void R_dsgraph_structure::r_dsgraph_render_graph(u32 _priority, bool _clear)
 	// Perform sorting based on ScreenSpaceArea
 	// Sorting by SSA and changes minimizations
 	// Render several passes
-	PROF_EVENT("MATERIAL_SHADER_PASSES");
+	PROF_EVENT("MATRIX_SHADER_PASSES");
 	for (u32 iPass = 0; iPass < SHADER_PASSES_MAX; ++iPass)
 	{
 		//mapMatrixVS&	vs				= mapMatrix	[_priority];
@@ -591,6 +591,7 @@ void R_dsgraph_structure::r_dsgraph_render_graph(u32 _priority, bool _clear)
 // HUD render
 void R_dsgraph_structure::r_dsgraph_render_hud(bool NoPS)
 {
+	PROF_EVENT("r_dsgraph_render_hud");
 	CHudInitializer initializer(true);
 
 	// Rendering
@@ -655,6 +656,7 @@ void R_dsgraph_structure::r_dsgraph_render_hud(bool NoPS)
 
 void R_dsgraph_structure::r_dsgraph_render_hud_ui()
 {
+	PROF_EVENT("r_dsgraph_render_hud_ui");
 	CHudInitializer initializer(true);
 
 	// Rendering
@@ -724,6 +726,7 @@ void R_dsgraph_structure::r_dsgraph_render_ScopeSorted()  //  Redotix99: for 3D 
 // strict-sorted render
 void R_dsgraph_structure::r_dsgraph_render_emissive(bool clear, bool renderHUD)
 {
+	PROF_EVENT("r_dsgraph_render_emissive");
 #if	RENDER!=R_R1
 	// Sorted (back to front)
 	mapEmissive.traverseLR(sorted_L1);
@@ -762,6 +765,7 @@ void R_dsgraph_structure::r_dsgraph_render_water()
 // strict-sorted render
 void R_dsgraph_structure::r_dsgraph_render_wmarks()
 {
+	PROF_EVENT("r_dsgraph_render_wmarks");
 #if	RENDER!=R_R1
 	// Sorted (back to front)
 	mapWmark.traverseLR(sorted_L1);
@@ -773,6 +777,7 @@ void R_dsgraph_structure::r_dsgraph_render_wmarks()
 // strict-sorted render
 void R_dsgraph_structure::r_dsgraph_render_distort()
 {
+	PROF_EVENT("r_dsgraph_render_distort");
 	// Sorted (back to front)
 	mapDistort.traverseRL(sorted_L1);
 	mapDistort.clear();
@@ -791,6 +796,7 @@ void R_dsgraph_structure::r_dsgraph_render_distort()
 void R_dsgraph_structure::r_dsgraph_render_subspace(IRender_Sector* _sector, Fmatrix& mCombined, Fvector& _cop,
                                                     BOOL _dynamic, BOOL _precise_portals, CObject* O)
 {
+	if(!_sector) return;
 	PROF_EVENT("r_dsgraph_render_subspace");
 	CFrustum temp;
 	temp.CreateFromMatrix(mCombined, FRUSTUM_P_ALL & (~FRUSTUM_P_NEAR));
@@ -849,7 +855,7 @@ void R_dsgraph_structure::r_dsgraph_render_subspace(IRender_Sector* _sector, CFr
 
 	if (_dynamic)
 	{
-		PROF_EVENT("add__dynamic");
+		PROF_EVENT("add_dynamic");
 		set_Object(0);
 
 		// Traverse object database

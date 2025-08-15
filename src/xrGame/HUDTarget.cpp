@@ -9,7 +9,7 @@
 
 Flags32 psCrosshair_Flags = {};
 
-extern ENGINE_API BOOL g_bRendering;
+extern ENGINE_API xr_atomic_bool g_bRendering;
 u32 g_crosshair_color = C_WHITE;
 
 CrosshairSettings g_crosshair_camera_far = CrosshairSettings(

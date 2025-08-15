@@ -2369,7 +2369,7 @@ public:
             sscanf(args, "%s %d", &string, &count);
             for (int i = 0; i < count; ++i)
             {
-                CParticlesObject *pParticle = CParticlesObject::Create(string, FALSE);
+                auto pParticle = Particles::Details::Create(string, FALSE);
 
                 // Set up matrix and position
                 Fmatrix pos;

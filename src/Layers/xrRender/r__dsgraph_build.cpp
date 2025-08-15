@@ -919,6 +919,9 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual, bool ignore)
 void CRender::add_leafs_Static(dxRender_Visual* pVisual)
 {
 	PROF_EVENT("add_leafs_Static");
+#if RENDER!=R_R1
+	if(RImplementation.phase==CRender::PHASE_NORMAL)
+#endif
 	if (!HOM.visible(pVisual->vis))
 		return;
 
@@ -1166,7 +1169,9 @@ void CRender::add_Static(dxRender_Visual* pVisual, u32 planes)
 	VIS = View->testSAABB(vis.sphere.P, vis.sphere.R, vis.box.data(), planes);
 	if (VIS == fcvNone)
 		return;
-
+#if RENDER!=R_R1
+	if(RImplementation.phase==CRender::PHASE_NORMAL)
+#endif
 	if (!HOM.visible(vis))
 		return;
 

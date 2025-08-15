@@ -149,7 +149,7 @@ void CWeaponStatMgun::net_Destroy()
 	{
 		if (p_overheat->IsPlaying())
 			p_overheat->Stop(FALSE);
-		CParticlesObject::Destroy(p_overheat);
+		Particles::Details::Destroy(p_overheat);
 	}
 	inheritedPH::net_Destroy();
 	processing_deactivate();

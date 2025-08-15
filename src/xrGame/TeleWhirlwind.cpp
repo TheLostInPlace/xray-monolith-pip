@@ -215,8 +215,8 @@ bool CTeleWhirlwindObject::destroy_object(const Fvector dir, float val)
 		CEntityAlive* pEntity = smart_cast<CEntityAlive*>(object);
 		if (pEntity)
 		{
-			CParticlesObject* pParticles = CParticlesObject::Create(
-				m_pTelekinesis->GetTearingParticles(), true, true);
+			CParticlesObject* pParticles = Particles::Details::Create(
+				m_pTelekinesis->GetTearingParticles(), true, true).get();
 			
 			Fmatrix xform, m;
 			Fvector angles;
@@ -578,8 +578,8 @@ bool CTeleTrampolinObject::destroy_object(const Fvector dir, float val)
 		CEntityAlive* pEntity = smart_cast<CEntityAlive*>(object);
 		if (pEntity)
 		{
-			CParticlesObject* pParticles = CParticlesObject::Create(
-				m_pTelekinesis->GetTearingParticles(), true, true);
+			CParticlesObject* pParticles = Particles::Details::Create(
+				m_pTelekinesis->GetTearingParticles(), true, true).get();
 
 			Fmatrix xform, m;
 			Fvector angles;

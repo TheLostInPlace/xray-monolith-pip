@@ -302,7 +302,7 @@ dxRender_Visual* CModelPool::CreateChild(LPCSTR name, IReader* data)
 	return Model;
 }
 
-extern BOOL ENGINE_API g_bRendering;
+extern  xr_atomic_bool ENGINE_API g_bRendering; 
 
 void CModelPool::DeleteInternal(dxRender_Visual* & V, BOOL bDiscard)
 {
@@ -338,12 +338,21 @@ void CModelPool::DeleteInternal(dxRender_Visual* & V, BOOL bDiscard)
 	V = NULL;
 }
 
+void CModelPool::DeleteDeffered(dxRender_Visual* &V)
+{
+	if (nullptr==V)				return;
+	xrCriticalSectionGuard guard(&deffered_del_lock);
+	ModelsToDelete.push_back(V);
+	V = nullptr;
+}
+
 void CModelPool::Delete(dxRender_Visual* & V, BOOL bDiscard)
 {
 	if (NULL == V) return;
 	if (g_bRendering)
 	{
 		VERIFY(!bDiscard);
+		xrCriticalSectionGuard guard(&deffered_del_lock);
 		ModelsToDelete.push_back(V);
 	}
 	else
@@ -355,6 +364,7 @@ void CModelPool::Delete(dxRender_Visual* & V, BOOL bDiscard)
 
 void CModelPool::DeleteQueue()
 {
+	xrCriticalSectionGuard guard(&deffered_del_lock);
 	for (u32 it = 0; it < ModelsToDelete.size(); it++)
 		DeleteInternal(ModelsToDelete[it]);
 	ModelsToDelete.clear();

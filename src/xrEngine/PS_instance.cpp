@@ -11,30 +11,20 @@ CPS_Instance::CPS_Instance(bool destroy_on_game_load) :
 	ISpatial(g_SpatialSpace),
 	m_destroy_on_game_load(destroy_on_game_load)
 {
-	g_pGamePersistent->ps_active.insert(this);
-	renderable.pROS_Allowed = FALSE;
+	//g_pGamePersistent->ps_active.insert		(this);
+	renderable.pROS_Allowed	= FALSE;
 
 	m_iLifeTime = int_max;
 	m_bAutoRemove = TRUE;
 	m_bDead = FALSE;
 }
-
-extern ENGINE_API BOOL g_bRendering;
+extern ENGINE_API xr_atomic_bool			g_bRendering; 
 
 //----------------------------------------------------
 CPS_Instance::~CPS_Instance()
 {
-	VERIFY(!g_bRendering);
-	xr_set<CPS_Instance*>::iterator it = g_pGamePersistent->ps_active.find(this);
-	VERIFY(it != g_pGamePersistent->ps_active.end());
-	g_pGamePersistent->ps_active.erase(it);
-
-	xr_vector<CPS_Instance*>::iterator it2 = std::find(g_pGamePersistent->ps_destroy.begin(),
-	                                                   g_pGamePersistent->ps_destroy.end(), this);
-
-	VERIFY(it2 == g_pGamePersistent->ps_destroy.end());
-
-	spatial_unregister();
+	VERIFY									(!g_bRendering);
+	spatial_unregister						();
 }
 
 //----------------------------------------------------
@@ -54,10 +44,10 @@ void CPS_Instance::shedule_Update(u32 dt)
 //----------------------------------------------------
 void CPS_Instance::PSI_destroy()
 {
-	if (m_bDead) return;
 	m_bDead = TRUE;
 	m_iLifeTime = 0;
-	g_pGamePersistent->ps_destroy.push_back(this);
+	m_NeedDestroy = true;
+	//g_pGamePersistent->ps_destroy.push_back	(this);
 }
 
 //----------------------------------------------------

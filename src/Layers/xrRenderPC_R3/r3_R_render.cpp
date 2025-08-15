@@ -135,10 +135,7 @@ void CRender::render_main(bool deffered, bool zfill)
 				}
 			}
 
-			Fbox sp_box;
-			sp_box.setb(spatial->spatial.sphere.P,Fvector().set(spatial->spatial.sphere.R, spatial->spatial.sphere.R, spatial->spatial.sphere.R));
-			HOM.Enable();
-			if(!HOM.visible(sp_box)) continue;
+			if(!HOM.visible(spatial->spatial.sphere)) continue;
 
 			if ((spatial->spatial.type & STYPE_LIGHTSOURCE) && deffered)
 			{
@@ -151,14 +148,6 @@ void CRender::render_main(bool deffered, bool zfill)
 							Lights.add_light(L);
 						else
 						{
-							if(Sectors.size()>1)
-							{
-								if(L->b_need_detect_sectors)
-								{
-									L->get_sectors();
-									L->b_need_detect_sectors = false;
-								}
-							}
 							for (u32 s_it = 0; s_it < L->m_sectors.size(); s_it++)
 							{
 								CSector* sector_ = (CSector*)L->m_sectors[s_it];
@@ -468,6 +457,11 @@ void CRender::Render()
 	if (bSUN) set_Recorder(&main_coarse_structure);
 	else set_Recorder(NULL);
 	phase = PHASE_NORMAL;
+	{
+		PROF_EVENT("lights_spatial_move");
+		for (light* L : v_all_lights)
+			L->spatial_move();
+	}
 	render_main(true);
 	set_Recorder(NULL);
 	r_pmask(true, false); // disable priority "1"
@@ -686,7 +680,6 @@ void CRender::Render()
 	{
 		PIX_EVENT(DEFER_LIGHT_NO_OCCQ);
 		Target->phase_accumulator();
-		HOM.Disable();
 		render_lights(LP_normal);
 	}
 
@@ -713,7 +706,6 @@ void CRender::render_forward()
 	//******* Main render - second order geometry (the one, that doesn't support deffering)
 	//.todo: should be done inside "combine" with estimation of of luminance, tone-mapping, etc.
 	{
-		HOM.Enable();
 		// level
 		r_pmask(false, true); // enable priority "1"
 		phase = PHASE_NORMAL;

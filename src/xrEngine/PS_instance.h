@@ -21,6 +21,7 @@ protected:
 	int m_iLifeTime;
 	BOOL m_bAutoRemove;
 	BOOL m_bDead;
+	volatile bool m_NeedDestroy = false;
 
 protected:
 	virtual ~CPS_Instance();

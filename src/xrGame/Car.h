@@ -260,7 +260,7 @@ public:
 		u16 bone_id;
 		Fmatrix transform;
 		//Fvector				velocity;
-		CParticlesObject* p_pgobject;
+		xr_shared_ptr<CParticlesObject> p_pgobject;
 		CPhysicsElement* pelement;
 		CCar* pcar;
 		void Init();
