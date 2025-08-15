@@ -568,14 +568,6 @@ public:
 		dm_current_cache_line = dm_current_size + 1 + dm_current_size;
 		dm_current_cache_size = dm_current_cache_line * dm_current_cache_line;
 		dm_current_fade = float(2 * dm_current_size) - .5f;
-		if (RImplementation.b_loaded && (dm_current_size != dm_size))
-		{
-			RImplementation.Details->MT_CALC.cancel();
-			RImplementation.Details->cache_task.clear();
-			RImplementation.Details->cache_Free();
-			RImplementation.Details->cache_Alloc();
-			RImplementation.Details->cache_Initialize();
-		}
 	}
 
 	CCC_detail_radius(LPCSTR N, int* V, int _min = 0, int _max = 999) : CCC_Integer(N, V, _min, _max)
@@ -1552,7 +1544,7 @@ void xrRender_initconsole()
 	CMD3(CCC_Mask64, "r__fast_details_update" ,&ps_r2_ls_flags, R2FLAG_FAST_DETAILS_UPDATE);
 
 #ifdef DETAIL_RADIUS
-	CMD4(CCC_detail_radius, "r__detail_radius", &ps_r__detail_radius, 0, 500);
+	CMD4(CCC_detail_radius, "r__detail_radius", &ps_r__detail_radius, 0, 250);
 	CMD3(CCC_Mask, "r__clear_models_on_unload", &psDeviceFlags2, rsClearModels); //Alundaio
 	CMD3(CCC_Mask, "r__use_precompiled_shaders", &psDeviceFlags2, rsPrecompiledShaders); //Alundaio
 	CMD3(CCC_Mask, "r__enable_grass_shadow", &psDeviceFlags2, rsGrassShadow); //Alundaio
