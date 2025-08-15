@@ -149,8 +149,6 @@ void IGame_Persistent::Start(LPCSTR op)
 	}
 	else 
 		UpdateGameType();
-
-	VERIFY(ps_destroy.empty());
 }
 
 void IGame_Persistent::Disconnect()
@@ -281,14 +279,12 @@ void IGame_Persistent::UpdateParticles()
 		pInstance->Play(false);
 	}
 
-	ps_active.erase(std::remove_if
-	(
-		ps_active.begin(), ps_active.end(),
-		[](const xr_shared_ptr<CPS_Instance>& Obj)->bool
-		{
-			return Obj->m_NeedDestroy;
-		}
-	), ps_active.end());
+	static auto eraseFunc = [](const xr_shared_ptr<CPS_Instance>& Obj)
+	{
+		return Obj->m_NeedDestroy;
+	};
+
+	ps_active.erase(std::remove_if(ps_active.begin(), ps_active.end(), eraseFunc), ps_active.end());
 
 #ifdef _DEBUG
 	Msg("Suck my particles counter: %ull", ps_active.size());
@@ -307,14 +303,12 @@ void IGame_Persistent::destroy_particles(const bool& all_particles)
 	}
 	else
 	{
-		ps_active.erase(std::remove_if
-		(
-			ps_active.begin(), ps_active.end(),
-			[](const xr_shared_ptr<CPS_Instance>& Obj)->bool
-			{
-				return Obj->destroy_on_game_load();
-			}
-		), ps_active.end());
+		static auto eraseFunc = [](const xr_shared_ptr<CPS_Instance>& Obj)
+		{
+			return Obj->destroy_on_game_load();
+		};
+
+		ps_active.erase(std::remove_if(ps_active.begin(), ps_active.end(), eraseFunc), ps_active.end());
 	}
 
 	VERIFY(ps_needtoplay.empty() && (!all_particles || ps_active.empty()));

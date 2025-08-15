@@ -598,7 +598,6 @@ BOOL CParticleGroup::Compile(CPGDef* def)
 
 void CParticleGroup::Play()
 {
-	xrCriticalSectionGuard guard(&onframe_lock);
 	m_CurrentTime = 0;
 	m_RT_Flags.set(flRT_DefferedStop,FALSE);
 	m_RT_Flags.set(flRT_Playing,TRUE);
