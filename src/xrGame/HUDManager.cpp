@@ -177,6 +177,7 @@ void CHUDManager::OnFrameMT()
 		Level().GameTaskManager().UpdateTasks();
 
 	PP.CameraPick();
+	g_player_hud->OnFrame();
 	DoPick(PP);
 
 	xrCriticalSectionGuard guard(&ui_lock);
