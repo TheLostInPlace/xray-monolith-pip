@@ -76,46 +76,44 @@ using SStringVecIt = SStringVec::iterator;
 //	return temp;
 //}
 
-namespace std {
+namespace std
+{
 	template<>
-	class hash<xr_string> {
-	public:
-		size_t operator()(const xr_string& s) const {
-			std::hash<xr_string::Super> hashFn;
-			return hashFn(s);
-		}
+	class hash<xr_string>
+	{
+		public:
+			size_t operator()(const xr_string& s) const
+			{
+				return xr_hash<xr_string::Super>()(s);
+			}
 	};
 }
 
-//////////////////////////////////////////////////////////////////////////
-#pragma warning(push)
-#pragma warning(disable : 4200)
 struct XRCORE_API str_value
 {
-	u32 dwReference;
-	u32 dwLength;
-	u32 dwCRC;
-	str_value* next;
-	char value[];
+	mutable u32 dwReference;
+	xr_string value;
+
+	str_value(str_c s) : dwReference(0), value(s) {};
+	str_value(xr_string& s) : dwReference(0), value(s) {};
+
+	bool operator==(const str_value& other) const
+	{
+		return value == other.value;
+	}
 };
 
-struct XRCORE_API str_value_cmp
+struct XRCORE_API str_value_hash
 {
-	// less
-	IC bool operator ()(const str_value* A, const str_value* B) const { return A->dwCRC < B->dwCRC; };
+	size_t operator()(const str_value& s) const noexcept
+	{
+		return xr_hash<xr_string>()(s.value);
+	}
 };
-
-struct XRCORE_API str_hash_function
-{
-	IC u32 operator ()(str_value const* const value) const { return value->dwCRC; };
-};
-
-#pragma warning(pop)
 
 struct str_container_impl;
 class IWriter;
 
-//////////////////////////////////////////////////////////////////////////
 class XRCORE_API str_container
 {
 private:
@@ -126,19 +124,16 @@ public:
 	~str_container();
 
 	str_value* dock(str_c value);
+	void erase(str_c value);
 	void clean();
 	void dump();
 	void dump(IWriter* W);
 	void verify();
 	u32 stat_economy(u32& count);
-#ifdef PROFILE_CRITICAL_SECTIONS
-    str_container ():cs(MUTEX_PROFILE_ID(str_container)) {}
-#endif // PROFILE_CRITICAL_SECTIONS
 };
 
 XRCORE_API extern str_container* g_pStringContainer;
 
-//////////////////////////////////////////////////////////////////////////
 class shared_str
 {
 private:
@@ -149,7 +144,11 @@ protected:
 	{
 		if (0 == p_) return;
 		p_->dwReference--;
-		if (0 == p_->dwReference) p_ = 0;
+		if (0 == p_->dwReference)
+		{
+			//g_pStringContainer->erase(p_->value.c_str()); // erasing causes crashes due to invalid pointers
+			p_ = 0;
+		}
 	}
 
 public:
@@ -169,11 +168,8 @@ public:
 		p_ = v;
 	}
 
-	// void _set (shared_str const &rhs) { str_value* v = g_pStringContainer->dock(rhs.c_str()); if (0!=v) v->dwReference++; _dec(); p_ = v; }
-
-
 	const str_value* _get() const { return p_; }
-public:
+
 	// construction
 	shared_str() { p_ = 0; }
 
@@ -189,7 +185,10 @@ public:
 		_set(rhs);
 	}
 
-	~shared_str() { _dec(); }
+	~shared_str()
+	{
+		_dec(); 
+	}
 
 	// assignment & accessors
 	shared_str& operator=(str_c rhs)
@@ -204,16 +203,16 @@ public:
 		return (shared_str&)*this;
 	}
 
-	str_c operator*() const { return p_ ? p_->value : 0; }
+	str_c operator*() const { return p_ ? p_->value.c_str() : 0; }
 	bool operator!() const { return p_ == 0; }
 	char operator[](size_t id) { return p_->value[id]; }
-	str_c c_str() const { return p_ ? p_->value : 0; }
+	str_c c_str() const { return p_ ? p_->value.c_str() : 0; }
 
 	// misc func
 	u32 size() const
 	{
 		if (0 == p_) return 0;
-		else return p_->dwLength;
+		else return p_->value.length();
 	}
 
 	void swap(shared_str& rhs)
@@ -237,6 +236,19 @@ public:
 		return (shared_str&)*this;
 	}
 };
+
+namespace std
+{
+	template<>
+	class hash<shared_str>
+	{
+	public:
+		size_t operator()(const shared_str& s) const
+		{
+			return xr_hash<xr_string>()(s._get()->value);
+		}
+	};
+}
 
 // res_ptr == res_ptr
 // res_ptr != res_ptr
