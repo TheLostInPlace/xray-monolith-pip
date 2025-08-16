@@ -237,6 +237,19 @@ public:
 	}
 };
 
+namespace std
+{
+	template<>
+	class hash<shared_str>
+	{
+	public:
+		size_t operator()(const shared_str& s) const
+		{
+			return xr_hash<xr_string>()(s._get()->value);
+		}
+	};
+}
+
 // res_ptr == res_ptr
 // res_ptr != res_ptr
 // const res_ptr == ptr
