@@ -108,6 +108,7 @@ str_value* str_container::dock(str_c value)
 
 void str_container::erase(str_c value)
 {
+	xrCriticalSectionGuard g(cs);
 	str_value s(value);
 	impl->erase(s);
 }

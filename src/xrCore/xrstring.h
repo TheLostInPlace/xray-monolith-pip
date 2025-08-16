@@ -185,7 +185,10 @@ public:
 		_set(rhs);
 	}
 
-	~shared_str() { _dec(); }
+	~shared_str()
+	{
+		_dec(); 
+	}
 
 	// assignment & accessors
 	shared_str& operator=(str_c rhs)
