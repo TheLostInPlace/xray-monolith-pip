@@ -62,9 +62,15 @@ struct str_container_impl
 		}
 	}
 
-	u32 stat_economy()
+	u32 stat_economy(u32& count)
 	{
-		return buffer.size() * sizeof(str_value);
+		count = buffer.size();
+		u32 size = 0;
+		for (const auto& s : buffer)
+		{
+			size += sizeof(str_value) + s.value.length();
+		}
+		return size;
 	}
 };
 
@@ -122,10 +128,10 @@ void str_container::dump(IWriter* W)
 	impl->dump(W);
 }
 
-u32 str_container::stat_economy()
+u32 str_container::stat_economy(u32& count)
 {
 	xrCriticalSectionGuard g(cs);
-	return impl->stat_economy();
+	return impl->stat_economy(count);
 }
 
 str_container::~str_container()

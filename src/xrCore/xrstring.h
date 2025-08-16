@@ -125,7 +125,7 @@ public:
 	void dump();
 	void dump(IWriter* W);
 	void verify();
-	u32 stat_economy();
+	u32 stat_economy(u32& count);
 };
 
 XRCORE_API extern str_container* g_pStringContainer;
