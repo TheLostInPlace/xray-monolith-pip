@@ -309,15 +309,24 @@ void HUD_SOUND_COLLECTION_LAYERED::PlaySound(LPCSTR alias, const Fvector& positi
 			::luabind::object output = funct(alias, parent_lua_game_object);
 			if (output && output.type() == LUA_TTABLE)
 			{
+				float volume_mult_ex = ::luabind::object_cast<float>(output["volume_mult"]);
 				LPCSTR section = ::luabind::object_cast<LPCSTR>(output["section"]);
 				LPCSTR line = ::luabind::object_cast<LPCSTR>(output["line"]);
+				if (volume_mult_ex) {
+					volume_mult = volume_mult*volume_mult_ex;
+				}
 				if (!section)
 				{
-					Msg("!_G.COnBeforePlayHudSound callback, HUD_SOUND_COLLECTION_LAYERED::PlaySound, failed to override sound item %s, no section specified", alias);
+					if (!volume_mult) {
+						Msg("!_G.COnBeforePlayHudSound callback, HUD_SOUND_COLLECTION_LAYERED::PlaySound, failed to override sound item %s, no section specified", alias);
+					}
+					
 				} 
 				else if (!line)
 				{
-					Msg("!_G.COnBeforePlayHudSound callback, HUD_SOUND_COLLECTION_LAYERED::PlaySound, failed to override sound item %s, no line specified", alias);
+					if (!volume_mult) {
+						Msg("!_G.COnBeforePlayHudSound callback, HUD_SOUND_COLLECTION_LAYERED::PlaySound, failed to override sound item %s, no line specified", alias);
+					}
 				} 
 				else
 				{
