@@ -18,7 +18,7 @@ struct str_container_impl
 		buffer.reserve(buffer_size);
 	}
 
-	str_value* find(str_value value)
+	str_value* find(str_value& value)
 	{
 		auto it = buffer.find(value);
 		if (it == buffer.end())
@@ -27,14 +27,20 @@ struct str_container_impl
 		return &(*it);
 	}
 
-	void insert(str_value value)
+	void insert(str_value& value)
 	{
 		buffer.insert(value);
+	}
+
+	void erase(str_value& value)
+	{
+		buffer.erase(value);
 	}
 
 	void clean()
 	{
 		buffer.clear();
+		buffer.rehash(buffer_size);
 	}
 
 	void verify()
@@ -88,9 +94,7 @@ str_value* str_container::dock(str_c value)
 	str_value* result = nullptr;
 
 	// search
-	str_value s;
-	s.dwReference = 0;
-	s.value = value;
+	str_value s(value);
 
 	result = impl->find(s);
 	if (!result)
@@ -100,6 +104,12 @@ str_value* str_container::dock(str_c value)
 	}
 
 	return result;
+}
+
+void str_container::erase(str_c value)
+{
+	str_value s(value);
+	impl->erase(s);
 }
 
 void str_container::clean()

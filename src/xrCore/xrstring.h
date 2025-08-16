@@ -94,6 +94,9 @@ struct XRCORE_API str_value
 	u32 dwReference;
 	xr_string value;
 
+	str_value(str_c s) : dwReference(0), value(s) {};
+	str_value(xr_string& s) : dwReference(0), value(s) {};
+
 	bool operator==(const str_value& other) const
 	{
 		return value == other.value;
@@ -121,6 +124,7 @@ public:
 	~str_container();
 
 	str_value* dock(str_c value);
+	void erase(str_c value);
 	void clean();
 	void dump();
 	void dump(IWriter* W);
@@ -140,7 +144,11 @@ protected:
 	{
 		if (0 == p_) return;
 		p_->dwReference--;
-		if (0 == p_->dwReference) p_ = 0;
+		if (0 == p_->dwReference)
+		{
+			g_pStringContainer->erase(p_->value.c_str());
+			p_ = 0;
+		}
 	}
 
 public:
@@ -161,7 +169,7 @@ public:
 	}
 
 	const str_value* _get() const { return p_; }
-public:
+
 	// construction
 	shared_str() { p_ = 0; }
 
