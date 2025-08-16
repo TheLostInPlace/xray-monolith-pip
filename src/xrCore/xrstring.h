@@ -146,7 +146,7 @@ protected:
 		p_->dwReference--;
 		if (0 == p_->dwReference)
 		{
-			g_pStringContainer->erase(p_->value.c_str());
+			//g_pStringContainer->erase(p_->value.c_str()); // erasing causes crashes due to invalid pointers
 			p_ = 0;
 		}
 	}

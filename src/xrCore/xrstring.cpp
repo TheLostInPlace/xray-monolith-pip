@@ -72,7 +72,7 @@ struct str_container_impl
 	u32 stat_economy(u32& count)
 	{
 		count = buffer.size();
-		u32 size = 0;
+		u32 size = sizeof(buffer);
 		for (const auto& s : buffer)
 		{
 			size += sizeof(str_value) + s.value.length();
