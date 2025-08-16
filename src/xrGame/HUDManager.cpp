@@ -156,33 +156,28 @@ CHUDManager::~CHUDManager()
 //--------------------------------------------------------------------
 void CHUDManager::OnFrame()
 {
-	if (!b_online)						
-		return;
-
 	PROF_EVENT("CHUDManager::OnFrame");
-}
-
-xrCriticalSection ui_lock;
-void CHUDManager::OnFrameMT()
-{
-	if (!psHUD_Flags.is(HUD_DRAW_RT2))	
+	if (!psHUD_Flags.is(HUD_DRAW_RT2))
 		return;
 
 	if (!b_online)
 		return;
 
-	PROF_EVENT("CHUDManager::OnFrameMT");
-
-	if (Device.dwPrecacheFrame == 0)
-		Level().GameTaskManager().UpdateTasks();
+	if (pUIGame)
+		pUIGame->OnFrame();
 
 	PP.CameraPick();
 	g_player_hud->OnFrame();
 	DoPick(PP);
+}
 
-	xrCriticalSectionGuard guard(&ui_lock);
-	if (pUIGame) 
-		pUIGame->OnFrame();
+xrCriticalSection ui_lock;
+void CHUDManager::OnFrameMT()
+{
+	PROF_EVENT("CHUDManager::OnFrameMT");
+
+	if (Device.dwPrecacheFrame == 0)
+		Level().GameTaskManager().UpdateTasks();
 }
 
 //--------------------------------------------------------------------
