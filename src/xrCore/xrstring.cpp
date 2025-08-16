@@ -27,9 +27,10 @@ struct str_container_impl
 		return &(*it);
 	}
 
-	void insert(str_value& value)
+	str_value* insert(str_value& value)
 	{
-		buffer.insert(value);
+		auto p = buffer.insert(value);
+		return &(*p.first);
 	}
 
 	void erase(str_value& value)
@@ -63,7 +64,7 @@ struct str_container_impl
 		for (const auto& s : buffer)
 		{
 			string4096 temp;
-			xr_sprintf(temp, sizeof(temp), "ref[%4u]-len[%3u] : %s\n", s.dwReference, s.value.length(), s.value);
+			xr_sprintf(temp, sizeof(temp), "ref[%4u]-len[%3u] : %s\n", s.dwReference, s.value.length(), s.value.c_str());
 			f->w_string(temp);
 		}
 	}
@@ -87,23 +88,11 @@ str_container::str_container()
 
 str_value* str_container::dock(str_c value)
 {
-	if (0 == value) return 0;
+	if (!value) return nullptr;
 
 	xrCriticalSectionGuard g(cs);
-
-	str_value* result = nullptr;
-
-	// search
 	str_value s(value);
-
-	result = impl->find(s);
-	if (!result)
-	{
-		impl->insert(s);
-		result = impl->find(s);
-	}
-
-	return result;
+	return impl->insert(s);
 }
 
 void str_container::erase(str_c value)
