@@ -91,7 +91,7 @@ namespace std
 
 struct XRCORE_API str_value
 {
-	u32 dwReference;
+	mutable u32 dwReference;
 	xr_string value;
 
 	str_value(str_c s) : dwReference(0), value(s) {};
