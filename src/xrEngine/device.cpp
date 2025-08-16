@@ -188,14 +188,17 @@ static void mt_Thread(void* ptr)
 			// we has granted permission to execute
 			mt_Thread_marker = Device.dwFrame;
 			{
+				PROF_EVENT("Parallel Sync");
+
 				if (g_hud)
 					g_hud->OnFrameMT();
+
 				if (g_pGameLevel && g_pGameLevel->bReady)
 					g_pGameLevel->SoundEvent_Dispatch();
 
 				if (!Device.Paused())
 					Engine.Sheduler.Update();
-				PROF_EVENT("Parallel Sync");
+				
 				for (u32 pit = 0; pit < Device.seqParallel.size(); pit++)
 					Device.seqParallel[pit]();
 

@@ -160,6 +160,10 @@ void CHUDManager::OnFrame()
 		return;
 
 	PROF_EVENT("CHUDManager::OnFrame");
+
+	PP.CameraPick();
+	g_player_hud->OnFrame();
+	DoPick(PP);
 }
 
 xrCriticalSection ui_lock;
@@ -175,10 +179,6 @@ void CHUDManager::OnFrameMT()
 
 	if (Device.dwPrecacheFrame == 0)
 		Level().GameTaskManager().UpdateTasks();
-
-	PP.CameraPick();
-	g_player_hud->OnFrame();
-	DoPick(PP);
 
 	xrCriticalSectionGuard guard(&ui_lock);
 	if (pUIGame) 
