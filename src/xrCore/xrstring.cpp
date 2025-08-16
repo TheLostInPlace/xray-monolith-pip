@@ -55,7 +55,7 @@ struct str_container_impl
 	{
 		for (const auto& s : buffer)
 		{
-			fprintf(f, "ref[%4u]-len[%3u] : %s\n", s.dwReference, s.value.length(), s.value.c_str());
+			fprintf(f, "ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
 		}
 	}
 
@@ -64,7 +64,7 @@ struct str_container_impl
 		for (const auto& s : buffer)
 		{
 			string4096 temp;
-			xr_sprintf(temp, sizeof(temp), "ref[%4u]-len[%3u] : %s\n", s.dwReference, s.value.length(), s.value.c_str());
+			xr_sprintf(temp, sizeof(temp), "ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
 			f->w_string(temp);
 		}
 	}
