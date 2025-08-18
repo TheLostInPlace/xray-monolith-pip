@@ -388,7 +388,7 @@ void CResourceManager::DeferredUpload()
 	CTimer timer;
 	timer.Start();
 
-	xr_parallel_for(m_textures.begin(), m_textures.end(), [](auto& pair)
+	xr_parallel_foreach(m_textures.begin(), m_textures.end(), [](auto& pair)
 	{
 		pair.second->Load();
 	});
@@ -401,7 +401,7 @@ void CResourceManager::DeferredUnload()
 	if (!RDEVICE.b_is_Ready)
 		return;
 
-	xr_parallel_for(m_textures.begin(), m_textures.end(), [](auto& pair)
+	xr_parallel_foreach(m_textures.begin(), m_textures.end(), [](auto& pair)
 	{
 		pair.second->Load();
 	});

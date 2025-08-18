@@ -66,7 +66,7 @@ void CSoundRender_Core::i_create_all_sources()
 		lock.Leave();
 	};
 
-	xr_parallel_for(flist.begin(), flist.end(), processFile);
+	xr_parallel_foreach(flist.begin(), flist.end(), processFile);
 
 	Msg("Finished creating %d sound sources. Duration: %d ms", s_sources.size() - sizeBefore, T.GetElapsed_ms());
 }
