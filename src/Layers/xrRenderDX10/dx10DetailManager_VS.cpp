@@ -291,13 +291,9 @@ void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave
 						if (RImplementation.pOutdoorSector && PortalTraverser.i_marker != RImplementation.pOutdoorSector->r_marker)
 							continue;
 
-						CSector* sector = (CSector*)RImplementation.getSector(Instance.sector_id);
-						if (sector && PortalTraverser.i_marker != sector->r_marker)
-							continue;
-
 						if (RImplementation.phase == CRender::PHASE_SMAP && L)
 						{
-							if (L->position.distance_to_sqr(Instance.mRotY.c) >= _sqr(L->range))
+							if (L->position.distance_to_sqr(Instance.position) >= _sqr(L->range))
 								continue;
 						}
 

@@ -224,17 +224,19 @@ RDEVICE.Statistic->TEST0.End		();
 #else
 				CDB::TRI& T = tris[xrc.r_begin()[tid].id];
 				SGameMtl* mtl = GMLib.GetMaterialByIdx(T.material);
-
-				//Detect sector
-				Item.sector_id = T.sector;
+				
 				if (mtl->Flags.test(SGameMtl::flPassable))
 					continue;
 
-				CSector* sector = (CSector*)RImplementation.getSector(T.sector);
-				if (sector != RImplementation.pOutdoorSector)
+				//Detect sector
+				if (RImplementation.pOutdoorSector)
 				{
-					no_push = true;
-					continue;
+					CSector* sector = (CSector*)RImplementation.getSector(T.sector);
+					if (sector != RImplementation.pOutdoorSector)
+					{
+						no_push = true;
+						break;
+					}
 				}
 
 				Fvector Tv[3] = {verts[T.verts[0]], verts[T.verts[1]], verts[T.verts[2]]};
@@ -244,8 +246,8 @@ RDEVICE.Statistic->TEST0.End		();
 					{
 						float y_test = Item_P.y - r_range;
 						if (y_test > y) y = y_test;
-						terrain_normal.mknormal(Tv[0], Tv[1], Tv[2]);
 					}
+					terrain_normal.mknormal(Tv[0], Tv[1], Tv[2]);
 				}
 #endif
 			}
