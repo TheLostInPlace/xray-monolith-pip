@@ -310,14 +310,11 @@ void HUD_SOUND_COLLECTION_LAYERED::PlaySound(LPCSTR alias, const Fvector& positi
 			if (output && output.type() == LUA_TTABLE)
 			{
 				auto volume_mult_ex_obj = output["volume_mult"]; 
-				bool volume_mult_ex_is_nil = (volume_mult_ex_obj.type() == LUA_TNIL);
-				float volume_mult_ex = ::luabind::object_cast<float>(volume_mult_ex_obj);
+				float volume_mult_ex = volume_mult_ex_obj.type() != LUA_TNUMBER ? 1 : ::luabind::object_cast<float>(volume_mult_ex_obj);
+				volume_mult = volume_mult * volume_mult_ex;
+
 				LPCSTR section = ::luabind::object_cast<LPCSTR>(output["section"]);
 				LPCSTR line = ::luabind::object_cast<LPCSTR>(output["line"]);
-				if (!volume_mult_ex && !volume_mult_ex_is_nil) {return;} // when the volume is 0, stop doing stuff
-				if (volume_mult_ex) {
-					volume_mult = volume_mult*volume_mult_ex;
-				}
 				if (!section)
 				{
 					if (line) {
