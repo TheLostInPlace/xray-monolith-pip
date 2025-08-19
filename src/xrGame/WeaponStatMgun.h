@@ -47,7 +47,7 @@ struct SStmBarrel
 
 	shared_str m_sShellParticles;
 	shared_str m_sFlameParticles;
-	CParticlesObject *m_pFlameParticles;
+	xr_shared_ptr<CParticlesObject> m_pFlameParticles;
 	shared_str m_sSmokeParticles;
 
 	Fcolor light_base_color;
