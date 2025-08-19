@@ -248,6 +248,7 @@ RDEVICE.Statistic->TEST0.End		();
 						if (y_test > y) y = y_test;
 					}
 					terrain_normal.mknormal(Tv[0], Tv[1], Tv[2]);
+					break;
 				}
 #endif
 			}
