@@ -625,7 +625,8 @@ void CInventory::Activate(u16 slot, bool bForce)
 			CHudItem* tempItem = active_item->cast_hud_item();
 			R_ASSERT2(tempItem, active_item->object().cNameSect().c_str());
 
-			tempItem->SendDeactivateItem();
+			if (tempItem)
+				tempItem->SendDeactivateItem();
 #ifdef DEBUG
 			//			Msg("--- Inventory owner [%s]: send deactivate item [%s]", m_pOwner->Name(), active_item->NameItem());
 #endif // #ifdef DEBUG
@@ -874,8 +875,8 @@ void CInventory::Update()
 				funct(m_iActiveSlot, obj, prev_slot, prev_obj);
 			}
 		}
-		else if ((GetNextActiveSlot() != NO_ACTIVE_SLOT) && ActiveItem() && ActiveItem()->cast_hud_item()->IsHidden())
-					ActiveItem()->ActivateItem();
+		else if ((GetNextActiveSlot() != NO_ACTIVE_SLOT) && ActiveItem() && ActiveItem()->cast_hud_item() && ActiveItem()->cast_hud_item()->IsHidden())
+			ActiveItem()->ActivateItem();
 	}
 	UpdateDropTasks();
 }
