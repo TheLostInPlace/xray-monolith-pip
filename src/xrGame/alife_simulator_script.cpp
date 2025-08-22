@@ -617,7 +617,7 @@ void CALifeSimulator::script_register(lua_State* L)
 		.def("set_switch_distance", &CALifeSimulator::set_switch_distance)
 		//Alundaio: renamed to set_switch_distance from switch_distance
 		//Alundaio: extend alife simulator exports
-		.def("teleport_object", &teleport_object)
+		.def("teleport_object", &::teleport_object)
 		.def("iterate_info", &IterateInfo)
 		.def("clone_weapon", &try_to_clone_object)
 		.def("register", &reprocess_spawn)
