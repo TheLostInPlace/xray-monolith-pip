@@ -177,7 +177,8 @@ public:
 	MotionID ID_FX(LPCSTR N);
 	MotionID ID_FX_Safe(LPCSTR N);
 	CBlend* PlayFX(LPCSTR N, float power_scale);
-	CBlend* PlayFX(MotionID M, float power_scale);
+	CBlend* PlayFX(MotionID M, float power_scale) override;
+	CBlend* PlayFX_Safe (LPCSTR N, float power_scale) override;
 
 	const CPartition& partitions() const { return *m_Partition; };
 
