@@ -2,9 +2,12 @@
 
 #include "MMSound.h"
 #include "xrUIXmlParser.h"
+#include "time.h"
 
 CMMSound::CMMSound()
 {
+	// Ncenka - fix for not playing random Main Menu music
+	Random.seed((u32)time(NULL));
 }
 
 CMMSound::~CMMSound()
@@ -69,7 +72,9 @@ void CMMSound::music_Play()
 	if (m_play_list.empty())
 		return;
 
-	int i = Random.randI(m_play_list.size());
+	int i = 0;
+	if (m_bRandom)
+		i = Random.randI(m_play_list.size());
 
 	string_path _path;
 	strconcat(sizeof(_path), _path, m_play_list[i].c_str(), ".ogg");
