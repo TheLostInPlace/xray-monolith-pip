@@ -1,0 +1,20 @@
+-------------------------------------------------------------------------------
+-- ImGui
+-- Mods menu group
+-------------------------------------------------------------------------------
+-- Built-in group for mod interfaces that don't need a dedicated menu
+-------------------------------------------------------------------------------
+-- Implemented by Lander
+-------------------------------------------------------------------------------
+
+-- Register the mods widget group
+imgui_groups.add_group("Mods")
+
+-- Render it in the menu bar
+local render_mods = imgui_groups.render_mods
+imgui_groups.add_widget_menu_bar(function()
+     if ImGui.BeginMenu("Mods") then
+        render_mods()
+        ImGui.EndMenu()
+    end
+end)
