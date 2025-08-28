@@ -1,0 +1,165 @@
+-------------------------------------------------------------------------------
+-- ImGui
+-- Group Manager
+-------------------------------------------------------------------------------
+--
+-- Implements an extensible grouping system for ImGui widgets,
+-- providing a common interface for shareable UI containers.
+--
+-- Modders are advised to structure their ImGui interfaces with groups,
+-- as they allow new elements to be added by downstream code.
+-- For instance: Other scripts within the same mod, patches, or extension mods.
+--
+-- Usage:
+-- Groups correspond to widget IDs passed to the `imgui_on_render` callback,
+-- and should be given in CamelCase by convention.
+--
+-- A group can be registered by calling `add_widget(<group name>)`,
+-- which will allocate widget storage and implement an
+-- `add_widget_<group name>` registration function
+-- and `render_<group name>` on `imgui_groups`.
+--
+-- For consistency and convenience, group names given in CamelCase
+-- are converted into snake_case when naming these functions.
+--
+-- For instance:
+-- `add_group("MyGroup")`
+-- Will create:
+-- `imgui_groups.add_widget_my_group(<widget function>)`
+-- `imgui_groups.render_my_group()`
+--
+-- Widgets can be registered to a group by calling its registrar,
+-- or using `add_widget(<group name>, <widget function>)`.
+-- If the given group does not exist when using the latter syntax,
+-- it will be added automatically.
+--
+-- Groups can be drawn by calling their renderer function,
+-- or via `render(<group name>)`.
+-- This will render all widgets registered to the group,
+-- in the order they were registered.
+-- Attempting to render an unregistered group is an error.
+--
+-- Built-in groups:
+-- Main - Default group, renders only when the overlay is visible
+-- MenuBar - Built-in overlay menu bar group
+-- Unique - Renders every frame, independent of the ImGui overlay
+-- Debug - Built-in MenuBar entry to hold debugging tools
+-- Mods - Built-in MenuBar entry to hold individual mod UIs
+--
+-- See the following scripts for more details:
+-- imgui_groups_unique.script
+-- imgui_groups_debug.script
+-- imgui_groups_mods.script
+--
+-- Basic Example:
+-- -- Register MyGroup
+-- imgui_groups.add_group("MyGroup")
+--
+-- -- Register a 'main widget' that always draws in MyGroup
+-- imgui_groups.add_widget_my_group(function() <ImGui drawing code> end)
+--
+-- -- Add the MyGroup render function to Main so it draws in the overlay
+-- imgui_groups.add_widget_main(imgui_groups.render_my_group)
+--
+-- -- Downstream code may now call `add_widget_my_group` to extend it
+--
+-------------------------------------------------------------------------------
+-- Implemented by Lander
+-------------------------------------------------------------------------------
+
+-- Constants
+WIDGET_MAIN = "Main"
+WIDGET_MENU_BAR = "MenuBar"
+
+-- State
+local groups = {}
+
+-- Convert the given string from CamelCase to snake_case
+function camel_to_snake(str)
+    local segs = {}
+
+    for seg in str:gmatch("[A-Z][^A-Z]+") do
+        table.insert(segs, seg:lower())
+    end
+
+    if #segs == 0 then
+        return str:lower()
+    end
+
+    return table.concat(segs, "_")
+end
+
+-- Add a group with the given ID
+function add_group(name)
+    printf("add_group: %s", name)
+    
+    if groups[name] ~= nil then
+        printf("~ Warning: ImGui group %s already exists", name)
+        return
+    end
+
+    -- Create a container for this group's widgets
+    groups[name] = {}
+
+    -- Convert the given NAME to snake-case
+    local tail = camel_to_snake(name)
+    printf("tail: %s", tail)
+
+    -- Implement a function for adding a widget to this group
+    imgui_groups["add_widget_" .. tail] = function(widget)
+        add_widget(name, widget)
+    end
+
+    -- Implement a function for rendering this group
+    imgui_groups["render_" .. tail] = function()
+        render(name)
+    end
+end
+
+-- Register WIDGET to render in GROUP
+function add_widget(group, widget)
+    assert(type(group) == "string", "ID is not a string")
+    assert(type(widget) == "function", "Widget is not a function")
+    
+    -- Lazily allocate storage and registrar for this group
+    if groups[group] == nil then
+        add_group(group)
+    end
+
+    -- Add the given widget to it
+    table.insert(groups[group], widget)
+end
+
+-- Render all widgets registered to GROUP
+function render(group)
+    if type(group) ~= "string" then
+        error("Group name is not a string: " .. tostring(group))
+    end
+
+    if groups[group] == nil then
+        error("Group name is not registered: " .. tostring(group))
+    end
+    
+    SendScriptCallback("imgui_on_render", group)
+end
+
+-- Register built-in groups
+add_group(WIDGET_MAIN)
+add_group(WIDGET_MENU_BAR)
+
+-- Entrypoint
+function on_game_start()
+    -- Register group rendering callback
+    RegisterScriptCallback(
+        "imgui_on_render",
+        function(name)
+            -- If a group exists with the given name
+            if groups[name] then
+                -- Render all widgets registered to it
+                for _,f in ipairs(groups[name]) do
+                    f()
+                end
+            end
+        end
+    )
+end
