@@ -3,7 +3,6 @@
 #include "frustum.h"
 
 extern Fvector c_spatial_offset[8];
-thread_local xr_vector<ISpatial*>* qf_result;
 
 class walker
 {
@@ -19,7 +18,7 @@ public:
 		space = _space;
 	}
 
-	void walk(ISpatial_NODE* N, Fvector& n_C, float n_R, u32 fmask)
+	void walk(xr_vector<ISpatial*>& R, ISpatial_NODE* N, Fvector& n_C, float n_R, u32 fmask)
 	{
 		// box
 		float n_vR = 2 * n_R;
@@ -28,11 +27,8 @@ public:
 		if (fcvNone == F->testAABB(BB.data(), fmask)) return;
 
 		// test items
-		xr_vector<ISpatial*>::iterator _it = N->items.begin();
-		xr_vector<ISpatial*>::iterator _end = N->items.end();
-		for (; _it != _end; _it++)
+		for (ISpatial* S : N->items)
 		{
-			ISpatial* S = *_it;
 			if (0 == (S->spatial.type & mask)) continue;
 
 			Fvector& sC = S->spatial.sphere.P;
@@ -40,7 +36,7 @@ public:
 			u32 tmask = fmask;
 			if (fcvNone == F->testSphere(sC, sR, tmask)) continue;
 
-			qf_result->push_back(S);
+			R.push_back(S);
 		}
 
 		// recurse
@@ -50,7 +46,7 @@ public:
 			if (0 == N->children[octant]) continue;
 			Fvector c_C;
 			c_C.mad(n_C, c_spatial_offset[octant], c_R);
-			walk(N->children[octant], c_C, c_R, fmask);
+			walk(R, N->children[octant], c_C, c_R, fmask);
 		}
 	}
 };
@@ -63,8 +59,7 @@ void ISpatial_DB::q_frustum(xr_vector<ISpatial*>& R, u32 _o, u32 _mask, const CF
 	{
 		return;
 	}
-	qf_result = &R;
-	qf_result->clear();
+	R.clear();
 	walker W(this, _mask, &_frustum);
-	W.walk(m_root, m_center, m_bounds, _frustum.getMask());
+	W.walk(R, m_root, m_center, m_bounds, _frustum.getMask());
 }

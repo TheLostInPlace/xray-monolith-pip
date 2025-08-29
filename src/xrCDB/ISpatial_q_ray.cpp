@@ -200,7 +200,6 @@ ICF BOOL isect_sse(const aabb_t& box, const ray_t& ray, float& dist)
 }
 
 extern Fvector c_spatial_offset[8];
-thread_local xr_vector<ISpatial*>* qr_result;
 
 template <bool b_use_sse, bool b_first, bool b_nearest>
 class _MM_ALIGN16 walker
@@ -270,7 +269,7 @@ public:
 		return isect_sse(box, ray, dist);
 	}
 
-	void walk(ISpatial_NODE* N, Fvector& n_C, float n_R)
+	void walk(xr_vector<ISpatial*>& R, ISpatial_NODE* N, Fvector& n_C, float n_R)
 	{
 		// Actual ray/aabb test
 		if (b_use_sse)
@@ -289,11 +288,8 @@ public:
 		}
 
 		// test items
-		xr_vector<ISpatial*>::iterator _it = N->items.begin();
-		xr_vector<ISpatial*>::iterator _end = N->items.end();
-		for (; _it != _end; _it++)
+		for (ISpatial* S : N->items)
 		{
-			ISpatial* S = *_it;
 			if (mask != (S->spatial.type & mask)) continue;
 			Fsphere& sS = S->spatial.sphere;
 			int quantity;
@@ -313,7 +309,7 @@ public:
 					}
 					range2 = range * range;
 				}
-				qr_result->push_back(S);
+				R.push_back(S);
 				if (b_first) return;
 			}
 		}
@@ -325,8 +321,8 @@ public:
 			if (0 == N->children[octant]) continue;
 			Fvector c_C;
 			c_C.mad(n_C, c_spatial_offset[octant], c_R);
-			walk(N->children[octant], c_C, c_R);
-			if (b_first && !qr_result->empty()) return;
+			walk(R, N->children[octant], c_C, c_R);
+			if (b_first && !R.empty()) return;
 		}
 	}
 };
@@ -336,8 +332,7 @@ void ISpatial_DB::q_ray(xr_vector<ISpatial*>& R, u32 _o, u32 _mask_and, const Fv
 {
 	PROF_EVENT("ISpatial_DB::q_ray");
 	xrSRWLockGuard guard(&db_lock, true);
-	qr_result = &R;
-	qr_result->clear();
+	R.clear();
 
 	if (CPU::ID.feature & _CPU_FEATURE_SSE)
 	{
@@ -346,12 +341,12 @@ void ISpatial_DB::q_ray(xr_vector<ISpatial*>& R, u32 _o, u32 _mask_and, const Fv
 			if (_o & O_ONLYNEAREST)
 			{
 				walker<true, true, true> W(this, _mask_and, _start, _dir, _range);
-				W.walk(m_root, m_center, m_bounds);
+				W.walk(R, m_root, m_center, m_bounds);
 			}
 			else
 			{
 				walker<true, true, false> W(this, _mask_and, _start, _dir, _range);
-				W.walk(m_root, m_center, m_bounds);
+				W.walk(R, m_root, m_center, m_bounds);
 			}
 		}
 		else
@@ -359,12 +354,12 @@ void ISpatial_DB::q_ray(xr_vector<ISpatial*>& R, u32 _o, u32 _mask_and, const Fv
 			if (_o & O_ONLYNEAREST)
 			{
 				walker<true, false, true> W(this, _mask_and, _start, _dir, _range);
-				W.walk(m_root, m_center, m_bounds);
+				W.walk(R, m_root, m_center, m_bounds);
 			}
 			else
 			{
 				walker<true, false, false> W(this, _mask_and, _start, _dir, _range);
-				W.walk(m_root, m_center, m_bounds);
+				W.walk(R, m_root, m_center, m_bounds);
 			}
 		}
 	}
@@ -375,12 +370,12 @@ void ISpatial_DB::q_ray(xr_vector<ISpatial*>& R, u32 _o, u32 _mask_and, const Fv
 			if (_o & O_ONLYNEAREST)
 			{
 				walker<false, true, true> W(this, _mask_and, _start, _dir, _range);
-				W.walk(m_root, m_center, m_bounds);
+				W.walk(R, m_root, m_center, m_bounds);
 			}
 			else
 			{
 				walker<false, true, false> W(this, _mask_and, _start, _dir, _range);
-				W.walk(m_root, m_center, m_bounds);
+				W.walk(R, m_root, m_center, m_bounds);
 			}
 		}
 		else
@@ -388,12 +383,12 @@ void ISpatial_DB::q_ray(xr_vector<ISpatial*>& R, u32 _o, u32 _mask_and, const Fv
 			if (_o & O_ONLYNEAREST)
 			{
 				walker<false, false, true> W(this, _mask_and, _start, _dir, _range);
-				W.walk(m_root, m_center, m_bounds);
+				W.walk(R, m_root, m_center, m_bounds);
 			}
 			else
 			{
 				walker<false, false, false> W(this, _mask_and, _start, _dir, _range);
-				W.walk(m_root, m_center, m_bounds);
+				W.walk(R, m_root, m_center, m_bounds);
 			}
 		}
 	}
