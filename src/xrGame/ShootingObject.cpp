@@ -365,7 +365,7 @@ void CShootingObject::StartFlameParticles()
 	}
 
 	StopFlameParticles();
-	m_pFlameParticles = Particles::Details::Create(*m_sFlameParticlesCurrent,FALSE).get();
+	m_pFlameParticles = Particles::Details::Create(*m_sFlameParticlesCurrent,FALSE);
 	m_pFlameParticles->SetLiveUpdate(TRUE);
 	UpdateFlameParticles();
 
