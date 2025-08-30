@@ -39,7 +39,7 @@ void light::vis_prepare()
 
 	vis.distance = Device.vCameraPosition.distance_to(spatial.sphere.P);
 
-	if (skiptest || vis.distance <= (spatial.sphere.R * 1.01f + safe_area))
+	if (skiptest || vis.distance <= (spatial.sphere.R * 1.01f + safe_area + (spatial.sphere.R * 0.1f))) // small error
 	{
 		// small error
 		vis.visible = true;
@@ -74,7 +74,7 @@ void light::vis_update()
 	if (!vis.pending) return;
 
 	u32 frame = Device.dwFrame;
-	u64 fragments = RImplementation.occq_get(vis.query_id);
+	R_occlusion::occq_result fragments = RImplementation.occq_get(vis.query_id);
 
 	vis.visible = (fragments > cullfragments);
 	vis.pending = false;
