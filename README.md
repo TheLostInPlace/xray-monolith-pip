@@ -170,6 +170,18 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.08.30**
+* MFB: Smart covers now have fixed enter min/max distances (https://github.com/themrdemonized/xray-monolith/pull/352)
+* Lucy: Level Script Attachments (https://github.com/themrdemonized/xray-monolith/pull/353)
+* ProfLander: ImGui: Implement grouping API (https://github.com/themrdemonized/xray-monolith/pull/354)
+
+**2025.08.27**
+* Fix https://github.com/themrdemonized/xray-monolith/issues/346
+* NLTP_Ashes:
+  * Export multiple CWeaponKnife related functions to Lua (https://github.com/themrdemonized/xray-monolith/pull/347)
+  * Export HUD elements to Lua (https://github.com/themrdemonized/xray-monolith/pull/351)
+* Ncenka: Fix for Random Music in Main Menu (https://github.com/themrdemonized/xray-monolith/pull/345)
+
 **2025.08.23**
 * Kutez: Callback Priority System (https://github.com/themrdemonized/xray-monolith/pull/339)
 * Ncenka: PDA UI XML Setter (https://github.com/themrdemonized/xray-monolith/pull/343)
