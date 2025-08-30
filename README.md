@@ -170,6 +170,11 @@ How to compile exes:
 7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.08.30**
+* MFB: Smart covers now have fixed enter min/max distances (https://github.com/themrdemonized/xray-monolith/pull/352)
+* Lucy: Level Script Attachments (https://github.com/themrdemonized/xray-monolith/pull/353)
+* ProfLander: ImGui: Implement grouping API (https://github.com/themrdemonized/xray-monolith/pull/354)
+
 **2025.08.27**
 * Fix https://github.com/themrdemonized/xray-monolith/issues/346
 * NLTP_Ashes:
