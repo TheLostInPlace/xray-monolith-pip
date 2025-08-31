@@ -636,8 +636,8 @@ void dx103DFluidRenderer::PrepareCBuffer(const dx103DFluidData &FluidData, u32 R
 	RCache.set_c(strRTWidth, (float)RTWidth);
 	RCache.set_c(strRTHeight, (float)RTHeight);
 
-	if (SizeOnly)
-		return;
+	// if (SizeOnly)
+	// 	return;
 
     const Fmatrix &transform = FluidData.GetTransform();
     RCache.set_xform_world(transform);
