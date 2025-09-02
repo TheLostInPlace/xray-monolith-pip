@@ -118,12 +118,8 @@ void CAI_Crow::Load(LPCSTR section)
 {
 	inherited::Load(section);
 	//////////////////////////////////////////////////////////////////////////
-	ISpatial* self = smart_cast<ISpatial*>(this);
-	if (self)
-	{
-		self->spatial.type &= ~STYPE_VISIBLEFORAI;
-		self->spatial.type &= ~STYPE_REACTTOSOUND;
-	}
+	SpatialComponent->spatial.type &= ~STYPE_VISIBLEFORAI;
+	SpatialComponent->spatial.type &= ~STYPE_REACTTOSOUND;
 	//////////////////////////////////////////////////////////////////////////
 
 	// sounds
@@ -220,8 +216,7 @@ void CAI_Crow::switch2_FlyIdle()
 void CAI_Crow::switch2_DeathDead()
 {
 	// AI need to pickup this
-	ISpatial* self = smart_cast<ISpatial*>(this);
-	if (self) self->spatial.type |= STYPE_VISIBLEFORAI;
+	SpatialComponent->spatial.type |= STYPE_VISIBLEFORAI;
 	//
 	smart_cast<IKinematicsAnimated*>(Visual())->PlayCycle(m_Anims.m_death_dead.GetRandom());
 }
@@ -364,7 +359,7 @@ collide::rq_result GetPickResult(Fvector pos, Fvector dir, float range, CObject*
 void CAI_Crow::shedule_Update(u32 DT)
 {
 	float fDT = float(DT) / 1000.F;
-	spatial.type &= ~STYPE_VISIBLEFORAI;
+	SpatialComponent->spatial.type &= ~STYPE_VISIBLEFORAI;
 
 	inherited::shedule_Update(DT);
 

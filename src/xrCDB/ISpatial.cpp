@@ -23,9 +23,41 @@ Fvector c_spatial_offset [8] =
 	{1, 1, 1}
 };
 
-//////////////////////////////////////////////////////////////////////////
-ISpatial::ISpatial(ISpatial_DB* space)
+CObject* ISpatial::dcast_CObject()
 {
+	return RawOwner ? RawOwner->dcast_CObject() : nullptr;
+}
+
+IRender_Light* ISpatial::dcast_Light()
+{
+	return RawOwner ? RawOwner->dcast_Light() : nullptr;
+}
+
+Feel::Sound* ISpatial::dcast_FeelSound()
+{
+	return RawOwner ? RawOwner->dcast_FeelSound() : nullptr;
+}
+
+IRenderable* ISpatial::dcast_Renderable() 
+{
+	return RawOwner ? RawOwner->dcast_Renderable() : nullptr;
+}
+
+CPHObject* ISpatial::dcast_CPHObject()
+{
+	return RawOwner ? RawOwner->dcast_CPHObject() : nullptr;
+}
+
+CGlow* ISpatial::dcast_CGlow()
+{
+	return RawOwner ? RawOwner->dcast_CGlow() : nullptr;
+}
+
+//////////////////////////////////////////////////////////////////////////
+ISpatial::ISpatial(ISpatial_DB* space, ISpatialOwner* Owner)
+{
+	RawOwner = Owner;
+
 	spatial.sphere.P.set(0, 0, 0);
 	spatial.sphere.R = 0;
 	spatial.node_center.set(0, 0, 0);
@@ -37,7 +69,7 @@ ISpatial::ISpatial(ISpatial_DB* space)
 
 ISpatial::~ISpatial(void)
 {
-	spatial_unregister();
+	Unregister();
 }
 
 BOOL ISpatial::spatial_inside()
@@ -52,7 +84,7 @@ BOOL ISpatial::spatial_inside()
 	return TRUE;
 }
 
-BOOL verify_sp(ISpatial* sp, Fvector& node_center, float node_radius)
+BOOL verify_sp(ISpatialShared sp, Fvector& node_center, float node_radius)
 {
 	float dr = -(- node_radius + sp->spatial.sphere.R);
 	if (sp->spatial.sphere.P.x < node_center.x - dr) return FALSE;
@@ -64,32 +96,32 @@ BOOL verify_sp(ISpatial* sp, Fvector& node_center, float node_radius)
 	return TRUE;
 }
 
-void ISpatial::spatial_register()
+void ISpatial::Register()
 {
 	spatial.type |= STYPEFLAG_INVALIDSECTOR;
 	if (spatial.node_ptr)
 	{
 		// already registered - nothing to do
 	}
-	else
+	else 
 	{
 		// register
 		R_ASSERT(spatial.space);
 		xrSRWLockGuard guard(&spatial.space->db_lock, false);
-		spatial.space->insert(this);
+		spatial.space->insert(shared_from_this());
 		spatial.sector = 0;
 	}
 }
 
-void ISpatial::spatial_unregister()
+void ISpatial::Unregister()
 {
 	if (spatial.node_ptr)
 	{
 		// remove
 		xrSRWLockGuard guard(&spatial.space->db_lock, false);
-		spatial.space->remove(this);
-		spatial.node_ptr = NULL;
-		spatial.sector = NULL;
+		spatial.space->remove(shared_from_this());
+		spatial.node_ptr = nullptr;
+		spatial.sector = nullptr;
 	}
 	else
 	{
@@ -97,22 +129,20 @@ void ISpatial::spatial_unregister()
 	}
 }
 
-void ISpatial::spatial_move()
+void ISpatial::Move()
 {
 	if (spatial.node_ptr)
 	{
-		float spatial_sector_threshold_sqr = 1.0f;
-		float spatial_distance_sqr = last_sector_point.distance_to_sqr(spatial_sector_point());
-		
 		//*** somehow it was determined that object has been moved
-		if (spatial_distance_sqr > spatial_sector_threshold_sqr)
-			spatial.type |= STYPEFLAG_INVALIDSECTOR;
+		spatial.type |= STYPEFLAG_INVALIDSECTOR;
 
 		//*** check if we are supposed to correct it's spatial location
-		if (spatial_inside()) return; // ???
+		if (spatial_inside())	
+			return;		// ???
+
 		xrSRWLockGuard guard(&spatial.space->db_lock, false);
-		spatial.space->remove(this);
-		spatial.space->insert(this);
+		spatial.space->remove(shared_from_this());
+		spatial.space->insert(shared_from_this());
 	}
 	else
 	{
@@ -121,12 +151,22 @@ void ISpatial::spatial_move()
 	}
 }
 
+Fvector ISpatial::SectorPoint()
+{
+	return spatial.sphere.P;
+}
+
+Fvector ISpatial::OwnerSectorPoint()
+{
+	return RawOwner ? RawOwner->spatial_sector_point() : spatial.sphere.P;
+}
+
 void ISpatial::spatial_updatesector_internal()
 {
-	last_sector_point = spatial_sector_point();
-	IRender_Sector* S = ::Render->detectSector(last_sector_point);
-	spatial.type &= ~STYPEFLAG_INVALIDSECTOR;
-	if (S) spatial.sector = S;
+	IRender_Sector* S = ::Render->detectSector(OwnerSectorPoint());
+	spatial.type &=	~STYPEFLAG_INVALIDSECTOR;
+	if (S)
+		spatial.sector = S;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -138,17 +178,17 @@ void ISpatial_NODE::_init(ISpatial_NODE* _parent)
 	items.clear();
 }
 
-void ISpatial_NODE::_insert(ISpatial* S)
+void ISpatial_NODE::_insert(ISpatialShared S)
 {
 	S->spatial.node_ptr = this;
 	items.push_back(S);
 	S->spatial.space->stat_objects ++;
 }
 
-void ISpatial_NODE::_remove(ISpatial* S)
+void ISpatial_NODE::_remove(ISpatialShared S)
 {
-	S->spatial.node_ptr = NULL;
-	xr_vector<ISpatial*>::iterator it = std::find(items.begin(), items.end(), S);
+	S->spatial.node_ptr = nullptr;
+	auto it = std::find(items.begin(),items.end(),S);
 	VERIFY(it!=items.end());
 	items.erase(it);
 	S->spatial.space->stat_objects --;
@@ -268,24 +308,8 @@ void ISpatial_DB::_insert(ISpatial_NODE* N, Fvector& n_C, float n_R)
 	}
 }
 
-void ISpatial_DB::insert(ISpatial* S)
+void ISpatial_DB::insert(ISpatialShared S)
 {
-#ifdef DEBUG
-	stat_insert.Begin	();
-
-	BOOL		bValid	= _valid(S->spatial.sphere.R) && _valid(S->spatial.sphere.P);
-	if (!bValid)	
-	{
-		CObject*	O	= fast_dynamic_cast<CObject*>(S);
-		if (O)			Debug.fatal(DEBUG_INFO, "Invalid OBJECT position or radius (%s)", O->cName().c_str());
-		else {
-			CPS_Instance* P = fast_dynamic_cast<CPS_Instance*>(S);
-			if (P)		Debug.fatal(DEBUG_INFO,"Invalid PS spatial position{%3.2f,%3.2f,%3.2f} or radius{%3.2f}",VPUSH(S->spatial.sphere.P),S->spatial.sphere.R);
-			else		Debug.fatal(DEBUG_INFO,"Invalid OTHER spatial position{%3.2f,%3.2f,%3.2f} or radius{%3.2f}",VPUSH(S->spatial.sphere.P),S->spatial.sphere.R);
-		}
-	}
-#endif
-
 	if (verify_sp(S, m_center, m_bounds))
 	{
 		// Object inside our DB
@@ -331,7 +355,7 @@ void ISpatial_DB::_remove(ISpatial_NODE* N, ISpatial_NODE* N_sub)
 	if (N->_empty()) _remove(N->parent, N);
 }
 
-void ISpatial_DB::remove(ISpatial* S)
+void ISpatial_DB::remove(ISpatialShared S)
 {
 #ifdef DEBUG
 	stat_remove.Begin	();
@@ -347,10 +371,11 @@ void ISpatial_DB::remove(ISpatial* S)
 #endif
 }
 
-void ISpatial_DB::update(u32 nodes/* =8 */)
+void ISpatial_DB::update(u32)
 {
 #ifdef DEBUG
-	if (0==m_root)	return;
-	VERIFY			(verify());
+	if (0 == m_root)	
+		return;
+	VERIFY(verify());
 #endif
 }

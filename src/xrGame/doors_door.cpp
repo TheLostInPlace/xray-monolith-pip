@@ -44,12 +44,12 @@ door::door(CPhysicObject* object) :
 	m_open_vector.mul(length);
 	m_closed_vector.mul(length);
 
-	m_object.spatial.type |= STYPE_VISIBLEFORAI;
+	m_object.SpatialComponent->spatial.type |= STYPE_VISIBLEFORAI;
 }
 
 door::~door()
 {
-	m_object.spatial.type &= ~STYPE_VISIBLEFORAI;
+	m_object.SpatialComponent->spatial.type &= ~STYPE_VISIBLEFORAI;
 
 	if (m_initiators.empty())
 		return;

@@ -147,7 +147,7 @@ void CAI_Stalker::feel_touch_new(CObject* O)
 	//	Msg					("FEEL_TOUCH::NEW : %s",*O->cName());
 	if (!g_Alive()) return;
 	if (Remote()) return;
-	if ((O->spatial.type | STYPE_VISIBLEFORAI) != O->spatial.type) return;
+	if ((O->SpatialComponent->spatial.type | STYPE_VISIBLEFORAI) != O->SpatialComponent->spatial.type) return;
 
 	// demonized: add g_ai_die_in_anomaly == 0 check
 	if (!(g_ai_die_in_anomaly || m_enable_anomalies_pathfinding)) {

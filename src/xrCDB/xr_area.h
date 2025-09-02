@@ -5,6 +5,8 @@
 
 // refs
 class ISpatial;
+using ISpatialShared = xr_shared_ptr<ISpatial>;
+
 class ICollisionForm;
 class CObject;
 
@@ -72,7 +74,7 @@ public:
 
 	int GetNearest(xr_vector<CObject*>& q_nearest, ICollisionForm* obj, float range);
 	int GetNearest(xr_vector<CObject*>& q_nearest, const Fvector& point, float range, CObject* ignore_object);
-	int GetNearest(xr_vector<ISpatial*>& q_spatial, xr_vector<CObject*>& q_nearest, const Fvector& point, float range,
+	int GetNearest(xr_vector<ISpatialShared>& q_spatial, xr_vector<CObject*>& q_nearest, const Fvector& point, float range,
 	               CObject* ignore_object);
 
 	CDB::TRI* GetStaticTris() { return Static.get_tris(); }

@@ -79,7 +79,7 @@ ICF static BOOL info_trace_callback(collide::rq_result& result, LPVOID params)
 		else
 		{
 			//check obstacle flag
-			if (result.O->spatial.type & STYPE_OBSTACLE)
+			if (result.O->SpatialComponent->spatial.type & STYPE_OBSTACLE)
 				bOverlaped = TRUE;
 
 			return TRUE;
@@ -189,7 +189,7 @@ void CActor::PickupModeUpdate_COD(pickup_result_t pickup_result)
 
 	for (u32 o_it = 0; o_it < ISpatialResult.size(); o_it++)
 	{
-		ISpatial* spatial = ISpatialResult[o_it];
+		ISpatial* spatial = ISpatialResult[o_it].get();
 		CInventoryItem* pIItem = smart_cast<CInventoryItem*>(spatial->dcast_CObject());
 
 		if (0 == pIItem) continue;
@@ -288,13 +288,13 @@ void CActor::Check_for_AutoPickUp()
 	Fbox APU_Box;
 	APU_Box.set(Fvector().sub(bc, m_AutoPickUp_AABB), Fvector().add(bc, m_AutoPickUp_AABB));
 
-	xr_vector<ISpatial*> ISpatialResult;
+	xr_vector<ISpatialShared> ISpatialResult;
 	g_SpatialSpace->q_box(ISpatialResult, 0, STYPE_COLLIDEABLE, bc, m_AutoPickUp_AABB);
 
 	// Determine visibility for dynamic part of scene
 	for (u32 o_it = 0; o_it < ISpatialResult.size(); o_it++)
 	{
-		ISpatial* spatial = ISpatialResult[o_it];
+		ISpatial* spatial = ISpatialResult[o_it].get();
 		CInventoryItem* pIItem = smart_cast<CInventoryItem*>(spatial->dcast_CObject());
 
 		if (0 == pIItem) continue;

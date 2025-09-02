@@ -61,9 +61,9 @@ class CPHWorld : public pureFrame,
 	IPHWorldUpdateCallbck* m_update_callback;
 	CObjectSpace* m_object_space;
 	CObjectList* m_level_objects;
-	CRenderDeviceBase* m_device; ;
+	CRenderDeviceBase* m_device;
 public:
-	xr_vector<ISpatial*> r_spatial;
+	xr_vector<ISpatialShared> r_spatial;
 public:
 	u64 m_steps_num;
 private:

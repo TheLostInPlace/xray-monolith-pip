@@ -1,13 +1,14 @@
 #pragma once
-#ifndef CPHOBJECT
-#define CPHOBJECT
+
 #include "../xrcdb/ispatial.h"
 #include "PHItemList.h"
 #include "PHIsland.h"
 typedef u32 CLClassBits;
 typedef u32 CLBits;
 class ISpatial;
-DEFINE_VECTOR(ISpatial*, qResultVec, qResultIt)
+
+using qResultVec = xr_vector<ISpatialShared>;
+using qResultIt = qResultVec::iterator;
 class CPHObject;
 class CPHUpdateObject;
 class CPHMoveStorage;
@@ -17,8 +18,8 @@ typedef void CollideCallback(CPHObject* obj1, CPHObject* obj2, dGeomID o1, dGeom
 #ifdef		DEBUG
 class IPhysicsShellHolder;
 #endif
-class CPHObject :
-	public ISpatial
+class CPHObject:
+	public ISpatialOwner
 {
 #ifdef DEBUG
 	friend struct SPHObjDBGDraw;
@@ -140,9 +141,8 @@ virtual		IPhysicsShellHolder	*ref_object					()										=0;
 	IC const CLBits& collide_bits() const { return m_collide_bits; }
 	IC const _flags<CLClassBits>& collide_class_bits() const { return m_collide_class_bits; }
 	void CollideDynamics();
+	virtual CPHObject* dcast_CPHObject() override { return this; }
 };
 
 
 DEFINE_PHITEM_LIST(CPHObject, PH_OBJECT_STORAGE, PH_OBJECT_I)
-
-#endif//CPHOBJECT

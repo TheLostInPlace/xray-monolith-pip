@@ -61,7 +61,7 @@ void CRender::Calculate()
 	g_SpatialSpace->q_sphere(lstRenderables, 0, STYPE_LIGHTSOURCE, Device.vCameraPosition, EPS_L);
 	for (u32 _it = 0; _it < lstRenderables.size(); _it++)
 	{
-		ISpatial* spatial = lstRenderables[_it];
+		ISpatial* spatial = lstRenderables[_it].get();
 		spatial->spatial_updatesector();
 		CSector* sector = (CSector*)spatial->spatial.sector;
 		if (0 == sector) continue; // disassociated from S/P structure

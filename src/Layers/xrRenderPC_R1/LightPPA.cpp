@@ -154,10 +154,10 @@ void CLightR_Manager::render_point(u32 _priority)
 	for (xr_vector<light*>::iterator it = selected_point.begin(); it != selected_point.end(); it++)
 	{
 		light* L = *it;
-		VERIFY(L->spatial.sector && _valid(L->range));
+		VERIFY(L->SpatialComponent->spatial.sector && _valid(L->range));
 
 		//		0. Dimm & Clip
-		float lc_dist = lc_COP.distance_to(L->spatial.sphere.P) - L->spatial.sphere.R;
+		float lc_dist = lc_COP.distance_to(L->SpatialComponent->spatial.sphere.P) - L->SpatialComponent->spatial.sphere.R;
 		float lc_scale = 1 - lc_dist / lc_limit;
 		if (lc_scale < EPS) continue;
 		if (L->range < 0.01f) continue;
@@ -198,12 +198,12 @@ void CLightR_Manager::render_point(u32 _priority)
 		RImplementation.r1_dlight_tcgen = L_texgen;
 
 		//		3. Calculate visibility for light + build soring tree
-		VERIFY(L->spatial.sector);
+		VERIFY(L->SpatialComponent->spatial.sector);
 		if (_priority == 1)
 			RImplementation.r_pmask(false, true);
 
 		RImplementation.r_dsgraph_render_subspace(
-			L->spatial.sector,
+			L->SpatialComponent->spatial.sector,
 			L_combine,
 			L_pos,
 			true,
@@ -240,7 +240,7 @@ void CLightR_Manager::render_spot(u32 _priority)
 		light* L = *it;
 
 		//		0. Dimm & Clip
-		float lc_dist = lc_COP.distance_to(L->spatial.sphere.P) - L->spatial.sphere.R;
+		float lc_dist = lc_COP.distance_to(L->SpatialComponent->spatial.sphere.P) - L->SpatialComponent->spatial.sphere.R;
 		float lc_scale = 1 - lc_dist / lc_limit;
 		if (lc_scale < EPS) continue;
 
@@ -280,13 +280,13 @@ void CLightR_Manager::render_spot(u32 _priority)
 		RImplementation.r1_dlight_tcgen = L_texgen;
 
 		//		3. Calculate visibility for light + build soring tree
-		VERIFY(L->spatial.sector);
+		VERIFY(L->SpatialComponent->spatial.sector);
 		// RImplementation.marker					++;
 		if (_priority == 1)
 			RImplementation.r_pmask(false, true);
 
 		RImplementation.r_dsgraph_render_subspace(
-			L->spatial.sector,
+			L->SpatialComponent->spatial.sector,
 			L_combine,
 			L_pos,
 			TRUE,
@@ -369,7 +369,7 @@ void CLightR_Manager::render(u32 _priority)
 void CLightR_Manager::add(light* L)
 {
 	if (L->range < 0.1f) return;
-	if (0 == L->spatial.sector) return;
+	if (0 == L->SpatialComponent->spatial.sector) return;
 	if (IRender_Light::POINT == L->flags.type)
 	{
 		// PPA
@@ -380,7 +380,7 @@ void CLightR_Manager::add(light* L)
 		// spot/flash
 		selected_spot.push_back(L);
 	}
-	VERIFY(L->spatial.sector);
+	VERIFY(L->SpatialComponent->spatial.sector);
 }
 
 CLightR_Manager::CLightR_Manager()

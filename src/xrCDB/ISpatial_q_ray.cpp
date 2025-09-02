@@ -269,7 +269,7 @@ public:
 		return isect_sse(box, ray, dist);
 	}
 
-	void walk(xr_vector<ISpatial*>& R, ISpatial_NODE* N, Fvector& n_C, float n_R)
+	void walk(xr_vector<ISpatialShared>& R, ISpatial_NODE* N, Fvector& n_C, float n_R)
 	{
 		// Actual ray/aabb test
 		if (b_use_sse)
@@ -288,7 +288,7 @@ public:
 		}
 
 		// test items
-		for (ISpatial* S : N->items)
+		for (ISpatialShared& S : N->items)
 		{
 			if (mask != (S->spatial.type & mask)) continue;
 			Fsphere& sS = S->spatial.sphere;
@@ -327,8 +327,7 @@ public:
 	}
 };
 
-void ISpatial_DB::q_ray(xr_vector<ISpatial*>& R, u32 _o, u32 _mask_and, const Fvector& _start, const Fvector& _dir,
-                        float _range)
+void ISpatial_DB::q_ray(xr_vector<ISpatialShared>& R, u32 _o, u32 _mask_and, const Fvector&	_start,  const Fvector&	_dir, float _range)
 {
 	PROF_EVENT("ISpatial_DB::q_ray");
 	xrSRWLockGuard guard(&db_lock, true);

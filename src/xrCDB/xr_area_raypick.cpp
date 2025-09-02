@@ -21,7 +21,7 @@ using namespace collide;
 namespace CObjectSpaceThreadData {
 	thread_local xrXRC xrc;
 	thread_local collide::rq_results r_temp;
-	thread_local xr_vector<ISpatial*> r_spatial;
+	thread_local xr_vector<ISpatialShared> r_spatial;
 }
 
 //--------------------------------------------------------------------------------
@@ -53,9 +53,9 @@ BOOL CObjectSpace::_RayTest(const Fvector& start, const Fvector& dir, float rang
 		// Determine visibility for dynamic part of scene
 		for (u32 o_it = 0; o_it < CObjectSpaceThreadData::r_spatial.size(); o_it++)
 		{
-			ISpatial* spatial = CObjectSpaceThreadData::r_spatial[o_it];
+			ISpatial* spatial = CObjectSpaceThreadData::r_spatial[o_it].get();
 			CObject* collidable = spatial->dcast_CObject();
-			if (collidable && (collidable != ignore_object))
+			if (collidable && (collidable != ignore_object) && collidable->collidable.model)
 			{
 				ECollisionFormType tp = collidable->collidable.model->Type();
 				if ((tgt & (rqtObject | rqtObstacle)) && (tp == cftObject) && collidable->collidable.model->_RayQuery(Q, CObjectSpaceThreadData::r_temp))
@@ -167,7 +167,7 @@ BOOL CObjectSpace::_RayPick(const Fvector& start, const Fvector& dir, float rang
 		// Determine visibility for dynamic part of scene
 		for (u32 o_it = 0; o_it < CObjectSpaceThreadData::r_spatial.size(); o_it++)
 		{
-			ISpatial* spatial = CObjectSpaceThreadData::r_spatial[o_it];
+			ISpatial* spatial = CObjectSpaceThreadData::r_spatial[o_it].get();
 			CObject* collidable = spatial->dcast_CObject();
 			if (0 == collidable) continue;
 
@@ -251,12 +251,14 @@ BOOL CObjectSpace::_RayQuery2(collide::rq_results& r_dest, const collide::ray_de
 			CObject* collidable = CObjectSpaceThreadData::r_spatial[o_it]->dcast_CObject();
 			if (0 == collidable) continue;
 			if (collidable == ignore_object) continue;
-			ICollisionForm* cform = collidable->collidable.model;
-			ECollisionFormType tp = collidable->collidable.model->Type();
-			if (((R.tgt & (rqtObject | rqtObstacle)) && (tp == cftObject)) || ((R.tgt & rqtShape) && (tp == cftShape)))
+
+			if (ICollisionForm* cform = collidable->collidable.model)
 			{
-				if (tb && !tb(R, collidable, user_data))continue;
-				cform->_RayQuery(R, CObjectSpaceThreadData::r_temp);
+				ECollisionFormType tp = cform->Type();
+				if (((R.tgt & (rqtObject | rqtObstacle)) && (tp == cftObject)) || ((R.tgt & rqtShape) && (tp == cftShape))) {
+					if (tb && !tb(R, collidable, user_data))continue;
+					cform->_RayQuery(R, CObjectSpaceThreadData::r_temp);
+				}
 			}
 		}
 	}

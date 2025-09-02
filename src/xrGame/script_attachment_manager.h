@@ -46,8 +46,7 @@ struct script_attachment_bone_cb
 };
 
 class script_attachment :
-	public IRenderable,
-	public ISpatial
+	public IRenderable
 {
 private:
 	shared_str m_name;

@@ -78,7 +78,7 @@ void CLightProjector::set_object(IRenderable* O)
 
 		if (current)
 		{
-			ISpatial* spatial = fast_dynamic_cast<ISpatial*>(O);
+			ISpatial* spatial = O->SpatialComponent.get();
 			if (0 == spatial) current = 0;
 			else
 			{
@@ -318,7 +318,7 @@ void CLightProjector::calculate()
 		BB.set(min, max);
 		R.UVclamp_min.set(min).add(.05f); // shrink a little
 		R.UVclamp_max.set(max).sub(.05f); // shrink a little
-		ISpatial* spatial = fast_dynamic_cast<ISpatial*>(O);
+		ISpatial* spatial = O->SpatialComponent.get();
 		if (spatial)
 		{
 			spatial->spatial_updatesector();

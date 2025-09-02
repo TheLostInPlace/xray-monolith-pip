@@ -8,11 +8,9 @@
 #include "IGame_Persistent.h"
 
 CPS_Instance::CPS_Instance(bool destroy_on_game_load) :
-	ISpatial(g_SpatialSpace),
 	m_destroy_on_game_load(destroy_on_game_load)
 {
-	//g_pGamePersistent->ps_active.insert		(this);
-	renderable.pROS_Allowed	= FALSE;
+	renderable.pROS_Allowed = FALSE;
 
 	m_iLifeTime = int_max;
 	m_bAutoRemove = TRUE;
@@ -23,8 +21,8 @@ extern ENGINE_API xr_atomic_bool			g_bRendering;
 //----------------------------------------------------
 CPS_Instance::~CPS_Instance()
 {
-	VERIFY									(!g_bRendering);
-	spatial_unregister						();
+	VERIFY(!g_bRendering);
+	ISpatialOwner::spatial_unregister();
 }
 
 //----------------------------------------------------

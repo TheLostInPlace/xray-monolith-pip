@@ -37,9 +37,9 @@ void light::vis_prepare()
 	if (ps_r2_ls_flags.test(R2FLAG_EXP_DONT_TEST_SHADOWED) && flags.bShadow) skiptest = true;
 	//if (ps_ssfx_volumetric.x > 0 && flags.bShadow) skiptest = true; // Temp Fix
 
-	vis.distance = Device.vCameraPosition.distance_to(spatial.sphere.P);
+	vis.distance = Device.vCameraPosition.distance_to(SpatialComponent->spatial.sphere.P);
 
-	if (skiptest || vis.distance <= (spatial.sphere.R * 1.01f + safe_area + (spatial.sphere.R * 0.1f))) // small error
+	if (skiptest || vis.distance <= (SpatialComponent->spatial.sphere.R * 1.01f + safe_area + (SpatialComponent->spatial.sphere.R * 0.1f))) // small error
 	{
 		// small error
 		vis.visible = true;

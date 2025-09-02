@@ -93,7 +93,7 @@ void CObject::cNameVisual_set(shared_str N)
 
 #ifdef OPTIMIZE_CALCULATE_BONES
 		if (new_k)
-			new_k->spatialParent = this;
+			new_k->spatialParent = SpatialComponent;
 
 		if (old_k)
 			old_k->spatialParent = nullptr;
@@ -142,30 +142,33 @@ void CObject::processing_deactivate()
 
 void CObject::setEnabled(BOOL _enabled)
 {
+	if (Props.bDestroy) return;
 	if (_enabled)
 	{
 		Props.bEnabled = 1;
-		if (collidable.model) spatial.type |= STYPE_COLLIDEABLE;
+		if (collidable.model)
+			SpatialComponent->spatial.type |= STYPE_COLLIDEABLE;
 	}
 	else
 	{
 		Props.bEnabled = 0;
-		spatial.type &= ~STYPE_COLLIDEABLE;
+		SpatialComponent->spatial.type &= ~STYPE_COLLIDEABLE;
 	}
 }
 
 void CObject::setVisible(BOOL _visible)
 {
+	if (Props.bDestroy) return;
 	if (_visible)
-	{
-		// Parent should control object visibility itself (??????)
+	{ // Parent should control object visibility itself (??????)
 		Props.bVisible = 1;
-		if (renderable.visual) spatial.type |= STYPE_RENDERABLE;
+		if (renderable.visual)
+			SpatialComponent->spatial.type |= STYPE_RENDERABLE;
 	}
 	else
 	{
 		Props.bVisible = 0;
-		spatial.type &= ~STYPE_RENDERABLE;
+		SpatialComponent->spatial.type &= ~STYPE_RENDERABLE;
 	}
 }
 
@@ -197,8 +200,7 @@ const Fbox& CObject::BoundingBox() const
 // Purpose :
 //----------------------------------------------------------------------
 CObject::CObject() :
-	ISpatial(g_SpatialSpace),
-	dwFrame_AsCrow(u32(-1))
+	dwFrame_AsCrow (u32(-1))
 {
 	// Transform
 	Props.storage = 0;
@@ -242,6 +244,9 @@ void CObject::Load(LPCSTR section)
 		cNameVisual_set(tmp);
 	}
 	setVisible(false);
+
+	SpatialComponent->spatial.ssa_dyn_factor = READ_IF_EXISTS(pSettings, r_float, section, "ssa_dyn_factor", 0.002f);// минимальный размер на экране при котором объект еще будет виден
+	SpatialComponent->spatial.ssa_d_cam = READ_IF_EXISTS(pSettings, r_float, section, "ssa_d_cam", 220.f);//дистанция в совокупности с fov на которой еще видно объект
 }
 
 BOOL CObject::net_Spawn(CSE_Abstract* data)
@@ -262,8 +267,9 @@ BOOL CObject::net_Spawn(CSE_Abstract* data)
 		}
 	}
 
-	R_ASSERT(spatial.space);
-	spatial_register();
+	VERIFY(SpatialComponent->spatial.space);
+
+	spatial_register			();
 
 	if (register_schedule())
 		shedule_register();
@@ -296,6 +302,7 @@ const float base_spu_epsR = 0.05f;
 
 void CObject::spatial_update(float eps_P, float eps_R)
 {
+	if (Props.bDestroy) return;
 	//
 	BOOL bUpdate = FALSE;
 	if (PositionStack.empty())
@@ -338,15 +345,17 @@ void CObject::spatial_update(float eps_P, float eps_R)
 	}
 	else
 	{
-		if (spatial.node_ptr)
+		if (SpatialComponent->spatial.node_ptr)
 		{
 			// Object registered!
-			if (!fsimilar(Radius(), spatial.sphere.R, eps_R)) spatial_move();
+			if (!fsimilar(Radius(), SpatialComponent->spatial.sphere.R,eps_R))
+				spatial_move();
 			else
 			{
 				Fvector C;
 				Center(C);
-				if (!C.similar(spatial.sphere.P, eps_P)) spatial_move();
+				if (!C.similar(SpatialComponent->spatial.sphere.P,eps_P))
+					spatial_move();
 			}
 			// else nothing to do :_)
 		}
@@ -363,9 +372,11 @@ void CObject::UpdateCL()
     if (Device.dwFrame == dbg_update_cl) Debug.fatal(DEBUG_INFO, "'UpdateCL' called twice per frame for %s", *cName());
     dbg_update_cl = Device.dwFrame;
 
-    if (Parent && spatial.node_ptr) Debug.fatal(DEBUG_INFO, "Object %s has parent but is still registered inside spatial DB", *cName());
+    if (Parent && SpatialComponent->spatial.node_ptr)
+		Debug.fatal	(DEBUG_INFO,"Object %s has parent but is still registered inside spatial DB",*cName());
 
-    if ((0 == collidable.model) && (spatial.type&STYPE_COLLIDEABLE)) Debug.fatal(DEBUG_INFO, "Object %s registered as 'collidable' but has no collidable model", *cName());
+    if ((0==collidable.model)&&(SpatialComponent->spatial.type&STYPE_COLLIDEABLE))
+		Debug.fatal	(DEBUG_INFO,"Object %s registered as 'collidable' but has no collidable model",*cName());
 #endif
 
 	spatial_update(base_spu_epsP * 5, base_spu_epsR * 5);
@@ -404,21 +415,22 @@ void CObject::shedule_Update(u32 T)
 
 void CObject::spatial_register()
 {
-	Center(spatial.sphere.P);
-	spatial.sphere.R = Radius();
-	ISpatial::spatial_register();
+	Center(SpatialComponent->spatial.sphere.P);
+	SpatialComponent->spatial.sphere.R = Radius();
+	ISpatialOwner::spatial_register();
 }
 
 void CObject::spatial_unregister()
 {
-	ISpatial::spatial_unregister();
+	ISpatialOwner::spatial_unregister();
 }
 
 void CObject::spatial_move()
 {
-	Center(spatial.sphere.P);
-	spatial.sphere.R = Radius();
-	ISpatial::spatial_move();
+	if (Props.bDestroy) return;
+	Center(SpatialComponent->spatial.sphere.P);
+	SpatialComponent->spatial.sphere.R = Radius();
+	ISpatialOwner::spatial_move();
 }
 
 CObject::SavedPosition CObject::ps_Element(u32 ID) const

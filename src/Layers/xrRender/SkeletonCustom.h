@@ -118,7 +118,7 @@ public:
 #ifdef OPTIMIZE_CALCULATE_BONES
 	IC bool canBeOptimized()
 	{
-		return spatialParent && spatialParent->canOptimizeCalculateBones();
+		return spatialParent && spatialParent->canOptimizeCalculateBones;
 	}
 #endif
 

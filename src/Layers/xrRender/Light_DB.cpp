@@ -145,7 +145,7 @@ void CLight_DB::LoadHemi()
 						L->set_active(true);
 						L->set_attenuation_params(Ldata.attenuation0, Ldata.attenuation1, Ldata.attenuation2,
 						                          Ldata.falloff);
-						L->spatial.type = STYPE_LIGHTSOURCEHEMI;
+						L->SpatialComponent->spatial.type = STYPE_LIGHTSOURCEHEMI;
 						//				R_ASSERT			(L->spatial.sector	);
 					}
 				}
@@ -193,7 +193,7 @@ void CLight_DB::add_light(light* L)
 	L->frame_render = Device.dwFrame;
 	if (RImplementation.o.noshadows) L->flags.bShadow = FALSE;
 	if (L->flags.bStatic && !ps_r2_ls_flags.test(R2FLAG_R1LIGHTS)) return;
-	if(Device.vCameraPosition.distance_to_sqr(L->spatial.sphere.P)>_sqr(g_pGamePersistent->Environment().CurrentEnv->fog_distance)) return;
+	if(Device.vCameraPosition.distance_to_sqr(L->SpatialComponent->spatial.sphere.P)>_sqr(g_pGamePersistent->Environment().CurrentEnv->fog_distance)) return;
 
 	L->export_(package);
 }

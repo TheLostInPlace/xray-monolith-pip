@@ -14,7 +14,8 @@
 extern Fvector4 ps_ssfx_volumetric;
 class CObject;
 
-class light : public IRender_Light, public ISpatial
+class light :
+	public IRender_Light
 {
 public:
 	struct

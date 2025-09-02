@@ -213,6 +213,9 @@ void XRCORE_API mem_alloc_clear_stats();
 #endif // DEBUG_MEMORY_MANAGER
 
 template<typename T>
+using xr_weak_ptr = std::weak_ptr<T>;
+
+template<typename T>
 using xr_shared_ptr = std::shared_ptr<T>;
 
 template<typename T>

@@ -728,14 +728,9 @@ BOOL CCustomMonster::net_Spawn(CSE_Abstract* DC)
 	if (!movement().net_Spawn(DC) || !inherited::net_Spawn(DC) || !CScriptEntity::net_Spawn(DC))
 		return (FALSE);
 
-	ISpatial* self = smart_cast<ISpatial*>(this);
-	if (self)
-	{
-		self->spatial.type |= STYPE_VISIBLEFORAI;
-		// enable react to sound only if alive
-		if (g_Alive())
-			self->spatial.type |= STYPE_REACTTOSOUND;
-	}
+	SpatialComponent->spatial.type |= STYPE_VISIBLEFORAI;
+	if (g_Alive())
+		SpatialComponent->spatial.type |= STYPE_REACTTOSOUND;
 
 	CSE_Abstract* e = (CSE_Abstract*)(DC);
 	CSE_ALifeMonsterAbstract* E = smart_cast<CSE_ALifeMonsterAbstract*>(e);
@@ -1414,20 +1409,5 @@ void CCustomMonster::ForceTransform(const Fmatrix& m)
 
 Fvector CCustomMonster::spatial_sector_point()
 {
-	//if ( g_Alive() )
-	//	return						inherited::spatial_sector_point( );
-
-	//if ( !animation_movement() )
-	return inherited::spatial_sector_point().add(Fvector().set(0.f, Radius() * .5f, 0.f));
-
-	//IKinematics* const kinematics	= smart_cast<IKinematics*>(Visual());
-	//VERIFY							(kinematics);
-	//u16 const root_bone_id			= kinematics->LL_BoneID("bip01_spine");
-
-	//Fmatrix local;
-	//kinematics->Bone_GetAnimPos		( local, root_bone_id, u8(-1), false );
-
-	//Fmatrix result;
-	//result.mul_43					( XFORM(), local );
-	//return							result.c;
+	return ISpatialOwner::spatial_sector_point().add(Fvector().set(0.f, Radius() * .5f, 0.f));
 }

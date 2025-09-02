@@ -14,6 +14,8 @@ class ISpatial;
 class CBoneInstance;
 struct SEnumVerticesCallback;
 
+using ISpatialShared = xr_shared_ptr<ISpatial>;
+
 // 10 fps
 #define UCalc_Interval		(u32(100))
 
@@ -32,7 +34,7 @@ public:
 public:
 
 #ifdef OPTIMIZE_CALCULATE_BONES
-	ISpatial* spatialParent = nullptr;
+	ISpatialShared spatialParent = nullptr;
 #endif
 
 	virtual void Bone_Calculate(CBoneData* bd, Fmatrix* parent) = 0;

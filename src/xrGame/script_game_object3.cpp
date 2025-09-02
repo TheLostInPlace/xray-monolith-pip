@@ -1906,12 +1906,12 @@ void CScriptGameObject::IterateFeelTouch(::luabind::functor<void> functor)
 
 void CScriptGameObject::SetSpatialType(u32 sptype)
 {
-	object().spatial.type = sptype;
+	object().SpatialComponent->spatial.type = sptype;
 }
 
 u32 CScriptGameObject::GetSpatialType()
 {
-	return object().spatial.type;
+	return object().SpatialComponent->spatial.type;
 }
 
 void CScriptGameObject::DestroyObject()

@@ -5,7 +5,8 @@
 
 //////////////////////////////////////////////////////////////////////////
 // definition ("Renderable")
-class ENGINE_API IRenderable
+class ENGINE_API IRenderable:
+	public ISpatialOwner
 {
 public:
 	struct
@@ -29,6 +30,7 @@ public:
 	virtual float GetTransparency() { return 0.0; }		//--DSR-- HeatVision
 	virtual float GetGlowing() { return 0.0; }			//--DSR-- SilencerOverheat
 
+	virtual IRenderable* dcast_Renderable() override { return this; }
 };
 
 #endif // IRENDERABLE_H_INCLUDED
