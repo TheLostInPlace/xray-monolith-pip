@@ -46,3 +46,5 @@
 #include "smart_cast.h"
 
 #include "../xrCore/profiler.h"
+
+#include "pch_script.h"
