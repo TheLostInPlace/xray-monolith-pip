@@ -60,17 +60,17 @@ namespace luabind
 		struct push_args_from_tuple
 		{
 			template<class H, class T, class Policies>
-			inline static void apply(lua_State* L, const boost::tuples::cons<H, T>& x, const Policies& p) 
+			inline static void apply(lua_State* L, const boost::tuples::cons<H, T>& x, const Policies& p)
 			{
 				convert_to_lua_p<Index>(L, *x.get_head(), p);
-				push_args_from_tuple<Index+1>::apply(L, x.get_tail(), p);
+				push_args_from_tuple<Index + 1>::apply(L, x.get_tail(), p);
 			}
 
 			template<class H, class T>
-			inline static void apply(lua_State* L, const boost::tuples::cons<H, T>& x) 
+			inline static void apply(lua_State* L, const boost::tuples::cons<H, T>& x)
 			{
 				convert_to_lua(L, *x.get_head());
-				push_args_from_tuple<Index+1>::apply(L, x.get_tail());
+				push_args_from_tuple<Index + 1>::apply(L, x.get_tail());
 			}
 
 			template<class Policies>
@@ -83,7 +83,7 @@ namespace luabind
 		template<class Tuple>
 		class proxy_caller
 		{
-		friend class luabind::object;
+			friend class luabind::object;
 		public:
 
 			proxy_caller(luabind::object* o, const Tuple args)
@@ -105,9 +105,9 @@ namespace luabind
 			operator luabind::object();
 
 #if defined(BOOST_MSVC) && (BOOST_MSVC <= 1300)
-	#define LUABIND_SEMICOLON
+#define LUABIND_SEMICOLON
 #else
-	#define LUABIND_SEMICOLON ;
+#define LUABIND_SEMICOLON ;
 #endif
 
 			template<class Policies>
@@ -119,16 +119,16 @@ namespace luabind
 				m_obj->pushvalue();
 				detail::push_args_from_tuple<1>::apply(L, m_args, p);
 				if (pcall(L, boost::tuples::length<Tuple>::value, 1))
-				{ 
+				{
 #ifndef LUABIND_NO_EXCEPTIONS
 					throw error(L);
 #else
 					error_callback_fun e = get_error_callback();
 					if (e) e(L);
-	
+
 					assert(0 && "the lua function threw an error and exceptions are disabled."
 						"if you want to handle this error use luabind::set_error_callback()");
-					std::terminate();
+
 #endif
 				}
 				detail::lua_reference ref;
@@ -150,10 +150,10 @@ namespace luabind
 
 		class LUABIND_API proxy_object
 		{
-		friend class luabind::object;
-		friend class luabind::detail::proxy_array_object;
-		friend class luabind::detail::proxy_raw_object;
-//		template<class T> friend T object_cast(const proxy_object& obj);
+			friend class luabind::object;
+			friend class luabind::detail::proxy_array_object;
+			friend class luabind::detail::proxy_raw_object;
+			//		template<class T> friend T object_cast(const proxy_object& obj);
 		public:
 
 			template<class T>
@@ -194,7 +194,9 @@ namespace luabind
 
 			void swap(const proxy_object& rhs);
 			proxy_object* operator->()
-			{ return this; }
+			{
+				return this;
+			}
 
 			operator luabind::object();
 
@@ -218,9 +220,9 @@ namespace luabind
 			}
 
 #if defined(BOOST_MSVC) && (BOOST_MSVC <= 1300)
-			template<class T>					
+			template<class T>
 			inline object raw_at(const T& key)
-			LUABIND_PROXY_RAW_AT_BODY
+				LUABIND_PROXY_RAW_AT_BODY
 #else
 			template<class T>
 			inline object raw_at(const T& key);
@@ -239,9 +241,9 @@ namespace luabind
 			}
 
 #if defined(BOOST_MSVC) && (BOOST_MSVC <= 1300)
-			template<class T>					
+			template<class T>
 			inline object at(const T& key)
-			LUABIND_PROXY_AT_BODY
+				LUABIND_PROXY_AT_BODY
 #else
 			template<class T>
 			inline object at(const T& key);
@@ -253,7 +255,7 @@ namespace luabind
 			void set() const;
 
 			// this is a safe substitute for an implicit converter to bool
-			typedef void (proxy_object::*member_ptr)() const;
+			typedef void (proxy_object::* member_ptr)() const;
 			operator member_ptr() const
 			{
 				if (is_valid()) return &proxy_object::dummy;
@@ -281,10 +283,10 @@ namespace luabind
 
 		class LUABIND_API proxy_raw_object
 		{
-		friend class luabind::object;
-		friend class luabind::detail::proxy_array_object;
-		friend class luabind::detail::proxy_object;
-//		template<class T> friend T luabind::object_cast(const proxy_object& obj);
+			friend class luabind::object;
+			friend class luabind::detail::proxy_array_object;
+			friend class luabind::detail::proxy_object;
+			//		template<class T> friend T luabind::object_cast(const proxy_object& obj);
 		public:
 
 			template<class T>
@@ -321,7 +323,9 @@ namespace luabind
 			proxy_raw_object& operator=(const proxy_array_object& p);
 			void swap(const proxy_raw_object& rhs);
 			proxy_raw_object* operator->()
-			{ return this; }
+			{
+				return this;
+			}
 
 			operator luabind::object();
 
@@ -333,18 +337,18 @@ namespace luabind
 			}
 
 #if defined(BOOST_MSVC) && (BOOST_MSVC <= 1300)
-			template<class T>	
+			template<class T>
 			inline object raw_at(const T& key)
-			LUABIND_PROXY_RAW_AT_BODY
+				LUABIND_PROXY_RAW_AT_BODY
 #else
 			template<class T>
 			inline object raw_at(const T& key);
 #endif
 
 #if defined(BOOST_MSVC) && (BOOST_MSVC <= 1300)
-			template<class T>	
+			template<class T>
 			inline object at(const T& key)
-			LUABIND_PROXY_AT_BODY
+				LUABIND_PROXY_AT_BODY
 #else
 			template<class T>
 			inline object at(const T& key);
@@ -356,7 +360,7 @@ namespace luabind
 			void set() const;
 
 			// this is a safe substitute for an implicit converter to bool
-			typedef void (proxy_raw_object::*member_ptr)() const;
+			typedef void (proxy_raw_object::* member_ptr)() const;
 			operator member_ptr() const
 			{
 				if (is_valid()) return &proxy_raw_object::dummy;
@@ -385,10 +389,10 @@ namespace luabind
 
 		class LUABIND_API proxy_array_object
 		{
-		friend class luabind::object;
-		friend class luabind::detail::proxy_object;
-		friend class luabind::detail::proxy_raw_object;
-//		template<class T> friend T object_cast(const proxy_array_object& obj);
+			friend class luabind::object;
+			friend class luabind::detail::proxy_object;
+			friend class luabind::detail::proxy_raw_object;
+			//		template<class T> friend T object_cast(const proxy_array_object& obj);
 		public:
 
 			template<class T>
@@ -425,7 +429,9 @@ namespace luabind
 			void swap(const proxy_array_object& rhs);
 
 			proxy_array_object* operator->()
-			{ return this; }
+			{
+				return this;
+			}
 			operator luabind::object();
 
 			int type() const
@@ -458,9 +464,9 @@ namespace luabind
 			}
 
 #if defined(BOOST_MSVC) && (BOOST_MSVC <= 1300)
-			template<class T>	
+			template<class T>
 			inline object at(const T& key)
-			LUABIND_PROXY_ARRAY_AT_BODY
+				LUABIND_PROXY_ARRAY_AT_BODY
 #else
 			template<class T>
 			inline object at(const T& key);
@@ -468,9 +474,9 @@ namespace luabind
 
 
 #if defined(BOOST_MSVC) && (BOOST_MSVC <= 1300)
-			template<class T>	
+			template<class T>
 			inline object raw_at(const T& key)
-			LUABIND_PROXY_ARRAY_RAW_AT_BODY
+				LUABIND_PROXY_ARRAY_RAW_AT_BODY
 #else
 			template<class T>
 			inline object raw_at(const T& key);
@@ -482,7 +488,7 @@ namespace luabind
 			void set() const;
 
 			// this is a safe substitute for an implicit converter to bool
-			typedef void (proxy_array_object::*member_ptr)() const;
+			typedef void (proxy_array_object::* member_ptr)() const;
 			operator member_ptr() const
 			{
 				if (is_valid()) return &proxy_array_object::dummy;
@@ -496,7 +502,8 @@ namespace luabind
 			proxy_array_object(luabind::object* o, int key)
 				: m_obj(o)
 				, m_key(key)
-			{}
+			{
+			}
 			luabind::object* m_obj;
 			int m_key;
 		};
@@ -513,25 +520,25 @@ namespace luabind
 
 #if !(defined (BOOST_MSVC) && (BOOST_MSVC <= 1200))
 
-	template<class T>
-	friend T object_cast(const object& obj);
-	template<class T>
-	friend struct detail::primitive_converter;
+		template<class T>
+		friend T object_cast(const object& obj);
+		template<class T>
+		friend struct detail::primitive_converter;
 
 #endif
 
-	friend object get_globals(lua_State*);
-	friend object get_registry(lua_State*);
-	friend object newtable(lua_State*);
-	friend class detail::proxy_object;
-	friend class detail::proxy_array_object;
-	friend class detail::proxy_raw_object;
+		friend object get_globals(lua_State*);
+		friend object get_registry(lua_State*);
+		friend object newtable(lua_State*);
+		friend class detail::proxy_object;
+		friend class detail::proxy_array_object;
+		friend class detail::proxy_raw_object;
 
 	public:
 
 		class array_iterator
 		{
-		friend class object;
+			friend class object;
 		public:
 
 			typedef std::forward_iterator_tag iterator_category;
@@ -633,7 +640,7 @@ namespace luabind
 
 		class iterator
 		{
-		friend class object;
+			friend class object;
 		public:
 
 			typedef std::forward_iterator_tag iterator_category;
@@ -739,7 +746,7 @@ namespace luabind
 
 		class raw_iterator
 		{
-		friend class object;
+			friend class object;
 		public:
 
 			typedef std::forward_iterator_tag iterator_category;
@@ -833,7 +840,8 @@ namespace luabind
 			raw_iterator(object* obj, detail::lua_reference const& key)
 				: m_obj(obj)
 				, m_key(key)
-			{}
+			{
+			}
 
 			object* m_obj;
 			detail::lua_reference m_key;
@@ -869,12 +877,13 @@ namespace luabind
 		}
 
 		inline ~object()
-		{}
+		{
+		}
 
 		inline bool is_valid() const { return m_ref.is_valid(); }
 
 		// this is a safe substitute for an implicit converter to bool
-		typedef void (object::*member_ptr)() const;
+		typedef void (object::* member_ptr)() const;
 		operator member_ptr() const
 		{
 			if (is_valid()) return &object::dummy;
@@ -1033,8 +1042,8 @@ namespace luabind
 		// *****************************
 		// OPERATOR()
 
-		#define BOOST_PP_ITERATION_PARAMS_1 (4, (0, LUABIND_MAX_ARITY, <luabind/object.hpp>, 1))
-		#include BOOST_PP_ITERATE()
+#define BOOST_PP_ITERATION_PARAMS_1 (4, (0, LUABIND_MAX_ARITY, <luabind/object.hpp>, 1))
+#include BOOST_PP_ITERATE()
 
 
 
@@ -1063,7 +1072,7 @@ namespace luabind
 		{
 		}
 
-private:
+	private:
 
 		void dummy() const {}
 
@@ -1116,10 +1125,14 @@ private:
 		{
 			tuple_object_ref(object* a, object* b)
 				: n(2)
-			{ refs[0] = a; refs[1] = b; }
+			{
+				refs[0] = a; refs[1] = b;
+			}
 
 			tuple_object_ref& operator,(const object& x)
-			{ refs[n++] = const_cast<object*>(&x); return *this; }
+			{
+				refs[n++] = const_cast<object*>(&x); return *this;
+			}
 
 			struct assign_into
 			{
@@ -1129,16 +1142,16 @@ private:
 				assign_into(tuple_object_ref& to, const T& val)
 					: target(&to)
 					, n(0)
-				{ 
-					if (n >= target->n) return; 
-					*target->refs[n++] = val; 
+				{
+					if (n >= target->n) return;
+					*target->refs[n++] = val;
 				}
 
 				template<class T>
 				assign_into& operator,(const T& val)
-				{ 
+				{
 					if (n >= target->n) return *this;
-					*target->refs[n++] = val; 
+					*target->refs[n++] = val;
 					return *this;
 				}
 
@@ -1148,7 +1161,9 @@ private:
 
 			template<class T>
 			assign_into operator=(const T& val)
-			{ return assign_into(*this, val); }
+			{
+				return assign_into(*this, val);
+			}
 
 			tuple_object_ref(const tuple_object_ref&);
 			assign_into operator=(const tuple_object_ref& x)
@@ -1168,7 +1183,9 @@ private:
 		{
 			tuple_object(const object& x)
 				: n(0)
-			{ objs[n++] = x; }
+			{
+				objs[n++] = x;
+			}
 
 			tuple_object(const tuple_object_ref& x)
 			{
@@ -1200,16 +1217,15 @@ private:
 			m_obj->pushvalue();
 			detail::push_args_from_tuple<1>::apply(L, m_args, p);
 			if (pcall(L, boost::tuples::length<Tuple>::value, 1))
-			{ 
+			{
 #ifndef LUABIND_NO_EXCEPTIONS
 				throw error(L);
 #else
 				error_callback_fun e = get_error_callback();
 				if (e) e(L);
-	
+
 				assert(0 && "the lua function threw an error and exceptions are disabled."
 					"if you want to handle this error use luabind::set_error_callback()");
-				std::terminate();
 #endif
 			}
 			detail::lua_reference ref;
@@ -1223,14 +1239,14 @@ private:
 #if !defined(BOOST_MSVC) || (defined(BOOST_MSVC) && (BOOST_MSVC > 1300))
 		template<class T>
 		inline object proxy_object::raw_at(const T& key)
-		LUABIND_PROXY_RAW_AT_BODY
+			LUABIND_PROXY_RAW_AT_BODY
 
-		template<class T>
+			template<class T>
 		inline object proxy_object::at(const T& key)
-		LUABIND_PROXY_AT_BODY
+			LUABIND_PROXY_AT_BODY
 #endif
 
-		inline lua_State* proxy_object::lua_state() const
+			inline lua_State* proxy_object::lua_state() const
 		{
 			return m_obj->lua_state();
 		}
@@ -1251,17 +1267,17 @@ private:
 #if !defined(BOOST_MSVC) || (defined(BOOST_MSVC) && (BOOST_MSVC > 1300))
 		template<class T>
 		inline object proxy_array_object::raw_at(const T& key)
-		LUABIND_PROXY_ARRAY_RAW_AT_BODY
+			LUABIND_PROXY_ARRAY_RAW_AT_BODY
 
-		template<class T>
+			template<class T>
 		inline object proxy_array_object::at(const T& key)
-		LUABIND_PROXY_ARRAY_AT_BODY
+			LUABIND_PROXY_ARRAY_AT_BODY
 #endif
 
 #undef LUABIND_PROXY_ARRAY_AT_BODY
 #undef LUABIND_PROXY_ARRAY_RAW_AT_BODY
 
-		inline lua_State* proxy_array_object::lua_state() const
+			inline lua_State* proxy_array_object::lua_state() const
 		{
 			return m_obj->lua_state();
 		}
@@ -1282,17 +1298,17 @@ private:
 #if !defined(BOOST_MSVC) || (defined(BOOST_MSVC) && (BOOST_MSVC > 1300))
 		template<class T>
 		inline object proxy_raw_object::raw_at(const T& key)
-		LUABIND_PROXY_RAW_AT_BODY
+			LUABIND_PROXY_RAW_AT_BODY
 
-		template<class T>
+			template<class T>
 		inline object proxy_raw_object::at(const T& key)
-		LUABIND_PROXY_AT_BODY
+			LUABIND_PROXY_AT_BODY
 #endif
 
 #undef LUABIND_PROXY_RAW_AT_BODY
 #undef LUABIND_PROXY_AT_BODY
 
-		inline lua_State* proxy_raw_object::lua_state() const
+			inline lua_State* proxy_raw_object::lua_state() const
 		{
 			return m_obj->lua_state();
 		}
@@ -1322,16 +1338,16 @@ private:
 
 			push_args_from_tuple<1>::apply(L, m_args);
 			if (pcall(L, boost::tuples::length<Tuple>::value, 0))
-			{ 
+			{
 #ifndef LUABIND_NO_EXCEPTIONS
 				throw luabind::error(L);
 #else
 				error_callback_fun e = get_error_callback();
 				if (e) e(L);
-	
+
 				assert(0 && "the lua function threw an error and exceptions are disabled."
 					"if you want to handle this error use luabind::set_error_callback()");
-				std::terminate();
+
 #endif
 			}
 		}
@@ -1345,16 +1361,16 @@ private:
 
 			push_args_from_tuple<1>::apply(L, m_args);
 			if (pcall(L, boost::tuples::length<Tuple>::value, 1))
-			{ 
+			{
 #ifndef LUABIND_NO_EXCEPTIONS
 				throw luabind::error(L);
 #else
 				error_callback_fun e = get_error_callback();
 				if (e) e(L);
-	
+
 				assert(0 && "the lua function threw an error and exceptions are disabled."
 					"if you want to handle this error use luabind::set_error_callback()");
-				std::terminate();
+
 #endif
 			}
 			detail::lua_reference ref;
@@ -1396,11 +1412,11 @@ private:
 #undef LUABIND_EQUALITY_OPERATOR
 
 #define LUABIND_LESSTHAN_OPERATOR(lhs, rhs) LUABIND_API bool operator<(const lhs&, const rhs&);
-	LUABIND_DECLARE_OPERATOR(LUABIND_LESSTHAN_OPERATOR)
+		LUABIND_DECLARE_OPERATOR(LUABIND_LESSTHAN_OPERATOR)
 #undef LUABIND_LESSTHAN_OPERATOR
 
 #define LUABIND_LESSOREQUAL_OPERATOR(lhs_t, rhs_t) LUABIND_API bool operator<=(const lhs_t&, const rhs_t&);
-	LUABIND_DECLARE_OPERATOR(LUABIND_LESSOREQUAL_OPERATOR)
+		LUABIND_DECLARE_OPERATOR(LUABIND_LESSOREQUAL_OPERATOR)
 #undef LUABIND_LESSOREQUAL_OPERATOR
 
 #define LUABIND_INEQUALITY_OPERATOR(lhs_t, rhs_t)\
@@ -1409,7 +1425,7 @@ private:
 		return !(rhs == lhs); \
 	}
 
-	LUABIND_DECLARE_OPERATOR(LUABIND_INEQUALITY_OPERATOR)
+		LUABIND_DECLARE_OPERATOR(LUABIND_INEQUALITY_OPERATOR)
 
 #undef LUABIND_INEQUALITY_OPERATOR
 
@@ -1419,7 +1435,7 @@ private:
 		return !(rhs < lhs); \
 	}
 
-	LUABIND_DECLARE_OPERATOR(LUABIND_GREATEROREQUAL_OPERATOR)
+		LUABIND_DECLARE_OPERATOR(LUABIND_GREATEROREQUAL_OPERATOR)
 
 #undef LUABIND_GREATEROREQUAL_OPERATOR
 
@@ -1429,7 +1445,7 @@ private:
 		return !(lhs <= rhs); \
 	}
 
-	LUABIND_DECLARE_OPERATOR(LUABIND_GREATERTHAN_OPERATOR)
+		LUABIND_DECLARE_OPERATOR(LUABIND_GREATERTHAN_OPERATOR)
 #undef LUABIND_GREATERTHAN_OPERATOR
 
 #undef LUABIND_DECLARE_OPERATOR
@@ -1456,26 +1472,26 @@ namespace std
 
 	// object against all other
 	LUABIND_DEFINE_SWAP(luabind::object&, const luabind::detail::proxy_object&)
-	LUABIND_DEFINE_SWAP(luabind::object&, const luabind::detail::proxy_raw_object&)
-	LUABIND_DEFINE_SWAP(luabind::object&, const luabind::detail::proxy_array_object&)
-	LUABIND_DEFINE_SWAP(const luabind::detail::proxy_object&, luabind::object&)
-	LUABIND_DEFINE_SWAP(const luabind::detail::proxy_raw_object&, luabind::object&)
-	LUABIND_DEFINE_SWAP(const luabind::detail::proxy_array_object&, luabind::object&)
+		LUABIND_DEFINE_SWAP(luabind::object&, const luabind::detail::proxy_raw_object&)
+		LUABIND_DEFINE_SWAP(luabind::object&, const luabind::detail::proxy_array_object&)
+		LUABIND_DEFINE_SWAP(const luabind::detail::proxy_object&, luabind::object&)
+		LUABIND_DEFINE_SWAP(const luabind::detail::proxy_raw_object&, luabind::object&)
+		LUABIND_DEFINE_SWAP(const luabind::detail::proxy_array_object&, luabind::object&)
 
-	// proxy_object against all other
-	LUABIND_DEFINE_SWAP(const luabind::detail::proxy_object&, const luabind::detail::proxy_object&)
-	LUABIND_DEFINE_SWAP(const luabind::detail::proxy_object&, const luabind::detail::proxy_raw_object&)
-	LUABIND_DEFINE_SWAP(const luabind::detail::proxy_object&, const luabind::detail::proxy_array_object&)
-	LUABIND_DEFINE_SWAP(const luabind::detail::proxy_raw_object&, const luabind::detail::proxy_object&)
-	LUABIND_DEFINE_SWAP(const luabind::detail::proxy_array_object&, const luabind::detail::proxy_object&)
+		// proxy_object against all other
+		LUABIND_DEFINE_SWAP(const luabind::detail::proxy_object&, const luabind::detail::proxy_object&)
+		LUABIND_DEFINE_SWAP(const luabind::detail::proxy_object&, const luabind::detail::proxy_raw_object&)
+		LUABIND_DEFINE_SWAP(const luabind::detail::proxy_object&, const luabind::detail::proxy_array_object&)
+		LUABIND_DEFINE_SWAP(const luabind::detail::proxy_raw_object&, const luabind::detail::proxy_object&)
+		LUABIND_DEFINE_SWAP(const luabind::detail::proxy_array_object&, const luabind::detail::proxy_object&)
 
-	// proxy_raw_object against all other
-	LUABIND_DEFINE_SWAP(const luabind::detail::proxy_raw_object&, const luabind::detail::proxy_raw_object&)
-	LUABIND_DEFINE_SWAP(const luabind::detail::proxy_raw_object&, const luabind::detail::proxy_array_object&)
-	LUABIND_DEFINE_SWAP(const luabind::detail::proxy_array_object&, const luabind::detail::proxy_raw_object&)
+		// proxy_raw_object against all other
+		LUABIND_DEFINE_SWAP(const luabind::detail::proxy_raw_object&, const luabind::detail::proxy_raw_object&)
+		LUABIND_DEFINE_SWAP(const luabind::detail::proxy_raw_object&, const luabind::detail::proxy_array_object&)
+		LUABIND_DEFINE_SWAP(const luabind::detail::proxy_array_object&, const luabind::detail::proxy_raw_object&)
 
-	// proxy_array_object against all other
-	LUABIND_DEFINE_SWAP(const luabind::detail::proxy_array_object&, const luabind::detail::proxy_array_object&)
+		// proxy_array_object against all other
+		LUABIND_DEFINE_SWAP(const luabind::detail::proxy_array_object&, const luabind::detail::proxy_array_object&)
 
 #undef LUABIND_DEFINE_SWAP
 
@@ -1489,19 +1505,19 @@ namespace std
 #define LUABIND_OPERATOR_PARAMS(z, n, data) const A##n & a##n
 
 #if BOOST_PP_ITERATION() > 0
-	template<BOOST_PP_ENUM_PARAMS(BOOST_PP_ITERATION(), class A)>
+template<BOOST_PP_ENUM_PARAMS(BOOST_PP_ITERATION(), class A)>
 #endif
-	detail::proxy_caller<boost::tuples::tuple<BOOST_PP_ENUM(BOOST_PP_ITERATION(), LUABIND_TUPLE_PARAMS, _)> >
-	operator()(BOOST_PP_ENUM(BOOST_PP_ITERATION(), LUABIND_OPERATOR_PARAMS, _)) const
-	{
-		typedef boost::tuples::tuple<BOOST_PP_ENUM(BOOST_PP_ITERATION(), LUABIND_TUPLE_PARAMS, _)> tuple_t;
+detail::proxy_caller<boost::tuples::tuple<BOOST_PP_ENUM(BOOST_PP_ITERATION(), LUABIND_TUPLE_PARAMS, _)> >
+operator()(BOOST_PP_ENUM(BOOST_PP_ITERATION(), LUABIND_OPERATOR_PARAMS, _)) const
+{
+	typedef boost::tuples::tuple<BOOST_PP_ENUM(BOOST_PP_ITERATION(), LUABIND_TUPLE_PARAMS, _)> tuple_t;
 #if BOOST_PP_ITERATION() == 0
-		tuple_t args;
+	tuple_t args;
 #else
-		tuple_t args(BOOST_PP_ENUM_PARAMS(BOOST_PP_ITERATION(), &a));
+	tuple_t args(BOOST_PP_ENUM_PARAMS(BOOST_PP_ITERATION(), &a));
 #endif
-		return detail::proxy_caller<tuple_t>(const_cast<luabind::object*>(this), args);
-	}
+	return detail::proxy_caller<tuple_t>(const_cast<luabind::object*>(this), args);
+}
 
 #undef LUABIND_OPERATOR_PARAMS
 #undef LUABIND_TUPLE_PARAMS

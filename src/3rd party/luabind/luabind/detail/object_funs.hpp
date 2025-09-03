@@ -41,7 +41,7 @@ namespace luabind
 		template<class T, class Obj, class Policies>
 		inline T object_cast_impl(const Obj& obj, const Policies&)
 		{
-			if (obj.lua_state() == 0) 
+			if (obj.lua_state() == 0)
 			{
 #ifndef LUABIND_NO_EXCEPTIONS
 				throw cast_failed(0, LUABIND_TYPEID(T));
@@ -51,7 +51,7 @@ namespace luabind
 				if (e) e(L, LUABIND_TYPEID(T));
 
 				assert(0 && "object_cast failed. If you want to handle this error use luabind::set_error_callback()");
-				std::terminate();
+
 #endif
 			}
 
@@ -76,7 +76,7 @@ namespace luabind
 				if (e) e(L, LUABIND_TYPEID(T));
 
 				assert(0 && "object_cast failed. If you want to handle this error use luabind::set_error_callback()");
-				std::terminate();
+
 #endif
 			}
 #endif

@@ -85,16 +85,16 @@ namespace luabind
 
 					push_args_from_tuple<1>::apply(L, m_args);
 					if (pcall(L, boost::tuples::length<Tuple>::value, 0))
-					{ 
+					{
 #ifndef LUABIND_NO_EXCEPTIONS
 						throw luabind::error(L);
 #else
 						error_callback_fun e = get_error_callback();
 						if (e) e(L);
-	
+
 						assert(0 && "the lua function threw an error and exceptions are disabled."
 							"if you want to handle this error use luabind::set_error_callback()");
-						std::terminate();
+
 #endif
 					}
 				}
@@ -109,14 +109,14 @@ namespace luabind
 					if (L == 0)
 					{
 	#ifndef LUABIND_NO_EXCEPTIONS
-						throw error(L); 
+						throw error(L);
 	#else
 						error_callback_fun e = get_error_callback();
 						if (e) e(L);
-	
+
 						assert(0 && "tried to call uninitialized functor object."
 							"if you want to handle this error use luabind::set_error_callback()");
-						std::terminate();
+
 	#endif
 					}
 #endif
@@ -129,16 +129,16 @@ namespace luabind
 
 					push_args_from_tuple<1>::apply(L, m_args);
 					if (pcall(L, boost::tuples::length<Tuple>::value, 1))
-					{ 
+					{
 #ifndef LUABIND_NO_EXCEPTIONS
 						throw luabind::error(L);
 #else
 						error_callback_fun e = get_error_callback();
 						if (e) e(L);
-	
+
 						assert(0 && "the lua function threw an error and exceptions are disabled."
 							"if you want to handle this error use luabind::set_error_callback()");
-						std::terminate();
+
 #endif
 					}
 
@@ -154,7 +154,7 @@ namespace luabind
 
 						assert(0 && "the lua function's return value could not be converted."
 								"if you want to handle this error use luabind::set_error_callback()");
-						std::terminate();
+
 #endif
 					}
 #endif
@@ -173,14 +173,14 @@ namespace luabind
 					if (L == 0)
 					{
 	#ifndef LUABIND_NO_EXCEPTIONS
-						throw error(L); 
+						throw error(L);
 	#else
 						error_callback_fun e = get_error_callback();
 						if (e) e(L);
-	
+
 						assert(0 && "tried to call uninitialized functor object."
 							"if you want to handle this error use luabind::set_error_callback()");
-						std::terminate();
+
 	#endif
 					}
 #endif
@@ -192,16 +192,16 @@ namespace luabind
 
 					detail::push_args_from_tuple<1>::apply(L, m_args, p);
 					if (pcall(L, boost::tuples::length<Tuple>::value, 1))
-					{ 
+					{
 #ifndef LUABIND_NO_EXCEPTIONS
 						throw error(L);
 #else
 						error_callback_fun e = get_error_callback();
 						if (e) e(L);
-	
+
 						assert(0 && "the lua function threw an error and exceptions are disabled."
 							"if you want to handle this error use luabind::set_error_callback()");
-						std::terminate();
+
 #endif
 					}
 
@@ -217,7 +217,7 @@ namespace luabind
 
 						assert(0 && "the lua function's return value could not be converted."
 							"if you want to handle this error use luabind::set_error_callback()");
-						std::terminate();
+
 #endif
 					}
 #endif
@@ -264,14 +264,14 @@ namespace luabind
 					if (L == 0)
 					{
 	#ifndef LUABIND_NO_EXCEPTIONS
-						throw error(L); 
+						throw error(L);
 	#else
 						error_callback_fun e = get_error_callback();
 						if (e) e(L);
-	
+
 						assert(0 && "tried to call uninitialized functor object."
 							"if you want to handle this error use luabind::set_error_callback()");
-						std::terminate();
+
 	#endif
 					}
 #endif
@@ -282,16 +282,16 @@ namespace luabind
 
 					push_args_from_tuple<1>::apply(L, m_args);
 					if (pcall(L, boost::tuples::length<Tuple>::value, 0))
-					{ 
+					{
 #ifndef LUABIND_NO_EXCEPTIONS
 						throw luabind::error(L);
 #else
 						error_callback_fun e = get_error_callback();
 						if (e) e(L);
-	
+
 						assert(0 && "the lua function threw an error and exceptions are disabled."
 							"if you want to handle this error use luabind::set_error_callback()");
-						std::terminate();
+
 #endif
 					}
 				}
@@ -305,14 +305,14 @@ namespace luabind
 					if (L == 0)
 					{
 	#ifndef LUABIND_NO_EXCEPTIONS
-						throw error(L); 
+						throw error(L);
 	#else
 						error_callback_fun e = get_error_callback();
 						if (e) e(L);
-	
+
 						assert(0 && "tried to call uninitialized functor object."
 							"if you want to handle this error use luabind::set_error_callback()");
-						std::terminate();
+
 	#endif
 					}
 #endif
@@ -323,16 +323,16 @@ namespace luabind
 
 					detail::push_args_from_tuple<1>::apply(L, m_args, p);
 					if (pcall(L, boost::tuples::length<Tuple>::value, 0))
-					{ 
+					{
 #ifndef LUABIND_NO_EXCEPTIONS
-						throw error(L); 
+						throw error(L);
 #else
 						error_callback_fun e = get_error_callback();
 						if (e) e(L);
-	
+
 						assert(0 && "the lua function threw an error and exceptions are disabled."
 							"if you want to handle this error use luabind::set_error_callback()");
-						std::terminate();
+
 #endif
 					}
 				}
@@ -470,4 +470,3 @@ namespace luabind
 	#define LUABIND_OPERATOR_PARAMS(z, n, data) const A##n & a##n
 
 #endif
-
