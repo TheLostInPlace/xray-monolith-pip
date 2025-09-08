@@ -69,14 +69,31 @@ struct str_container_impl
 		}
 	}
 
-	u32 stat_economy(u32& count)
+	void dump_console() const
+	{
+		xr_set<str_value> set;
+		for (const auto& s : buffer)
+		{
+			set.insert(s);
+		}
+		Msg("* [x-ray]: strings: count[%lu], unique[%lu]", buffer.size(), set.size());
+		for (const auto& s : set)
+		{
+			Msg("ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
+		}
+	}
+
+	u32 stat_economy(u32& count, u32& unique)
 	{
 		count = buffer.size();
 		u32 size = sizeof(buffer);
+		xr_unordered_set<xr_string> strings;
 		for (const auto& s : buffer)
 		{
 			size += sizeof(str_value) + s.value.length();
+			strings.insert(s.value);
 		}
+		unique = strings.size();
 		return size;
 	}
 };
@@ -128,10 +145,16 @@ void str_container::dump(IWriter* W)
 	impl->dump(W);
 }
 
-u32 str_container::stat_economy(u32& count)
+void str_container::dump_console()
 {
 	xrCriticalSectionGuard g(cs);
-	return impl->stat_economy(count);
+	impl->dump_console();
+}
+
+u32 str_container::stat_economy(u32& count, u32& unique)
+{
+	xrCriticalSectionGuard g(cs);
+	return impl->stat_economy(count, unique);
 }
 
 str_container::~str_container()

@@ -318,8 +318,9 @@ static void full_memory_stats()
 	u32		_game_lua = game_lua_memory_usage();
 	u32		_render = ::Render->memory_usage();
 #endif // SEVERAL_ALLOCATORS
-    u32 _eco_strings_count = 0;
-	int _eco_strings = (int)g_pStringContainer->stat_economy(_eco_strings_count);
+	u32 _eco_strings_count = 0;
+	u32 _eco_strings_unique_count = 0;
+	int _eco_strings = (int)g_pStringContainer->stat_economy(_eco_strings_count, _eco_strings_unique_count);
 	int _eco_smem = (int)g_pSharedMemoryContainer->stat_economy();
 	u32 m_base = 0, c_base = 0, m_lmaps = 0, c_lmaps = 0;
 
@@ -337,7 +338,7 @@ static void full_memory_stats()
 	Msg("* [x-ray]: process heap[%u K], game lua[%d K], render[%d K]", _process_heap / 1024, _game_lua / 1024, _render / 1024);
 #endif // SEVERAL_ALLOCATORS
 
-	Msg("* [x-ray]: shared strings: memory[%ld K], count[%lu]", _eco_strings / 1024, _eco_strings_count);
+	Msg("* [x-ray]: shared strings: memory[%ld K], count[%lu], unique[%lu]", _eco_strings / 1024, _eco_strings_count, _eco_strings_unique_count);
 	Msg("* [x-ray]: shared memory: memory[%ld K]", _eco_smem);
 
 #ifdef FS_DEBUG
@@ -360,6 +361,26 @@ public:
 		full_memory_stats();
 	}
 };
+
+static void shared_string_dump() {
+	g_pStringContainer->dump_console();
+}
+
+
+class CCC_SharedStringDump : public IConsole_Command
+{
+public:
+	CCC_SharedStringDump(LPCSTR N) : IConsole_Command(N)
+	{
+		bEmptyArgsHandled = TRUE;
+	};
+
+	virtual void Execute(LPCSTR args)
+	{
+		shared_string_dump();
+	}
+};
+
 #ifdef DEBUG
 class CCC_MemCheckpoint : public IConsole_Command
 {
@@ -2396,6 +2417,7 @@ void CCC_RegisterCommands()
 	//g_OptConCom.Init();
 
 	CMD1(CCC_MemStats, "stat_memory");
+	CMD1(CCC_SharedStringDump, "stat_shared_string_dump");
 #ifdef DEBUG
 	CMD1(CCC_MemCheckpoint, "stat_memory_checkpoint");
 #endif //#ifdef DEBUG

@@ -97,6 +97,11 @@ struct XRCORE_API str_value
 	str_value(str_c s) : dwReference(0), value(s) {};
 	str_value(xr_string& s) : dwReference(0), value(s) {};
 
+	bool operator<(const str_value& other) const
+	{
+		return value < other.value;
+	}
+
 	bool operator==(const str_value& other) const
 	{
 		return value == other.value;
@@ -128,8 +133,9 @@ public:
 	void clean();
 	void dump();
 	void dump(IWriter* W);
+	void dump_console();
 	void verify();
-	u32 stat_economy(u32& count);
+	u32 stat_economy(u32& count, u32& unique);
 };
 
 XRCORE_API extern str_container* g_pStringContainer;
