@@ -79,11 +79,11 @@ namespace R_dsgraph
 		float ssa;
 		IRenderable* pObject;
 		dxRender_Visual* pVisual;
-		Fmatrix PrevMatrix;
 		Fmatrix Matrix;				// matrix (copy)
+		Fmatrix PrevMatrix;
 	};
 
-	struct _MatrixItemS	: public _MatrixItem
+	struct _MatrixItemS : public _MatrixItem
 	{
 		ShaderElement* se;
 	};

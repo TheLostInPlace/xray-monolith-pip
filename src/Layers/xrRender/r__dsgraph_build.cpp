@@ -57,7 +57,7 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 	if (RImplementation.o.distortion && sh_d && sh_d->flags.bDistort && pmask[sh_d->flags.iPriority / 2])
 	{
 		mapSorted_T& test = RI.val_bHUD ? mapHUDDistort : mapDistort;
-		test.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh_d });
+		test.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, *RI.val_pTransform, sh_d });
 	}
 
 	// Select shader
@@ -74,7 +74,7 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 			break;
 
 		case 1: {
-			mapHUD.insertInAnyWay(EPS, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh });
+			mapHUD.insertInAnyWay(EPS, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, *RI.val_pTransform, sh });
 
 			// SSS: Deprecated
 			/*if (!sh->passes[0]->ps->hud_disabled)
@@ -90,12 +90,12 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 		}
 
 		case 2: {
-			mapScopeHUD.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh });
+			mapScopeHUD.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, *RI.val_pTransform, sh });
 			return;
 		}
 
 		case 3: {
-			mapScopeHUDSorted.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh });
+			mapScopeHUDSorted.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, *RI.val_pTransform, sh });
 			return;
 		}
 	}
@@ -110,17 +110,17 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 			if (sh->flags.bEmissive)
 			{
 				auto& map = RI.val_bCamAttached ? mapCamAttachedEmissive : mapHUDEmissive;
-				map.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, &*pVisual->shader->E[4] });
+				map.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, *RI.val_pTransform, &*pVisual->shader->E[4] });
 			}
 #endif // RENDER!=R_R1
 			auto& map = RI.val_bCamAttached ? mapCamAttachedSorted : mapHUDSorted;
-			map.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh });
+			map.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, *RI.val_pTransform, sh });
 			return;
 		}
 		else
 		{
 			auto& map = RI.val_bCamAttached ? mapCamAttached : mapHUD;
-			map.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh });
+			map.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, *RI.val_pTransform, sh });
 			/*
 #if RENDER==R_R4
 			if (RImplementation.o.ssfx_core && !sh->passes[0]->ps->hud_disabled)
@@ -138,7 +138,7 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 			if (sh->flags.bEmissive)
 			{
 				auto& map = RI.val_bCamAttached ? mapCamAttachedEmissive : mapHUDEmissive;
-				map.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, &*pVisual->shader->E[4] });
+				map.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, *RI.val_pTransform, &*pVisual->shader->E[4] });
 			}
 #endif	//	RENDER!=R_R1
 			return;
@@ -155,7 +155,7 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 	// strict-sorting selection
 	if (sh->flags.bStrictB2F)
 	{
-		mapSorted.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh });
+		mapSorted.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, *RI.val_pTransform, sh });
 		return;
 	}
 
@@ -167,11 +167,11 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 	// d) Should be rendered to accumulation buffer in the second pass
 	if (sh->flags.bEmissive)
 	{
-		mapEmissive.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, &*pVisual->shader->E[4] });
+		mapEmissive.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, *RI.val_pTransform, &*pVisual->shader->E[4] });
 	}
 	if (sh->flags.bWmark && pmask[2])
 	{
-		mapWmark.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh });
+		mapWmark.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, *RI.val_pTransform, sh });
 		return;
 	}
 #endif
@@ -258,7 +258,7 @@ void R_dsgraph_structure::r_dsgraph_insert_static(dxRender_Visual* pVisual)
 	ShaderElement* sh_d = &*pVisual->shader->E[4];
 	if (RImplementation.o.distortion && sh_d && sh_d->flags.bDistort && pmask[sh_d->flags.iPriority / 2])
 	{
-		mapDistort.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, &*pVisual->shader->E[4] });
+		mapDistort.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, Fidentity, &*pVisual->shader->E[4] });
 	}
 
 	// Select shader
@@ -270,7 +270,7 @@ void R_dsgraph_structure::r_dsgraph_insert_static(dxRender_Visual* pVisual)
 #if RENDER==R_R4
 	if (sh->flags.isWater && RImplementation.o.ssfx_water)
 	{
-		mapWater.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, sh });
+		mapWater.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, Fidentity, sh });
 		return;
 	}
 #endif
@@ -278,7 +278,7 @@ void R_dsgraph_structure::r_dsgraph_insert_static(dxRender_Visual* pVisual)
 	// strict-sorting selection
 	if (sh->flags.bStrictB2F)
 	{
-		mapSorted.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, sh });
+		mapSorted.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, Fidentity, sh });
 		return;
 	}
 
@@ -290,11 +290,11 @@ void R_dsgraph_structure::r_dsgraph_insert_static(dxRender_Visual* pVisual)
 	// d) Should be rendered to accumulation buffer in the second pass
 	if (sh->flags.bEmissive)
 	{
-		mapEmissive.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, &*pVisual->shader->E[4] });
+		mapEmissive.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, Fidentity, &*pVisual->shader->E[4] });
 	}
 	if (sh->flags.bWmark && pmask[2])
 	{
-		mapWmark.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, sh });
+		mapWmark.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, Fidentity, sh });
 		return;
 	}
 #endif
