@@ -389,7 +389,6 @@ void CRender::Render()
 	{
 		Device.Statistic->RenderCALC.Begin();
 		r_pmask(true, false); // enable priority "0"
-		set_Recorder(NULL);
 		phase = PHASE_SMAP;
 		render_main(false, true);
 		r_pmask(true, false); // disable priority "1"
@@ -406,35 +405,11 @@ void CRender::Render()
 		Target->phase_scene_prepare();
 	}
 
-	//*******
-	// Sync point
-	Device.Statistic->RenderDUMP_Wait_S.Begin();
-	if (ps_r2_qsync)
-	{
-		CTimer T;
-		T.Start();
-		BOOL result = FALSE;
-		HRESULT hr = S_FALSE;
-		while ((hr = q_sync_point[q_sync_count]->GetData(&result, sizeof(result),D3DGETDATA_FLUSH)) == S_FALSE)
-		{
-			if (!SwitchToThread()) Sleep(ps_r2_wait_sleep);
-			if (T.GetElapsed_ms() > 500)
-			{
-				result = FALSE;
-				break;
-			}
-		}
-	}
-	Device.Statistic->RenderDUMP_Wait_S.End();
-	q_sync_count = (q_sync_count + 1) % HW.Caps.iGPUNum;
-	CHK_DX(q_sync_point[q_sync_count]->Issue(D3DISSUE_END));
 
 	//******* Main calc - DEFERRER RENDERER
 	// Main calc
 	Device.Statistic->RenderCALC.Begin();
 	r_pmask(true, false, true); // enable priority "0",+ capture wmarks
-	if (bSUN) set_Recorder(&main_coarse_structure);
-	else set_Recorder(NULL);
 	phase = PHASE_NORMAL;
 	{
 		PROF_EVENT("lights_spatial_move");
@@ -442,14 +417,12 @@ void CRender::Render()
 			L->spatial_move();
 	}
 	render_main(true);
-	set_Recorder(NULL);
 	r_pmask(true, false); // disable priority "1"
 	Device.Statistic->RenderCALC.End();
 
 	if (ps_r2_ls_flags.test(R2FLAG_TERRAIN_PREPASS))
 	{
 		Target->u_setrt(Device.dwWidth, Device.dwHeight, NULL, NULL, NULL, HW.pBaseZB);
-		r_dsgraph_render_landscape(0, false);
 	}
 
 	BOOL split_the_scene_to_minimize_wait = FALSE;
@@ -464,7 +437,6 @@ void CRender::Render()
 		r_dsgraph_render_graph(0);
 		r_dsgraph_render_lods(true, true);
 		if (Details) Details->Render();
-		if (ps_r2_ls_flags.test(R2FLAG_TERRAIN_PREPASS)) r_dsgraph_render_landscape(1, true);
 		Target->phase_scene_end();
 	}
 	else
@@ -558,7 +530,6 @@ void CRender::Render()
 		r_dsgraph_render_hud();
 		r_dsgraph_render_lods(true, true);
 		if (Details) Details->Render();
-		if (ps_r2_ls_flags.test(R2FLAG_TERRAIN_PREPASS)) r_dsgraph_render_landscape(1, true);
 		Target->phase_scene_end();
 	}
 

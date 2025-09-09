@@ -57,12 +57,7 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 	if (RImplementation.o.distortion && sh_d && sh_d->flags.bDistort && pmask[sh_d->flags.iPriority / 2])
 	{
 		mapSorted_T& test = RI.val_bHUD ? mapHUDDistort : mapDistort;
-		mapSorted_Node* N = test.insertInAnyWay(distSQ);
-		N->val.ssa = SSA;
-		N->val.pObject = RI.val_pObject;
-		N->val.pVisual = pVisual;
-		N->val.Matrix = *RI.val_pTransform;
-		N->val.se = sh_d; // 4=L_special
+		test.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh_d });
 	}
 
 	// Select shader
@@ -72,7 +67,6 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 
 	// Create common node
 	// NOTE: Invisible elements exist only in R1
-	_MatrixItem item = {SSA, RI.val_pObject, pVisual, *RI.val_pTransform};
 
 #if defined(USE_DX11) //  Redotix99: for 3D Shader Based Scopes 		
 	switch (sh->flags.iScopeLense) {	
@@ -80,12 +74,7 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 			break;
 
 		case 1: {
-			mapHUD_Node* N = mapHUD.insertInAnyWay(EPS);
-			N->val.ssa = SSA;
-			N->val.pObject = RI.val_pObject;
-			N->val.pVisual = pVisual;
-			N->val.Matrix = *RI.val_pTransform;
-			N->val.se = sh;
+			mapHUD.insertInAnyWay(EPS, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh });
 
 			// SSS: Deprecated
 			/*if (!sh->passes[0]->ps->hud_disabled)
@@ -101,22 +90,12 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 		}
 
 		case 2: {
-			mapHUD_Node * N = mapScopeHUD.insertInAnyWay(distSQ);
-			N->val.ssa = SSA;
-			N->val.pObject = RI.val_pObject;
-			N->val.pVisual = pVisual;
-			N->val.Matrix = *RI.val_pTransform;
-			N->val.se = sh;
+			mapScopeHUD.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh });
 			return;
 		}
 
 		case 3: {
-			mapSorted_Node * N = mapScopeHUDSorted.insertInAnyWay(distSQ);
-			N->val.ssa = SSA;
-			N->val.pObject = RI.val_pObject;
-			N->val.pVisual = pVisual;
-			N->val.Matrix = *RI.val_pTransform;
-			N->val.se = sh;
+			mapScopeHUDSorted.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh });
 			return;
 		}
 	}
@@ -130,30 +109,18 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 #if RENDER!=R_R1
 			if (sh->flags.bEmissive)
 			{
-				mapSorted_Node* N = RI.val_bCamAttached ? mapCamAttachedEmissive.insertInAnyWay(distSQ) : mapHUDEmissive.insertInAnyWay(distSQ);
-				N->val.ssa = SSA;
-				N->val.pObject = RI.val_pObject;
-				N->val.pVisual = pVisual;
-				N->val.Matrix = *RI.val_pTransform;
-				N->val.se = &*pVisual->shader->E[4]; // 4=L_special
+				auto& map = RI.val_bCamAttached ? mapCamAttachedEmissive : mapHUDEmissive;
+				map.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, &*pVisual->shader->E[4] });
 			}
 #endif // RENDER!=R_R1
-			mapSorted_Node* N = RI.val_bCamAttached ? mapCamAttachedSorted.insertInAnyWay(distSQ) : mapHUDSorted.insertInAnyWay(distSQ);
-			N->val.ssa = SSA;
-			N->val.pObject = RI.val_pObject;
-			N->val.pVisual = pVisual;
-			N->val.Matrix = *RI.val_pTransform;
-			N->val.se = sh;
+			auto& map = RI.val_bCamAttached ? mapCamAttachedSorted : mapHUDSorted;
+			map.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh });
 			return;
 		}
 		else
 		{
-			mapHUD_Node* N = RI.val_bCamAttached ? mapCamAttached.insertInAnyWay(distSQ) : mapHUD.insertInAnyWay(distSQ);
-			N->val.ssa = SSA;
-			N->val.pObject = RI.val_pObject;
-			N->val.pVisual = pVisual;
-			N->val.Matrix = *RI.val_pTransform;
-			N->val.se = sh;
+			auto& map = RI.val_bCamAttached ? mapCamAttached : mapHUD;
+			map.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh });
 			/*
 #if RENDER==R_R4
 			if (RImplementation.o.ssfx_core && !sh->passes[0]->ps->hud_disabled)
@@ -170,12 +137,8 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 #if RENDER!=R_R1
 			if (sh->flags.bEmissive)
 			{
-				mapSorted_Node* N = RI.val_bCamAttached ? mapCamAttachedEmissive.insertInAnyWay(distSQ) : mapHUDEmissive.insertInAnyWay(distSQ);
-				N->val.ssa = SSA;
-				N->val.pObject = RI.val_pObject;
-				N->val.pVisual = pVisual;
-				N->val.Matrix = *RI.val_pTransform;
-				N->val.se = &*pVisual->shader->E[4]; // 4=L_special
+				auto& map = RI.val_bCamAttached ? mapCamAttachedEmissive : mapHUDEmissive;
+				map.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, &*pVisual->shader->E[4] });
 			}
 #endif	//	RENDER!=R_R1
 			return;
@@ -184,6 +147,7 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 
 	// Shadows registering
 #if RENDER==R_R1
+	_MatrixItem		item = { SSA,RI.val_pObject,pVisual,*RI.val_pTransform };
 	RI.L_Shadows->add_element(item);
 #endif
 	if (RI.val_bInvisible) return;
@@ -191,12 +155,7 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 	// strict-sorting selection
 	if (sh->flags.bStrictB2F)
 	{
-		mapSorted_Node* N = mapSorted.insertInAnyWay(distSQ);
-		N->val.ssa = SSA;
-		N->val.pObject = RI.val_pObject;
-		N->val.pVisual = pVisual;
-		N->val.Matrix = *RI.val_pTransform;
-		N->val.se = sh;
+		mapSorted.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh });
 		return;
 	}
 
@@ -208,21 +167,11 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 	// d) Should be rendered to accumulation buffer in the second pass
 	if (sh->flags.bEmissive)
 	{
-		mapSorted_Node* N = mapEmissive.insertInAnyWay(distSQ);
-		N->val.ssa = SSA;
-		N->val.pObject = RI.val_pObject;
-		N->val.pVisual = pVisual;
-		N->val.Matrix = *RI.val_pTransform;
-		N->val.se = &*pVisual->shader->E[4]; // 4=L_special
+		mapEmissive.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, &*pVisual->shader->E[4] });
 	}
-	if (sh->flags.bWmark && pmask_wmark)
+	if (sh->flags.bWmark && pmask[2])
 	{
-		mapSorted_Node* N = mapWmark.insertInAnyWay(distSQ);
-		N->val.ssa = SSA;
-		N->val.pObject = RI.val_pObject;
-		N->val.pVisual = pVisual;
-		N->val.Matrix = *RI.val_pTransform;
-		N->val.se = sh;
+		mapWmark.insertInAnyWay(distSQ, { SSA, RI.val_pObject, pVisual, *RI.val_pTransform, sh });
 		return;
 	}
 #endif
@@ -277,61 +226,13 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(dxRender_Visual* pVisual, Fve
 #endif
 		mapMatrixStates::TNode* Nstate = Ncs->val.insert(pass.state->state);
 		mapMatrixTextures::TNode* Ntex = Nstate->val.insert(pass.T._get());
-		mapMatrixItems& items = Ntex->val;
-		items.push_back(item);
 
-		// Need to sort for HZB efficient use
-		if (SSA > Ntex->val.ssa)
-		{
-			Ntex->val.ssa = SSA;
-			if (SSA > Nstate->val.ssa)
-			{
-				Nstate->val.ssa = SSA;
-				if (SSA > Ncs->val.ssa)
-				{
-					Ncs->val.ssa = SSA;
-#ifdef USE_DX11
-					if (SSA > Nps->val.mapCS.ssa)
-					{
-						Nps->val.mapCS.ssa = SSA;
+#if RENDER==R_R1
+		Ntex->val.push_back(item);
 #else
-					if (SSA > Nps->val.ssa)
-					{
-						Nps->val.ssa = SSA;
+		Ntex->val.push_back({ SSA, RI.val_pObject, pVisual, *RI.val_pTransform });
 #endif
-#if defined(USE_DX10) || defined(USE_DX11)
-						if (SSA > Ngs->val.ssa)
-						{
-							Ngs->val.ssa = SSA;
-#endif	//	USE_DX10
-						if (SSA > Nvs->val.ssa)
-						{
-							Nvs->val.ssa = SSA;
-#if defined(USE_DX10) || defined(USE_DX11)
-							}
-						}
-					}
-				}
-			}
-		}
-#else	//	USE_DX10
-						}
-					}
-				}
-			}
-		}
-#endif	//	USE_DX10
 	}
-
-#if RENDER!=R_R1
-	if (val_recorder)
-	{
-		Fbox3 temp;
-		Fmatrix& xf = *RI.val_pTransform;
-		temp.xform(pVisual->vis.box, xf);
-		val_recorder->push_back(temp);
-	}
-#endif
 }
 
 void R_dsgraph_structure::r_dsgraph_insert_static(dxRender_Visual* pVisual)
@@ -357,12 +258,7 @@ void R_dsgraph_structure::r_dsgraph_insert_static(dxRender_Visual* pVisual)
 	ShaderElement* sh_d = &*pVisual->shader->E[4];
 	if (RImplementation.o.distortion && sh_d && sh_d->flags.bDistort && pmask[sh_d->flags.iPriority / 2])
 	{
-		mapSorted_Node* N = mapDistort.insertInAnyWay(distSQ);
-		N->val.ssa = SSA;
-		N->val.pObject = NULL;
-		N->val.pVisual = pVisual;
-		N->val.Matrix = Fidentity;
-		N->val.se = &*pVisual->shader->E[4]; // 4=L_special
+		mapDistort.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, &*pVisual->shader->E[4] });
 	}
 
 	// Select shader
@@ -374,12 +270,7 @@ void R_dsgraph_structure::r_dsgraph_insert_static(dxRender_Visual* pVisual)
 #if RENDER==R_R4
 	if (sh->flags.isWater && RImplementation.o.ssfx_water)
 	{
-		mapWater_Node* N = mapWater.insertInAnyWay(distSQ);
-		N->val.ssa = SSA;
-		N->val.pObject = NULL;
-		N->val.pVisual = pVisual;
-		N->val.Matrix = Fidentity;
-		N->val.se = sh;
+		mapWater.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, sh });
 		return;
 	}
 #endif
@@ -387,11 +278,7 @@ void R_dsgraph_structure::r_dsgraph_insert_static(dxRender_Visual* pVisual)
 	// strict-sorting selection
 	if (sh->flags.bStrictB2F)
 	{
-		mapSorted_Node* N = mapSorted.insertInAnyWay(distSQ);
-		N->val.pObject = NULL;
-		N->val.pVisual = pVisual;
-		N->val.Matrix = Fidentity;
-		N->val.se = sh;
+		mapSorted.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, sh });
 		return;
 	}
 
@@ -403,21 +290,11 @@ void R_dsgraph_structure::r_dsgraph_insert_static(dxRender_Visual* pVisual)
 	// d) Should be rendered to accumulation buffer in the second pass
 	if (sh->flags.bEmissive)
 	{
-		mapSorted_Node* N = mapEmissive.insertInAnyWay(distSQ);
-		N->val.ssa = SSA;
-		N->val.pObject = NULL;
-		N->val.pVisual = pVisual;
-		N->val.Matrix = Fidentity;
-		N->val.se = &*pVisual->shader->E[4]; // 4=L_special
+		mapEmissive.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, &*pVisual->shader->E[4] });
 	}
-	if (sh->flags.bWmark && pmask_wmark)
+	if (sh->flags.bWmark && pmask[2])
 	{
-		mapSorted_Node* N = mapWmark.insertInAnyWay(distSQ);
-		N->val.ssa = SSA;
-		N->val.pObject = NULL;
-		N->val.pVisual = pVisual;
-		N->val.Matrix = Fidentity;
-		N->val.se = sh;
+		mapWmark.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, sh });
 		return;
 	}
 #endif
@@ -425,17 +302,6 @@ void R_dsgraph_structure::r_dsgraph_insert_static(dxRender_Visual* pVisual)
 	if (val_feedback && counter_S == val_feedback_breakp) val_feedback->rfeedback_static(pVisual);
 
 	counter_S ++;
-
-	if (sh->flags.bLandscape && RI.phase == CRender::PHASE_NORMAL)
-	{
-		mapLandscape_Node* N = mapLandscape.insertInAnyWay(distSQ);
-		N->val.ssa = SSA;
-		N->val.pObject = NULL;
-		N->val.pVisual = pVisual;
-		N->val.Matrix = Fidentity;
-		N->val.se = sh;
-		return;
-	}
 
 	for (u32 iPass = 0; iPass < sh->passes.size(); ++iPass)
 	{
@@ -491,342 +357,15 @@ void R_dsgraph_structure::r_dsgraph_insert_static(dxRender_Visual* pVisual)
 #endif
 		mapNormalStates::TNode* Nstate = Ncs->val.insert(pass.state->state);
 		mapNormalTextures::TNode* Ntex = Nstate->val.insert(pass.T._get());
-		mapNormalItems& items = Ntex->val;
-		_NormalItem item = {SSA, pVisual};
-		items.push_back(item);
 
-		// Need to sort for HZB efficient use
-		if (SSA > Ntex->val.ssa)
-		{
-			Ntex->val.ssa = SSA;
-			if (SSA > Nstate->val.ssa)
-			{
-				Nstate->val.ssa = SSA;
-				if (SSA > Ncs->val.ssa)
-				{
-					Ncs->val.ssa = SSA;
-#ifdef USE_DX11
-					if (SSA > Nps->val.mapCS.ssa)
-					{
-						Nps->val.mapCS.ssa = SSA;
-#else
-					if (SSA > Nps->val.ssa)
-					{
-						Nps->val.ssa = SSA;
-#endif
-						//	if (SSA>Nvs->val.ssa)		{ Nvs->val.ssa = SSA;
-						//	} } } } }
-#if defined(USE_DX10) || defined(USE_DX11)
-						if (SSA > Ngs->val.ssa)
-						{
-							Ngs->val.ssa = SSA;
-#endif	//	USE_DX10
-						if (SSA > Nvs->val.ssa)
-						{
-							Nvs->val.ssa = SSA;
-#if defined(USE_DX10) || defined(USE_DX11)
-							}
-						}
-					}
-				}
-			}
-		}
-#else	//	USE_DX10
-						}
-					}
-				}
-			}
-		}
-#endif	//	USE_DX10
+		Ntex->val.push_back({ SSA, pVisual });
 	}
-
-#if RENDER!=R_R1
-	if (val_recorder)
-	{
-		val_recorder->push_back(pVisual->vis.box);
-	}
-#endif
-}
-
-// Static geometry optimization
-#define O_S_L1_S_LOW    10.f // geometry 3d volume size
-#define O_S_L1_D_LOW    150.f // distance, after which it is not rendered
-#define O_S_L2_S_LOW    100.f
-#define O_S_L2_D_LOW    200.f
-#define O_S_L3_S_LOW    500.f
-#define O_S_L3_D_LOW    250.f
-#define O_S_L4_S_LOW    2500.f
-#define O_S_L4_D_LOW    350.f
-#define O_S_L5_S_LOW    7000.f
-#define O_S_L5_D_LOW    400.f
-
-#define O_S_L1_S_MED    25.f
-#define O_S_L1_D_MED    50.f
-#define O_S_L2_S_MED    200.f
-#define O_S_L2_D_MED    150.f
-#define O_S_L3_S_MED    1000.f
-#define O_S_L3_D_MED    200.f
-#define O_S_L4_S_MED    2500.f
-#define O_S_L4_D_MED    300.f
-#define O_S_L5_S_MED    7000.f
-#define O_S_L5_D_MED    400.f
-
-#define O_S_L1_S_HII    50.f
-#define O_S_L1_D_HII    50.f
-#define O_S_L2_S_HII    400.f
-#define O_S_L2_D_HII    150.f
-#define O_S_L3_S_HII    1500.f
-#define O_S_L3_D_HII    200.f
-#define O_S_L4_S_HII    5000.f
-#define O_S_L4_D_HII    300.f
-#define O_S_L5_S_HII    20000.f
-#define O_S_L5_D_HII    350.f
-
-#define O_S_L1_S_ULT    50.f
-#define O_S_L1_D_ULT    35.f
-#define O_S_L2_S_ULT    500.f
-#define O_S_L2_D_ULT    125.f
-#define O_S_L3_S_ULT    1750.f
-#define O_S_L3_D_ULT    175.f
-#define O_S_L4_S_ULT    5250.f
-#define O_S_L4_D_ULT    250.f
-#define O_S_L5_S_ULT    25000.f
-#define O_S_L5_D_ULT    300.f
-
-// Dyn geometry optimization
-
-#define O_D_L1_S_LOW    1.f // geometry 3d volume size
-#define O_D_L1_D_LOW    80.f // distance, after which it is not rendered
-#define O_D_L2_S_LOW    3.f
-#define O_D_L2_D_LOW    150.f
-#define O_D_L3_S_LOW    4000.f
-#define O_D_L3_D_LOW    250.f
-
-#define O_D_L1_S_MED    1.f
-#define O_D_L1_D_MED    40.f
-#define O_D_L2_S_MED    4.f
-#define O_D_L2_D_MED    100.f
-#define O_D_L3_S_MED    4000.f
-#define O_D_L3_D_MED    200.f
-
-#define O_D_L1_S_HII    1.4f
-#define O_D_L1_D_HII    30.f
-#define O_D_L2_S_HII    4.f
-#define O_D_L2_D_HII    80.f
-#define O_D_L3_S_HII    4000.f
-#define O_D_L3_D_HII    150.f
-
-#define O_D_L1_S_ULT    2.0f
-#define O_D_L1_D_ULT    30.f
-#define O_D_L2_S_ULT    8.f
-#define O_D_L2_D_ULT    50.f
-#define O_D_L3_S_ULT    4000.f
-#define O_D_L3_D_ULT    110.f
-
-Fvector4 o_optimize_static_l1_dist = {O_S_L1_D_LOW, O_S_L1_D_MED, O_S_L1_D_HII, O_S_L1_D_ULT};
-Fvector4 o_optimize_static_l1_size = {O_S_L1_S_LOW, O_S_L1_S_MED, O_S_L1_S_HII, O_S_L1_S_ULT};
-Fvector4 o_optimize_static_l2_dist = {O_S_L2_D_LOW, O_S_L2_D_MED, O_S_L2_D_HII, O_S_L2_D_ULT};
-Fvector4 o_optimize_static_l2_size = {O_S_L2_S_LOW, O_S_L2_S_MED, O_S_L2_S_HII, O_S_L2_S_ULT};
-Fvector4 o_optimize_static_l3_dist = {O_S_L3_D_LOW, O_S_L3_D_MED, O_S_L3_D_HII, O_S_L3_D_ULT};
-Fvector4 o_optimize_static_l3_size = {O_S_L3_S_LOW, O_S_L3_S_MED, O_S_L3_S_HII, O_S_L3_S_ULT};
-Fvector4 o_optimize_static_l4_dist = {O_S_L4_D_LOW, O_S_L4_D_MED, O_S_L4_D_HII, O_S_L4_D_ULT};
-Fvector4 o_optimize_static_l4_size = {O_S_L4_S_LOW, O_S_L4_S_MED, O_S_L4_S_HII, O_S_L4_S_ULT};
-Fvector4 o_optimize_static_l5_dist = {O_S_L5_D_LOW, O_S_L5_D_MED, O_S_L5_D_HII, O_S_L5_D_ULT};
-Fvector4 o_optimize_static_l5_size = {O_S_L5_S_LOW, O_S_L5_S_MED, O_S_L5_S_HII, O_S_L5_S_ULT};
-
-Fvector4 o_optimize_dynamic_l1_dist = {O_D_L1_D_LOW, O_D_L1_D_MED, O_D_L1_D_HII, O_D_L1_D_ULT};
-Fvector4 o_optimize_dynamic_l1_size = {O_D_L1_S_LOW, O_D_L1_S_MED, O_D_L1_S_HII, O_D_L1_S_ULT};
-Fvector4 o_optimize_dynamic_l2_dist = {O_D_L2_D_LOW, O_D_L2_D_MED, O_D_L2_D_HII, O_D_L2_D_ULT};
-Fvector4 o_optimize_dynamic_l2_size = {O_D_L2_S_LOW, O_D_L2_S_MED, O_D_L2_S_HII, O_D_L2_S_ULT};
-Fvector4 o_optimize_dynamic_l3_dist = {O_D_L3_D_LOW, O_D_L3_D_MED, O_D_L3_D_HII, O_D_L3_D_ULT};
-Fvector4 o_optimize_dynamic_l3_size = {O_D_L3_S_LOW, O_D_L3_S_MED, O_D_L3_S_HII, O_D_L3_S_ULT};
-
-#define BASE_FOV 67.f
-
-IC float GetDistFromCamera(const Fvector& from_position)
-// Aproximate, adjusted by fov, distance from camera to position (For right work when looking though binoculars and scopes)
-{
-	float distance = Device.vCameraPosition.distance_to(from_position);
-	float fov_K = BASE_FOV / Device.fFOV;
-	float adjusted_distane = distance / fov_K;
-
-	return adjusted_distane;
-}
-
-IC bool IsValuableToRender(dxRender_Visual* pVisual, bool isStatic, bool sm, Fmatrix& transform_matrix, bool ignore_opt = false)
-{
-	PROF_EVENT("IsValuableToRender");
-	if (ignore_opt || pVisual->flags.test(eIgnoreOptimization))
-		return true;
-
-	if ((isStatic && opt_static >= 1) || (!isStatic && opt_dynamic >= 1))
-	{
-		float sphere_volume = pVisual->getVisData().sphere.volume();
-
-		float adjusted_distane = 0;
-
-		if (isStatic)
-			adjusted_distane = GetDistFromCamera(pVisual->vis.sphere.P);
-		else
-			// dynamic geometry position needs to be transformed by transform matrix, to get world coordinates, dont forget ;)
-		{
-			Fvector pos;
-			transform_matrix.transform_tiny(pos, pVisual->vis.sphere.P);
-
-			adjusted_distane = GetDistFromCamera(pos);
-		}
-
-		if (sm && !!psDeviceFlags2.test(rsOptShadowGeom)) // Highest cut off for shadow map
-		{
-			if (sphere_volume < 50000.f && adjusted_distane > ps_ssfx_shadow_cascades.z)
-				// don't need geometry behind the farest sun shadow cascade
-				return false;
-
-			if ((sphere_volume < o_optimize_static_l1_size.z) && (adjusted_distane > o_optimize_static_l1_dist.z))
-				return false;
-			else if ((sphere_volume < o_optimize_static_l2_size.z) && (adjusted_distane > o_optimize_static_l2_dist.z))
-				return false;
-			else if ((sphere_volume < o_optimize_static_l3_size.z) && (adjusted_distane > o_optimize_static_l3_dist.z))
-				return false;
-			else if ((sphere_volume < o_optimize_static_l4_size.z) && (adjusted_distane > o_optimize_static_l4_dist.z))
-				return false;
-			else if ((sphere_volume < o_optimize_static_l5_size.z) && (adjusted_distane > o_optimize_static_l5_dist.z))
-				return false;
-
-			return true;
-		}
-
-		if (isStatic)
-		{
-
-			if (pVisual->Type == MT_LOD || pVisual->Type == MT_TREE_PM || pVisual->Type == MT_TREE_ST)
-				return true;
-
-			if (opt_static == 2)
-			{
-				if ((sphere_volume < o_optimize_static_l1_size.y) && (adjusted_distane > o_optimize_static_l1_dist.y))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l2_size.y) && (adjusted_distane > o_optimize_static_l2_dist.
-					y))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l3_size.y) && (adjusted_distane > o_optimize_static_l3_dist.
-					y))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l4_size.y) && (adjusted_distane > o_optimize_static_l4_dist.
-					y))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l5_size.y) && (adjusted_distane > o_optimize_static_l5_dist.
-					y))
-					return false;
-			}
-			else if (opt_static == 3)
-			{
-				if ((sphere_volume < o_optimize_static_l1_size.z) && (adjusted_distane > o_optimize_static_l1_dist.z))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l2_size.z) && (adjusted_distane > o_optimize_static_l2_dist.
-					z))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l3_size.z) && (adjusted_distane > o_optimize_static_l3_dist.
-					z))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l4_size.z) && (adjusted_distane > o_optimize_static_l4_dist.
-					z))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l5_size.z) && (adjusted_distane > o_optimize_static_l5_dist.
-					z))
-					return false;
-			}
-			else if (opt_static == 4)
-			{
-				if ((sphere_volume < o_optimize_static_l1_size.w) && (adjusted_distane > o_optimize_static_l1_dist.w))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l2_size.w) && (adjusted_distane > o_optimize_static_l2_dist.
-					w))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l3_size.w) && (adjusted_distane > o_optimize_static_l3_dist.
-					w))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l4_size.w) && (adjusted_distane > o_optimize_static_l4_dist.
-					w))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l5_size.w) && (adjusted_distane > o_optimize_static_l5_dist.
-					w))
-					return false;
-			}
-			else
-			{
-				if ((sphere_volume < o_optimize_static_l1_size.x) && (adjusted_distane > o_optimize_static_l1_dist.x))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l2_size.x) && (adjusted_distane > o_optimize_static_l2_dist.
-					x))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l3_size.x) && (adjusted_distane > o_optimize_static_l3_dist.
-					x))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l4_size.x) && (adjusted_distane > o_optimize_static_l4_dist.
-					x))
-					return false;
-				else if ((sphere_volume < o_optimize_static_l5_size.x) && (adjusted_distane > o_optimize_static_l5_dist.
-					x))
-					return false;
-			}
-		}
-		else
-		{
-			if (opt_dynamic == 2)
-			{
-				if ((sphere_volume < o_optimize_dynamic_l1_size.y) && (adjusted_distane > o_optimize_dynamic_l1_dist.y))
-					return false;
-				else if ((sphere_volume < o_optimize_dynamic_l2_size.y) && (adjusted_distane >
-					o_optimize_dynamic_l2_dist.y))
-					return false;
-				else if ((sphere_volume < o_optimize_dynamic_l3_size.y) && (adjusted_distane >
-					o_optimize_dynamic_l3_dist.y))
-					return false;
-			}
-			else if (opt_dynamic == 3)
-			{
-				if ((sphere_volume < o_optimize_dynamic_l1_size.z) && (adjusted_distane > o_optimize_dynamic_l1_dist.z))
-					return false;
-				else if ((sphere_volume < o_optimize_dynamic_l2_size.z) && (adjusted_distane >
-					o_optimize_dynamic_l2_dist.z))
-					return false;
-				else if ((sphere_volume < o_optimize_dynamic_l3_size.z) && (adjusted_distane >
-					o_optimize_dynamic_l3_dist.z))
-					return false;
-			}
-			else if (opt_dynamic == 4)
-			{
-				if ((sphere_volume < o_optimize_dynamic_l1_size.w) && (adjusted_distane > o_optimize_dynamic_l1_dist.w))
-					return false;
-				else if ((sphere_volume < o_optimize_dynamic_l2_size.w) && (adjusted_distane >
-					o_optimize_dynamic_l2_dist.w))
-					return false;
-				else if ((sphere_volume < o_optimize_dynamic_l3_size.w) && (adjusted_distane >
-					o_optimize_dynamic_l3_dist.w))
-					return false;
-			}
-			else
-			{
-				if ((sphere_volume < o_optimize_dynamic_l1_size.x) && (adjusted_distane > o_optimize_dynamic_l1_dist.x))
-					return false;
-				else if ((sphere_volume < o_optimize_dynamic_l2_size.x) && (adjusted_distane >
-					o_optimize_dynamic_l2_dist.x))
-					return false;
-				else if ((sphere_volume < o_optimize_dynamic_l3_size.x) && (adjusted_distane >
-					o_optimize_dynamic_l3_dist.x))
-					return false;
-			}
-		}
-	}
-
-	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual, bool ignore)
+void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual)
 {
 	PROF_EVENT("add_leafs_Dynamic");
 	if (!pVisual)
@@ -836,11 +375,6 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual, bool ignore)
 
 	if (phase != PHASE_NORMAL && !!flags.test(IRenderVisualFlags::eNoShadow))
 		return;
-
-	if (!!!flags.test(IRenderVisualFlags::eIgnoreOptimization) && !IsValuableToRender(pVisual, false, phase == 1, *val_pTransform, ignore))
-		return;
-
-	PROF_EVENT();
 
 	// Visual is 100% visible - simply add it
 	xr_vector<IRenderVisual*>::iterator I, E; // it may be useful for 'hierrarhy' visual
@@ -854,14 +388,14 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual, bool ignore)
 			for (PS::CParticleGroup::SItemVecIt i_it = pG->items.begin(); i_it != pG->items.end(); ++i_it)
 			{
 				PS::CParticleGroup::SItem& I = *i_it;
-				if (I._effect) add_leafs_Dynamic(I._effect, ignore);
+				if (I._effect) add_leafs_Dynamic(I._effect);
 				for (xr_vector<dxRender_Visual*>::iterator pit = I._children_related.begin(); pit != I
 				                                                                                     ._children_related.
 				                                                                                     end(); ++pit)
-					add_leafs_Dynamic(*pit, ignore);
+					add_leafs_Dynamic(*pit);
 				for (xr_vector<dxRender_Visual*>::iterator pit = I._children_free.begin(); pit != I._children_free.end()
 				     ; ++pit)
-					add_leafs_Dynamic(*pit, ignore);
+					add_leafs_Dynamic(*pit);
 			}
 		}
 		return;
@@ -871,7 +405,7 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual, bool ignore)
 			FHierrarhyVisual* pV = (FHierrarhyVisual*)pVisual;
 			I = pV->children.begin();
 			E = pV->children.end();
-			for (; I != E; ++I) add_leafs_Dynamic((dxRender_Visual*)*I, ignore);
+			for (; I != E; ++I) add_leafs_Dynamic((dxRender_Visual*)*I);
 		}
 		return;
 	case MT_SKELETON_ANIM:
@@ -890,7 +424,7 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual, bool ignore)
 			}
 			if (_use_lod)
 			{
-				add_leafs_Dynamic(pV->m_lod, ignore);
+				add_leafs_Dynamic(pV->m_lod);
 			}
 			else
 			{
@@ -900,7 +434,7 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual, bool ignore)
 #endif
 				I = pV->children.begin();
 				E = pV->children.end();
-				for (; I != E; ++I) add_leafs_Dynamic((dxRender_Visual*)*I, ignore);
+				for (; I != E; ++I) add_leafs_Dynamic((dxRender_Visual*)*I);
 			}
 		}
 		return;
@@ -919,6 +453,7 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual, bool ignore)
 void CRender::add_leafs_Static(dxRender_Visual* pVisual)
 {
 	PROF_EVENT("add_leafs_Static");
+
 #if RENDER!=R_R1
 	if(RImplementation.phase==CRender::PHASE_NORMAL)
 #endif
@@ -929,11 +464,6 @@ void CRender::add_leafs_Static(dxRender_Visual* pVisual)
 
 	if (phase != PHASE_NORMAL && !!flags.test(IRenderVisualFlags::eNoShadow))
 		return;
-
-	if (!!!flags.test(IRenderVisualFlags::eIgnoreOptimization) && !IsValuableToRender(pVisual, true, phase == 1, *val_pTransform))
-		return;
-
-	PROF_EVENT();
 
 	// Visual is 100% visible - simply add it
 	xr_vector<IRenderVisual*>::iterator I, E; // it may be usefull for 'hierrarhy' visuals
@@ -1032,11 +562,6 @@ BOOL CRender::add_Dynamic(dxRender_Visual* pVisual, u32 planes)
 
 	if (phase != PHASE_NORMAL && !!flags.test(IRenderVisualFlags::eNoShadow))
 		return FALSE;
-
-	if (!!!flags.test(IRenderVisualFlags::eIgnoreOptimization) && !IsValuableToRender(pVisual, false, phase == 1, *val_pTransform))
-		return FALSE;
-
-	PROF_EVENT();
 
 	// Check frustum visibility and calculate distance to visual's center
 	Fvector Tpos; // transformed position
@@ -1158,9 +683,6 @@ void CRender::add_Static(dxRender_Visual* pVisual, u32 planes)
 	Flags16& flags = pVisual->dcast_RenderVisual()->flags;
 
 	if (phase != PHASE_NORMAL && !!flags.test(IRenderVisualFlags::eNoShadow))
-		return;
-
-	if (!!!flags.test(IRenderVisualFlags::eIgnoreOptimization) && !IsValuableToRender(pVisual, true, phase == 1, *val_pTransform))
 		return;
 
 	// Check frustum visibility and calculate distance to visual's center

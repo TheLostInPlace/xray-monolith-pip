@@ -39,21 +39,19 @@ void CRenderTarget::phase_combine()
 	Fvector2 p0, p1;
 
 	//*** exposure-pipeline
-	u32			gpu_id	= Device.dwFrame%HW.Caps.iGPUNum;
 	if (Device.m_SecondViewport.IsSVPActive())	//--#SM+#-- +SecondVP+ Fix for screen flickering
 	{
-		// clang-format off
-		gpu_id = (Device.dwFrame - 1) % HW.Caps.iGPUNum;	// Фeen "ia?цaнey" tonemapping (HDR) iоnлa вueл?чaнey двойноaо ?aндa?a. 
-															// Iобочнuй эффaeo - i?e ?aбоoa двойноaо ?aндa?a neо?оnoь eзiaнaнey tonemapping (HDR) iaдaao в двa ?aзa
-															// Ia?цaнea nвyзaно n oai, чoо HDR длy nвоaй ?aбоou o?aнeo уiaньoaннea eоiee "i?оoлuo eaд?ов"
-															// Эoe eaд?u оoноneoaльно iоoоae д?уa нa д?уaa, однaeо i?e вeл?чaнноi двойноi ?aндa?a
-															// в iоловeнa eaд?ов оeaзuвaaony ea?oeнea eз вoо?оaо ?aндa?a, e iоneольeу онa чanoо iоaao оoлeчaony iо цвaoу\y?eоnoe
-															// oо i?e iоiuoea nоздaнey "iлaвноaо" ia?aoодa iaaду нeie iолучaaony эффaeo ia?цaнey
-
+		if (t_LUM_src != rt_LUM_pool[0]->pTexture)
+			t_LUM_src->surface_set(rt_LUM_pool[0]->pSurface);
+		if (t_LUM_dest != rt_LUM_pool[1]->pTexture)
+			t_LUM_dest->surface_set(rt_LUM_pool[1]->pSurface);
 	}
+	else
 	{
-		t_LUM_src->surface_set		(rt_LUM_pool[gpu_id*2+0]->pSurface);
-		t_LUM_dest->surface_set		(rt_LUM_pool[gpu_id*2+1]->pSurface);
+		if (t_LUM_src != rt_LUM_pool[0]->pTexture)
+			t_LUM_src->surface_set(rt_LUM_pool[0]->pSurface);
+		if (t_LUM_dest != rt_LUM_pool[1]->pTexture)
+			t_LUM_dest->surface_set(rt_LUM_pool[1]->pSurface);
 	}
 
 	RCache.set_CullMode(CULL_NONE);
@@ -419,9 +417,9 @@ void CRenderTarget::phase_combine()
 
 	//*** exposure-pipeline-clear
 	{
-		std::swap(rt_LUM_pool[gpu_id * 2 + 0], rt_LUM_pool[gpu_id * 2 + 1]);
-		t_LUM_src->surface_set(NULL);
-		t_LUM_dest->surface_set(NULL);
+		std::swap(rt_LUM_pool[0], rt_LUM_pool[1]);
+		t_LUM_src->surface_set(nullptr);
+		t_LUM_dest->surface_set(nullptr);
 	}
 
 #ifdef DEBUG
