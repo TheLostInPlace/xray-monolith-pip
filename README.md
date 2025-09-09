@@ -161,13 +161,12 @@ The original engine is used in S.T.A.L.K.E.R. Call of Pripyat game released by G
 ## How to make my own modded exe?
 
 How to compile exes:
-1. Fork this xray-monolith
-2. Clone the fork onto your pc
-3. Run `git submodule update --init --recursive` to pull git submodules
-4. Select all-in-one-vs2022-wpo branch
-5. Compile the engine-vs2022.sln solution with VS2022
-6. For batch builds of all configurations use `batch_build.bat` in xray-monolith repo
-7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
+1. Fork this xray-monolith repo, the main branch is `all-in-one-vs2022-wpo`
+2. Download the fork onto your pc
+3. Open Git Bash or terminal in the downloaded folder and run `git submodule update --init --recursive` to pull git submodules
+4. Compile the engine-vs2022.sln solution with VS2022
+5. For batch builds of all configurations use `batch_build.bat`
+6. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
 **2025.09.06**
