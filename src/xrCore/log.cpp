@@ -10,7 +10,7 @@
 static xrLogger* theLogger = nullptr;
 XRCORE_API xr_queue <xrLogger::LogRecord>* xrLogger::logData;
 
-shared_str FormatString(LPCSTR fmt, ...)
+xr_string FormatString(LPCSTR fmt, ...)
 {
 	va_list mark;
 	string2048 buf;
@@ -18,8 +18,8 @@ shared_str FormatString(LPCSTR fmt, ...)
 	int sz = _vsnprintf(buf, sizeof(buf) - 1, fmt, mark);
 	buf[sizeof(buf) - 1] = 0;
 	va_end(mark);
-	if (sz) return shared_str(buf);
-	return shared_str(0);
+	if (sz) return xr_string(buf);
+	return xr_string("");
 }
 
 // Timestamp flag and helpers

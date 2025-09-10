@@ -15,7 +15,7 @@ void 	XRCORE_API		Log			(const char* msg, int dop);
 void 	XRCORE_API		Log			(const char* msg, float dop);
 void 	XRCORE_API		LogWinErr(const char* msg, long err_code);
 
-shared_str FormatString(LPCSTR fmt, ...);
+xr_string FormatString(LPCSTR fmt, ...);
 
 class XRCORE_API xrLogger
 {
