@@ -169,6 +169,9 @@ How to compile exes:
 6. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.09.10**
+* ProfLander: Fix CALifeMonsterBrain::process_task segfault (https://github.com/themrdemonized/xray-monolith/pull/364)
+
 **2025.09.06**
 * Replaced luabind with non-Boost version (https://github.com/ixray-team/ixray-1.6-stcop/commit/2f61f5f781130468c945720b76d23ce4bbea95b1)
 * Disable `std::terminate` in luabind (https://github.com/ixray-team/ixray-1.6-stcop/commit/723fb65a8b9ebb89dda8f03cbb4b1bebceabacdc)
