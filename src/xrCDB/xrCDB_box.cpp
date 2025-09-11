@@ -87,8 +87,7 @@ ICF bool planeBoxOverlap(const Point& normal, const float d, const Point& maxbox
 	if(min>rad || max<-rad) return false;
 
 
-template <bool bClass3, bool bFirst>
-class box_collider
+class _MM_ALIGN16 cform_box_collider
 {
 public:
 	COLLIDER* dest;
@@ -99,6 +98,14 @@ public:
 	Point center, extents;
 
 	Point mLeafVerts [3];
+
+	bool bClass3 = false;
+
+	bool bFirst = false;
+
+	cform_box_collider(bool bClass, bool bFrst) 
+
+		:bClass3(bClass), bFirst(bFrst) {}
 
 	IC void _init(COLLIDER* CL, Fvector* V, TRI* T, const Fvector& C, const Fvector& E)
 	{
@@ -241,6 +248,8 @@ public:
 void COLLIDER::box_query(const MODEL* m_def, const Fvector& b_center, const Fvector& b_dim)
 {
 	PROF_EVENT("COLLIDER::box_query");
+	if (!m_def)
+		return;
 	m_def->syncronize();
 
 	// Get nodes
@@ -248,35 +257,7 @@ void COLLIDER::box_query(const MODEL* m_def, const Fvector& b_center, const Fvec
 	const AABBNoLeafNode* N = T->GetNodes();
 	r_clear();
 
-	// Binary dispatcher
-	if (box_mode & OPT_FULL_TEST)
-	{
-		if (box_mode & OPT_ONLYFIRST)
-		{
-			box_collider<true, true> BC;
-			BC._init(this, m_def->verts, m_def->tris, b_center, b_dim);
-			BC._stab(N);
-		}
-		else
-		{
-			box_collider<true, false> BC;
-			BC._init(this, m_def->verts, m_def->tris, b_center, b_dim);
-			BC._stab(N);
-		}
-	}
-	else
-	{
-		if (box_mode & OPT_ONLYFIRST)
-		{
-			box_collider<false, true> BC;
-			BC._init(this, m_def->verts, m_def->tris, b_center, b_dim);
-			BC._stab(N);
-		}
-		else
-		{
-			box_collider<false, false> BC;
-			BC._init(this, m_def->verts, m_def->tris, b_center, b_dim);
-			BC._stab(N);
-		}
-	}
+	cform_box_collider BC(!!(box_mode&OPT_FULL_TEST), !!(box_mode&OPT_ONLYFIRST));
+	BC._init(this, m_def->verts, m_def->tris, b_center, b_dim);
+	BC._stab(N);
 }

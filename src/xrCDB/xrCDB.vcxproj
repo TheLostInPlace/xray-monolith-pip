@@ -465,6 +465,7 @@
     <ClInclude Include="OPC_TriTriOverlap.h" />
     <ClInclude Include="OPC_Types.h" />
     <ClInclude Include="OPC_VolumeCollider.h" />
+    <ClInclude Include="sse_intersect.h" />
     <ClInclude Include="StdAfx.h" />
     <ClInclude Include="xrCDB.h" />
     <ClInclude Include="xrXRC.h" />

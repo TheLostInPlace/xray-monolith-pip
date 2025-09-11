@@ -260,6 +260,9 @@
     <ClInclude Include="ISpatial.h">
       <Filter>engine</Filter>
     </ClInclude>
+    <ClInclude Include="sse_intersect.h">
+      <Filter>engine</Filter>
+    </ClInclude>
     <ClInclude Include="xr_area.h">
       <Filter>engine</Filter>
     </ClInclude>
