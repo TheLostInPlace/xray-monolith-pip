@@ -261,51 +261,269 @@ namespace luabind { namespace detail
 			static int match(lua_State* L, luabind::detail::by_value<const prim>, int index) { return match(L, detail::by_value<prim>(), index); } \
 			static int match(lua_State* L, luabind::detail::by_value<prim>, int index)
 
-		PRIMITIVE_CONVERTER(bool) { return lua_toboolean(L, index) == 1; }
-		PRIMITIVE_MATCHER(bool) { if (lua_type(L, index) == LUA_TBOOLEAN) return 0; else return -1; }
-
-		PRIMITIVE_CONVERTER(int) { return static_cast<int>(lua_tonumber(L, index)); }
-		PRIMITIVE_MATCHER(int)
+		PRIMITIVE_CONVERTER(bool)
 		{
-            const int type = lua_type(L, index);
-		    if (type == LUA_TNUMBER) return 0; else return -1;
+			if (lua_isnil(L, index))
+			{
+				return false;
+			}
+			return lua_toboolean(L, index) == 1;
+		}
+		PRIMITIVE_MATCHER(bool)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+
+			if (lua_type(L, index) == LUA_TBOOLEAN)
+				return 0;
+			else
+				return -1;
 		}
 
-		PRIMITIVE_CONVERTER(unsigned int) { return static_cast<unsigned int>(lua_tonumber(L, index)); }
-		PRIMITIVE_MATCHER(unsigned int) { if (lua_type(L, index) == LUA_TNUMBER) return 0; else return -1; }
+		PRIMITIVE_CONVERTER(int)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			return static_cast<int>(lua_tonumber(L, index));
+		}
 
-		PRIMITIVE_CONVERTER(char) { return static_cast<char>(lua_tonumber(L, index)); }
-		PRIMITIVE_MATCHER(char) { if (lua_type(L, index) == LUA_TNUMBER) return 0; else return -1; }
+		PRIMITIVE_MATCHER(int)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
 
-		PRIMITIVE_CONVERTER(signed char) { return static_cast<char>(lua_tonumber(L, index)); }
-		PRIMITIVE_MATCHER(signed char) { if (lua_type(L, index) == LUA_TNUMBER) return 0; else return -1; }
-		
-		PRIMITIVE_CONVERTER(unsigned char) { return static_cast<unsigned char>(lua_tonumber(L, index)); }
-		PRIMITIVE_MATCHER(unsigned char) { if (lua_type(L, index) == LUA_TNUMBER) return 0; else return -1; }
+			const int type = lua_type(L, index);
+			if (type == LUA_TNUMBER) return 0; else return -1;
+		}
 
-		PRIMITIVE_CONVERTER(short) { return static_cast<short>(lua_tonumber(L, index)); }
-		PRIMITIVE_MATCHER(short) { if (lua_type(L, index) == LUA_TNUMBER) return 0; else return -1; }
+		PRIMITIVE_CONVERTER(unsigned int)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			return static_cast<unsigned int>(lua_tonumber(L, index));
+		}
+		PRIMITIVE_MATCHER(unsigned int)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			if (lua_type(L, index) == LUA_TNUMBER)
+				return 0;
+			else
+				return -1;
+		}
 
-		PRIMITIVE_CONVERTER(unsigned short) { return static_cast<unsigned short>(lua_tonumber(L, index)); }
-		PRIMITIVE_MATCHER(unsigned short) { if (lua_type(L, index) == LUA_TNUMBER) return 0; else return -1; }
+		PRIMITIVE_CONVERTER(char)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			return static_cast<char>(lua_tonumber(L, index));
+		}
+		PRIMITIVE_MATCHER(char)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			if (lua_type(L, index) == LUA_TNUMBER)
+				return 0;
+			else
+				return -1;
+		}
 
-		PRIMITIVE_CONVERTER(long) { return static_cast<long>(lua_tonumber(L, index)); }
-		PRIMITIVE_MATCHER(long) { if (lua_type(L, index) == LUA_TNUMBER) return 0; else return -1; }
+		PRIMITIVE_CONVERTER(signed char)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			return static_cast<char>(lua_tonumber(L, index));
+		}
+		PRIMITIVE_MATCHER(signed char)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			if (lua_type(L, index) == LUA_TNUMBER)
+				return 0;
+			else
+				return -1;
+		}
 
-		PRIMITIVE_CONVERTER(unsigned long) { return static_cast<unsigned long>(lua_tonumber(L, index)); }
-		PRIMITIVE_MATCHER(unsigned long) { if (lua_type(L, index) == LUA_TNUMBER) return 0; else return -1; }
-		
-		PRIMITIVE_CONVERTER(unsigned long long) { return static_cast<unsigned long long>(lua_tonumber(L, index)); }
-		PRIMITIVE_MATCHER(unsigned long long) { if (lua_type(L, index) == LUA_TNUMBER) return 0; else return -1; }
+		PRIMITIVE_CONVERTER(unsigned char)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			return static_cast<unsigned char>(lua_tonumber(L, index));
+		}
+		PRIMITIVE_MATCHER(unsigned char)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			if (lua_type(L, index) == LUA_TNUMBER)
+				return 0;
+			else
+				return -1;
+		}
 
-		PRIMITIVE_CONVERTER(float) { return static_cast<float>(lua_tonumber(L, index)); }
-		PRIMITIVE_MATCHER(float) { if (lua_type(L, index) == LUA_TNUMBER) return 0; else return -1; }
+		PRIMITIVE_CONVERTER(short)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
 
-		PRIMITIVE_CONVERTER(double) { return static_cast<double>(lua_tonumber(L, index)); }
-		PRIMITIVE_MATCHER(double) { if (lua_type(L, index) == LUA_TNUMBER) return 0; else return -1; }
+			return static_cast<short>(lua_tonumber(L, index));
+		}
+		PRIMITIVE_MATCHER(short)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			if (lua_type(L, index) == LUA_TNUMBER)
+				return 0;
+			else
+				return -1;
+		}
+
+		PRIMITIVE_CONVERTER(unsigned short) {
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			return static_cast<unsigned short>(lua_tonumber(L, index));
+		}
+		PRIMITIVE_MATCHER(unsigned short)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			if (lua_type(L, index) == LUA_TNUMBER)
+				return 0;
+			else
+				return -1;
+		}
+
+		PRIMITIVE_CONVERTER(long)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			return static_cast<long>(lua_tonumber(L, index));
+		}
+		PRIMITIVE_MATCHER(long)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			if (lua_type(L, index) == LUA_TNUMBER)
+				return 0;
+			else
+				return -1;
+		}
+
+		PRIMITIVE_CONVERTER(unsigned long)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			return static_cast<unsigned long>(lua_tonumber(L, index));
+		}
+		PRIMITIVE_MATCHER(unsigned long)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}if (lua_type(L, index) == LUA_TNUMBER)
+				return 0;
+			else
+				return -1;
+		}
+
+		PRIMITIVE_CONVERTER(unsigned long long)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			return static_cast<unsigned long long>(lua_tonumber(L, index));
+		}
+		PRIMITIVE_MATCHER(unsigned long long)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			if (lua_type(L, index) == LUA_TNUMBER)
+				return 0;
+			else
+				return -1;
+		}
+
+		PRIMITIVE_CONVERTER(float) {
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			return static_cast<float>(lua_tonumber(L, index));
+		}
+		PRIMITIVE_MATCHER(float)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			if (lua_type(L, index) == LUA_TNUMBER)
+				return 0;
+			else
+				return -1;
+		}
+
+		PRIMITIVE_CONVERTER(double)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			return static_cast<double>(lua_tonumber(L, index));
+		}
+		PRIMITIVE_MATCHER(double)
+		{
+			if (lua_isnil(L, index))
+			{
+				return 0;
+			}
+			if (lua_type(L, index) == LUA_TNUMBER)
+				return 0;
+			else
+				return -1;
+		}
 
 		PRIMITIVE_CONVERTER(string_class)
-		{ return string_class(lua_tostring(L, index), lua_strlen(L, index)); }
+		{
+			return string_class(lua_tostring(L, index), lua_strlen(L, index));
+		}
 		PRIMITIVE_MATCHER(string_class) { if (lua_type(L, index) == LUA_TSTRING) return 0; else return -1; }
 
 		PRIMITIVE_CONVERTER(luabind::object)
@@ -880,9 +1098,13 @@ namespace luabind { namespace detail
 	template<Direction Dir = Direction::cpp_to_lua>
 	struct enum_converter
 	{
-		void apply(lua_State* L, int val)
+		template<typename T>
+		void apply(lua_State* L, T val)
 		{
-			lua_pushnumber(L, (lua_Number)val);
+			if constexpr (std::is_enum_v<T>)
+				lua_pushnumber(L, static_cast<lua_Number>(static_cast<std::underlying_type_t<T>>(val)));
+			else
+				lua_pushnumber(L, static_cast<lua_Number>(val));
 		}
 	};
 
@@ -890,16 +1112,15 @@ namespace luabind { namespace detail
 	struct enum_converter<Direction::lua_to_cpp>
 	{
 		template<class T>
-		T apply(lua_State* L, by_value<T>, int index)
+		T apply(lua_State* L, by_value<T>, std::underlying_type_t<T> index)
 		{
-//			std::cerr << "enum_converter\n";
-			return static_cast<T>(static_cast<int>(lua_tonumber(L, index)));
+			return static_cast<T>(static_cast<int>(lua_tonumber(L, static_cast<int>(index))));
 		}
-		
+
 		template<class T>
-		static int match(lua_State* L, by_value<T>, int index)
+		static int match(lua_State* L, by_value<T>, std::underlying_type_t<T> index)
 		{
-			if (lua_isnumber(L, index)) return 0; else return -1;
+			if (lua_isnumber(L, static_cast<int>(index))) return 0; else return -1;
 		}
 
 		template<class T>
