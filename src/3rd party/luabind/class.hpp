@@ -716,9 +716,9 @@ namespace luabind
 				const char* name
 				, std::function<int(lua_State*, ptrdiff_t)> s);
 #else
-			void add_setter(
+			void class_base::add_setter(
 				const char* name
-				, std::function<int(lua_State*, int)> s
+				, std::function<int(lua_State*, ptrdiff_t)> s
 				, int (*match)(lua_State*, int)
 				, void (*get_sig_ptr)(lua_State*, string_class&));
 #endif
@@ -1119,7 +1119,7 @@ namespace luabind
 			add_setter(
 				name
 				, std::bind(detail::set_caller<T, Setter>(), _1, _2, s)
-				, &detail::set_matcher<Setter>::apply
+				, detail::gen_set_matcher(static_cast<Setter>(nullptr), detail::policy_cons<>())
 				, &detail::get_member_signature<Setter>::apply);
 #else
 			add_setter(name, std::bind(detail::set_caller<T, Setter>(), _1, _2, s));
