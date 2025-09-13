@@ -31,7 +31,9 @@ protected:
 
 public:
 
-	class iterator
+	class iterator;
+
+	typedef class iterator
 	{
 		T* my_ptr;
 	public:

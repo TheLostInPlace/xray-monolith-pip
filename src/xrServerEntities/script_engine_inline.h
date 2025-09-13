@@ -88,7 +88,14 @@ IC bool CScriptEngine::functor(LPCSTR function_to_call, ::luabind::functor<_resu
 	if (!function_object(function_to_call, object))
 		return (false);
 
-	lua_function = ::luabind::object_cast<::luabind::functor<_result_type>>(object);
+	try
+	{
+		lua_function = ::luabind::object_cast<::luabind::functor<_result_type>>(object);
+	}
+	catch (...)
+	{
+		return (false);
+	}
 
 #ifdef USE_LUA_FUNCTOR_CACHE
 	// Store in cache
