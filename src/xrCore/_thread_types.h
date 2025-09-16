@@ -2,6 +2,7 @@
 
 #include <ppl.h>
 #include <concurrent_unordered_map.h>
+#include <concurrent_vector.h>
 #include <atomic>
 
 // Atomic types
@@ -14,6 +15,9 @@ using xr_task_group = concurrency::task_group;
 
 template <typename T, typename U>
 using xr_concurrent_unordered_map = concurrency::concurrent_unordered_map<T, U>;
+
+template <typename T>
+using xr_concurrent_vector = concurrency::concurrent_vector<T>;
 
 template<typename BlockRangeType, typename Body>
 inline void xr_parallel_for(BlockRangeType Begin, BlockRangeType End, Body Functor)

@@ -45,7 +45,8 @@ ENGINE_API CRenderDevice* DevicePtr = nullptr;
 ENGINE_API xr_atomic_bool g_bRendering = false;
 extern ENGINE_API float psHUD_FOV;
 
-static HANDLE RenderEventMT = nullptr;
+static xrCriticalSection EnterRenderCs;
+static xrCriticalSection LeaveRenderCs;
 
 BOOL g_bLoaded = FALSE;
 ref_light precache_light = 0;
@@ -355,6 +356,9 @@ void CRenderDevice::on_idle()
 		if (g_loading_events.front()())
 			g_loading_events.pop_front();
 		pApp->LoadDraw();
+
+		EnterRenderCs.Enter();
+		LeaveRenderCs.Leave();
 		return;
 	}
 
@@ -435,7 +439,13 @@ void CRenderDevice::on_idle()
 	mProject_saved = mProject;
 
 	// TODO: Try to move this upper
-	SetEvent(RenderEventMT);
+	if (Device.ModelDefferClear)
+	{
+		Device.ModelDefferClear();
+	}
+	LeaveRenderCs.Enter();
+	EnterRenderCs.Leave();
+
 	STOP_PROFILE;
 
 	// *** Resume threads
@@ -514,6 +524,9 @@ void CRenderDevice::on_idle()
 
 		seqFrameMT.Process(rp_Frame);
 	}
+
+	EnterRenderCs.Enter();
+	LeaveRenderCs.Leave();
 
 #ifdef DEDICATED_SERVER
     u32 FrameEndTime = TimerGlobal.GetElapsed_ms();
@@ -595,7 +608,7 @@ static void mt_ParallelRenderThread(void*)
 	PROF_THREAD("X-Ray mt_ParallelRenderThread");
 	while (FALSE == Device.mt_bMustExit)
 	{
-		WaitForSingleObject(RenderEventMT, INFINITE);
+		EnterRenderCs.Enter();
 
 		{
 			PROF_EVENT("mt_ParallelRenderThread seqParallelRender");
@@ -609,7 +622,8 @@ static void mt_ParallelRenderThread(void*)
 			Device.ParticleWorkerCallback();
 		}
 
-		ResetEvent(RenderEventMT);
+		EnterRenderCs.Leave();
+		xrCriticalSectionGuard sync(LeaveRenderCs);
 	}
 }
 
@@ -633,8 +647,8 @@ void CRenderDevice::Run()
 	// InitializeCriticalSection (&mt_csEnter);
 	// InitializeCriticalSection (&mt_csLeave);
 	mt_csEnter.Enter();
+	EnterRenderCs.Enter();
 	mt_bMustExit = FALSE;
-	RenderEventMT = CreateEvent(nullptr, true, false, "Render Helper Event");
 	thread_spawn(mt_FreezeThread, "Freeze detecting thread", 0, 0);
 	thread_spawn(mt_Thread, "X-RAY Secondary thread", 0, this);
 	thread_spawn(mt_DiscordThread, "X-RAY Discord thread", 0, 0);
@@ -647,7 +661,7 @@ void CRenderDevice::Run()
 	seqAppEnd.Process(rp_AppEnd);
 	// Stop Balance-Thread
 	mt_bMustExit = TRUE;
-	SetEvent(RenderEventMT); // Important for correct thread closing!!!
+	EnterRenderCs.Leave(); // Important for correct thread closing!!!
 	mt_csEnter.Leave();
 	while (mt_bMustExit) Sleep(0);
 	ParticleWorkerCallback = nullptr;

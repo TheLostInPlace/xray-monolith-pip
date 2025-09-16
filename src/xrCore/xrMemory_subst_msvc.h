@@ -162,6 +162,11 @@ struct xr_special_free
 {
 	IC void operator()(T*& ptr)
 	{
+		if (ptr == nullptr)
+		{
+			return;
+		}
+
 		if constexpr (_is_pm)
 		{
 			void* _real_ptr = fast_dynamic_cast<void*>(ptr);
@@ -181,6 +186,11 @@ struct xr_special_free<false, T>
 {
 	IC void operator()(T*& ptr)
 	{
+		if (ptr == nullptr)
+		{
+			return;
+		}
+		
 		ptr->~T();
 		Memory.mem_free(ptr);
 	}

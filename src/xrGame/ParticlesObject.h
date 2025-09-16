@@ -10,7 +10,6 @@ class CParticlesObject : public CPS_Instance
 	friend class CParticlesAsync;
 	using inherited = CPS_Instance;
 
-	u32 dwLastTime;
 	void Init(LPCSTR p_name, IRender_Sector* S, BOOL bAutoRemove);
 	void UpdateSpatial();
 
@@ -26,7 +25,7 @@ public:
 
 	virtual bool shedule_Needed() { return true; };
 	virtual float shedule_Scale();
-	void Update(u32 dt);
+	virtual void Update(u32 dt) override;
 	virtual void renderable_Render();
 	void PerformAllTheWork();
 

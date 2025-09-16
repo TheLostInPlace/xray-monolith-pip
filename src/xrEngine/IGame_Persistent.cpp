@@ -279,6 +279,12 @@ void IGame_Persistent::UpdateParticles()
 		pInstance->Play(false);
 	}
 
+	for (xr_shared_ptr<CPS_Instance> Part : ps_active_deffer)
+	{
+		ps_active.push_back(Part);
+	}
+	ps_active_deffer.clear();
+
 	static auto eraseFunc = [](const xr_shared_ptr<CPS_Instance>& Obj)
 	{
 		return Obj->m_NeedDestroy;

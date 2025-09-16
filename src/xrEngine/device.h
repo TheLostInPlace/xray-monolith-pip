@@ -234,6 +234,7 @@ public:
 	xr_vector<xr_delegate<void()>> seqParallelRender;
 
 	std::function<void()> ParticleWorkerCallback;
+	xr_delegate<void()> ModelDefferClear;
 
 	// Dependent classes
 	//CResourceManager* Resources;

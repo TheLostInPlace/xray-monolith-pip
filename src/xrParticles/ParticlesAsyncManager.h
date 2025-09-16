@@ -1,7 +1,7 @@
 #pragma once
 #include "../xrGame/ParticlesObject.h"
 
-class CParticlesObject;
+class CPS_Instance;
 
 class CParticlesAsync
 {
@@ -9,19 +9,16 @@ public:
 	static void Play();
 	static void Wait();
 
-	static bool Push(CParticlesObject* Obj);
-	static void Pop(CParticlesObject* Obj);
-
-	static void ForceUpdate(CParticlesObject* Obj);
+	static void ForceUpdate(CPS_Instance* Obj);
+	static bool NeedForceUpdate();
 
 private:
-	void UpdateParticle(CParticlesObject* particle) const;
+	void UpdateParticle(CPS_Instance* particle) const;
 	static void Start();
 
 public:
 	CParticlesAsync();
 
 private:
-	xr_list<CParticlesObject*> Particles;
 	volatile bool IsStarted = false;
 };

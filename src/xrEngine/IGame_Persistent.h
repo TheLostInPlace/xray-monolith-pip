@@ -63,6 +63,7 @@ public:
 	params m_game_params;
 public:
 	xr_vector<xr_shared_ptr<CPS_Instance>> ps_active;
+	xr_vector<xr_shared_ptr<CPS_Instance>> ps_active_deffer;
 	xr_vector<xr_shared_ptr<CPS_Instance>> ps_needtoplay;
 public:
 	enum GrassBenders_Anim
