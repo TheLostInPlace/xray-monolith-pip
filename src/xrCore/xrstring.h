@@ -8,6 +8,7 @@ using str_c = const char*;
 
 #include <string>
 #include <vector>
+#include "_thread_types.h"
 #include "_stl_extensions.h"
 
 class xr_string;
@@ -91,11 +92,12 @@ namespace std
 
 struct XRCORE_API str_value
 {
-	mutable u32 dwReference;
+	mutable xr_atomic_u32 dwReference;
 	xr_string value;
 
 	str_value(str_c s) : dwReference(0), value(s) {};
 	str_value(xr_string& s) : dwReference(0), value(s) {};
+	str_value(const str_value& s) : dwReference(0), value(s.value) {};
 
 	bool operator<(const str_value& other) const
 	{
