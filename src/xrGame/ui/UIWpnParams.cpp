@@ -8,6 +8,8 @@
 #include "inventory_item_object.h"
 #include "UIInventoryUtilities.h"
 #include "Weapon.h"
+#include <algorithm>
+#include <iterator>
 
 struct SLuaWpnParams
 {
@@ -244,11 +246,10 @@ void CUIWpnParams::SetInfo(CInventoryItem* slot_wpn, CInventoryItem& cur_wpn)
 		m_textAmmoUsedType.SetTextST(str);
 
 		xr_vector<shared_str> good_ammo;
-		for (const auto& ammo_type : ammo_types)
+		std::copy_if(ammo_types.begin(), ammo_types.end(), std::back_inserter(good_ammo), [](const shared_str& ammo_type)
 		{
-			if (ammo_type != NULL && !strstr(ammo_type.c_str(), "_bad") && !strstr(ammo_type.c_str(), "_verybad"))
-				good_ammo.push_back(ammo_type.c_str());
-		}
+			return ammo_type != NULL && !strstr(ammo_type.c_str(), "_bad") && !strstr(ammo_type.c_str(), "_verybad");
+		});
 
 		// Выводим иконки патронов --#SM+#--
 		for (u8 i = 0; i < m_vecStAmmoTypes.size(); i++)
