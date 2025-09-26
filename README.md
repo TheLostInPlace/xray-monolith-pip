@@ -169,6 +169,10 @@ How to compile exes:
 6. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.09.26**
+* Disabled `ZoomTexture` check in `set_scope_ui` Lua export
+* Xottab-DUTY: Fixed loading of fast (shadow) geometry (https://github.com/themrdemonized/xray-monolith/pull/379)
+
 **2025.09.19**
 * Possible fix for issue https://github.com/themrdemonized/xray-monolith/issues/375
 
