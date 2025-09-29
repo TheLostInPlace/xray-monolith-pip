@@ -123,6 +123,13 @@ int get_modded_exes_version() {
 	return result;
 }
 
+// demonized: get modded exes version
+xr_string get_modded_exes_version_string() {
+	std::string s = std::to_string(get_modded_exes_version());
+	s.insert(4, 1, '.').insert(7, 1, '.');
+	return xr_string(s.c_str());
+}
+
 ::luabind::object get_string_table() {
 	auto pData = CStringTable::getPData();
 	::luabind::object table = ::luabind::newtable(ai().script_engine().lua());
