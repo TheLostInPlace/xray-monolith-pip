@@ -391,6 +391,8 @@ void CRenderDevice::on_idle()
 	mView_saved = mView;
 	mProject_saved = mProject;
 
+	STOP_PROFILE;
+
 	// TODO: Try to move this upper
 	secondary_tasks.run([]()
 	{
@@ -402,18 +404,12 @@ void CRenderDevice::on_idle()
 				it();
 		}
 
-		if (Device.ParticleWorkerCallback)
 		{
 			PROF_EVENT("mt_ParallelRenderThread Process Particles");
-			Device.ParticleWorkerCallback();
+			if (Device.ParticleWorkerCallback)
+				Device.ParticleWorkerCallback();
 		}
 	});
-
-	STOP_PROFILE;
-
-	// *** Resume threads
-	// Capture end point - thread must run only ONE cycle
-	// Release start point - allow thread to run
 
 	secondary_tasks.run([]()
 	{
