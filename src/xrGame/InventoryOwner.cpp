@@ -27,6 +27,7 @@
 #include "CustomOutfit.h"
 #include "Bolt.h"
 #include "string_table.h"
+#include "map_manager.h"
 
 CInventoryOwner::CInventoryOwner()
 {
@@ -172,6 +173,8 @@ void CInventoryOwner::net_Destroy()
 
 	inventory().Clear();
 	inventory().SetActiveSlot(NO_ACTIVE_SLOT);
+
+	Level().MapManager().RemoveRelationLocation(this);
 }
 
 void CInventoryOwner::save(NET_Packet& output_packet)

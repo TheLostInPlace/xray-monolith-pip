@@ -20,6 +20,7 @@ public:
 	Locations& Locations(); //{return *m_locations;}
 	CMapLocation* AddMapLocation(const shared_str& spot_type, u16 id);
 	CMapLocation* AddRelationLocation(CInventoryOwner* pInvOwner);
+	void RemoveRelationLocation(CInventoryOwner* pInvOwner);
 	void RemoveMapLocation(const shared_str& spot_type, u16 id);
 
 	// demonized: remove all map object spots by id
