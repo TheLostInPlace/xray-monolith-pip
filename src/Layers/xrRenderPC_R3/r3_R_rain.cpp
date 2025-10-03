@@ -38,7 +38,8 @@ void CRender::render_rain()
 	D3DXMATRIX m_LightViewProj;
 
 	//	Use light as placeholder for rain data.
-	light RainLight;
+	// нет необходимости создавать каждый кадр структуру размером почти в киллобайт на стеке.
+	light& RainLight = *RImplementation.Lights.rain_light;
 
 	//static const float	source_offset		= 40.f;
 

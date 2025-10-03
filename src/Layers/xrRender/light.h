@@ -61,8 +61,6 @@ public:
 
 	float virtual_size;
 
-	bool b_spatial_move;
-
 #if (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 	float			falloff;			// precalc to make light equal to zero at light range
 	float	        attenuation0;		// Constant attenuation		
@@ -130,6 +128,8 @@ public:
 
 #if RENDER!=R_R1
 	void get_sectors();
+	bool has_light_visible_from_sectors();
+	xrCriticalSection sectors_lc;
 #endif	//	RENDER!=R_R1
 
 	virtual void set_shadow(bool b);

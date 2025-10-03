@@ -21,6 +21,8 @@ void CLight_DB::Load(IReader* fs)
 	// Lights itself
 	sun_original = NULL;
 	sun_adapted = NULL;
+	rain_light = xr_new<light>();
+	rain_light->set_type(IRender_Light::DIRECT);
 	{
 		F = fs->open_chunk(fsL_LIGHT_DYNAMIC);
 
@@ -165,6 +167,8 @@ void CLight_DB::Unload()
 	v_hemi.clear();
 	sun_original.destroy();
 	sun_adapted.destroy();
+	rain_light->destroy(false);
+	rain_light = nullptr;
 }
 
 light* CLight_DB::Create()
@@ -194,6 +198,8 @@ void CLight_DB::add_light(light* L)
 	if (RImplementation.o.noshadows) L->flags.bShadow = FALSE;
 	if (L->flags.bStatic && !ps_r2_ls_flags.test(R2FLAG_R1LIGHTS)) return;
 	if(Device.vCameraPosition.distance_to_sqr(L->SpatialComponent->spatial.sphere.P)>_sqr(g_pGamePersistent->Environment().CurrentEnv->fog_distance)) return;
+
+	if (!L->has_light_visible_from_sectors()) return;
 
 	L->export_(package);
 }

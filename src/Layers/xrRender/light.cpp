@@ -50,7 +50,6 @@ light::light()
 	X.S.posY = 0;
 	X.S.size = SMAP_adapt_max;
 #endif // (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
-	b_spatial_move = true;
 	RImplementation.v_all_lights.push_back(this);
 }
 
@@ -141,7 +140,7 @@ void light::set_active(bool a)
 
 		flags.bActive = true;
 		spatial_register();
-		b_spatial_move = true;
+		spatial_move();
 		//Msg("!!! L-register: %X",u32(this));
 
 #ifdef DEBUG
@@ -163,18 +162,18 @@ void light::set_active(bool a)
 
 void light::set_position(const Fvector& P)
 {
-	float eps = EPS_L; //_max	(range*0.001f,EPS_L);
+	float eps = EPS; //_max	(range*0.001f,EPS_L);
 	if (position.similar(P, eps))return;
 	position.set(P);
-	b_spatial_move = true;
+	spatial_move();
 }
 
 void light::set_range(float R)
 {
-	float eps = _max(range * 0.1f, EPS_L);
+	float eps = _max(range * 0.1f, EPS);
 	if (fsimilar(range, R, eps)) return;
 	range = R;
-	b_spatial_move = true;
+	spatial_move();
 };
 
 void light::set_cone(float angle)
@@ -182,7 +181,7 @@ void light::set_cone(float angle)
 	if (fsimilar(cone, angle)) return;
 	VERIFY(cone < deg2rad(121.f)); // 120 is hard limit for lights
 	cone = angle;
-	b_spatial_move = true;
+	spatial_move();
 }
 
 void light::set_rotation(const Fvector& D, const Fvector& R)
@@ -190,7 +189,7 @@ void light::set_rotation(const Fvector& D, const Fvector& R)
 	Fvector old_D = direction;
 	direction.normalize(D);
 	right.normalize(R);
-	if (!fsimilar(1.f, old_D.dotproduct(D), EPS_S)) b_spatial_move = true;
+	if (!fsimilar(1.f, old_D.dotproduct(D), EPS_S)) spatial_move();
 }
 
 void light::set_shadow(bool b)						
@@ -205,7 +204,7 @@ void light::set_shadow(bool b)
 			if (0==omnipart[0])
 			{
 				for (int f=0; f<6; f++)
-					omnipart[f] = xr_new<light> ();
+					omnipart[f] = xr_new<light>();
 			}
 		}
 		else
@@ -223,6 +222,8 @@ void light::set_shadow(bool b)
 #if RENDER!=R_R1
 void light::get_sectors()
 {
+	if(RImplementation.SectorsCount()<=1) return;
+	xrCriticalSectionGuard guard(&sectors_lc);
 	if(0==SpatialComponent->spatial.sector)
 		SpatialComponent->spatial_updatesector();
 
@@ -240,12 +241,25 @@ void light::get_sectors()
 		m_sectors = RImplementation.detectSectors_sphere(sector, position, Fvector().set(range, range, range));
 	}
 }
+
+bool light::has_light_visible_from_sectors()
+{
+	if (RImplementation.SectorsCount() <= 1) return true;
+	xrCriticalSectionGuard guard(&sectors_lc);
+	for (IRender_Sector* IRsector : m_sectors)
+	{
+		CSector* sector_ = (CSector*)IRsector;
+		if (PortalTraverser.i_marker == sector_->r_marker)
+		{
+			return true;
+		}
+	}
+	return false;
+}
 #endif
 
 void light::spatial_move()
 {
-	if(!b_spatial_move) return;
-	b_spatial_move = false;
 	switch (flags.type)
 	{
 		case IRender_Light::REFLECTED:
