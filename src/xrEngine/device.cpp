@@ -36,6 +36,8 @@
 #include "CustomHUD.h"
 #include "IGame_Level.h"
 
+#include "Rain.h"
+
 #pragma comment( lib, "d3dx9.lib" )
 
 ENGINE_API CRenderDevice Device;
@@ -399,13 +401,22 @@ void CRenderDevice::on_idle()
 		PROF_THREAD("Secondary Task 1");
 
 		{
-			PROF_EVENT("mt_ParallelRenderThread seqParallelRender");
+			PROF_EVENT("seqParallelRender");
 			for (auto& it : Device.seqParallelRender)
 				it();
 		}
 
 		{
-			PROF_EVENT("mt_ParallelRenderThread Process Particles");
+			PROF_EVENT("CEffect_Rain::UpdateItems");
+			if (g_pGamePersistent &&
+				g_pGamePersistent->pEnvironment &&
+				g_pGamePersistent->pEnvironment->eff_Rain
+			)
+				g_pGamePersistent->pEnvironment->eff_Rain->UpdateItems();
+		}
+
+		{
+			PROF_EVENT("Process Particles");
 			if (Device.ParticleWorkerCallback)
 				Device.ParticleWorkerCallback();
 		}

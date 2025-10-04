@@ -21,7 +21,7 @@ const int max_particles = 1000;
 const int particles_cache = 400;
 const float particles_time = .3f;
 
-int current_items;
+xr_atomic_u32 current_items;
 
 dxRainRender::dxRainRender()
 {
@@ -95,106 +95,13 @@ void dxRainRender::Render(CEffect_Rain& owner)
 	Fvector3 f_rain_color = g_pGamePersistent->Environment().CurrentEnv->rain_color;
 	u32 u_rain_color = color_rgba_f(f_rain_color.x, f_rain_color.y, f_rain_color.z, factor_visual);
 
-	// born _new_ if needed
-	float b_radius_wrap_sqr = _sqr((rain_radius * 1.5f));
-	if (owner.items.size() < current_items)
-	{
-		// owner.items.reserve		(desired_items);
-		while (owner.items.size() < current_items)
-		{
-			CEffect_Rain::Item one;
-			owner.Born(one, rain_radius, _drop_speed);
-			owner.items.push_back(one);
-		}
-	}
-
-	// build source plane
-	Fplane src_plane;
-	Fvector norm = {0.f, -1.f, 0.f};
-	Fvector upper;
-	upper.set(Device.vCameraPosition.x, Device.vCameraPosition.y + source_offset, Device.vCameraPosition.z);
-	src_plane.build(upper, norm);
-
 	// perform update
 	u32 vOffset;
 	FVF::LIT* verts = (FVF::LIT *)RCache.Vertex.Lock(desired_items * 4, hGeom_Rain->vb_stride, vOffset);
 	FVF::LIT* start = verts;
 	const Fvector& vEye = Device.vCameraPosition;
-	for (u32 I = 0; I < current_items; I++)
+	for (CEffect_Rain::Item& one : owner.items)
 	{
-		// physics and time control
-		CEffect_Rain::Item& one = owner.items[I];
-
-		if (one.dwTime_Hit < Device.dwTimeGlobal) 
-		{
-			owner.Hit(one.Phit);
-			if (current_items > desired_items) current_items--; // Hit something
-		}
-		if (one.dwTime_Life < Device.dwTimeGlobal)
-		{
-			owner.Born(one, rain_radius, _drop_speed);
-			if (current_items > desired_items) current_items--; // Out of life ( invalidated, never hit something, etc. )
-		}
-
-		// последняя дельта ??
-		//.		float xdt		= float(one.dwTime_Hit-Device.dwTimeGlobal)/1000.f;
-		//.		float dt		= Device.fTimeDelta;//xdt<Device.fTimeDelta?xdt:Device.fTimeDelta;
-		float dt = Device.fTimeDelta;
-		one.P.mad(one.D, one.fSpeed * dt);
-
-		Device.Statistic->TEST1.Begin();
-		Fvector wdir;
-		wdir.set(one.P.x - vEye.x, 0, one.P.z - vEye.z);
-		float wlen = wdir.square_magnitude();
-		if (wlen > b_radius_wrap_sqr)
-		{
-			wlen = _sqrt(wlen);
-			//.			Device.Statistic->TEST3.Begin();
-			if ((one.P.y - vEye.y) < sink_offset)
-			{
-				// need born
-				one.invalidate();
-			}
-			else
-			{
-				Fvector inv_dir, src_p;
-				inv_dir.invert(one.D);
-				wdir.div(wlen);
-				one.P.mad(one.P, wdir, -(wlen + rain_radius));
-				if (src_plane.intersectRayPoint(one.P, inv_dir, src_p))
-				{
-					float dist_sqr = one.P.distance_to_sqr(src_p);
-					float height = max_distance;
-					if (owner.RayPick(src_p, one.D, height, collide::rqtBoth))
-					{
-						if (_sqr(height) <= dist_sqr)
-						{
-							one.invalidate(); // need born
-							//							Log("1");
-						}
-						else
-						{
-							owner.RenewItem(one, height - _sqrt(dist_sqr),TRUE); // fly to point
-							//							Log("2",height-dist);
-						}
-					}
-					else
-					{
-						owner.RenewItem(one, max_distance - _sqrt(dist_sqr),FALSE); // fly ...
-						//						Log("3",1.5f*b_height-dist);
-					}
-				}
-				else
-				{
-					// need born
-					one.invalidate();
-					//					Log("4");
-				}
-			}
-			//.			Device.Statistic->TEST3.End();
-		}
-		Device.Statistic->TEST1.End();
-
 		// Build line
 		Fvector& pos_head = one.P;
 		Fvector pos_trail;
