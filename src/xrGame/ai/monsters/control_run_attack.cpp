@@ -81,11 +81,8 @@ void CControlRunAttack::on_event(ControlCom::EEventType type, ControlCom::IEvent
 	switch (type)
 	{
 	case ControlCom::eventAnimationEnd:
-		if (m_min_delay > 0 && m_max_delay > 0)
-		{
-			m_time_next_attack = time() + Random.randI(m_min_delay, m_max_delay);
-			m_man->notify(ControlCom::eventRunAttackEnd, 0);
-		}
+		m_time_next_attack = time() + Random.randI(m_min_delay, m_max_delay);
+		m_man->notify(ControlCom::eventRunAttackEnd, 0);
 		break;
 	case ControlCom::eventAnimationStart: // handle blend params
 		{
