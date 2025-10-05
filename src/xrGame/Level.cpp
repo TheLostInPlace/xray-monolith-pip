@@ -1044,9 +1044,6 @@ void CLevel::OnFrame()
 #endif
 	g_pGamePersistent->Environment().SetGameTime(GetEnvironmentGameDayTimeSec(),
 	                                             game->GetEnvironmentGameTimeFactor());
-	Device.Statistic->TEST0.Begin();
-	BulletManager().CommitRenderSet();
-	Device.Statistic->TEST0.End();
 	// update static sounds
 	if (!g_dedicated_server)
 	{
