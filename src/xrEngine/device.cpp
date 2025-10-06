@@ -414,12 +414,6 @@ void CRenderDevice::on_idle()
 			)
 				g_pGamePersistent->pEnvironment->eff_Rain->UpdateItems();
 		}
-
-		{
-			PROF_EVENT("Process Particles");
-			if (Device.ParticleWorkerCallback)
-				Device.ParticleWorkerCallback();
-		}
 	});
 
 	secondary_tasks.run([]()
@@ -455,6 +449,12 @@ void CRenderDevice::on_idle()
 		{
 			PROF_EVENT("seqFrameMT");
 			Device.seqFrameMT.Process(rp_Frame);
+		}
+
+		{
+			PROF_EVENT("Process Particles");
+			if (Device.ParticleWorkerCallback)
+				Device.ParticleWorkerCallback();
 		}
 	});
 
