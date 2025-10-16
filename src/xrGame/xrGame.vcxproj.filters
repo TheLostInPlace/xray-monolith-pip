@@ -9435,10 +9435,16 @@
     <ClCompile Include="WeaponStatMgun.cpp">
       <Filter>Core\Client\Objects\items &amp; weapons\Weapons\StationaryMgun</Filter>
     </ClCompile>
+    <ClCompile Include="WeaponStatMgunBarrel.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\StationaryMgun</Filter>
+    </ClCompile>
     <ClCompile Include="WeaponStatMgunFire.cpp">
       <Filter>Core\Client\Objects\items &amp; weapons\Weapons\StationaryMgun</Filter>
     </ClCompile>
     <ClCompile Include="WeaponStatMgunIR.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\StationaryMgun</Filter>
+    </ClCompile>
+    <ClCompile Include="WeaponStatMgunMisc.cpp">
       <Filter>Core\Client\Objects\items &amp; weapons\Weapons\StationaryMgun</Filter>
     </ClCompile>
     <ClCompile Include="Artefact.cpp">
@@ -9682,6 +9688,9 @@
       <Filter>Core\Client\Objects\vehicles\Car</Filter>
     </ClCompile>
     <ClCompile Include="CarExhaust.cpp">
+      <Filter>Core\Client\Objects\vehicles\Car</Filter>
+    </ClCompile>
+    <ClCompile Include="CarNew.cpp">
       <Filter>Core\Client\Objects\vehicles\Car</Filter>
     </ClCompile>
     <ClCompile Include="CarInput.cpp">

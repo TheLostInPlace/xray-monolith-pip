@@ -1,3 +1,5 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/themrdemonized/xray-monolith)
+
 # STALKER-Anomaly-modded-exes
 
 Here is list of exe files for Anomaly 1.5.3 that contains all engine patches by community required for some advanced mods to work.
@@ -145,7 +147,7 @@ The original engine is used in S.T.A.L.K.E.R. Call of Pripyat game released by G
 * Commits from IX-Ray Engine: https://github.com/ixray-team/ixray-1.6-stcop
 
 <!----><a name="script_debugger_instructions"></a>
-* Debug scripts with VSCode and LuaPanda, support by IX-Ray Platform. How to use it: https://igigog.github.io/anomaly-modding-book/tutorials/addons/lua-debugger.html
+* Debug scripts with VSCode and LuaPanda, support by IX-Ray Platform. How to use it: https://anomaly-modding-book.netlify.app/docs/tutorials/addons/lua-debugger
 
 * All settings can be edited from the game options in "Modded Exes" tab
 ![image](http://puu.sh/JC40Y/9315119150.jpg)
@@ -161,15 +163,78 @@ The original engine is used in S.T.A.L.K.E.R. Call of Pripyat game released by G
 ## How to make my own modded exe?
 
 How to compile exes:
-1. Fork this xray-monolith
-2. Clone the fork onto your pc
-3. Run `git submodule update --init --recursive` to pull git submodules
-4. Select all-in-one-vs2022-wpo branch
-5. Compile the engine-vs2022.sln solution with VS2022
-6. For batch builds of all configurations use `batch_build.bat` in xray-monolith repo
-7. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
+1. Fork this xray-monolith repo, the main branch is `all-in-one-vs2022-wpo`
+2. Download the fork onto your pc
+3. Open Git Bash or terminal in the downloaded folder and run `git submodule update --init --recursive` to pull git submodules
+4. Compile the engine-vs2022.sln solution with VS2022
+5. For batch builds of all configurations use `batch_build.bat`
+6. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.09.28**
+* Moved ubgl key to custom21, fix issue https://github.com/themrdemonized/xray-monolith/issues/380, you need to rebind UBGL key again in the settings
+* RavenAscendant: additional 100 entries, will let the bind console command bind actions to values that won't get triggered by keyboard input but can be triggered from the `level.press_action` functions
+
+**2025.09.26**
+* Disabled `ZoomTexture` check in `set_scope_ui` Lua export
+* Xottab-DUTY: Fixed loading of fast (shadow) geometry (https://github.com/themrdemonized/xray-monolith/pull/379)
+
+**2025.09.19**
+* Possible fix for issue https://github.com/themrdemonized/xray-monolith/issues/375
+
+**2025.09.15**
+* Various Luabind fixes and improvements
+* Simplify `script_callback_ex` templates
+* Fix `PHItemList` compile warning
+* SaloEater: Update link to new wiki (https://github.com/themrdemonized/xray-monolith/pull/372)
+
+**2025.09.12**
+* OXR: Replace shared_str with xr_string for log and fs, fixed https://github.com/themrdemonized/xray-monolith/issues/366
+* Fix https://github.com/themrdemonized/xray-monolith/issues/369
+
+**2025.09.10**
+* ProfLander: Fix CALifeMonsterBrain::process_task segfault (https://github.com/themrdemonized/xray-monolith/pull/364)
+
+**2025.09.06**
+* Replaced luabind with non-Boost version (https://github.com/ixray-team/ixray-1.6-stcop/commit/2f61f5f781130468c945720b76d23ce4bbea95b1)
+* Disable `std::terminate` in luabind (https://github.com/ixray-team/ixray-1.6-stcop/commit/723fb65a8b9ebb89dda8f03cbb4b1bebceabacdc)
+* Removed Boost library
+* Added nullptr check in `CMonsterCorpseMemory::add_corpse`
+* LVutner:
+  * ADD: [Render] Added missing s_position samplers (https://github.com/themrdemonized/xray-monolith/pull/358)
+  * UPD: [Render] r_ComputePass fix (https://github.com/themrdemonized/xray-monolith/pull/359)
+
+**2025.08.30**
+* MFB: Smart covers now have fixed enter min/max distances (https://github.com/themrdemonized/xray-monolith/pull/352)
+* Lucy: Level Script Attachments (https://github.com/themrdemonized/xray-monolith/pull/353)
+* ProfLander: ImGui: Implement grouping API (https://github.com/themrdemonized/xray-monolith/pull/354)
+
+**2025.08.27**
+* Fix https://github.com/themrdemonized/xray-monolith/issues/346
+* NLTP_Ashes:
+  * Export multiple CWeaponKnife related functions to Lua (https://github.com/themrdemonized/xray-monolith/pull/347)
+  * Export HUD elements to Lua (https://github.com/themrdemonized/xray-monolith/pull/351)
+* Ncenka: Fix for Random Music in Main Menu (https://github.com/themrdemonized/xray-monolith/pull/345)
+
+**2025.08.23**
+* Kutez: Callback Priority System (https://github.com/themrdemonized/xray-monolith/pull/339)
+* Ncenka: PDA UI XML Setter (https://github.com/themrdemonized/xray-monolith/pull/343)
+
+**2025.08.21**
+* GhenTuong:
+  * CCar CWeaponStatMgun changes (https://github.com/themrdemonized/xray-monolith/pull/310)
+  * Export API functions and minor improvements (https://github.com/themrdemonized/xray-monolith/pull/340)
+* Antglobes: Sun values (https://github.com/themrdemonized/xray-monolith/pull/341)
+
+**2025.08.19**
+* Removed `parallel_for` in HOM and `particle_actions_collection` in favor of single-threaded loop for less thread creation overhead
+* Replace `unordered_map` implementation to `unordered_node_map`, same with set
+* Removed double loop in volumetric lights code
+* Disabled update of actor stamina while driving cars (https://github.com/ixray-team/ixray-1.6-stcop/commit/6c1ad01adffba180df8f47a58f33e66e69def949)
+* Fix crash when NPC trying use destroyed object (https://github.com/ixray-team/ixray-1.6-stcop/commit/d34966c3e255568f60df7bd0e33d61bebfe98afa)
+* ProfLander: Add string count to stat_memory and OOM handler (https://github.com/themrdemonized/xray-monolith/pull/337)
+* Kutez: Added the new "volume_mult" property for HUD sound call back. Removed all indoor framework related engine side code (https://github.com/themrdemonized/xray-monolith/pull/338)
+
 **2025.08.12u1**
 * Fix issue https://github.com/themrdemonized/xray-monolith/issues/333
 * v2v3v4: fix ctd when zooming into about to be destroyed object with detector scopes

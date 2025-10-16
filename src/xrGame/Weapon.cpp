@@ -1576,7 +1576,7 @@ bool CWeapon::Action(u16 cmd, u32 flags)
 			}
 			return true;
 		}
-	case kCUSTOM16:
+	case kCUSTOM21:
 		if (useSeparateUBGLKeybind && flags & CMD_START && !IsPending())
 		{
 			if (pActor && pActor->is_safemode())
@@ -3193,7 +3193,7 @@ void CWeapon::ZoomDec()
 
 	float f = GetZoomFactor() * power + delta;
 	if (useNewZoomDeltaAlgorithm)
-		f = GetZoomFactor() * power / max(delta, 0.001f);
+		f = GetZoomFactor() * power / std::max(delta, 0.001f);
 
 	clamp(f, m_zoom_params.m_fScopeZoomFactor * power, min_zoom_factor);
 	SetZoomFactor(f / power);
@@ -3296,7 +3296,7 @@ Fmatrix CWeapon::RayTransform()
 	return matrix;
 }
 
-// v2v3v4: fix ctd when into about to be destroyed object with detector scopes
+// v2v3v4: fix ctd when zooming into about to be destroyed object with detector scopes
 void CWeapon::net_Relcase(CObject* object)
 {
 	CHudItem::net_Relcase(object);

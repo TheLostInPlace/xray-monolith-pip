@@ -483,6 +483,14 @@ void CScriptGameObject::SetMovementSpeed(Fvector vel)
 
 CHolderCustom* CScriptGameObject::get_current_holder()
 {
+#ifdef HOLDERCUSTOM_NEW
+	CAI_Stalker *stalker = smart_cast<CAI_Stalker *>(&object());
+	if (stalker)
+	{
+		return stalker->Holder();
+	}
+#endif
+
 	CActor* actor = smart_cast<CActor*>(&object());
 
 	if (actor)
@@ -575,6 +583,19 @@ CCar* CScriptGameObject::get_car()
 	}
 	return car;
 }
+
+#ifdef STATIONARYMGUN_NEW
+CWeaponStatMgun *CScriptGameObject::get_stmgun()
+{
+	CWeaponStatMgun *stm = smart_cast<CWeaponStatMgun *>(&object());
+	if (!stm)
+	{
+		ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "CGameObject : cannot access class member get_stmgun!");
+		NODEFAULT;
+	}
+	return stm;
+}
+#endif
 
 #ifdef DEBUG
 void CScriptGameObject::debug_planner				(const script_planner *planner)
@@ -773,12 +794,12 @@ void CScriptGameObject::set_scope_ui(LPCSTR scope_texture) {
 		return;
 	}
 
-	auto wnd = weapon->ZoomTexture();
+	/*auto wnd = weapon->ZoomTexture();
 	if (!wnd) {
 		ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError,
 										"CScriptGameObject : set_scope_ui no scope found for %s!", weapon->cNameSect().c_str());
 		return;
-	}
+	}*/
 
 	weapon->SetUIScope(scope_texture);
 }
