@@ -171,6 +171,10 @@ How to compile exes:
 6. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.10.23**
+* Added `bolt` and `bolt_bullet` to spawn antifreeze ignore list
+* SaloEater: World2UI With Depth lua method (https://github.com/themrdemonized/xray-monolith/pull/386)
+
 **2025.09.28**
 * Moved ubgl key to custom21, fix issue https://github.com/themrdemonized/xray-monolith/issues/380, you need to rebind UBGL key again in the settings
 * RavenAscendant: additional 100 entries, will let the bind console command bind actions to values that won't get triggered by keyboard input but can be triggered from the `level.press_action` functions
