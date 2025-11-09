@@ -1,3 +1,5 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/themrdemonized/xray-monolith)
+
 # STALKER-Anomaly-modded-exes
 
 Here is list of exe files for Anomaly 1.5.3 that contains all engine patches by community required for some advanced mods to work.
@@ -169,6 +171,21 @@ How to compile exes:
 6. For successful compilation, **the latest build tools with MFC and ATL libraries is required**
 
 ## Changelog
+**2025.10.28**
+* Temporary revert https://github.com/themrdemonized/xray-monolith/pull/326 to fix issue https://github.com/themrdemonized/xray-monolith/issues/387#issuecomment-3453531244
+
+**2025.10.23**
+* Added `bolt` and `bolt_bullet` to spawn antifreeze ignore list
+* SaloEater: World2UI With Depth lua method (https://github.com/themrdemonized/xray-monolith/pull/386)
+
+**2025.09.28**
+* Moved ubgl key to custom21, fix issue https://github.com/themrdemonized/xray-monolith/issues/380, you need to rebind UBGL key again in the settings
+* RavenAscendant: additional 100 entries, will let the bind console command bind actions to values that won't get triggered by keyboard input but can be triggered from the `level.press_action` functions
+
+**2025.09.26**
+* Disabled `ZoomTexture` check in `set_scope_ui` Lua export
+* Xottab-DUTY: Fixed loading of fast (shadow) geometry (https://github.com/themrdemonized/xray-monolith/pull/379)
+
 **2025.09.19**
 * Possible fix for issue https://github.com/themrdemonized/xray-monolith/issues/375
 

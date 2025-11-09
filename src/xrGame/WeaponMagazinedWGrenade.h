@@ -1,7 +1,7 @@
 #pragma once
 #include "weaponmagazined.h"
 #include "rocketlauncher.h"
-#include "WeaponGrenadeLauncher.h"
+
 
 class CWeaponFakeGrenade;
 
@@ -10,10 +10,6 @@ class CWeaponMagazinedWGrenade : public CWeaponMagazined,
                                  public CRocketLauncher
 {
 	typedef CWeaponMagazined inherited;
-
-private:
-	virtual bool is_grenade(const char* sect);
-
 public:
 	CWeaponMagazinedWGrenade(ESoundTypes eSoundType = SOUND_TYPE_WEAPON_SUBMACHINEGUN);
 	virtual ~CWeaponMagazinedWGrenade();
@@ -39,6 +35,7 @@ public:
 	virtual bool UseScopeTexture();
 	virtual float CurrentZoomFactor();
 	virtual u8 GetCurrentHudOffsetIdx();
+	virtual void FireEnd();
 	void LaunchGrenade();
 
 	virtual void OnStateSwitch(u32 S, u32 oldState);
