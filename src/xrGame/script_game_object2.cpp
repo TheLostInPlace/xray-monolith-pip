@@ -794,12 +794,12 @@ void CScriptGameObject::set_scope_ui(LPCSTR scope_texture) {
 		return;
 	}
 
-	auto wnd = weapon->ZoomTexture();
+	/*auto wnd = weapon->ZoomTexture();
 	if (!wnd) {
 		ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError,
 										"CScriptGameObject : set_scope_ui no scope found for %s!", weapon->cNameSect().c_str());
 		return;
-	}
+	}*/
 
 	weapon->SetUIScope(scope_texture);
 }
