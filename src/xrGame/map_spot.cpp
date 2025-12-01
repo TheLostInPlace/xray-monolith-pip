@@ -386,6 +386,7 @@ void CComplexMapSpot::SetWndSize(const Fvector2& size)
 		return;
 	}
 	float k = size.x / m_originSize.x;
+	xrCriticalSectionGuard guard(csUi);
 
 	for (WINDOW_LIST_it it = m_ChildWndList.begin(); m_ChildWndList.end() != it; ++it)
 	{

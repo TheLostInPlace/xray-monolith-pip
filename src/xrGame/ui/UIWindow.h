@@ -149,7 +149,11 @@ public:
 	virtual void DetachChild(CUIWindow* pChild);
 	virtual bool IsChild(CUIWindow* pChild) const;
 	virtual void DetachAll();
-	int GetChildNum() { return m_ChildWndList.size(); }
+	int GetChildNum()
+	{
+		xrCriticalSectionGuard guard(csUi);
+		return m_ChildWndList.size();
+	}
 
 	void SetParent(CUIWindow* pNewParent);
 	CUIWindow* GetParent() const { return m_pParentWnd; }
@@ -275,9 +279,12 @@ public:
 	IC bool GetCustomDraw() const { return m_bCustomDraw; }
 	IC void SetCustomDraw(bool b) { m_bCustomDraw = b; }
 
+	xrCriticalSection csUi;
+
 protected:
 	IC void SafeRemoveChild(CUIWindow* child)
 	{
+		xrCriticalSectionGuard guard(csUi);
 		WINDOW_LIST_it it = std::find(m_ChildWndList.begin(), m_ChildWndList.end(), child);
 		if (it != m_ChildWndList.end()) m_ChildWndList.erase(it);
 	};
