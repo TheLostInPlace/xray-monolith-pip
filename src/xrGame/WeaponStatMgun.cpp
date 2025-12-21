@@ -440,12 +440,9 @@ void CWeaponStatMgun::net_Destroy()
 
 #ifdef HOLDERCUSTOM_NEW
 #ifdef STATIONARYMGUN_NEW
-	if (Owner())
+	if (Owner() && Owner()->cast_stalker())
 	{
-		if (Owner()->cast_stalker() && !Owner()->cast_stalker()->g_Alive())
-		{
-			Owner()->cast_stalker()->detach_Holder();
-		}
+		Owner()->cast_stalker()->detach_Holder();
 	}
 #endif
 #endif
@@ -1274,12 +1271,14 @@ void CWeaponStatMgun::UpdateAnimation()
 			}
 		}
 		stalker->movement().set_desired_direction(0);
+#if 0
 		SBoneRotation &body = stalker->movement().m_body;
 		SBoneRotation &head = stalker->movement().m_head;
 		body.target.yaw = 0.0F;
 		body.target.pitch = 0.0F;
 		head.target.yaw = 0.0F;
 		head.target.pitch = 0.0F;
+#endif
 	}
 }
 
