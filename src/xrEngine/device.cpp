@@ -430,13 +430,30 @@ void CRenderDevice::on_idle()
 		else
 			rr = refresh_rate;
 
-		time_span = std::chrono::duration_cast<std::chrono::duration<float>>(tcurrentf - tlastf);
-		while (time_span.count() < rr)
+
+
+		const auto target = tlastf + std::chrono::duration_cast<std::chrono::high_resolution_clock::duration>(
+			std::chrono::duration<float>(rr)
+		);
+
+		while (true)
 		{
-			tcurrentf = std::chrono::high_resolution_clock::now();
-			time_span = std::chrono::duration_cast<std::chrono::duration<float>>(tcurrentf - tlastf);
+			auto now = std::chrono::high_resolution_clock::now();
+			if (now >= target)
+			{
+				break;
+			}				
+			auto remaining = target - now;
+			if (remaining > std::chrono::microseconds(500))
+			{
+				/* i don't know how precise those timers are, lets leave a small gap for the more accurate spin lock here */
+				std::this_thread::sleep_for(remaining - std::chrono::microseconds(200));
+			}
+			/* we'll implicitly spin lock instead here */
 		}
+
 		tlastf = std::chrono::high_resolution_clock::now();
+
 	}
 #endif // ECO_RENDER END
 
