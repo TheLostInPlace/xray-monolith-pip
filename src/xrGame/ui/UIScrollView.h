@@ -58,11 +58,7 @@ public:
 	void ScrollToBegin();
 	void ScrollToEnd();
 	bool GetVertFlip() { return !!m_flags.test(eVertFlip); }
-	bool Empty()
-	{
-		xrCriticalSectionGuard guard(m_pad->csUi);
-		return m_pad->GetChildWndList().empty();
-	}
+	bool Empty() { return m_pad->GetChildWndList().empty(); }
 	u32 GetSize();
 	WINDOW_LIST& Items() { return m_pad->GetChildWndList(); }
 	CUIWindow* GetItem(u32 idx);

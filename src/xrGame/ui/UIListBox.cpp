@@ -147,7 +147,6 @@ u32 CUIListBox::GetSelectedIDX()
 	u32 _idx = 0;
 	CUIWindow* w = GetSelected();
 
-	xrCriticalSectionGuard guard(m_pad->csUi);
 	for (WINDOW_LIST_it it = m_pad->GetChildWndList().begin(); m_pad->GetChildWndList().end() != it; ++it)
 	{
 		CUIListBoxItem* item = smart_cast<CUIListBoxItem*>(*it);
@@ -175,7 +174,6 @@ void CUIListBox::MoveSelectedUp()
 	CUIWindow* w = GetSelected();
 	if (!w) return;
 
-	xrCriticalSectionGuard guard(m_pad->csUi);
 	WINDOW_LIST::reverse_iterator it = m_pad->GetChildWndList().rbegin();
 	WINDOW_LIST::reverse_iterator it_e = m_pad->GetChildWndList().rend();
 	WINDOW_LIST::reverse_iterator it_prev = it;
@@ -200,7 +198,6 @@ void CUIListBox::MoveSelectedDown()
 	CUIWindow* w = GetSelected();
 	if (!w) return;
 	//.	R_ASSERT(!m_flags.test(CUIScrollView::eMultiSelect));
-	xrCriticalSectionGuard guard(m_pad->csUi);
 	WINDOW_LIST_it it = m_pad->GetChildWndList().begin();
 	WINDOW_LIST_it it_e = m_pad->GetChildWndList().end();
 	WINDOW_LIST_it it_next;
@@ -239,7 +236,6 @@ int CUIListBox::GetIdxByTAG(u32 tag_val)
 {
 	int result = -1;
 
-	xrCriticalSectionGuard guard(m_pad->csUi);
 	for (WINDOW_LIST_it it = m_pad->GetChildWndList().begin(); m_pad->GetChildWndList().end() != it; ++it)
 	{
 		CUIListBoxItem* item = smart_cast<CUIListBoxItem*>(*it);
@@ -257,7 +253,6 @@ int CUIListBox::GetIdxByTAG(u32 tag_val)
 
 CUIListBoxItem* CUIListBox::GetItemByTAG(u32 tag_val)
 {
-	xrCriticalSectionGuard guard(m_pad->csUi);
 	for (WINDOW_LIST_it it = m_pad->GetChildWndList().begin(); m_pad->GetChildWndList().end() != it; ++it)
 	{
 		CUIListBoxItem* item = smart_cast<CUIListBoxItem*>(*it);
@@ -273,7 +268,6 @@ CUIListBoxItem* CUIListBox::GetItemByTAG(u32 tag_val)
 CUIListBoxItem* CUIListBox::GetItemByIDX(int idx)
 {
 	int _idx = 0;
-	xrCriticalSectionGuard guard(m_pad->csUi);
 	for (WINDOW_LIST_it it = m_pad->GetChildWndList().begin(); m_pad->GetChildWndList().end() != it; ++it)
 	{
 		CUIListBoxItem* item = smart_cast<CUIListBoxItem*>(*it);
@@ -289,7 +283,6 @@ CUIListBoxItem* CUIListBox::GetItemByIDX(int idx)
 
 CUIListBoxItem* CUIListBox::GetItemByText(LPCSTR txt)
 {
-	xrCriticalSectionGuard guard(m_pad->csUi);
 	for (WINDOW_LIST_it it = m_pad->GetChildWndList().begin(); m_pad->GetChildWndList().end() != it; ++it)
 	{
 		CUIListBoxItem* item = smart_cast<CUIListBoxItem*>(*it);
@@ -337,7 +330,6 @@ CGameFont* CUIListBox::GetFont()
 float CUIListBox::GetLongestLength()
 {
 	float len = 0;
-	xrCriticalSectionGuard guard(m_pad->csUi);
 	for (WINDOW_LIST_it it = m_pad->GetChildWndList().begin(); m_pad->GetChildWndList().end() != it; ++it)
 	{
 		CUIListBoxItem* item = smart_cast<CUIListBoxItem*>(*it);

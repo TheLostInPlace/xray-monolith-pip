@@ -278,7 +278,6 @@ void CUIStatsPlayerList::Update()
 	if (n < 0)
 	{
 		n = abs(n);
-		xrCriticalSectionGuard guard(m_pad->csUi);
 		for (int i = 0; i<n; i++)
 			m_pad->DetachChild(*(m_pad->GetChildWndList().begin()));
 		m_flags.set(eNeedRecalc,TRUE);
@@ -296,7 +295,6 @@ void CUIStatsPlayerList::Update()
 
 	R_ASSERT(items.size() == m_pad->GetChildNum());
 
-	xrCriticalSectionGuard guard(m_pad->csUi);
 	WINDOW_LIST_it it = m_pad->GetChildWndList().begin();
 	ItemIt itit = items.begin();
 
