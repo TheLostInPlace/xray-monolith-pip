@@ -219,16 +219,18 @@ DECLARE_SPECIALIZATION(CObject, ISpatial, dcast_CObject)
 template < typename _Ty >
 using clean_type_t = typename std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t< _Ty >>>;
 
+#pragma warning(push)
+#pragma warning(disable : 4702)
 template < typename _To, typename _From >
 __forceinline _To smart_cast(_From* ptr)
 {
     // Try dedicated cast function if available
-    if constexpr (has_dcast<_To, _From*>::value) {
+    if constexpr (has_dcast<_To, _From*>::value)
         return has_dcast<_To, _From*>::cast(ptr);
-    }
-
-	return fast_dynamic_cast<_To>(ptr);
+    else
+	    return fast_dynamic_cast<_To>(ptr);
 };
+#pragma warning(pop)
 
 // const T*
 template < typename _To, typename _From >
