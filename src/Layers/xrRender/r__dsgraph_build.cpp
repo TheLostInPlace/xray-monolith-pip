@@ -79,7 +79,7 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 			break;
 
 		case 1: {
-			RGraph.mapHUD.insert(pVisual, DSGraphItem{ SSA, val_pObject, xform, sh, i_mask[CDSGraphManager::fl_hud] });
+			RGraph.mapHUD.insert(EPS, DSGraphItemVisual{ SSA, val_pObject, xform, sh, i_mask[CDSGraphManager::fl_hud], pVisual });
 
 			// SSS: Deprecated
 			/*if (!sh->passes[0]->ps->hud_disabled)
@@ -95,12 +95,12 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 		}
 
 		case 2: {
-			RGraph.mapScopeHUD.insert(pVisual, DSGraphItem{ SSA, val_pObject, xform, sh, i_mask[CDSGraphManager::fl_hud] });
+			RGraph.mapScopeHUD.insert(distSQ, DSGraphItemVisual{ SSA, val_pObject, xform, sh, i_mask[CDSGraphManager::fl_hud], pVisual });
 			return;
 		}
 
 		case 3: {
-			RGraph.mapScopeHUDSorted.Sorted.insert(pVisual, DSGraphItem{ SSA, val_pObject, xform, sh, i_mask[CDSGraphManager::fl_hud] });
+			RGraph.mapScopeHUDSorted.insert(distSQ, DSGraphItemVisual{ SSA, val_pObject, xform, sh, i_mask[CDSGraphManager::fl_hud], pVisual });
 			return;
 		}
 	}
@@ -130,7 +130,7 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 			if (i_mask[CDSGraphManager::fl_cam])
 				RGraph.mapCamAttached.insert(pVisual, DSGraphItem{ SSA, val_pObject, xform, sh, i_mask[CDSGraphManager::fl_cam] });
 			else
-				RGraph.mapHUD.insert(pVisual, DSGraphItem{ SSA, val_pObject, xform, sh, i_mask[CDSGraphManager::fl_hud] });
+				RGraph.mapHUD.insert(distSQ, DSGraphItemVisual{ SSA, val_pObject, xform, sh, i_mask[CDSGraphManager::fl_hud], pVisual });
 
 			/*
 #if RENDER==R_R4

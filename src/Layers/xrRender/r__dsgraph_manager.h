@@ -101,6 +101,7 @@ public:
 	};
 
 	void r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItems& graph, bool _clear = true);
+	void r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItemsVisual& graph, bool _clear = true);
 	void r_dsgraph_capture_hud();
 	void r_dsgraph_render_hud();
 	void r_dsgraph_render_hud_ui();

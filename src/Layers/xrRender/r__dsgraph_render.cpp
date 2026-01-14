@@ -101,6 +101,29 @@ void CDSGraphManager::r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItems& 
 	RCache.set_xform_world(Fidentity);
 }
 
+void CDSGraphManager::r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItemsVisual& graph, bool _clear)
+{
+	for (R_dsgraph::mapDSGraphItemsVisual::TNode& item : graph)
+	{
+		dxRender_Visual* V = item.val.pVisual;
+		VERIFY(V && V->shader._get());
+		RCache.set_Element(item.val.pSE);
+		RCache.set_xform_world(*item.val.pMatrix);
+		RImplementation.apply_object(item.val.pObject);
+		RImplementation.apply_lmaterial();
+		//if (item.b_hud_mode)
+		//{
+		//	//new feature
+		//}
+		V->Render(calcLOD(item.key, V->vis.sphere.R));
+	}
+
+	if (_clear)
+		graph.clear();
+
+	RCache.set_xform_world(Fidentity);
+}
+
 void CDSGraphManager::r_dsgraph_render_graph(RenderQueueArray& queues, u32 _priority, bool _clear, bool static_geometry)
 {
 	RCache.set_xform_world(Fidentity);
@@ -317,7 +340,7 @@ void CDSGraphManager::r_dsgraph_render_ScopeSorted()  //  Redotix99: for 3D Shad
 
 	// Rendering
 	RImplementation.rmNear();
-	r_dsgraph_render_graph_sorted(RGraph.mapScopeHUDSorted.Sorted);
+	r_dsgraph_render_graph_sorted(RGraph.mapScopeHUDSorted);
 	RImplementation.rmNormal();
 }
 #endif

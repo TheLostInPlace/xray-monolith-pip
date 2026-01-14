@@ -76,6 +76,11 @@ namespace R_dsgraph
 		bool b_hud_mode = false;
 	};
 
+	struct DSGraphItemVisual : public DSGraphItem
+	{
+		dxRender_Visual* pVisual = nullptr;
+	};
+
 #if defined(USE_DX10) || defined(USE_DX11)	//	DX10 needs shader signature to propperly bind deometry to shader
 	using vs_type = SVS*;
 	using gs_type = ID3DGeometryShader*;
@@ -88,7 +93,8 @@ namespace R_dsgraph
 #endif	//	USE_DX10
 	using ps_type = ID3DPixelShader*;
 
-	using mapDSGraphItems = FixedMAP<dxRender_Visual*,DSGraphItem, render_allocator>;
+	using mapDSGraphItems = FixedMAP<dxRender_Visual*, DSGraphItem, render_allocator>;
+	using mapDSGraphItemsVisual = FixedMAP<float, DSGraphItemVisual, render_allocator>;
 
 	struct RenderPacket
 	{
@@ -158,17 +164,19 @@ namespace R_dsgraph
 		RenderQueueArray mapStaticPasses;
 		RenderQueueArray mapDynamicPasses;
 
-		mapDSGraphItems mapHUD;
+		mapDSGraphItemsVisual mapHUD;
 		mapSorted mapHUDSorted;
 
 		mapDSGraphItems mapLOD;
 
 		// Anomaly
-		mapDSGraphItems mapScopeHUD;
 		mapDSGraphItems mapCamAttached;
-		mapWater_T mapWater;
-		mapSorted mapScopeHUDSorted;
 		mapSorted mapCamAttachedSorted;
+		mapWater_T mapWater;
+#ifdef USE_DX11
+		mapDSGraphItemsVisual mapScopeHUDSorted;
+		mapDSGraphItemsVisual mapScopeHUD;
+#endif
 
 		IC void clear_graph(RenderQueueArray& queue, u32 _priority)
 		{
@@ -207,16 +215,15 @@ namespace R_dsgraph
 			mapHUDSorted.Emissive.clear();
 			mapHUDSorted.Sorted.clear();
 			mapHUDSorted.Distort.clear();
-			mapScopeHUD.clear();
 			mapCamAttached.clear();
-			mapScopeHUDSorted.Wmark.clear();
-			mapScopeHUDSorted.Emissive.clear();
-			mapScopeHUDSorted.Sorted.clear();
-			mapScopeHUDSorted.Distort.clear();
 			mapCamAttachedSorted.Wmark.clear();
 			mapCamAttachedSorted.Emissive.clear();
 			mapCamAttachedSorted.Sorted.clear();
 			mapCamAttachedSorted.Distort.clear();
+#ifdef USE_DX11
+			mapScopeHUD.clear();
+			mapScopeHUDSorted.clear();
+#endif
 		}
 
 		IC void clear_lods()
