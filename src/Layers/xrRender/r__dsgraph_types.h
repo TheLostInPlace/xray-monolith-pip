@@ -153,7 +153,6 @@ namespace R_dsgraph
 			mapDSGraphItems<T> Wmark;
 			mapDSGraphItems<T> Emissive;
 			mapDSGraphItems<T> Distort;
-			mapDSGraphItems<T> ScopeLens;
 		};
 
 		mapSorted<float> mapStaticSorted;

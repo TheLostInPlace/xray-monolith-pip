@@ -56,11 +56,6 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 			RGraph.mapDynamicSorted.Distort.push_back(DSGraphItem<float>{ distSQ, SSA, val_pObject, pVisual, xform, sh_d, i_mask[CDSGraphManager::fl_hud] });
 	}
 
-	/*if (sh_d && sh_d->flags.bScopeMask && i_mask[CDSGraphManager::fl_deffered] && i_mask[CDSGraphManager::fl_hud])
-	{
-		RGraph.mapHUDSorted.ScopeLens.push_back(DSGraphItem{ SSA, val_pObject, pVisual, xform, sh_d, i_mask[CDSGraphManager::fl_hud] });
-	}*/
-
 	// Select shader
 	ShaderElement* sh = RImplementation.rimp_select_sh_dynamic(pVisual, distSQ);
 
