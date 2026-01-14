@@ -24,7 +24,7 @@ void CDSGraphManager::r_dsgraph_render_lods(bool _setup_zb, bool _clear)
 
 	// *** Fill VB and generate groups
 	u32 shid = _setup_zb ? SE_R1_LMODELS : SE_R1_NORMAL_LQ;
-	FLOD* firstV = (FLOD*)RGraph.mapLOD[0].key;
+	FLOD* firstV = (FLOD*)RGraph.mapLOD[0].pVisual;
 	ref_selement cur_S = firstV->shader->E[shid];
 	float ssaRange = r_ssaLOD_A - r_ssaLOD_B;
 	if (ssaRange < EPS_S) ssaRange = EPS_S;
@@ -39,7 +39,7 @@ void CDSGraphManager::r_dsgraph_render_lods(bool _setup_zb, bool _clear)
 
 	for (u32 i = 0; i < RGraph.mapLOD.size(); i++)
 	{
-		const u32 iBatchSize = _min(RGraph.mapLOD.size() - i, uiImpostersFit);
+		const u32 iBatchSize = _min((u32)RGraph.mapLOD.size() - i, uiImpostersFit);
 		int cur_count = 0;
 		u32 vOffset;
 		FLOD::_hw* V = (FLOD::_hw*)RCache.Vertex.Lock(iBatchSize * uiVertexPerImposter, firstV->geom->vb_stride,
@@ -48,25 +48,25 @@ void CDSGraphManager::r_dsgraph_render_lods(bool _setup_zb, bool _clear)
 		for (u32 j = 0; j < iBatchSize; ++j, ++i)
 		{
 			// sort out redundancy
-			R_dsgraph::mapDSGraphItems::TNode& P = RGraph.mapLOD[i];
+			auto& P = RGraph.mapLOD[i];
 
-			if (P.key->shader->E[shid] == cur_S)
+			if (P.pVisual->shader->E[shid] == cur_S)
 				cur_count++;
 			else
 			{
 				lstLODgroups.push_back(cur_count);
-				cur_S = P.key->shader->E[shid];
+				cur_S = P.pVisual->shader->E[shid];
 				cur_count = 1;
 			}
 
 			// calculate alpha
-			float ssaDiff = P.val.ssa - r_ssaLOD_B;
+			float ssaDiff = P.ssa - r_ssaLOD_B;
 			float scale = ssaDiff / ssaRange;
 			int iA = iFloor((1 - scale) * 255.f);
 			u32 uA = u32(clampr(iA, 0, 255));
 
 			// calculate direction and shift
-			FLOD* lodV = (FLOD*)P.key;
+			FLOD* lodV = (FLOD*)P.pVisual;
 			Fvector Ldir, shift;
 			Ldir.sub(lodV->vis.sphere.P, Device.vCameraPosition).normalize();
 			shift.mul(Ldir, -.5f * lodV->vis.sphere.R);
@@ -121,10 +121,10 @@ void CDSGraphManager::r_dsgraph_render_lods(bool _setup_zb, bool _clear)
 
 			for (int& p_count : lstLODgroups)
 			{
-				u32 uiNumPasses = RGraph.mapLOD[current].key->shader->E[shid]->passes.size();
+				u32 uiNumPasses = RGraph.mapLOD[current].pVisual->shader->E[shid]->passes.size();
 				if (uiPass < uiNumPasses)
 				{
-					RCache.set_Element(RGraph.mapLOD[current].key->shader->E[shid], uiPass);
+					RCache.set_Element(RGraph.mapLOD[current].pVisual->shader->E[shid], uiPass);
 					RCache.set_Geometry(firstV->geom);
 					RCache.Render(D3DPT_TRIANGLELIST, vCurOffset, 0, 4 * p_count, 0, 2 * p_count);
 				}

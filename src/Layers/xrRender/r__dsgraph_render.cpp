@@ -78,44 +78,29 @@ void __fastcall water_node(mapSorted_Node* N)
 	V->Render(calcLOD(N->key, V->vis.sphere.R));
 }
 
-void CDSGraphManager::r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItems& graph, bool _clear)
+template<typename T>
+void CDSGraphManager::r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItems<T>& graph, bool _clear, bool reverse)
 {
-	for (R_dsgraph::mapDSGraphItems::TNode& item : graph)
+	static auto sortFunc = [](const R_dsgraph::DSGraphItem<T>& a, const R_dsgraph::DSGraphItem<T>& b) { return a.sortKey < b.sortKey; };
+	static auto sortFuncReverse = [](const R_dsgraph::DSGraphItem<T>& a, const R_dsgraph::DSGraphItem<T>& b) { return a.sortKey > b.sortKey; };
+	if (reverse)
+		std::sort(graph.begin(), graph.end(), sortFuncReverse);
+	else
+		std::sort(graph.begin(), graph.end(), sortFunc);
+
+	for (R_dsgraph::DSGraphItem<T>& item : graph)
 	{
-		dxRender_Visual* V = item.key;
+		dxRender_Visual* V = item.pVisual;
 		VERIFY(V && V->shader._get());
-		RCache.set_Element(item.val.pSE);
-		RCache.set_xform_world(*item.val.pMatrix);
-		RImplementation.apply_object(item.val.pObject);
+		RCache.set_Element(item.pSE);
+		RCache.set_xform_world(*item.pMatrix);
+		RImplementation.apply_object(item.pObject);
 		RImplementation.apply_lmaterial();
 		//if (item.b_hud_mode)
 		//{
 		//	//new feature
 		//}
-		V->Render(calcLOD(item.val.ssa, V->vis.sphere.R));
-	}
-
-	if (_clear)
-		graph.clear();
-
-	RCache.set_xform_world(Fidentity);
-}
-
-void CDSGraphManager::r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItemsVisual& graph, bool _clear)
-{
-	for (R_dsgraph::mapDSGraphItemsVisual::TNode& item : graph)
-	{
-		dxRender_Visual* V = item.val.pVisual;
-		VERIFY(V && V->shader._get());
-		RCache.set_Element(item.val.pSE);
-		RCache.set_xform_world(*item.val.pMatrix);
-		RImplementation.apply_object(item.val.pObject);
-		RImplementation.apply_lmaterial();
-		//if (item.b_hud_mode)
-		//{
-		//	//new feature
-		//}
-		V->Render(calcLOD(item.key, V->vis.sphere.R));
+		V->Render(calcLOD(item.sortKey, V->vis.sphere.R));
 	}
 
 	if (_clear)
@@ -213,12 +198,12 @@ void CDSGraphManager::r_dsgraph_render_graph(RenderQueueArray& queues, u32 _prio
 			auto& item = packet.item;
 			if (!static_geometry)
 			{
-				RCache.set_xform_world(*item.item.pMatrix);
-				RImplementation.apply_object(item.item.pObject);
+				RCache.set_xform_world(*item.pMatrix);
+				RImplementation.apply_object(item.pObject);
 				RImplementation.apply_lmaterial();
 			}
 
-			float LOD = calcLOD(item.item.ssa, item.pVisual->vis.sphere.R);
+			float LOD = calcLOD(item.ssa, item.pVisual->vis.sphere.R);
 #ifdef USE_DX11
 			RCache.LOD.set_LOD(LOD);
 #endif
@@ -301,8 +286,8 @@ void CDSGraphManager::r_dsgraph_render_sorted(bool render_hud)
 	{
 		PROF_EVENT("r_dsgraph_render_sorted");
 		// Rendering
-		r_dsgraph_render_graph_sorted(RGraph.mapStaticSorted.Sorted);
-		r_dsgraph_render_graph_sorted(RGraph.mapDynamicSorted.Sorted);
+		r_dsgraph_render_graph_sorted(RGraph.mapStaticSorted.Sorted, true, true);
+		r_dsgraph_render_graph_sorted(RGraph.mapDynamicSorted.Sorted, true, true);
 	}
 
 	if (render_hud)
@@ -316,7 +301,7 @@ void CDSGraphManager::r_dsgraph_render_sorted(bool render_hud)
 		CHudInitializer initializer(2);
 
 		// Rendering
-		r_dsgraph_render_graph_sorted(RGraph.mapCamAttachedSorted.Sorted);
+		r_dsgraph_render_graph_sorted(RGraph.mapCamAttachedSorted.Sorted, true, true);
 		RImplementation.rmNormal();
 	}
 }
@@ -340,7 +325,7 @@ void CDSGraphManager::r_dsgraph_render_ScopeSorted()  //  Redotix99: for 3D Shad
 
 	// Rendering
 	RImplementation.rmNear();
-	r_dsgraph_render_graph_sorted(RGraph.mapScopeHUDSorted);
+	r_dsgraph_render_graph_sorted(RGraph.mapScopeHUDSorted, true, true);
 	RImplementation.rmNormal();
 }
 #endif
@@ -354,7 +339,7 @@ void CDSGraphManager::r_dsgraph_render_sorted_hud()
 	CHudInitializer initializer(true);
 
 	RImplementation.rmNear();
-	r_dsgraph_render_graph_sorted(RGraph.mapHUDSorted.Sorted);
+	r_dsgraph_render_graph_sorted(RGraph.mapHUDSorted.Sorted, true, true);
 	RImplementation.rmNormal();
 }
 
@@ -364,16 +349,19 @@ void CDSGraphManager::r_dsgraph_render_emissive(bool clear, bool renderHUD)
 {
 	PROF_EVENT("r_dsgraph_render_emissive");
 #if	RENDER!=R_R1
-	r_dsgraph_render_graph_sorted(RGraph.mapStaticSorted.Emissive);
-	r_dsgraph_render_graph_sorted(RGraph.mapDynamicSorted.Emissive);
-	//	HACK: Calculate this only once
-	CHudInitializer initializer(true);
+	r_dsgraph_render_graph_sorted(RGraph.mapStaticSorted.Emissive, clear);
+	r_dsgraph_render_graph_sorted(RGraph.mapDynamicSorted.Emissive, clear);
+	{
+		//	HACK: Calculate this only once
+		CHudInitializer initializer(true);
 
-	RImplementation.rmNear();
-	r_dsgraph_render_graph_sorted(RGraph.mapHUDSorted.Emissive);
+		RImplementation.rmNear();
+		r_dsgraph_render_graph_sorted(RGraph.mapHUDSorted.Emissive, clear);
+		RImplementation.rmNormal();
+	}
+	
 	if (renderHUD)
-		r_dsgraph_render_graph_sorted(RGraph.mapHUDSorted.Sorted);
-	RImplementation.rmNormal();
+		r_dsgraph_render_sorted_hud();
 #endif
 }
 
@@ -412,8 +400,8 @@ void CDSGraphManager::r_dsgraph_render_distort()
 {
 	PROF_EVENT("r_dsgraph_render_distort");
 	// Rendering
-	r_dsgraph_render_graph_sorted(RGraph.mapStaticSorted.Distort);
-	r_dsgraph_render_graph_sorted(RGraph.mapDynamicSorted.Distort);
+	r_dsgraph_render_graph_sorted(RGraph.mapStaticSorted.Distort, true, true);
+	r_dsgraph_render_graph_sorted(RGraph.mapDynamicSorted.Distort, true, true);
 	//	HACK: Calculate this only once
 	CHudInitializer initalizer(true);
 

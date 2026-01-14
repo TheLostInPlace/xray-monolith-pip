@@ -67,18 +67,16 @@ class dxRender_Visual;
 
 namespace R_dsgraph
 {
+	template<typename T>
 	struct DSGraphItem
 	{
+		T sortKey;
 		float ssa = 0.0f;
 		IRenderable* pObject = nullptr;
+		dxRender_Visual* pVisual = nullptr;
 		Fmatrix* pMatrix = nullptr;
 		ShaderElement* pSE = nullptr;
 		bool b_hud_mode = false;
-	};
-
-	struct DSGraphItemVisual : public DSGraphItem
-	{
-		dxRender_Visual* pVisual = nullptr;
 	};
 
 #if defined(USE_DX10) || defined(USE_DX11)	//	DX10 needs shader signature to propperly bind deometry to shader
@@ -93,8 +91,11 @@ namespace R_dsgraph
 #endif	//	USE_DX10
 	using ps_type = ID3DPixelShader*;
 
-	using mapDSGraphItems = FixedMAP<dxRender_Visual*, DSGraphItem, render_allocator>;
-	using mapDSGraphItemsVisual = FixedMAP<float, DSGraphItemVisual, render_allocator>;
+	template<typename T>
+	using mapDSGraphItems = xr_concurrent_vector<DSGraphItem<T>, typename render_allocator::template helper<DSGraphItem<T>>::result>;
+
+	template<typename T>
+	using mapDSGraphItemsMap = FixedMAP<T, DSGraphItem<T>, render_allocator>;
 
 	struct RenderPacket
 	{
@@ -102,11 +103,7 @@ namespace R_dsgraph
 		u64 sortKey;
 
 		// Visual data
-		struct
-		{
-			dxRender_Visual* pVisual;
-			DSGraphItem item;
-		} item;
+		DSGraphItem<dxRender_Visual*> item;
 
 		// Pointers to resources (previously keys in FixedMAPs)
 #if defined(USE_DX10) || defined(USE_DX11)
@@ -148,34 +145,35 @@ namespace R_dsgraph
 
 	struct DynamicSceneRgraph
 	{
+		template<typename T>
 		struct mapSorted
 		{
-			mapDSGraphItems Sorted;
+			mapDSGraphItems<T> Sorted;
 
-			mapDSGraphItems Wmark;
-			mapDSGraphItems Emissive;
-			mapDSGraphItems Distort;
-			mapDSGraphItems ScopeLens;
+			mapDSGraphItems<T> Wmark;
+			mapDSGraphItems<T> Emissive;
+			mapDSGraphItems<T> Distort;
+			mapDSGraphItems<T> ScopeLens;
 		};
 
-		mapSorted mapStaticSorted;
-		mapSorted mapDynamicSorted;
+		mapSorted<float> mapStaticSorted;
+		mapSorted<float> mapDynamicSorted;
 
 		RenderQueueArray mapStaticPasses;
 		RenderQueueArray mapDynamicPasses;
 
-		mapDSGraphItemsVisual mapHUD;
-		mapSorted mapHUDSorted;
+		mapDSGraphItems<float> mapHUD;
+		mapSorted<float> mapHUDSorted;
 
-		mapDSGraphItems mapLOD;
+		mapDSGraphItems<float> mapLOD;
 
 		// Anomaly
-		mapDSGraphItems mapCamAttached;
-		mapSorted mapCamAttachedSorted;
+		mapDSGraphItems<float> mapCamAttached;
+		mapSorted<float> mapCamAttachedSorted;
 		mapWater_T mapWater;
 #ifdef USE_DX11
-		mapDSGraphItemsVisual mapScopeHUDSorted;
-		mapDSGraphItemsVisual mapScopeHUD;
+		mapDSGraphItems<float> mapScopeHUDSorted;
+		mapDSGraphItems<float> mapScopeHUD;
 #endif
 
 		IC void clear_graph(RenderQueueArray& queue, u32 _priority)

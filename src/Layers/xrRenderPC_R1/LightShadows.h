@@ -13,7 +13,7 @@ class CLightShadows
 {
 private:
 	//
-	typedef R_dsgraph::mapDSGraphItems::TNode NODE;
+	typedef R_dsgraph::mapDSGraphItemsMap<dxRender_Visual*>::TNode NODE;
 
 	struct caster
 	{
