@@ -143,7 +143,9 @@ CUIWindow::~CUIWindow()
 	if (parent && !ad)
 		parent->CUIWindow::DetachChild(this);
 
-	DetachAll();
+	if (!m_ChildWndList.empty()) {
+		DetachAll();
+	}
 
 	if (GetPPMode())
 		MainMenu()->UnregisterPPDraw(this);
