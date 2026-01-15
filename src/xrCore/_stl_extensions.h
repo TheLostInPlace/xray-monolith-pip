@@ -182,8 +182,8 @@ public:
 
 	u32 size() const { return (u32)inherited::size(); }
 
-	void clear_and_free() { inherited::clear(); }
-	void clear_not_free() { erase(begin(), end()); }
+	void clear_and_free() { inherited::clear(); inherited::shrink_to_fit(); }
+	void clear_not_free() { inherited::clear(); }
 
 	void clear_and_reserve()
 	{
