@@ -181,6 +181,7 @@ namespace R_dsgraph
 			for (u32 iPass = 0; iPass < SHADER_PASSES_MAX; ++iPass)
 			{
 				queue[_priority][iPass].clear();
+				queue[_priority][iPass].shrink_to_fit();
 			}
 		}
 
@@ -193,6 +194,11 @@ namespace R_dsgraph
 			mapDynamicSorted.Emissive.clear();
 			mapDynamicSorted.Sorted.clear();
 			mapDynamicSorted.Distort.clear();
+
+			mapDynamicSorted.Wmark.shrink_to_fit();
+			mapDynamicSorted.Emissive.shrink_to_fit();
+			mapDynamicSorted.Sorted.shrink_to_fit();
+			mapDynamicSorted.Distort.shrink_to_fit();
 		}
 		IC void clear_static()
 		{
@@ -203,6 +209,11 @@ namespace R_dsgraph
 			mapStaticSorted.Emissive.clear();
 			mapStaticSorted.Sorted.clear();
 			mapStaticSorted.Distort.clear();
+
+			mapStaticSorted.Wmark.shrink_to_fit();
+			mapStaticSorted.Emissive.shrink_to_fit();
+			mapStaticSorted.Sorted.shrink_to_fit();
+			mapStaticSorted.Distort.shrink_to_fit();
 		}
 
 		IC void clear_hud()
@@ -217,15 +228,30 @@ namespace R_dsgraph
 			mapCamAttachedSorted.Emissive.clear();
 			mapCamAttachedSorted.Sorted.clear();
 			mapCamAttachedSorted.Distort.clear();
+
+			mapHUD.shrink_to_fit();
+			mapHUDSorted.Wmark.shrink_to_fit();
+			mapHUDSorted.Emissive.shrink_to_fit();
+			mapHUDSorted.Sorted.shrink_to_fit();
+			mapHUDSorted.Distort.shrink_to_fit();
+			mapCamAttached.shrink_to_fit();
+			mapCamAttachedSorted.Wmark.shrink_to_fit();
+			mapCamAttachedSorted.Emissive.shrink_to_fit();
+			mapCamAttachedSorted.Sorted.shrink_to_fit();
+			mapCamAttachedSorted.Distort.shrink_to_fit();
 #ifdef USE_DX11
 			mapScopeHUD.clear();
 			mapScopeHUDSorted.clear();
+
+			mapScopeHUD.shrink_to_fit();
+			mapScopeHUDSorted.shrink_to_fit();
 #endif
 		}
 
 		IC void clear_lods()
 		{
 			mapLOD.clear();
+			mapLOD.shrink_to_fit();
 		}
 
 		IC void clear()
