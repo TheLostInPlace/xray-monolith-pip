@@ -241,7 +241,7 @@ void CDSGraphManager::r_dsgraph_insert_static(dxRender_Visual *pVisual)
 #if RENDER==R_R4
 	if (sh->flags.isWater && RImplementation.o.ssfx_water)
 	{
-		RGraph.mapWater.insertInAnyWay(distSQ, { SSA, nullptr, pVisual, Fidentity, Fidentity, sh });
+		RGraph.mapWater.push_back(DSGraphItem<float>{ distSQ, SSA, nullptr, pVisual, &Fidentity, sh });
 		return;
 	}
 #endif

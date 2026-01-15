@@ -125,24 +125,6 @@ namespace R_dsgraph
 	using RenderQueue = xr_concurrent_vector<RenderPacket, render_allocator::helper<RenderPacket>::result>;
 	using RenderQueueArray = xr_array<xr_array<RenderQueue, SHADER_PASSES_MAX>, 2>;
 
-	// demonized: fix this to use vectors
-	struct _MatrixItem
-	{
-		float ssa;
-		IRenderable* pObject;
-		dxRender_Visual* pVisual;
-		Fmatrix Matrix;				// matrix (copy)
-		Fmatrix PrevMatrix;
-	};
-	struct _MatrixItemS : public _MatrixItem
-	{
-		ShaderElement* se;
-	};
-	using mapSorted_T = FixedMAP<float, _MatrixItemS, render_allocator>;
-	using mapSorted_Node = mapSorted_T::TNode;
-	using mapWater_T = FixedMAP<float, _MatrixItemS, render_allocator>;
-	using mapWater_Node = mapWater_T::TNode;
-
 	struct DynamicSceneRgraph
 	{
 		template<typename T>
@@ -169,7 +151,7 @@ namespace R_dsgraph
 		// Anomaly
 		mapDSGraphItems<float> mapCamAttached;
 		mapSorted<float> mapCamAttachedSorted;
-		mapWater_T mapWater;
+		mapDSGraphItems<float> mapWater;
 #ifdef USE_DX11
 		mapDSGraphItems<float> mapScopeHUDSorted;
 		mapDSGraphItems<float> mapScopeHUD;

@@ -28,56 +28,6 @@ ICF float calcLOD(float ssa/*fDistSq*/, float R)
 	return _sqrt(clampr((ssa - r_ssaGLOD_end) / (r_ssaGLOD_start - r_ssaGLOD_end), 0.f, 1.f));
 }
 
-
-
-void __fastcall water_node_ssr(mapSorted_Node* N)
-{
-#ifdef USE_DX11
-	VERIFY(N);
-	dxRender_Visual* V = N->val.pVisual;
-	VERIFY(V);
-
-	RCache.set_Shader(RImplementation.Target->s_ssfx_water_ssr);
-
-	RCache.set_xform_world(N->val.Matrix);
-	RImplementation.apply_object(N->val.pObject);
-	RImplementation.apply_lmaterial();
-
-	RCache.set_c("cam_pos", RImplementation.Target->Position_previous.x, RImplementation.Target->Position_previous.y, RImplementation.Target->Position_previous.z, 0.0f);
-
-	// Previous matrix data
-	RCache.set_c("m_current", RImplementation.Target->Matrix_current);
-	RCache.set_c("m_previous", RImplementation.Target->Matrix_previous);
-
-	V->Render(calcLOD(N->key, V->vis.sphere.R));
-#endif
-}
-
-void __fastcall water_node(mapSorted_Node* N)
-{
-	VERIFY(N);
-	dxRender_Visual* V = N->val.pVisual;
-	VERIFY(V);
-
-#ifdef USE_DX11
-	if (RImplementation.o.ssfx_water)
-	{
-		RCache.set_Shader(RImplementation.Target->s_ssfx_water);
-	}
-#endif
-
-	RCache.set_xform_world(N->val.Matrix);
-	RImplementation.apply_object(N->val.pObject);
-	RImplementation.apply_lmaterial();
-
-	// Wind settings
-	float WindDir = g_pGamePersistent->Environment().CurrentEnv->wind_direction;
-	float WindVel = g_pGamePersistent->Environment().CurrentEnv->wind_velocity;
-	RCache.set_c("wind_setup", WindDir, WindVel, 0, 0);
-
-	V->Render(calcLOD(N->key, V->vis.sphere.R));
-}
-
 template<typename T>
 void CDSGraphManager::r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItems<T>& graph, bool _clear, bool reverse)
 {
@@ -367,12 +317,60 @@ void CDSGraphManager::r_dsgraph_render_emissive(bool clear, bool renderHUD)
 
 void CDSGraphManager::r_dsgraph_render_water_ssr()
 {
-	RGraph.mapWater.traverseLR(water_node_ssr);
+#ifdef USE_DX11
+	PROF_EVENT("r_dsgraph_render_water_ssr");
+	static auto sortFunc = [](const R_dsgraph::DSGraphItem<float>& a, const R_dsgraph::DSGraphItem<float>& b) { return a.sortKey < b.sortKey; };
+	std::sort(RGraph.mapWater.begin(), RGraph.mapWater.end(), sortFunc);
+	for (R_dsgraph::DSGraphItem<float>& N : RGraph.mapWater)
+	{
+		dxRender_Visual* V = N.pVisual;
+		VERIFY(V);
+
+		RCache.set_Shader(RImplementation.Target->s_ssfx_water_ssr);
+
+		RCache.set_xform_world(*N.pMatrix);
+		RImplementation.apply_object(N.pObject);
+		RImplementation.apply_lmaterial();
+
+		RCache.set_c("cam_pos", RImplementation.Target->Position_previous.x, RImplementation.Target->Position_previous.y, RImplementation.Target->Position_previous.z, 0.0f);
+
+		// Previous matrix data
+		RCache.set_c("m_current", RImplementation.Target->Matrix_current);
+		RCache.set_c("m_previous", RImplementation.Target->Matrix_previous);
+
+		V->Render(calcLOD(N.ssa, V->vis.sphere.R));
+	}
+#endif
 }
 
 void CDSGraphManager::r_dsgraph_render_water()
 {
-	RGraph.mapWater.traverseLR(water_node);
+	PROF_EVENT("r_dsgraph_render_water_ssr");
+	static auto sortFunc = [](const R_dsgraph::DSGraphItem<float>& a, const R_dsgraph::DSGraphItem<float>& b) { return a.sortKey < b.sortKey; };
+	std::sort(RGraph.mapWater.begin(), RGraph.mapWater.end(), sortFunc);
+	for (R_dsgraph::DSGraphItem<float>& N : RGraph.mapWater)
+	{
+		dxRender_Visual* V = N.pVisual;
+		VERIFY(V);
+
+#ifdef USE_DX11
+		if (RImplementation.o.ssfx_water)
+		{
+			RCache.set_Shader(RImplementation.Target->s_ssfx_water);
+		}
+#endif
+
+		RCache.set_xform_world(*N.pMatrix);
+		RImplementation.apply_object(N.pObject);
+		RImplementation.apply_lmaterial();
+
+		// Wind settings
+		float WindDir = g_pGamePersistent->Environment().CurrentEnv->wind_direction;
+		float WindVel = g_pGamePersistent->Environment().CurrentEnv->wind_velocity;
+		RCache.set_c("wind_setup", WindDir, WindVel, 0, 0);
+
+		V->Render(calcLOD(N.ssa, V->vis.sphere.R));
+	}
 	RGraph.mapWater.clear();
 }
 
