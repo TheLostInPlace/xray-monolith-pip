@@ -36,37 +36,9 @@ public:
 	ref_shader								f_shader;
 	ref_geom								f_geom;
 
-	CDSGraphManager(u32 options, u32 doptions, bool(&& mask)[7]) : i_options(options), i_doptions(doptions) {
+	CDSGraphManager(u32 options, u32 doptions, bool(&& mask)[7]) : i_options(options), i_doptions(doptions)
+	{
 		std::copy(mask, mask + 7, i_mask);
-		for (u32 iPass = 0; iPass < SHADER_PASSES_MAX; ++iPass)
-		{
-			RGraph.mapStaticPasses[0][iPass].reserve(32);
-			RGraph.mapStaticPasses[1][iPass].reserve(32);
-			RGraph.mapDynamicPasses[0][iPass].reserve(32);
-			RGraph.mapDynamicPasses[1][iPass].reserve(32);
-		}
-		RGraph.mapDynamicSorted.Wmark.reserve(32);
-		RGraph.mapDynamicSorted.Emissive.reserve(32);
-		RGraph.mapDynamicSorted.Sorted.reserve(32);
-		RGraph.mapDynamicSorted.Distort.reserve(32);
-		RGraph.mapStaticSorted.Wmark.reserve(32);
-		RGraph.mapStaticSorted.Emissive.reserve(32);
-		RGraph.mapStaticSorted.Sorted.reserve(32);
-		RGraph.mapStaticSorted.Distort.reserve(32);
-		RGraph.mapHUD.reserve(32);
-		RGraph.mapHUDSorted.Wmark.reserve(32);
-		RGraph.mapHUDSorted.Emissive.reserve(32);
-		RGraph.mapHUDSorted.Sorted.reserve(32);
-		RGraph.mapHUDSorted.Distort.reserve(32);
-		RGraph.mapCamAttached.reserve(32);
-		RGraph.mapCamAttachedSorted.Wmark.reserve(32);
-		RGraph.mapCamAttachedSorted.Emissive.reserve(32);
-		RGraph.mapCamAttachedSorted.Sorted.reserve(32);
-		RGraph.mapCamAttachedSorted.Distort.reserve(32);
-		RGraph.mapScopeHUD.reserve(32);
-		RGraph.mapScopeHUDSorted.reserve(32);
-		RGraph.mapLOD.reserve(32);
-
 	}
 	void initialize();
 	void destroy();
