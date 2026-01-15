@@ -172,7 +172,7 @@ CUIWindow::~CUIWindow()
 void CUIWindow::Draw()
 {
 	PROF_EVENT("CUIWindow::Draw");
-	for(CUIWindow* W : GetChildWndList())
+	for(CUIWindow* W : m_ChildWndList)
 	{
 		if (!W)		continue;
 		if (!W->IsShown())		continue;
@@ -218,7 +218,7 @@ void CUIWindow::Update()
 		}
 	}
 
-	for (WINDOW_LIST_it it = GetChildWndList().begin(); GetChildWndList().end() != it; ++it)
+	for (WINDOW_LIST_it it = m_ChildWndList.begin(); m_ChildWndList.end() != it; ++it)
 	{
 		if (!(*it)->IsShown()) continue;
 		(*it)->Update();
@@ -246,7 +246,7 @@ void CUIWindow::AttachChild(CUIWindow* pChild)
 	}
 
 	pChild->SetParent(this);
-	GetChildWndList().push_back(pChild);
+	m_ChildWndList.push_back(pChild);
 }
 
 void CUIWindow::DetachChild(CUIWindow* pChild)
@@ -258,10 +258,13 @@ void CUIWindow::DetachChild(CUIWindow* pChild)
 	if (m_pMouseCapturer == pChild)
 		SetCapture(pChild, false);
 
-	//.	SafeRemoveChild			(pChild);
-	WINDOW_LIST_it it = std::find(GetChildWndList().begin(), GetChildWndList().end(), pChild);
-	R_ASSERT(it!=GetChildWndList().end());
-	GetChildWndList().erase(it);
+	{
+
+		//.	SafeRemoveChild			(pChild);
+		WINDOW_LIST_it it = std::find(m_ChildWndList.begin(), m_ChildWndList.end(), pChild);
+		R_ASSERT(it != m_ChildWndList.end());
+		m_ChildWndList.erase(it);
+	}
 
 	pChild->SetParent(NULL);
 
@@ -271,9 +274,9 @@ void CUIWindow::DetachChild(CUIWindow* pChild)
 
 void CUIWindow::DetachAll()
 {
-	while (!GetChildWndList().empty())
+	while (!m_ChildWndList.empty())
 	{
-		DetachChild(GetChildWndList().back());
+		DetachChild(m_ChildWndList.back());
 	}
 }
 
@@ -373,9 +376,9 @@ bool CUIWindow::OnMouseAction(float x, float y, EUIMessages mouse_action)
 	//Проверка на попадание мыши в окно,
 	//происходит в обратном порядке, чем рисование окон
 	//(последние в списке имеют высший приоритет)
-	WINDOW_LIST::reverse_iterator it = GetChildWndList().rbegin();
+	WINDOW_LIST::reverse_iterator it = m_ChildWndList.rbegin();
 
-	for (; it != GetChildWndList().rend(); ++it)
+	for (; it != m_ChildWndList.rend(); ++it)
 	{
 		CUIWindow* w = (*it);
 		Frect wndRect = w->GetWndRect();
@@ -489,9 +492,9 @@ bool CUIWindow::OnKeyboardAction(int dik, EUIMessages keyboard_action)
 		if (result) return true;
 	}
 
-	WINDOW_LIST::reverse_iterator it = GetChildWndList().rbegin();
+	WINDOW_LIST::reverse_iterator it = m_ChildWndList.rbegin();
 
-	for (; it != GetChildWndList().rend(); ++it)
+	for (; it != m_ChildWndList.rend(); ++it)
 	{
 		if ((*it)->IsEnabled())
 		{
@@ -514,9 +517,9 @@ bool CUIWindow::OnKeyboardHold(int dik)
 		if (result) return true;
 	}
 
-	WINDOW_LIST::reverse_iterator it = GetChildWndList().rbegin();
+	WINDOW_LIST::reverse_iterator it = m_ChildWndList.rbegin();
 
-	for (; it != GetChildWndList().rend(); ++it)
+	for (; it != m_ChildWndList.rend(); ++it)
 	{
 		if ((*it)->IsEnabled())
 		{
@@ -551,7 +554,7 @@ void CUIWindow::SetKeyboardCapture(CUIWindow* pChildWindow, bool capture_status)
 void CUIWindow::SendMessage(CUIWindow* pWnd, s16 msg, void* pData)
 {
 	//оповестить дочерние окна
-	for (WINDOW_LIST_it it = GetChildWndList().begin(); GetChildWndList().end() != it; ++it)
+	for (WINDOW_LIST_it it = m_ChildWndList.begin(); m_ChildWndList.end() != it; ++it)
 	{
 		if ((*it)->IsEnabled())
 			(*it)->SendMessage(pWnd, msg, pData);
@@ -566,9 +569,9 @@ CUIWindow* CUIWindow::GetCurrentMouseHandler()
 CUIWindow* CUIWindow::GetChildMouseHandler()
 {
 	CUIWindow* pWndResult;
-	WINDOW_LIST::reverse_iterator it = GetChildWndList().rbegin();
+	WINDOW_LIST::reverse_iterator it = m_ChildWndList.rbegin();
 
-	for (; it != GetChildWndList().rend(); ++it)
+	for (; it != m_ChildWndList.rend(); ++it)
 	{
 		Frect wndRect = (*it)->GetWndRect();
 		// very strange code.... i can't understand difference between
@@ -597,7 +600,7 @@ void CUIWindow::Reset()
 
 void CUIWindow::ResetAll()
 {
-	for (WINDOW_LIST_it it = GetChildWndList().begin(); GetChildWndList().end() != it; ++it)
+	for (WINDOW_LIST_it it = m_ChildWndList.begin(); m_ChildWndList.end() != it; ++it)
 	{
 		(*it)->Reset();
 	}
@@ -610,8 +613,8 @@ CUIWindow* CUIWindow::GetMessageTarget()
 
 bool CUIWindow::IsChild(CUIWindow* pPossibleChild) const
 {
-	WINDOW_LIST::const_iterator it = std::find(GetChildWndList().begin(), GetChildWndList().end(), pPossibleChild);
-	return it != GetChildWndList().end();
+	WINDOW_LIST::const_iterator it = std::find(m_ChildWndList.begin(), m_ChildWndList.end(), pPossibleChild);
+	return it != m_ChildWndList.end();
 }
 
 
@@ -620,8 +623,8 @@ CUIWindow* CUIWindow::FindChild(const shared_str name)
 	if (WindowName() == name)
 		return this;
 
-	WINDOW_LIST::const_iterator it = GetChildWndList().begin();
-	WINDOW_LIST::const_iterator it_e = GetChildWndList().end();
+	WINDOW_LIST::const_iterator it = m_ChildWndList.begin();
+	WINDOW_LIST::const_iterator it_e = m_ChildWndList.end();
 	for (; it != it_e; ++it)
 	{
 		CUIWindow* pRes = (*it)->FindChild(name);
@@ -644,7 +647,7 @@ void CUIWindow::SetParent(CUIWindow* pNewParent)
 
 void CUIWindow::ShowChildren(bool show)
 {
-	for (WINDOW_LIST_it it = GetChildWndList().begin(); GetChildWndList().end() != it; ++it)
+	for (WINDOW_LIST_it it = m_ChildWndList.begin(); m_ChildWndList.end() != it; ++it)
 		(*it)->Show(show);
 }
 

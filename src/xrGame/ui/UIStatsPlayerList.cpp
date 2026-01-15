@@ -278,7 +278,7 @@ void CUIStatsPlayerList::Update()
 	if (n < 0)
 	{
 		n = abs(n);
-		for (int i = 0; i < n; i++)
+		for (int i = 0; i<n; i++)
 			m_pad->DetachChild(*(m_pad->GetChildWndList().begin()));
 		m_flags.set(eNeedRecalc,TRUE);
 	}
