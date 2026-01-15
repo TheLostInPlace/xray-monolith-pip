@@ -703,6 +703,46 @@ void CUIXmlInit::InitAutoStaticGroup(CUIXml& xml_doc, LPCSTR path, int index, CU
 		}
 		node = curr_root->IterateChildren(node);
 	}
+	/*
+		CUIStatic* pUIStatic				= NULL;
+		string64							sname;
+		for(int i=0; i<items_num; i++)
+		{
+			pUIStatic						= xr_new<CUIStatic>();
+			InitStatic						(xml_doc, "auto_static", i, pUIStatic);
+			xr_sprintf						(sname,"auto_static_%d", i);
+			pUIStatic->SetWindowName		(sname);
+			pUIStatic->SetAutoDelete		(true);
+			pParentWnd->AttachChild			(pUIStatic);
+			pUIStatic						= NULL;
+		}
+	*/
+	xml_doc.SetLocalRoot(_stored_root);
+}
+
+void CUIXmlInit::InitAutoFrameLineGroup(CUIXml& xml_doc, LPCSTR path, int index, CUIWindow* pParentWnd)
+{
+	int items_num = xml_doc.GetNodesNum(path, index, "auto_frameline");
+	if (items_num == 0)
+	{
+		return;
+	}
+	XML_NODE* _stored_root = xml_doc.GetLocalRoot();
+	xml_doc.SetLocalRoot(xml_doc.NavigateToNode(path, index));
+
+	CUIFrameLineWnd* pUIFL = NULL;
+	string64 sname;
+	for (int i = 0; i < items_num; ++i)
+	{
+		pUIFL = xr_new<CUIFrameLineWnd>();
+		InitFrameLine(xml_doc, "auto_frameline", i, pUIFL);
+		xr_sprintf(sname, "auto_frameline_%d", i);
+		pUIFL->SetWindowName(sname);
+		pUIFL->SetAutoDelete(true);
+		pParentWnd->AttachChild(pUIFL);
+		pUIFL = NULL;
+	}
+
 	xml_doc.SetLocalRoot(_stored_root);
 }
 

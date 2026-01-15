@@ -76,6 +76,7 @@ public:
 
 
 	static void InitAutoStaticGroup(CUIXml& xml_doc, LPCSTR path, int index, CUIWindow* pParentWnd);
+	static void InitAutoFrameLineGroup(CUIXml& xml_doc, LPCSTR path, int index, CUIWindow* pParentWnd);
 
 	static float ApplyAlignX(float coord, u32 align);
 	static float ApplyAlignY(float coord, u32 align);
