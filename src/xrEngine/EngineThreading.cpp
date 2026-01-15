@@ -10,6 +10,8 @@
 #include "Irenderable.h"
 #include "../../Include/xrRender/Kinematics.h"
 
+BOOL mt_Scheduler = TRUE;
+
 void XRay::Engine::PreRenderThread()
 {
 	PROF_THREAD("Secondary Task 1");
@@ -112,8 +114,11 @@ void XRay::Engine::GameThread()
 
 	if (!Device.Paused())
 	{
-		PROF_EVENT("Sheduler");
-		::Engine.Sheduler.Update();
+		if (mt_Scheduler)
+		{
+			PROF_EVENT("Sheduler");
+			::Engine.Sheduler.Update();
+		}
 	}
 
 	{

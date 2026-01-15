@@ -40,6 +40,8 @@
 #endif // _EDITOR
 #include "gametype_chooser.h"
 
+extern BOOL mt_Scheduler;
+
 //#ifdef DEBUG_MEMORY_MANAGER
 //	static	void *	ode_alloc	(size_t size)								{ return Memory.mem_alloc(size,"ODE");			}
 //	static	void *	ode_realloc	(void *ptr, size_t oldsize, size_t newsize)	{ return Memory.mem_realloc(ptr,newsize,"ODE");	}
@@ -732,6 +734,12 @@ void CGamePersistent::OnFrame()
 
 	if (!Device.Paused())
 	{
+		if (!mt_Scheduler)
+		{
+			PROF_EVENT("Sheduler");
+			::Engine.Sheduler.Update();
+		}
+
 		// update weathers ambient
 		WeathersUpdate();
 	}
