@@ -63,15 +63,13 @@ void xrCriticalSection::Enter()
 # endif // DEBUG
     profiler temp(m_id);
 #endif // PROFILE_CRITICAL_SECTIONS
-    if (IsValid())
-	    EnterCriticalSection((CRITICAL_SECTION*)pmutex);
+	EnterCriticalSection((CRITICAL_SECTION*)pmutex);
 }
 
 void xrCriticalSection::Leave()
 {
 	//PROF_EVENT("xrCriticalSection::Leave");
-    if (IsValid())
-	    LeaveCriticalSection((CRITICAL_SECTION*)pmutex);
+	LeaveCriticalSection((CRITICAL_SECTION*)pmutex);
 }
 
 BOOL xrCriticalSection::TryEnter()
