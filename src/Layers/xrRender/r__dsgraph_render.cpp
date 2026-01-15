@@ -100,7 +100,7 @@ void CDSGraphManager::r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItems<T
 		//{
 		//	//new feature
 		//}
-		V->Render(calcLOD(item.sortKey, V->vis.sphere.R));
+		V->Render(calcLOD(item.ssa, V->vis.sphere.R));
 	}
 
 	if (_clear)
