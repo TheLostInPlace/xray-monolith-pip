@@ -621,7 +621,7 @@ void Startup()
 
 	// Main cycle
 	Msg("* [x-ray]: Starting Main Loop");
-	Memory.mem_usage();
+	//Memory.mem_usage();
 
 	Device.Run();
 
