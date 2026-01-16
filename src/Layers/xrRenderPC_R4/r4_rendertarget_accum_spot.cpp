@@ -35,12 +35,6 @@ void CRenderTarget::accum_spot(light* L)
 		}
 	}
 
-	CHudInitializer initalizer(false);
-	if (L->flags.bHudMode) {
-		initalizer.SetHudMode();
-		RImplementation.rmNear();
-	}
-
 	BOOL bIntersect = FALSE; //enable_scissor(L);
 	{
 		// setup xform
@@ -278,11 +272,6 @@ void CRenderTarget::accum_spot(light* L)
 	increment_light_marker();
 
 	u_DBT_disable();
-
-	if (L->flags.bHudMode) {
-		RImplementation.rmNormal();
-		initalizer.SetDefaultMode();
-	}
 }
 
 void CRenderTarget::accum_volumetric(light* L)

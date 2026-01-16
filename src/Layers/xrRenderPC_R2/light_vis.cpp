@@ -23,7 +23,7 @@ void light::vis_prepare()
 		vis.pending = false;
 		return;
 	}
-	if (!flags.bOccq || flags.bHudMode)
+	if (flags.bHudMode)
 	{
 		vis.visible = true;
 		vis.pending = false;
