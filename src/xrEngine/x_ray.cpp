@@ -635,6 +635,7 @@ void Startup()
 	// Destroy APP
 	xr_delete(g_SpatialSpacePhysic);
 	xr_delete(g_SpatialSpace);
+	xr_delete(g_SpatialSpaceLights);
 	DEL_INSTANCE(g_pGamePersistent);
 
 	xr_delete(pApp);
