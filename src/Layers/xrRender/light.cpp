@@ -14,6 +14,7 @@ light::light()
 	flags.bShadow = false;
 	flags.bVolumetric = false;
 	flags.bHudMode = false;
+	flags.bOccq = true;
 
 	position.set(0, -1000, 0);
 	direction.set(0, -1, 0);
@@ -28,6 +29,8 @@ light::light()
 	m_volumetric_distance = 1;
 
 	frame_render = 0;
+	ignore_object = nullptr;
+	for (int f=0; f<6; f++) decor_object[f] = nullptr;
 	m_parent = nullptr;
 	virtual_size = 0.1f;
 	omnipart_num = 0;
@@ -65,6 +68,8 @@ light::~light()
 #if (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 	m_sectors.clear();
 #endif // (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
+	ignore_object = nullptr;
+	for (int f=0; f<6; f++) decor_object[f] = nullptr;
 }
 
 void light::destroy(bool deffered)
@@ -549,6 +554,9 @@ void light::export_()
 					L->set_volumetric_quality(m_volumetric_quality);
 					L->set_volumetric_intensity(m_volumetric_intensity);
 					L->set_volumetric_distance(m_volumetric_distance);
+					L->set_ignore_object(ignore_object);
+					for (int f=0; f<6; f++) L->set_decor_object(decor_object[f],f);
+					L->set_occq_mode(flags.bOccq);
 					L->set_hud_mode(flags.bHudMode);
 					L->xform_calc();
 					L->vis.pending = vis.pending;

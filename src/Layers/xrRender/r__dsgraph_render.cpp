@@ -589,6 +589,8 @@ void CDSGraphManager::r_dsgraph_capture_dynamic(CObject* O)
 						IRenderable* renderable = spatial->dcast_Renderable();
 						if (0 == renderable) break;
 
+						if (O && O->dcast_Renderable() == renderable) break;
+
 						// Rendering
 #if	RENDER==R_R1
 						if (i_mask[CDSGraphManager::fl_normal] && o_it == uID_LTRACK && renderable->renderable_ROS())

@@ -158,6 +158,19 @@ void CRender::render_lights(light_Package& LP)
 					}
 					else
 					{
+						if ((L->decor_object[0] && !L->decor_object[0]->getDestroy()) || (L->decor_object[1] && !L->decor_object[1]->getDestroy()) || (L->decor_object[2] && !L->decor_object[2]->getDestroy()) || (L->decor_object[3] && !L->decor_object[3]->getDestroy()) || (L->decor_object[4] && !L->decor_object[4]->getDestroy()) || (L->decor_object[5] && !L->decor_object[5]->getDestroy()))
+						{
+							for (int f = 0; f < 6; f++)
+							{
+								if (L->decor_object[f] && !L->decor_object[f]->getDestroy())
+								{
+									L->decor_object[f]->renderable_Render(&L->GMLight);
+									decorative_light = true;
+								}
+							}
+							L->GMLight.r_dsgraph_capture_dynamic(L->ignore_object);
+						}
+						else
 						{
 							if (L->m_moving_frames<32u)
 							{
@@ -166,6 +179,7 @@ void CRender::render_lights(light_Package& LP)
 								L->GMLight.r_dsgraph_capture_static();
 								L->m_moving_frames++;
 							}
+							L->GMLight.r_dsgraph_capture_dynamic(L->ignore_object);
 						}
 					}
 

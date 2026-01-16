@@ -160,6 +160,7 @@ void CTorch::Switch(bool light_on)
 			m_prev_hp.x = -H_Parent()->cast_actor()->cam_Active()->yaw;
 			m_prev_hp.y = -H_Parent()->cast_actor()->cam_Active()->pitch;
 		}
+		light_omni->set_decor_object(H_Parent());
 		light_omni->set_active(light_on);
 	}
 	glow_render->set_active(light_on);
