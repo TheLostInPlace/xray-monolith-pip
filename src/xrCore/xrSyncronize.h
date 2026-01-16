@@ -2,6 +2,7 @@
 
 #include <mutex>
 #include <shared_mutex>
+#include <memory>
 #include "_noncopyable.h"
 #if 0//def DEBUG
 # define PROFILE_CRITICAL_SECTIONS
@@ -72,6 +73,71 @@ public:
 	xrCriticalSectionGuard(xrCriticalSection& cs) : critical_section(&cs) { Enter(); }
 
 	~xrCriticalSectionGuard() { Leave(); }
+};
+
+// Shared critical section wrapper - manages lifetime of critical section object using shared pointers
+// Critical section will be alive even if owning object is destroyed while there are still guards referencing it
+typedef std::shared_ptr<xrCriticalSection> xr_shared_ptr_cs;
+#define xr_make_shared_cs std::make_shared<xrCriticalSection>
+class XRCORE_API xrSharedCriticalSection : xray::noncopyable
+{
+public:
+	// Create a new shared critical section
+	xrSharedCriticalSection();
+
+	// Reference an existing shared critical section
+	explicit xrSharedCriticalSection(const xr_shared_ptr_cs& cs);
+
+	// Move constructor
+	xrSharedCriticalSection(xrSharedCriticalSection&& other) noexcept;
+
+	// Move assignment
+	xrSharedCriticalSection& operator=(xrSharedCriticalSection&& other) noexcept;
+
+	~xrSharedCriticalSection() = default;
+
+	// Get the underlying shared pointer
+	const xr_shared_ptr_cs& GetPtr() const { return m_critical_section; }
+
+	// Check if the shared pointer is valid
+	bool IsValid() const { return m_critical_section != nullptr; }
+
+	// Reference count (for debugging purposes)
+	long UseCount() const { return m_critical_section ? m_critical_section.use_count() : 0; }
+
+private:
+	xr_shared_ptr_cs m_critical_section;
+};
+
+// Guard class for automatic critical section locking using shared pointer
+class XRCORE_API xrSharedCriticalSectionGuard : xray::noncopyable
+{
+public:
+	// Constructor - acquires lock from shared critical section
+	explicit xrSharedCriticalSectionGuard(const xrSharedCriticalSection& cs);
+
+	// Constructor - acquires lock from shared pointer
+	explicit xrSharedCriticalSectionGuard(const xr_shared_ptr_cs& cs);
+
+	// Disable move construction and move assignment to enforce single-owner guard semantics
+	xrSharedCriticalSectionGuard(xrSharedCriticalSectionGuard&&) = delete;
+	xrSharedCriticalSectionGuard& operator=(xrSharedCriticalSectionGuard&&) = delete;
+
+	// Destructor - automatically releases lock
+	~xrSharedCriticalSectionGuard();
+
+	// Manually release lock (will not release on destruction if already released)
+	void Leave();
+
+	// Check if lock is currently held
+	bool IsLocked() const { return m_critical_section != nullptr; }
+
+private:
+	xr_shared_ptr_cs m_critical_section;
+	bool m_owns_lock;
+
+	xrSharedCriticalSectionGuard(const xrSharedCriticalSectionGuard&) = delete;
+	xrSharedCriticalSectionGuard& operator=(const xrSharedCriticalSectionGuard&) = delete;
 };
 
 using ThreadID = HANDLE;
