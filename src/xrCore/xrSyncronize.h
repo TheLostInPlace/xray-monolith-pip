@@ -105,11 +105,15 @@ public:
 	// Reference count (for debugging purposes)
 	long UseCount() const { return m_critical_section ? m_critical_section.use_count() : 0; }
 
+	void Enter() { m_critical_section->Enter(); }
+	void Leave() { m_critical_section->Leave(); }
+
 private:
 	xr_shared_ptr_cs m_critical_section;
 };
 
 // Guard class for automatic critical section locking using shared pointer
+// Use only with xrSharedCriticalSection or xr_shared_ptr_cs
 class XRCORE_API xrSharedCriticalSectionGuard : xray::noncopyable
 {
 public:

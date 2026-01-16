@@ -97,9 +97,8 @@ xrSharedCriticalSection::xrSharedCriticalSection(xrSharedCriticalSection&& other
 xrSharedCriticalSection& xrSharedCriticalSection::operator=(xrSharedCriticalSection&& other) noexcept
 {
 	if (this != &other)
-	{
-		m_critical_section = std::move(other.m_critical_section);
-	}
+	    m_critical_section = std::move(other.m_critical_section);
+
 	return *this;
 }
 
