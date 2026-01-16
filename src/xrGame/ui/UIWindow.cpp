@@ -174,8 +174,8 @@ CUIWindow::~CUIWindow()
 void CUIWindow::Draw()
 {
 	PROF_EVENT("CUIWindow::Draw");
-	xrCriticalSectionGuard guard(csUi);
-	for(CUIWindow* W : m_ChildWndList)
+	xrSharedCriticalSectionGuard guard(csUi);
+	for (CUIWindow* W : m_ChildWndList)
 	{
 		if (!W)		continue;
 		if (!W->IsShown())		continue;
@@ -183,7 +183,7 @@ void CUIWindow::Draw()
 		W->Draw();
 	}
 #ifdef DEBUG
-	if(g_show_wnd_rect2){
+	if (g_show_wnd_rect2) {
 		Frect r;
 		GetAbsoluteRect(r);
 		add_rect_to_draw(r);
@@ -221,7 +221,7 @@ void CUIWindow::Update()
 		}
 	}
 
-	xrCriticalSectionGuard guard(csUi);
+	xrSharedCriticalSectionGuard guard(csUi);
 	for (WINDOW_LIST_it it = m_ChildWndList.begin(); m_ChildWndList.end() != it; ++it)
 	{
 		if (!(*it)->IsShown()) continue;
@@ -251,7 +251,7 @@ void CUIWindow::AttachChild(CUIWindow* pChild)
 
 	pChild->SetParent(this);
 
-	xrCriticalSectionGuard guard(csUi);
+	xrSharedCriticalSectionGuard guard(csUi);
 	m_ChildWndList.push_back(pChild);
 }
 
@@ -265,7 +265,7 @@ void CUIWindow::DetachChild(CUIWindow* pChild)
 		SetCapture(pChild, false);
 
 	{
-		xrCriticalSectionGuard guard(csUi);
+		xrSharedCriticalSectionGuard guard(csUi);
 
 		//.	SafeRemoveChild			(pChild);
 		WINDOW_LIST_it it = std::find(m_ChildWndList.begin(), m_ChildWndList.end(), pChild);
@@ -281,7 +281,7 @@ void CUIWindow::DetachChild(CUIWindow* pChild)
 
 void CUIWindow::DetachAll()
 {
-	xrCriticalSectionGuard guard(csUi);
+	xrSharedCriticalSectionGuard guard(csUi);
 
 	while (!m_ChildWndList.empty())
 	{
@@ -349,8 +349,8 @@ bool CUIWindow::OnMouseAction(float x, float y, EUIMessages mouse_action)
 	if (m_pMouseCapturer)
 	{
 		m_pMouseCapturer->OnMouseAction(cursor_pos.x - m_pMouseCapturer->GetWndRect().left,
-		                                cursor_pos.y - m_pMouseCapturer->GetWndRect().top,
-		                                mouse_action);
+			cursor_pos.y - m_pMouseCapturer->GetWndRect().top,
+			mouse_action);
 		return true;
 	}
 
@@ -385,7 +385,7 @@ bool CUIWindow::OnMouseAction(float x, float y, EUIMessages mouse_action)
 	//Проверка на попадание мыши в окно,
 	//происходит в обратном порядке, чем рисование окон
 	//(последние в списке имеют высший приоритет)
-	xrCriticalSectionGuard guard(csUi);
+	xrSharedCriticalSectionGuard guard(csUi);
 	WINDOW_LIST::reverse_iterator it = m_ChildWndList.rbegin();
 
 	for (; it != m_ChildWndList.rend(); ++it)
@@ -397,14 +397,14 @@ bool CUIWindow::OnMouseAction(float x, float y, EUIMessages mouse_action)
 			if (w->IsEnabled())
 			{
 				if (w->OnMouseAction(cursor_pos.x - w->GetWndRect().left,
-				                     cursor_pos.y - w->GetWndRect().top, mouse_action))
+					cursor_pos.y - w->GetWndRect().top, mouse_action))
 					return true;
 			}
 		}
 		else if (w->IsEnabled() && w->CursorOverWindow())
 		{
 			if (w->OnMouseAction(cursor_pos.x - w->GetWndRect().left,
-			                     cursor_pos.y - w->GetWndRect().top, mouse_action))
+				cursor_pos.y - w->GetWndRect().top, mouse_action))
 				return true;
 		}
 	}
@@ -502,7 +502,7 @@ bool CUIWindow::OnKeyboardAction(int dik, EUIMessages keyboard_action)
 		if (result) return true;
 	}
 
-	xrCriticalSectionGuard guard(csUi);
+	xrSharedCriticalSectionGuard guard(csUi);
 	WINDOW_LIST::reverse_iterator it = m_ChildWndList.rbegin();
 
 	for (; it != m_ChildWndList.rend(); ++it)
@@ -528,7 +528,7 @@ bool CUIWindow::OnKeyboardHold(int dik)
 		if (result) return true;
 	}
 
-	xrCriticalSectionGuard guard(csUi);
+	xrSharedCriticalSectionGuard guard(csUi);
 	WINDOW_LIST::reverse_iterator it = m_ChildWndList.rbegin();
 
 	for (; it != m_ChildWndList.rend(); ++it)
@@ -565,7 +565,7 @@ void CUIWindow::SetKeyboardCapture(CUIWindow* pChildWindow, bool capture_status)
 //обработка сообщений 
 void CUIWindow::SendMessage(CUIWindow* pWnd, s16 msg, void* pData)
 {
-	xrCriticalSectionGuard guard(csUi);
+	xrSharedCriticalSectionGuard guard(csUi);
 	//оповестить дочерние окна
 	for (WINDOW_LIST_it it = m_ChildWndList.begin(); m_ChildWndList.end() != it; ++it)
 	{
@@ -581,7 +581,7 @@ CUIWindow* CUIWindow::GetCurrentMouseHandler()
 
 CUIWindow* CUIWindow::GetChildMouseHandler()
 {
-	xrCriticalSectionGuard guard(csUi);
+	xrSharedCriticalSectionGuard guard(csUi);
 	CUIWindow* pWndResult;
 	WINDOW_LIST::reverse_iterator it = m_ChildWndList.rbegin();
 
@@ -614,7 +614,7 @@ void CUIWindow::Reset()
 
 void CUIWindow::ResetAll()
 {
-	xrCriticalSectionGuard guard(csUi);
+	xrSharedCriticalSectionGuard guard(csUi);
 	for (WINDOW_LIST_it it = m_ChildWndList.begin(); m_ChildWndList.end() != it; ++it)
 	{
 		(*it)->Reset();
@@ -628,7 +628,7 @@ CUIWindow* CUIWindow::GetMessageTarget()
 
 bool CUIWindow::IsChild(CUIWindow* pPossibleChild) const
 {
-	xrCriticalSectionGuard guard(const_cast<xrCriticalSection&>(csUi));
+	xrSharedCriticalSectionGuard guard(const_cast<xrSharedCriticalSection&>(csUi));
 	WINDOW_LIST::const_iterator it = std::find(m_ChildWndList.begin(), m_ChildWndList.end(), pPossibleChild);
 	return it != m_ChildWndList.end();
 }
@@ -639,7 +639,7 @@ CUIWindow* CUIWindow::FindChild(const shared_str name)
 	if (WindowName() == name)
 		return this;
 
-	xrCriticalSectionGuard guard(csUi);
+	xrSharedCriticalSectionGuard guard(csUi);
 	WINDOW_LIST::const_iterator it = m_ChildWndList.begin();
 	WINDOW_LIST::const_iterator it_e = m_ChildWndList.end();
 	for (; it != it_e; ++it)
@@ -664,7 +664,7 @@ void CUIWindow::SetParent(CUIWindow* pNewParent)
 
 void CUIWindow::ShowChildren(bool show)
 {
-	xrCriticalSectionGuard guard(csUi);
+	xrSharedCriticalSectionGuard guard(csUi);
 	for (WINDOW_LIST_it it = m_ChildWndList.begin(); m_ChildWndList.end() != it; ++it)
 		(*it)->Show(show);
 }

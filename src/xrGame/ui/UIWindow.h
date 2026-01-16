@@ -151,7 +151,7 @@ public:
 	virtual void DetachAll();
 	int GetChildNum()
 	{
-		xrCriticalSectionGuard guard(csUi);
+		xrSharedCriticalSectionGuard guard(csUi);
 		return m_ChildWndList.size();
 	}
 
@@ -279,12 +279,12 @@ public:
 	IC bool GetCustomDraw() const { return m_bCustomDraw; }
 	IC void SetCustomDraw(bool b) { m_bCustomDraw = b; }
 
-	xrCriticalSection csUi;
+	xrSharedCriticalSection csUi;
 
 protected:
 	IC void SafeRemoveChild(CUIWindow* child)
 	{
-		xrCriticalSectionGuard guard(csUi);
+		xrSharedCriticalSectionGuard guard(csUi);
 		WINDOW_LIST_it it = std::find(m_ChildWndList.begin(), m_ChildWndList.end(), child);
 		if (it != m_ChildWndList.end()) m_ChildWndList.erase(it);
 	};

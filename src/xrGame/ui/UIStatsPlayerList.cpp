@@ -278,10 +278,10 @@ void CUIStatsPlayerList::Update()
 	if (n < 0)
 	{
 		n = abs(n);
-		xrCriticalSectionGuard guard(m_pad->csUi);
-		for (int i = 0; i<n; i++)
+		xrSharedCriticalSectionGuard guard(m_pad->csUi);
+		for (int i = 0; i < n; i++)
 			m_pad->DetachChild(*(m_pad->GetChildWndList().begin()));
-		m_flags.set(eNeedRecalc,TRUE);
+		m_flags.set(eNeedRecalc, TRUE);
 	}
 	else
 	{
@@ -290,13 +290,13 @@ void CUIStatsPlayerList::Update()
 			CUIStatsPlayerInfo* pi = xr_new<CUIStatsPlayerInfo>(&m_field_info, m_i.f, m_i.c);
 			pi->InitPlayerInfo(Fvector2().set(0, 0), Fvector2().set(this->GetDesiredChildWidth(), m_i.h));
 			CUIScrollView::AddWindow(pi, true);
-			m_flags.set(eNeedRecalc,TRUE);
+			m_flags.set(eNeedRecalc, TRUE);
 		}
 	}
 
 	R_ASSERT(items.size() == m_pad->GetChildNum());
 
-	xrCriticalSectionGuard guard(m_pad->csUi);
+	xrSharedCriticalSectionGuard guard(m_pad->csUi);
 	WINDOW_LIST_it it = m_pad->GetChildWndList().begin();
 	ItemIt itit = items.begin();
 

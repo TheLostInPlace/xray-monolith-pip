@@ -60,7 +60,7 @@ public:
 	bool GetVertFlip() { return !!m_flags.test(eVertFlip); }
 	bool Empty()
 	{
-		xrCriticalSectionGuard guard(m_pad->csUi);
+		xrSharedCriticalSectionGuard guard(m_pad->csUi);
 		return m_pad->GetChildWndList().empty();
 	}
 	u32 GetSize();

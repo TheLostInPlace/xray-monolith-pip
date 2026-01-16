@@ -79,7 +79,7 @@ u32 CUIListBoxItem::GetTextColor()
 
 float CUIListBoxItem::FieldsLength() const
 {
-	xrCriticalSectionGuard guard(const_cast<xrCriticalSection&>(csUi));
+	xrSharedCriticalSectionGuard guard(const_cast<xrSharedCriticalSection&>(csUi));
 
 	if (m_ChildWndList.empty())
 		return 0.0f;
