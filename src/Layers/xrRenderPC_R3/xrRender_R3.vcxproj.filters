@@ -783,9 +783,6 @@
     <ClCompile Include="r2_blenders.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="r2_R_lights.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="r2_R_sun.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -1405,5 +1402,8 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="..\xrRender\r__dsgraph_manager.cpp" />
+    <ClCompile Include="..\xrRender\lights_render.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

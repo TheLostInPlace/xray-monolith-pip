@@ -57,13 +57,19 @@ void CRender::render_lights(light_Package& LP)
 	hud_light_apply(saved_pos, LP.v_spot);
 
 	{
+#if defined(USE_DX10) || defined(USE_DX11)
+		PIX_EVENT(SHADOWED_LIGHTS);
+#endif
 		{
+#if defined(USE_DX10) || defined(USE_DX11)
+			PIX_EVENT(PHASE_VIS_UPDATE);
+#endif
 			xr_vector<light*>& source = LP.v_shadowed;
 			source.erase(std::remove_if(source.begin(), source.end(), [](light* L)
 			{
-				if (L->m_parent)
+				if(L->m_parent)
 				{
-					if (L->m_parent->omnipart[0] == L)
+					if(L->m_parent->omnipart[0] == L)
 					{
 						L->m_parent->vis_update();
 						for (int f = 0; f < 6; f++)
@@ -85,6 +91,9 @@ void CRender::render_lights(light_Package& LP)
 		}
 
 		{
+#if defined(USE_DX10) || defined(USE_DX11)
+			PIX_EVENT(PHASE_CALC_POOLS);
+#endif
 			xr_vector<light*>& source = LP.v_shadowed;
 			static xr_vector<light*> refactored;
 			refactored.clear();
@@ -131,6 +140,9 @@ void CRender::render_lights(light_Package& LP)
 			// if (has_spot_shadowed)
 			static xr_vector<light*> L_spot_s;
 			{
+#if defined(USE_DX10) || defined(USE_DX11)
+				PIX_EVENT(GENERATE_SHMAPS);
+#endif
 				// generate spot shadowmap
 				Target->phase_smap_spot_clear();
 				xr_vector<light*>& source = LP.v_shadowed;
@@ -144,7 +156,9 @@ void CRender::render_lights(light_Package& LP)
 					source.pop_back();
 					// render
 					phase = PHASE_SMAP;
-
+#if defined(USE_DX10) || defined(USE_DX11)
+					PIX_EVENT(RENDER_SHADOWS);
+#endif
 					bool decorative_light = false;
 					if (L->flags.bHudMode)
 					{
@@ -176,6 +190,7 @@ void CRender::render_lights(light_Package& LP)
 							L->GMLight.r_dsgraph_capture_dynamic(L->ignore_object);
 						}
 					}
+
 					bool bDeffered_Shadows = L->GMLight.RGraph.mapStaticPasses[0][0].size() || L->GMLight.RGraph.mapDynamicPasses[0][0].size();
 					bool bForward_Shadows = L->GMLight.RGraph.mapStaticPasses[1][0].size() || L->GMLight.RGraph.mapDynamicPasses[1][0].size() || L->GMLight.RGraph.mapStaticSorted.Sorted.size() || L->GMLight.RGraph.mapDynamicSorted.Sorted.size();
 					if (bDeffered_Shadows || bForward_Shadows)
@@ -193,16 +208,16 @@ void CRender::render_lights(light_Package& LP)
 							Details->light_position.set(L->position);
 							Details->hw_Render(L);
 						}
-
+					
 						L->X.S.transluent = FALSE;
 						if (bForward_Shadows)
 						{
 							L->X.S.transluent = TRUE;
 							Target->phase_smap_spot_tsh(L);
-
+					
 							L->GMLight.r_dsgraph_render_static(1, false);
 							L->GMLight.r_dsgraph_render_dynamic(1, true);
-
+					
 							L->GMLight.r_dsgraph_render_sorted();			// strict-sorted geoms
 						}
 					}
@@ -212,7 +227,6 @@ void CRender::render_lights(light_Package& LP)
 					}
 				}
 			}
-
 			//		if (was_spot_shadowed)		->	accum spot shadowed
 			if (!L_spot_s.empty())
 			{
@@ -223,8 +237,21 @@ void CRender::render_lights(light_Package& LP)
 					render_indirect(L);
 					if (L->flags.bVolumetric && RImplementation.o.advancedpp && ps_r2_ls_flags.is(R2FLAG_VOLUMETRIC_LIGHTS))
 					{
+#ifdef USE_DX11
 						// Current Resolution
+						float w = float(Device.dwWidth);
+						float h = float(Device.dwHeight);
+
+						// Adjust resolution
+						if (RImplementation.o.ssfx_volumetric)
+							Target->set_viewport_size(HW.pContext, w / 8, h / 8);
+#endif
 						Target->accum_volumetric(L);
+#ifdef USE_DX11
+						// Restore resolution
+						if (RImplementation.o.ssfx_volumetric)
+							Target->set_viewport_size(HW.pContext, w, h);
+#endif
 					}
 				}
 
@@ -234,7 +261,13 @@ void CRender::render_lights(light_Package& LP)
 	}
 
 	{
+#if defined(USE_DX10) || defined(USE_DX11)
+		PIX_EVENT(UNSHADOWED_LIGHTS);
+#endif
 		{
+#if defined(USE_DX10) || defined(USE_DX11)
+			PIX_EVENT(POINT_LIGHTS_ACCUM_UNSH);
+#endif
 			// Point lighting (unshadowed, if left)
 			if (!LP.v_point.empty())
 			{
@@ -251,6 +284,9 @@ void CRender::render_lights(light_Package& LP)
 			}
 		}
 		{
+#if defined(USE_DX10) || defined(USE_DX11)
+			PIX_EVENT(SPOT_LIGHTS_ACCUM_UNSH);
+#endif
 			// Spot lighting (unshadowed, if left)
 			if (!LP.v_spot.empty())
 			{
