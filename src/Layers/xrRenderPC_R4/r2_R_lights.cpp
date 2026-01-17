@@ -194,11 +194,11 @@ void CRender::render_lights(light_Package& LP)
 						RCache.set_xform_project(L->X.S.project);
 						L->GMLight.r_dsgraph_render_static(0, false);
 						L->GMLight.r_dsgraph_render_dynamic(0, true);
-						if (Details && check_grass_shadow(L, ViewBase) && L->flags.bShadow && !decorative_light)
+						if (Details && Details->dtFS && check_grass_shadow(L, ViewBase) && L->flags.bShadow && !decorative_light)
 						{
 							Details->fade_distance = -1; // Use light position to calc "fade"
 							Details->light_position.set(L->position);
-							Details->Render();
+							Details->hw_Render(L);
 						}
 					
 						L->X.S.transluent = FALSE;

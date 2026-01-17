@@ -91,12 +91,14 @@ void CDetailManager::hw_Render(light* L)
 	dir2.set(_sin(tm_rot2), 0, _cos(tm_rot2), 0).normalize().mul(swing_current.amp2);
 
 	// Setup geometry and DMA
+	RCache.set_CullMode(CULL_NONE);
+	RCache.set_xform_world(Fidentity);
 	RCache.set_Geometry(hw_Geom);
-
-	// Wave0
 	float scale = 1.f / float(quant);
 	Fvector4 wave, prev_wave;
 	Fvector4 consts;
+
+	// Wave0
 	consts.set(scale, scale, ps_r__Detail_l_aniso, ps_r__Detail_l_ambient);
 	//wave.set				(1.f/5.f,		1.f/7.f,	1.f/3.f,	Device.fTimeGlobal*swing_current.speed);
 	wave.set(1.f / 5.f, 1.f / 7.f, 1.f / 3.f, m_time_pos);
@@ -134,6 +136,8 @@ void CDetailManager::hw_Render(light* L)
 		prev_dir1.set(dir1);
 		prev_dir2.set(dir2);
 	}
+
+	RCache.set_CullMode(CULL_CCW);
 }
 
 void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave, const Fvector4& wind, 
@@ -378,12 +382,7 @@ void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave
 			// KD: we must not clear vis on r2 since we want details shadows
 			if (ps_ssfx_grass_shadows.x <= 0)
 			{
-				if (!psDeviceFlags2.test(rsGrassShadow) || ((ps_r2_ls_flags.test(R2FLAG_SUN_DETAILS) && (RImplementation.PHASE_SMAP ==
-					RImplementation.phase)) // phase smap with shadows
-					|| (ps_r2_ls_flags.test(R2FLAG_SUN_DETAILS) && (RImplementation.PHASE_NORMAL == RImplementation.phase)
-						&& (!RImplementation.is_sun())) // phase normal with shadows without sun
-					|| (!ps_r2_ls_flags.test(R2FLAG_SUN_DETAILS) && (RImplementation.PHASE_NORMAL == RImplementation.phase))
-					)) // phase normal without shadows
+				if (!psDeviceFlags2.test(rsGrassShadow) || RImplementation.PHASE_NORMAL == RImplementation.phase) // phase normal without shadows
 					vis.clear_not_free();
 			}
 		}

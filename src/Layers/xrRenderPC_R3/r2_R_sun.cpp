@@ -305,12 +305,10 @@ void CRender::render_sun_cascade(u32 cascade_ind)
 			RCache.set_xform_project(fuckingsun->X.D.combine);
 			cascade.GMCascade.r_dsgraph_render_graph(0);
 
-			if (Details && Details->dtFS && ps_r2_ls_flags.test(R2FLAG_SUN_DETAILS))
+			if (psDeviceFlags2.test(rsGrassShadow) && cascade_ind <= ps_ssfx_grass_shadows.x)
 			{
-				RCache.set_CullMode(CULL_NONE);
-				RCache.set_xform_world(Fidentity);
-				Details->hw_Render();
-				RCache.set_CullMode(CULL_CCW);
+				Details->fade_distance = dm_fade * dm_fade * ps_ssfx_grass_shadows.y;
+				Details->Render();
 			}
 
 			fuckingsun->X.D.transluent = FALSE;
