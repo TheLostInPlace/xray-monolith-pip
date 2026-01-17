@@ -8,6 +8,7 @@ using std::swap;
 #include <unordered_set>
 #include <queue>
 #include <array>
+#include <forward_list>
 #include "_type_traits.h"
 
 #ifdef __BORLANDC__
@@ -365,6 +366,13 @@ using xr_unordered_flat_set = std::unordered_set<T, Hasher, Traits, allocator>;
 
 template <typename T, typename allocator = xalloc<T>>
 class xr_list : public std::list<T, allocator>
+{
+public:
+	u32 size() const { return (u32)__super::size(); }
+};
+
+template <typename T, typename allocator = xalloc<T>>
+class xr_forward_list : public std::forward_list<T, allocator>
 {
 public:
 	u32 size() const { return (u32)__super::size(); }
