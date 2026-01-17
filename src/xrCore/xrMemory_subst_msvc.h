@@ -1,3 +1,4 @@
+#pragma once
 #include <memory>
 
 #ifdef DEBUG_MEMORY_NAME
