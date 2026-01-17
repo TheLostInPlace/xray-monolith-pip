@@ -222,6 +222,19 @@ void XRCORE_API mem_alloc_show_stats();
 void XRCORE_API mem_alloc_clear_stats();
 #endif // DEBUG_MEMORY_MANAGER
 
+template <typename T>
+struct xr_allocator_shared_helper {
+    using value_type = T;
+    xr_allocator_shared_helper() = default;
+    template <class U> xr_allocator_shared_helper(const xr_allocator_shared_helper<U>&) {}
+    T* allocate(std::size_t n) {
+        return static_cast<T*>(Memory.mem_alloc(n * sizeof(T)));
+    }
+    void deallocate(T* p, std::size_t) noexcept {
+        Memory.mem_free(p);
+    }
+};
+
 template<typename T>
 using xr_weak_ptr = std::weak_ptr<T>;
 
@@ -234,11 +247,8 @@ using xr_unique_ptr = std::unique_ptr<T, xr_special_free<false, T>>;
 template <class T, class... Args>
 xr_shared_ptr<T> xr_make_shared(Args&&... args)
 {
-	return xr_shared_ptr<T>(new T(std::forward<Args>(args)...), [](T* ptr)
-		{
-			xr_special_free<false, T> deleter;
-			deleter(ptr);
-		});
+	xr_allocator_shared_helper<T> alloc;
+	return std::allocate_shared<T>(alloc, std::forward<Args>(args)...);
 }
 
 template <typename T, typename... ARGS>
