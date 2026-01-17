@@ -316,7 +316,7 @@ static void full_memory_stats()
 #endif // SEVERAL_ALLOCATORS
 	u32 _eco_strings_count = 0;
 	u32 _eco_strings_unique_count = 0;
-	int _eco_strings = (int)g_pStringContainer->stat_economy(_eco_strings_count, _eco_strings_unique_count);
+	int _eco_strings = (int)g_pStringContainer->stat_economy(_eco_strings_count);
 	int _eco_smem = (int)g_pSharedMemoryContainer->stat_economy();
 	u32 m_base = 0, c_base = 0, m_lmaps = 0, c_lmaps = 0;
 
