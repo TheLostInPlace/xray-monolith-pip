@@ -94,10 +94,11 @@ struct XRCORE_API str_value
 {
 	mutable u32 dwReference;
 	xr_string value;
+	size_t hash;
 
-	str_value(str_c s) : dwReference(0), value(s) {};
-	str_value(xr_string& s) : dwReference(0), value(s) {};
-	str_value(const str_value& s) : dwReference(0), value(s.value) {};
+	str_value(str_c s) : dwReference(0), value(s), hash(xr_hash<xr_string>()(value)) {};
+	str_value(xr_string& s) : dwReference(0), value(s), hash(xr_hash<xr_string>()(value)) {};
+	str_value(const str_value& s) : dwReference(0), value(s.value), hash(s.hash) {};
 
 	bool operator<(const str_value& other) const
 	{
@@ -124,7 +125,7 @@ class XRCORE_API str_container
 {
 private:
 	static const u32 buffer_size = 1024 * 256;
-	xr_unordered_set<str_value, str_value_hash> buffer;
+	xr_array<xr_forward_list<str_value>, buffer_size> buffer;
 	xrSRWLock rwlock;
 public:
 	str_container();

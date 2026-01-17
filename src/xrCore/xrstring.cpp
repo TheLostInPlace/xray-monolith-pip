@@ -10,31 +10,41 @@ XRCORE_API xr_shared_ptr<str_container> g_pStringContainer = nullptr;
 
 str_container::str_container()
 {
-	buffer.reserve(buffer_size);
 }
 
 str_value* str_container::dock(str_c value)
 {
 	if (!value) return nullptr;
 
-	str_value s(value);
+	auto s = str_value(value);
+	auto hash = s.hash % buffer_size;
+
 	xrSRWLockGuard guard(&rwlock, false);
-	auto p = buffer.insert(s);
-	return const_cast<str_value*>(&(*p.first));
+	auto it = std::find(buffer[hash].begin(), buffer[hash].end(), s);
+	if (it != buffer[hash].end())
+		return &*it;
+	buffer[hash].push_front(std::move(s));
+	return &buffer[hash].front();
 }
 
 void str_container::erase(str_c value)
 {
-	str_value s(value);
+	if (!value) return;
+
+	auto s = str_value(value);
+	auto hash = s.hash % buffer_size;
+
 	xrSRWLockGuard guard(&rwlock, false);
-	buffer.erase(s);
+	buffer[hash].remove(s);
 }
 
 void str_container::clean()
 {
 	xrSRWLockGuard guard(&rwlock, false);
-	buffer.clear();
-	buffer.rehash(buffer_size);
+	for (auto& list : buffer)
+	{
+		list.clear();
+	}
 }
 
 void str_container::verify()
@@ -48,9 +58,10 @@ void str_container::dump()
 {
 	FILE* F = fopen("d:\\$str_dump$.txt", "w");
 	xrSRWLockGuard guard(&rwlock, true);
-	for (const auto& s : buffer)
+	for (const auto& list : buffer)
 	{
-		fprintf(F, "ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
+		for (const auto& s: list)
+			fprintf(F, "ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
 	}
 	fclose(F);
 }
@@ -58,11 +69,14 @@ void str_container::dump()
 void str_container::dump(IWriter* W)
 {
 	xrSRWLockGuard guard(&rwlock, true);
-	for (const auto& s : buffer)
+	for (const auto& list : buffer)
 	{
-		string4096 temp;
-		xr_sprintf(temp, sizeof(temp), "ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
-		W->w_string(temp);
+		for (const auto& s : list)
+		{
+			string4096 temp;
+			xr_sprintf(temp, sizeof(temp), "ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
+			W->w_string(temp);
+		}
 	}
 }
 
@@ -70,14 +84,16 @@ void str_container::dump_console()
 {
 	xrSRWLockGuard guard(&rwlock, true);
 	xr_set<str_value> set;
-	for (const auto& s : buffer)
+	for (const auto& list : buffer)
 	{
-		set.insert(s);
+		for (const auto& s : list)
+			set.insert(s);
 	}
 	Msg("* [x-ray]: strings: count[%lu], unique[%lu]", buffer.size(), set.size());
-	for (const auto& s : buffer)
+	for (const auto& list : buffer)
 	{
-		Msg("ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
+		for (const auto& s : list)
+			Msg("ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
 	}
 }
 
@@ -87,10 +103,14 @@ u32 str_container::stat_economy(u32& count, u32& unique)
 	count = buffer.size();
 	u32 size = sizeof(buffer);
 	xr_unordered_set<xr_string> strings;
-	for (const auto& s : buffer)
+	for (const auto& list : buffer)
 	{
-		size += sizeof(str_value) + s.value.length();
-		strings.insert(s.value);
+		size += sizeof(list);
+		for (const auto& s : list)
+		{
+			size += sizeof(s) + s.value.length();
+			strings.insert(s.value);
+		}
 	}
 	unique = strings.size();
 	return size;
