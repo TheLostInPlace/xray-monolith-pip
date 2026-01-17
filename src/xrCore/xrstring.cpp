@@ -85,16 +85,28 @@ void str_container::dump_console()
 	xrSRWLockGuard guard(&rwlock, true);
 	xr_set<str_value> set;
 	u32 count = 0;
+	u32 loadedListCount = 0;
+
 	for (const auto& list : buffer)
 	{
+		bool isLoaded = false;
 		for (const auto& s : list)
 		{
+			if (!isLoaded)
+			{
+				isLoaded = true;
+				loadedListCount++;
+			}
 			count++;
 			set.insert(s);
 		}
 			
 	}
-	Msg("* [x-ray]: strings: count[%lu], unique[%lu]", count, set.size());
+
+	Msg("* [x-ray]: shared strings: count[%lu], unique[%lu], load factor[%.2f], distribution[%.2f]", count, set.size(), (float)count / buffer_size, _min(1.0f, (float)loadedListCount / buffer_size));
+	if (count != set.size())
+		Msg("! [x-ray]: shared strings, count != unique");
+
 	for (const auto& list : buffer)
 	{
 		for (const auto& s : list)
@@ -105,14 +117,15 @@ void str_container::dump_console()
 u32 str_container::stat_economy(u32& count, u32& unique)
 {
 	xrSRWLockGuard guard(&rwlock, true);
-	count = buffer.size();
+	count = 0;
 	u32 size = sizeof(buffer);
-	xr_unordered_set<xr_string> strings;
+	xr_set<xr_string> strings;
 	for (const auto& list : buffer)
 	{
 		size += sizeof(list);
 		for (const auto& s : list)
 		{
+			count++;
 			size += sizeof(s) + s.value.length();
 			strings.insert(s.value);
 		}

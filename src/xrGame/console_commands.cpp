@@ -335,6 +335,9 @@ static void full_memory_stats()
 #endif // SEVERAL_ALLOCATORS
 
 	Msg("* [x-ray]: shared strings: memory[%ld K], count[%lu], unique[%lu]", _eco_strings / 1024, _eco_strings_count, _eco_strings_unique_count);
+	if (_eco_strings_count != _eco_strings_unique_count)
+		Msg("! [x-ray]: shared strings, count != unique");
+
 	Msg("* [x-ray]: shared memory: memory[%ld K]", _eco_smem);
 
 #ifdef FS_DEBUG
