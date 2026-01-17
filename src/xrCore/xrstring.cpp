@@ -26,14 +26,14 @@ struct str_container_impl
 		if (it == buffer.end())
 			return nullptr;
 
-		return &(*it);
+		return const_cast<str_value*>(&(*it));
 	}
 
 	str_value* insert(str_value& value)
 	{
 		xrSRWLockGuard guard(&rwlock, false);
 		auto p = buffer.insert(value);
-		return &(*p.first);
+		return const_cast<str_value*>(&(*p.first));
 	}
 
 	void erase(str_value& value)
