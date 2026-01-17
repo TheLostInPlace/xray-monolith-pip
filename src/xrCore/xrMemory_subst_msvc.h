@@ -256,5 +256,5 @@ xr_unique_ptr<T> xr_make_unique(ARGS&&... args)
 {
 	void* TypeMem = Memory.mem_alloc(sizeof(T));
 	new (TypeMem)T(std::forward<ARGS>(args)...);
-	return xr_unique_ptr<T>(reinterpret_cast<T*>(TypeMem), xr_special_free<false, T>{});
+	return xr_unique_ptr<T>(static_cast<T*>(TypeMem), xr_special_free<false, T>{});
 }
