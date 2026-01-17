@@ -85,7 +85,7 @@ namespace std
 		public:
 			size_t operator()(const xr_string& s) const
 			{
-				return xr_hash<std::string>()(*reinterpret_cast<const std::string*>(&s));
+				return xr_hash<std::string_view>()(std::string_view(s));
 			}
 	};
 }
@@ -268,7 +268,7 @@ namespace std
 	public:
 		size_t operator()(const shared_str& s) const
 		{
-			return xr_hash<xr_string>()(s._get()->value);
+			return xr_hash<std::string_view>()(s._get()->value);
 		}
 	};
 }
