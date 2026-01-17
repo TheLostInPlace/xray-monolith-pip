@@ -3,7 +3,7 @@
 #include "../../xrEngine/irenderable.h"
 #include "../xrRender/FBasicVisual.h"
 
-#include "r3_R_sun_support.h"
+#include "../xrRender/r3_r4_R_sun_support.h"
 
 constexpr float tweak_COP_initial_offs = 1200.f;
 

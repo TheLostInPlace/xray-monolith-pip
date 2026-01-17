@@ -425,6 +425,7 @@
     <ClInclude Include="..\xrRender\ParticleGroup.h" />
     <ClInclude Include="..\xrRender\PSLibrary.h" />
     <ClInclude Include="..\xrRender\QueryHelper.h" />
+    <ClInclude Include="..\xrRender\r3_r4_R_sun_support.h" />
     <ClInclude Include="..\xrRender\ResourceManager.h" />
     <ClInclude Include="..\xrRender\R_Backend.h" />
     <ClInclude Include="..\xrRender\R_Backend_hemi.h" />
@@ -493,7 +494,6 @@
     <ClInclude Include="r3.h" />
     <ClInclude Include="r3_rendertarget.h" />
     <ClInclude Include="r3_rendertarget_wallmarks.h" />
-    <ClInclude Include="r3_R_sun_support.h" />
     <ClInclude Include="SMAP_Allocator.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
@@ -604,6 +604,7 @@
     <ClCompile Include="..\xrRender\ParticleEffectDef.cpp" />
     <ClCompile Include="..\xrRender\ParticleGroup.cpp" />
     <ClCompile Include="..\xrRender\PSLibrary.cpp" />
+    <ClCompile Include="..\xrRender\r3_r4_R_sun_support.cpp" />
     <ClCompile Include="..\xrRender\rendertarget_phase_blur.cpp" />
     <ClCompile Include="..\xrRender\rendertarget_phase_dof.cpp" />
     <ClCompile Include="..\xrRender\rendertarget_phase_lut.cpp" />
@@ -709,7 +710,6 @@
     <ClCompile Include="r3_rendertarget_phase_ssao.cpp" />
     <ClCompile Include="r3_R_rain.cpp" />
     <ClCompile Include="r3_R_render.cpp" />
-    <ClCompile Include="r3_R_sun_support.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ProfiledDX11|x64'">Create</PrecompiledHeader>

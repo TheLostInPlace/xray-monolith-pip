@@ -213,9 +213,6 @@
     <ClInclude Include="r4.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="r4_R_sun_support.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="..\xrRender\r__dsgraph_types.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -790,6 +787,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="..\xrRender\r__dsgraph_manager.h" />
+    <ClInclude Include="..\xrRender\r3_r4_R_sun_support.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -826,9 +826,6 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="r4_R_render.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="r4_R_sun_support.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="..\xrRender\r__dsgraph_build.cpp">
@@ -1460,6 +1457,9 @@
     </ClCompile>
     <ClCompile Include="..\xrRender\r__dsgraph_manager.cpp" />
     <ClCompile Include="..\xrRender\lights_render.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xrRender\r3_r4_R_sun_support.cpp">
       <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
