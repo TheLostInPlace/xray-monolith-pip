@@ -92,7 +92,7 @@ namespace std
 
 struct XRCORE_API str_value
 {
-	mutable u32 dwReference;
+	mutable xr_atomic_u32 dwReference;
 	xr_string value;
 	size_t hash;
 

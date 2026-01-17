@@ -61,7 +61,7 @@ void str_container::dump()
 	for (const auto& list : buffer)
 	{
 		for (const auto& s: list)
-			fprintf(F, "ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
+			fprintf(F, "ref[%d]-len[%d] : %s\n", s.dwReference.load(), (u32)s.value.length(), s.value.c_str());
 	}
 	fclose(F);
 }
@@ -74,7 +74,7 @@ void str_container::dump(IWriter* W)
 		for (const auto& s : list)
 		{
 			string4096 temp;
-			xr_sprintf(temp, sizeof(temp), "ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
+			xr_sprintf(temp, sizeof(temp), "ref[%d]-len[%d] : %s\n", s.dwReference.load(), (u32)s.value.length(), s.value.c_str());
 			W->w_string(temp);
 		}
 	}
@@ -93,7 +93,7 @@ void str_container::dump_console()
 	for (const auto& list : buffer)
 	{
 		for (const auto& s : list)
-			Msg("ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
+			Msg("ref[%d]-len[%d] : %s\n", s.dwReference.load(), (u32)s.value.length(), s.value.c_str());
 	}
 }
 
