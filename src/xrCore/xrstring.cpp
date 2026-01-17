@@ -61,7 +61,7 @@ struct str_container_impl
 		xrSRWLockGuard guard(&rwlock, true);
 		for (const auto& s : buffer)
 		{
-			fprintf(f, "ref[%d]-len[%d] : %s\n", s.dwReference.load(), (u32)s.value.length(), s.value.c_str());
+			fprintf(f, "ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
 		}
 	}
 
@@ -71,7 +71,7 @@ struct str_container_impl
 		for (const auto& s : buffer)
 		{
 			string4096 temp;
-			xr_sprintf(temp, sizeof(temp), "ref[%d]-len[%d] : %s\n", s.dwReference.load(), (u32)s.value.length(), s.value.c_str());
+			xr_sprintf(temp, sizeof(temp), "ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
 			f->w_string(temp);
 		}
 	}
@@ -87,7 +87,7 @@ struct str_container_impl
 		Msg("* [x-ray]: strings: count[%lu], unique[%lu]", buffer.size(), set.size());
 		for (const auto& s : set)
 		{
-			Msg("ref[%d]-len[%d] : %s\n", s.dwReference.load(), (u32)s.value.length(), s.value.c_str());
+			Msg("ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
 		}
 	}
 
