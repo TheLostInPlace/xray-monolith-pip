@@ -84,12 +84,17 @@ void str_container::dump_console()
 {
 	xrSRWLockGuard guard(&rwlock, true);
 	xr_set<str_value> set;
+	u32 count = 0;
 	for (const auto& list : buffer)
 	{
 		for (const auto& s : list)
+		{
+			count++;
 			set.insert(s);
+		}
+			
 	}
-	Msg("* [x-ray]: strings: count[%lu], unique[%lu]", buffer.size(), set.size());
+	Msg("* [x-ray]: strings: count[%lu], unique[%lu]", count, set.size());
 	for (const auto& list : buffer)
 	{
 		for (const auto& s : list)
