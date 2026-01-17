@@ -77,8 +77,9 @@ public:
 
 // Shared critical section wrapper - manages lifetime of critical section object using shared pointers
 // Critical section will be alive even if owning object is destroyed while there are still guards referencing it
-typedef std::shared_ptr<xrCriticalSection> xr_shared_ptr_cs;
-#define xr_make_shared_cs std::make_shared<xrCriticalSection>
+#include "xrMemory.h"
+#define xr_shared_ptr_cs xr_shared_ptr<xrCriticalSection>
+#define xr_make_shared_cs xr_make_shared<xrCriticalSection>
 class XRCORE_API xrSharedCriticalSection : xray::noncopyable
 {
 public:
