@@ -716,7 +716,7 @@ namespace luabind
 				const char* name
 				, std::function<int(lua_State*, ptrdiff_t)> s);
 #else
-			void add_setter(
+			void class_base::add_setter(
 				const char* name
 				, std::function<int(lua_State*, ptrdiff_t)> s
 				, int (*match)(lua_State*, int)

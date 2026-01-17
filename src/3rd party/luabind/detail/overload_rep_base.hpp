@@ -32,6 +32,8 @@ extern "C"
 namespace luabind::detail
 {
 	// this class represents a specific overload of a member-function.
+    template class LUABIND_API std::function<int(lua_State*)>;
+
 	struct LUABIND_API overload_rep_base
 	{
 #if !defined(LUABIND_NO_ERROR_CHECKING)
@@ -73,7 +75,11 @@ namespace luabind::detail
 		{ 
 			m_get_signature_fun = f; 
 		}
+#endif
 
+	protected:
+
+#ifndef LUABIND_NO_ERROR_CHECKING
 		get_sig_ptr m_get_signature_fun;
 #endif
 
