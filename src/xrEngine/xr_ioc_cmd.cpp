@@ -990,8 +990,9 @@ void CCC_Register()
     // CMD3(CCC_Mask, "rs_constant_fps", &psDeviceFlags, rsConstantFPS );
     CMD3(CCC_Mask, "rs_render_statics", &psDeviceFlags, rsDrawStatic);
     CMD3(CCC_Mask, "rs_render_dynamics", &psDeviceFlags, rsDrawDynamic);
-	CMD3(CCC_Mask, "rs_render_portals", &psDeviceFlags, rsDrawPortals);
 #endif
+
+	CMD3(CCC_Mask, "rs_render_portals", &psDeviceFlags, rsDrawPortals);
 
 	// bone damage modifier
 	CMD4(CCC_Float, "g_hit_pwr_modif", &hit_modifier, .5f, 3.f);
