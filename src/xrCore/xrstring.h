@@ -85,7 +85,7 @@ namespace std
 		public:
 			size_t operator()(const xr_string& s) const
 			{
-				return xr_hash<xr_string::Super>()(s);
+				return xr_hash<std::string>()(*reinterpret_cast<const std::string*>(&s));
 			}
 	};
 }
