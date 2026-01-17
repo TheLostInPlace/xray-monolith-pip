@@ -118,13 +118,14 @@ struct XRCORE_API str_value_hash
 	}
 };
 
-struct str_container_impl;
 class IWriter;
 
 class XRCORE_API str_container
 {
 private:
-	str_container_impl* impl;
+	static const u32 buffer_size = 1024 * 256;
+	xr_unordered_set<str_value, str_value_hash> buffer;
+	xrSRWLock rwlock;
 public:
 	str_container();
 	~str_container();

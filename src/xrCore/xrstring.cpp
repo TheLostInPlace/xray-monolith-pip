@@ -8,108 +8,9 @@
 
 XRCORE_API xr_shared_ptr<str_container> g_pStringContainer = nullptr;
 
-struct str_container_impl
-{
-	static const u32 buffer_size = 1024 * 256;
-	xr_unordered_set<str_value, str_value_hash> buffer;
-	xrSRWLock rwlock;
-
-	str_container_impl()
-	{
-		buffer.reserve(buffer_size);
-	}
-
-	str_value* find(str_value& value)
-	{
-		xrSRWLockGuard guard(&rwlock, true);
-		auto it = buffer.find(value);
-		if (it == buffer.end())
-			return nullptr;
-
-		return const_cast<str_value*>(&(*it));
-	}
-
-	str_value* insert(str_value& value)
-	{
-		xrSRWLockGuard guard(&rwlock, false);
-		auto p = buffer.insert(value);
-		return const_cast<str_value*>(&(*p.first));
-	}
-
-	void erase(str_value& value)
-	{
-		xrSRWLockGuard guard(&rwlock, false);
-		buffer.erase(value);
-	}
-
-	void clean()
-	{
-		xrSRWLockGuard guard(&rwlock, false);
-		buffer.clear();
-		buffer.rehash(buffer_size);
-	}
-
-	void verify()
-	{
-		Msg("strings verify started");
-		// do something
-		Msg("strings verify completed");
-	}
-
-	void dump(FILE* f)
-	{
-		xrSRWLockGuard guard(&rwlock, true);
-		for (const auto& s : buffer)
-		{
-			fprintf(f, "ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
-		}
-	}
-
-	void dump(IWriter* f)
-	{
-		xrSRWLockGuard guard(&rwlock, true);
-		for (const auto& s : buffer)
-		{
-			string4096 temp;
-			xr_sprintf(temp, sizeof(temp), "ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
-			f->w_string(temp);
-		}
-	}
-
-	void dump_console()
-	{
-		xrSRWLockGuard guard(&rwlock, true);
-		xr_set<str_value> set;
-		for (const auto& s : buffer)
-		{
-			set.insert(s);
-		}
-		Msg("* [x-ray]: strings: count[%lu], unique[%lu]", buffer.size(), set.size());
-		for (const auto& s : set)
-		{
-			Msg("ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
-		}
-	}
-
-	u32 stat_economy(u32& count, u32& unique)
-	{
-		xrSRWLockGuard guard(&rwlock, true);
-		count = buffer.size();
-		u32 size = sizeof(buffer);
-		xr_unordered_set<xr_string> strings;
-		for (const auto& s : buffer)
-		{
-			size += sizeof(str_value) + s.value.length();
-			strings.insert(s.value);
-		}
-		unique = strings.size();
-		return size;
-	}
-};
-
 str_container::str_container()
 {
-	impl = xr_new<str_container_impl>();
+	buffer.reserve(buffer_size);
 }
 
 str_value* str_container::dock(str_c value)
@@ -117,51 +18,87 @@ str_value* str_container::dock(str_c value)
 	if (!value) return nullptr;
 
 	str_value s(value);
-	return impl->insert(s);
+	xrSRWLockGuard guard(&rwlock, false);
+	auto p = buffer.insert(s);
+	return const_cast<str_value*>(&(*p.first));
 }
 
 void str_container::erase(str_c value)
 {
 	str_value s(value);
-	impl->erase(s);
+	xrSRWLockGuard guard(&rwlock, false);
+	buffer.erase(s);
 }
 
 void str_container::clean()
 {
-	impl->clean();
+	xrSRWLockGuard guard(&rwlock, false);
+	buffer.clear();
+	buffer.rehash(buffer_size);
 }
 
 void str_container::verify()
 {
-	impl->verify();
+	Msg("strings verify started");
+	// do something
+	Msg("strings verify completed");
 }
 
 void str_container::dump()
 {
 	FILE* F = fopen("d:\\$str_dump$.txt", "w");
-	impl->dump(F);
+	xrSRWLockGuard guard(&rwlock, true);
+	for (const auto& s : buffer)
+	{
+		fprintf(F, "ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
+	}
 	fclose(F);
 }
 
 void str_container::dump(IWriter* W)
 {
-	impl->dump(W);
+	xrSRWLockGuard guard(&rwlock, true);
+	for (const auto& s : buffer)
+	{
+		string4096 temp;
+		xr_sprintf(temp, sizeof(temp), "ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
+		W->w_string(temp);
+	}
 }
 
 void str_container::dump_console()
 {
-	impl->dump_console();
+	xrSRWLockGuard guard(&rwlock, true);
+	xr_set<str_value> set;
+	for (const auto& s : buffer)
+	{
+		set.insert(s);
+	}
+	Msg("* [x-ray]: strings: count[%lu], unique[%lu]", buffer.size(), set.size());
+	for (const auto& s : buffer)
+	{
+		Msg("ref[%d]-len[%d] : %s\n", s.dwReference, (u32)s.value.length(), s.value.c_str());
+	}
 }
 
 u32 str_container::stat_economy(u32& count, u32& unique)
 {
-	return impl->stat_economy(count, unique);
+	xrSRWLockGuard guard(&rwlock, true);
+	count = buffer.size();
+	u32 size = sizeof(buffer);
+	xr_unordered_set<xr_string> strings;
+	for (const auto& s : buffer)
+	{
+		size += sizeof(str_value) + s.value.length();
+		strings.insert(s.value);
+	}
+	unique = strings.size();
+	return size;
 }
 
 str_container::~str_container()
 {
 	clean();
-	xr_delete(impl);
 }
 
 //xr_string class
