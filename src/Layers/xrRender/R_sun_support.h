@@ -317,6 +317,7 @@ public:
 			t1.sub(points[P.points[0]], points[P.points[1]]);
 			t2.sub(points[P.points[0]], points[P.points[2]]);
 
+#if defined(USE_DX10) || defined(USE_DX11)
 			P.planeN.crossproduct(t1, t2);
 
 			len = P.planeN.magnitude();
@@ -342,8 +343,10 @@ public:
 					continue;
 				}
 			}
-
-			P.planeD = - P.planeN.dotproduct(points[P.points[0]]);
+#else
+			P.planeN.crossproduct(t1, t2).normalize();
+#endif
+			P.planeD = -P.planeN.dotproduct(points[P.points[0]]);
 
 			// verify
 			if (_debug)
@@ -362,33 +365,6 @@ public:
 				p301.build(p3, p0, p1);
 				VERIFY(p012.n.similar(p123.n) && p012.n.similar(p230.n) && p012.n.similar(p301.n));
 			}
-
-			/*
-			t1.sub					(points[P.points[0]], points[P.points[1]]);
-
-
-			//	HACK: Igor: just make sure we calculated the plane
-
-			t2.sub					(points[P.points[0]], points[P.points[2]]);
-			P.planeN.crossproduct	(t1,t2).normalize();
-
-
-			P.planeD			= -	P.planeN.dotproduct(points[P.points[0]]);
-
-			// verify
-			if (_debug)
-			{
-				Fvector&		p0	= points[P.points[0]];
-				Fvector&		p1	= points[P.points[1]];
-				Fvector&		p2	= points[P.points[2]];
-				Fvector&		p3	= points[P.points[3]];
-				Fplane	p012;	p012.build(p0,p1,p2);
-				Fplane	p123;	p123.build(p1,p2,p3);
-				Fplane	p230;	p230.build(p2,p3,p0);
-				Fplane	p301;	p301.build(p3,p0,p1);
-				VERIFY	(p012.n.similar(p123.n) && p012.n.similar(p230.n) && p012.n.similar(p301.n));
-			}
-			*/
 		}
 	}
 

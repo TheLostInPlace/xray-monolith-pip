@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "../../xrEngine/xr_object.h"
-#include "../xrRender/FBasicVisual.h"
-#include "../xrRender/SkeletonCustom.h"
+#include "FBasicVisual.h"
+#include "SkeletonCustom.h"
 
 bool check_grass_shadow(light* L, CFrustum VB)
 {

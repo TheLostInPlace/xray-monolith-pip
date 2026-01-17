@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "../../xrEngine/igame_persistent.h"
 #include "../../xrEngine/irenderable.h"
-#include "../xrRender/FBasicVisual.h"
+#include "FBasicVisual.h"
 
-#include "../xrRender/r3_r4_R_sun_support.h"
+#include "R_sun_support.h"
 
 constexpr float tweak_COP_initial_offs = 1200.f;
 
@@ -12,7 +12,7 @@ float OLES_SUN_LIMIT_27_01_07 = 100.f;
 //////////////////////////////////////////////////////////////////////////
 // tables to calculate view-frustum bounds in world space
 // note: D3D uses [0..1] range for Z
-static Fvector3 corners [8] = {
+static Fvector3 corners[8] = {
 	{-1, -1, 0}, {-1, -1, +1},
 	{-1, +1, +1}, {-1, +1, 0},
 	{+1, +1, +1}, {+1, +1, 0},
@@ -47,13 +47,13 @@ void CRender::init_cacades()
 	float fBias = -0.0000025f;
 	//	float size = MAP_SIZE_START;
 	m_sun_cascades[0].reset_chain = true;
-	m_sun_cascades[0].size = 20;
+	m_sun_cascades[0].size = ps_ssfx_shadow_cascades.x; //20
 	m_sun_cascades[0].bias = m_sun_cascades[0].size * fBias;
 
-	m_sun_cascades[1].size = 40;
+	m_sun_cascades[1].size = ps_ssfx_shadow_cascades.y; //40
 	m_sun_cascades[1].bias = m_sun_cascades[1].size * fBias;
 
-	m_sun_cascades[2].size = 160;
+	m_sun_cascades[2].size = ps_ssfx_shadow_cascades.z; //160
 	m_sun_cascades[2].bias = m_sun_cascades[2].size * fBias;
 
 	// 	for( u32 i = 0; i < cascade_count; ++i )
@@ -328,13 +328,19 @@ void CRender::render_sun_cascade(u32 cascade_ind)
 	PROF_EVENT("Render Cascade: Accumulate");
 	Target->phase_accumulator();
 
+#if defined(USE_DX10) || defined(USE_DX11)
 	if (Target->use_minmax_sm_this_frame())
 	{
+#if defined(USE_DX10) || defined(USE_DX11)
 		PIX_EVENT(SE_SUN_NEAR_MINMAX_GENERATE);
+#endif
 		Target->create_minmax_SM();
 	}
+#endif
 
+#if defined(USE_DX10) || defined(USE_DX11)
 	PIX_EVENT(SE_SUN_NEAR);
+#endif
 
 	if (cascade_ind == 0)
 		Target->accum_direct_cascade(SE_SUN_NEAR, cascade.xform, cascade.xform,
