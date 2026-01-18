@@ -168,7 +168,7 @@ void CDialogHolder::DoRenderDialogs()
 	xr_vector<dlgItem>::iterator it = m_dialogsToRender.begin();
 	for (; it != m_dialogsToRender.end(); ++it)
 	{
-		if ((*it).enabled && (*it).wnd->IsShown())
+		if ((*it).enabled && (*it).wnd && (*it).wnd->IsShown())
 			(*it).wnd->Draw();
 	}
 }
