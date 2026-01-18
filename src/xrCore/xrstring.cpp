@@ -103,7 +103,7 @@ void str_container::dump_console()
 			
 	}
 
-	Msg("* [x-ray]: shared strings: count[%lu], unique[%lu], load factor[%.2f], distribution[%.2f]", count, set.size(), (float)count / buffer_size, _min(1.0f, (float)loadedListCount / buffer_size));
+	Msg("* [x-ray]: shared strings: count[%lu], unique[%lu], load factor[%.2f], distribution[%.2f]", count, set.size(), (float)count / buffer_size, _min(1.0f, (float)loadedListCount / _min(count, buffer_size)));
 	if (count != set.size())
 		Msg("! [x-ray]: shared strings, count != unique");
 
