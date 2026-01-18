@@ -48,7 +48,7 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 	VERIFY(pVisual->shader._get());
 
 	ShaderElement* sh_d = &*pVisual->shader->E[4];
-	if (RImplementation.o.distortion && sh_d && sh_d->flags.bDistort && i_mask[sh_d->flags.iPriority/2])
+	if (sh_d && sh_d->flags.bDistort && i_mask[sh_d->flags.iPriority/2])
 	{
 		if (i_mask[CDSGraphManager::fl_hud])
 			RGraph.mapHUDSorted.Distort.push_back(DSGraphItem<float>{ distSQ, SSA, val_pObject, pVisual, xform, sh_d, i_mask[CDSGraphManager::fl_hud] });
@@ -225,7 +225,7 @@ void CDSGraphManager::r_dsgraph_insert_static(dxRender_Visual *pVisual)
 	// b) Should be rendered to special distort buffer in another pass
 	VERIFY(pVisual->shader._get());
 	ShaderElement* sh_d = &*pVisual->shader->E[4];
-	if (RImplementation.o.distortion && sh_d && sh_d->flags.bDistort && i_mask[sh_d->flags.iPriority/2])
+	if (sh_d && sh_d->flags.bDistort && i_mask[sh_d->flags.iPriority/2])
 		RGraph.mapStaticSorted.Distort.push_back(DSGraphItem<float>{ distSQ, SSA, nullptr, pVisual, &Fidentity, sh_d });
 
 	// Select shader
