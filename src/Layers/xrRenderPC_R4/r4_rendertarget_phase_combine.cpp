@@ -463,7 +463,13 @@ void CRenderTarget::phase_combine()
 	// Distortion filter
 	BOOL bDistort = RImplementation.o.distortion_enabled; // This can be modified
 	{
-		if ((0 == RImplementation.GMBase.RGraph.mapStaticSorted.Distort.size() && 0 == RImplementation.GMBase.RGraph.mapDynamicSorted.Distort.size() && 0 == RImplementation.GMBase.RGraph.mapHUDSorted.Distort.size()) && !_menu_pp)		bDistort = FALSE;
+		if ((
+			0 == RImplementation.GMBase.RGraph.mapStaticSorted.Distort.size() &&
+			0 == RImplementation.GMBase.RGraph.mapDynamicSorted.Distort.size() &&
+			0 == RImplementation.GMBase.RGraph.mapHUDSorted.Distort.size()
+			) && !_menu_pp
+		)		
+			bDistort = FALSE;
 		if (bDistort)
 		{
 			PIX_EVENT(render_distort_objects);
