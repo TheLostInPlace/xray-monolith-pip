@@ -548,6 +548,7 @@
     <ClCompile Include="..\xrRender\ParticleEffectDef.cpp" />
     <ClCompile Include="..\xrRender\ParticleGroup.cpp" />
     <ClCompile Include="..\xrRender\PSLibrary.cpp" />
+    <ClCompile Include="..\xrRender\r2_blenders.cpp" />
     <ClCompile Include="..\xrRender\rendertarget_phase_blur.cpp" />
     <ClCompile Include="..\xrRender\rendertarget_phase_dof.cpp" />
     <ClCompile Include="..\xrRender\rendertarget_phase_lut.cpp" />
@@ -628,7 +629,6 @@
     <ClCompile Include="light_GI.cpp" />
     <ClCompile Include="light_vis.cpp" />
     <ClCompile Include="r2.cpp" />
-    <ClCompile Include="r2_blenders.cpp" />
     <ClCompile Include="r2_loader.cpp" />
     <ClCompile Include="r2_rendertarget.cpp" />
     <ClCompile Include="r2_rendertarget_accum_direct.cpp" />

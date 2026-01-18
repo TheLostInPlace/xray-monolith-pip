@@ -780,9 +780,6 @@
     <ClCompile Include="..\xrRender\PSLibrary.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="r2_blenders.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="r2_test_hw.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -1403,6 +1400,9 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="..\xrRender\R_sun.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xrRender\r2_blenders.cpp">
       <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
