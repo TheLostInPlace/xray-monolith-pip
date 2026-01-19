@@ -28,6 +28,7 @@ public:
 	virtual CWeapon* cast_weapon() { return NULL; }
 	virtual CGameObject* cast_game_object() { return this; }
 	virtual IDamageSource* cast_IDamageSource() { return CExplosive::cast_IDamageSource(); }
+	virtual CExplosiveRocket* cast_explosive_rocket() { return this; }
 	virtual void on_activate_physic_shell();
 public:
 
