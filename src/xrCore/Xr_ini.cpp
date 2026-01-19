@@ -848,6 +848,279 @@ void CInifile::LTXLoad (
 	}
 };
 
+void CInifile::EvaluateSection(
+	shared_str SectionName,
+	RStringVec* PreviousEvaluations,
+	string_path currentFileName
+)
+{
+	if (FinalizedSections.find(SectionName) != FinalizedSections.end())
+	{
+		return;
+	}
+
+	static shared_str DLTX_DELETE = "DLTX_DELETE";
+
+	PreviousEvaluations->insert(PreviousEvaluations->end(), SectionName);
+
+	auto BaseParentsIt = BaseParentDataMap.find(SectionName);
+	auto OverrideParentsIt = OverrideParentDataMap.find(SectionName);
+
+	RStringVec* BaseParents = (BaseParentsIt != BaseParentDataMap.end()) ? &BaseParentsIt->second : nullptr;
+	RStringVec* OverrideParents = (OverrideParentsIt != OverrideParentDataMap.end()) ? &OverrideParentsIt->second : nullptr;
+
+	BOOL bDeleteSectionIfEmpty = FALSE;
+
+	if (BaseParents && OverrideParents)
+	{
+		MergeParentSet(BaseParents, OverrideParents, false);
+	}
+
+	auto CurrentSecPair = xr_pair<shared_str, Sect>(SectionName, Sect());
+	Sect* CurrentSect = &CurrentSecPair.second;
+	CurrentSect->Name = SectionName.c_str();
+
+	static auto IsStringDLTXDelete = [](shared_str str, shared_str DLTX_DELETE)
+		{
+			const char* RawString = str.c_str();
+			return RawString && xr_strcmp(RawString, DLTX_DELETE) == 0;
+		};
+
+	static auto InsertItemWithDelete = [](Item CurrentItem, CInifile::InsertType Type, BOOL& bDeleteSectionIfEmpty, Sect* CurrentSect)
+		{
+			if (IsStringDLTXDelete(CurrentItem.first, DLTX_DELETE))
+			{
+				bDeleteSectionIfEmpty = TRUE;
+			}
+			else
+			{
+				CInifile::SectIt_ sect_it = std::lower_bound(CurrentSect->Data.begin(), CurrentSect->Data.end(), *CurrentItem.first, item_pred);
+				if (sect_it != CurrentSect->Data.end() && sect_it->first.equal(CurrentItem.first))
+				{
+					bool bShouldInsert = [&]()
+						{
+							switch (Type)
+							{
+							case CInifile::InsertType::Override:		return true;
+							case CInifile::InsertType::Base:			return false;
+							case CInifile::InsertType::Parent:			return IsStringDLTXDelete(sect_it->second, DLTX_DELETE);
+							}
+							return false;
+						}();
+
+					if (bShouldInsert)
+					{
+						sect_it->second = CurrentItem.second;
+					}
+				}
+				else
+				{
+					CurrentSect->Data.insert(sect_it, CurrentItem);
+				}
+			}
+		};
+
+	// Insert variables of own data
+	static auto InsertData = [](xr_map<shared_str, Sect>* Data, BOOL bIsBase, shared_str SectionName, BOOL& bDeleteSectionIfEmpty, Sect* CurrentSect)
+		{
+			auto It = Data->find(SectionName);
+
+			if (It != Data->end())
+			{
+				Sect* DataSection = &It->second;
+				for (Item CurrentItem : DataSection->Data)
+				{
+					InsertItemWithDelete(CurrentItem, bIsBase ? CInifile::InsertType::Base : CInifile::InsertType::Override, bDeleteSectionIfEmpty, CurrentSect);
+				}
+
+				if (!bIsBase)
+				{
+					Data->erase(It);
+				}
+			}
+		};
+
+	InsertData(&OverrideData, false, SectionName, bDeleteSectionIfEmpty, CurrentSect);
+	InsertData(&BaseData, true, SectionName, bDeleteSectionIfEmpty, CurrentSect);
+
+	// Insert variables from parents
+	if (BaseParents)
+	{
+		for (auto It = BaseParents->rbegin(); It != BaseParents->rend(); ++It)
+		{
+			shared_str ParentSectionName = *(It.base() - 1);
+
+			for (auto It2 = PreviousEvaluations->begin(); It2 != PreviousEvaluations->end(); ++It2)
+			{
+				if (xr_strcmp(ParentSectionName, *It2) == 0)
+				{
+					Debug.fatal(DEBUG_INFO, "Section '%s' has cyclical dependencies. Ensure that sections with parents don't inherit in a loop. Check this file and its DLTX mods: %s, mod file %s", ParentSectionName.c_str(), m_file_name, currentFileName);
+				}
+			}
+
+			EvaluateSection(ParentSectionName, PreviousEvaluations, currentFileName);
+
+			auto ParentIt = FinalData.find(ParentSectionName);
+
+			if (ParentIt == FinalData.end())
+			{
+				Debug.fatal(DEBUG_INFO, "Section '%s' inherits from non-existent section '%s'. Check this file and its DLTX mods: %s, mod file %s", SectionName.c_str(), ParentSectionName.c_str(), m_file_name, currentFileName);
+			}
+
+			Sect* ParentSec = &ParentIt->second;
+
+			for (Item CurrentItem : ParentSec->Data)
+			{
+				InsertItemWithDelete(CurrentItem, CInifile::InsertType::Parent, bDeleteSectionIfEmpty, CurrentSect);
+			}
+		}
+	}
+
+	// Delete entries marked DLTX_DELETE
+	xr_set<shared_str> deletedItems;
+	for (auto It = CurrentSect->Data.rbegin(); It != CurrentSect->Data.rend(); ++It)
+	{
+		if (IsStringDLTXDelete(It->second, DLTX_DELETE))
+		{
+			CurrentSect->Data.erase(It.base() - 1);
+			deletedItems.insert(It->first);
+		}
+	}
+
+	// Process list modifications
+	if (OverrideModifyListData.find(CurrentSect->Name) != OverrideModifyListData.end())
+	{
+		for (auto It = OverrideModifyListData[CurrentSect->Name].begin(); It != OverrideModifyListData[CurrentSect->Name].end(); ++It)
+		{
+			CInifile::Item& I = *It;
+
+			char dltx_listmode = I.first[0];
+			I.first = I.first.c_str() + 1;
+
+			CInifile::SectIt_ sect_it = std::lower_bound(CurrentSect->Data.begin(), CurrentSect->Data.end(), *I.first, item_pred);
+
+			if (I.second != NULL &&
+				dltx_listmode == '>' &&
+				(sect_it == CurrentSect->Data.end() || !sect_it->first.equal(I.first)) &&
+				deletedItems.find(I.first.c_str()) == deletedItems.end()
+				)
+			{
+				CurrentSect->Data.insert(sect_it, I);
+			}
+			else if (sect_it != CurrentSect->Data.end() && sect_it->first.equal(I.first))
+			{
+				if (dltx_listmode && sect_it->second != NULL)
+				{
+					// Optimized list splitting and joining with reduced allocations
+					static auto split_list = [](shared_str items, const xr_string& delimiter = ",")
+					{
+						xr_vector<xr_string> vec;
+						vec.reserve(16);  // Pre-allocate for typical list sizes
+
+						const char* start = items.c_str();
+						const char* end = start + xr_strlen(start);
+
+						for (const char* pos = start; pos < end; ++pos)
+						{
+							if (*pos == delimiter[0])
+							{
+								xr_string token(start, pos - start);
+								token.TrimInPlace();
+								vec.push_back(token);
+								start = pos + 1;
+							}
+						}
+
+						// Add remaining token
+						if (start < end)
+						{
+							xr_string token(start, end - start);
+							token.TrimInPlace();
+							vec.push_back(token);
+						}
+
+						return vec;
+					};
+
+					auto sect_it_items_vec = split_list(sect_it->second);
+					auto I_items_vec = split_list(I.second);
+
+					// Add or remove from list
+					static auto find_and_store_index = [](const xr_vector<xr_string>& items_vec, const xr_string& item, int& vec_index)
+					{
+						auto it = std::find(items_vec.begin(), items_vec.end(), item);
+						if (it != items_vec.end()) {
+							vec_index = it - items_vec.begin();
+							return true;
+						}
+						else
+						{
+							vec_index = -1;
+							return false;
+						}
+					};
+
+					int vec_index = -1;
+					for (const auto& item : I_items_vec)
+					{
+						if (dltx_listmode == '>')
+						{
+							sect_it_items_vec.push_back(item);
+						}
+						else if (dltx_listmode == '<')
+						{
+							while (find_and_store_index(sect_it_items_vec, item, vec_index))
+							{
+								sect_it_items_vec.erase(sect_it_items_vec.begin() + vec_index);
+							}
+						}
+					}
+
+					// Store result back - optimized join with pre-calculated capacity
+					static auto join_list = [](const xr_vector<xr_string>& items_vec, const xr_string& delimiter = ",")
+					{
+						if (items_vec.empty())
+							return xr_string();
+
+						// Calculate total size needed
+						size_t total_size = 0;
+						for (const auto& i : items_vec)
+						{
+							total_size += i.length() + delimiter.length();
+						}
+
+						xr_string ret;
+						ret.reserve(total_size);
+
+						for (size_t idx = 0; idx < items_vec.size(); ++idx)
+						{
+							if (idx > 0)
+								ret += delimiter;
+							ret += items_vec[idx];
+						}
+						return ret;
+					};
+
+					sect_it->second = join_list(sect_it_items_vec, ",").c_str();
+				}
+			}
+		}
+	}
+
+	// Pop from stack
+	auto LastElement = PreviousEvaluations->end();
+	--LastElement;
+	PreviousEvaluations->erase(LastElement);
+
+	// Finalize
+	if (!bDeleteSectionIfEmpty || CurrentSecPair.second.Data.size())
+	{
+		FinalData.emplace(CurrentSecPair.first, CurrentSecPair.second);
+	}
+
+	FinalizedSections.insert(SectionName);
+};
+
 void CInifile::Load(IReader* F, LPCSTR path
 #ifndef _EDITOR
                     , allow_include_func_t allow_include_func
@@ -868,271 +1141,6 @@ void CInifile::Load(IReader* F, LPCSTR path
 	OverrideData.clear();
 	FinalData.clear();
 	FinalizedSections.clear();
-
-	// FUNCTION DEFINITIONS
-	std::function<void(shared_str, RStringVec*)> EvaluateSection = [&](shared_str SectionName, RStringVec* PreviousEvaluations)
-	{
-		if (FinalizedSections.find(SectionName) != FinalizedSections.end())
-		{
-			return;
-		}
-
-		PreviousEvaluations->insert(PreviousEvaluations->end(), SectionName);
-
-		auto BaseParentsIt = BaseParentDataMap.find(SectionName);
-		auto OverrideParentsIt = OverrideParentDataMap.find(SectionName);
-
-		RStringVec* BaseParents = (BaseParentsIt != BaseParentDataMap.end()) ? &BaseParentsIt->second : nullptr;
-		RStringVec* OverrideParents = (OverrideParentsIt != OverrideParentDataMap.end()) ? &OverrideParentsIt->second : nullptr;
-
-		BOOL bDeleteSectionIfEmpty = FALSE;
-
-		if (BaseParents && OverrideParents)
-		{
-			MergeParentSet(BaseParents, OverrideParents, false);
-		}
-
-		auto CurrentSecPair = xr_pair<shared_str, Sect>(SectionName, Sect());
-		Sect* CurrentSect = &CurrentSecPair.second;
-		CurrentSect->Name = SectionName.c_str();
-
-		auto IsStringDLTXDelete = [&](shared_str str)
-		{
-			const char* RawString = str.c_str();
-			return RawString && xr_strcmp(RawString, DLTX_DELETE) == 0;
-		};
-
-		auto InsertItemWithDelete = [&](Item CurrentItem, CInifile::InsertType Type)
-		{
-			if (IsStringDLTXDelete(CurrentItem.first))
-			{
-				bDeleteSectionIfEmpty = TRUE;
-			}
-			else
-			{
-				CInifile::SectIt_ sect_it = std::lower_bound(CurrentSect->Data.begin(), CurrentSect->Data.end(), *CurrentItem.first, item_pred);
-				if (sect_it != CurrentSect->Data.end() && sect_it->first.equal(CurrentItem.first))
-				{
-					bool bShouldInsert = [&]()
-					{
-						switch (Type)
-						{
-						case CInifile::InsertType::Override:		return true;
-						case CInifile::InsertType::Base:			return false;
-						case CInifile::InsertType::Parent:			return IsStringDLTXDelete(sect_it->second);
-						}
-						return false;
-					}();
-
-					if (bShouldInsert)
-					{
-						sect_it->second = CurrentItem.second;
-					}
-				}
-				else
-				{
-					CurrentSect->Data.insert(sect_it, CurrentItem);
-				}
-			}
-		};
-
-		// Insert variables of own data
-		auto InsertData = [&](xr_map<shared_str, Sect>* Data, BOOL bIsBase)
-		{
-			auto It = Data->find(SectionName);
-
-			if (It != Data->end())
-			{
-				Sect* DataSection = &It->second;
-				for (Item CurrentItem : DataSection->Data)
-				{
-					InsertItemWithDelete(CurrentItem, bIsBase ? Base : Override);
-				}
-
-				if (!bIsBase)
-				{
-					Data->erase(It);
-				}
-			}
-		};
-
-		InsertData(&OverrideData, false);
-		InsertData(&BaseData, true);
-
-		// Insert variables from parents
-		if (BaseParents)
-		{
-			for (auto It = BaseParents->rbegin(); It != BaseParents->rend(); ++It)
-			{
-				shared_str ParentSectionName = *(It.base() - 1);
-
-				for (auto It2 = PreviousEvaluations->begin(); It2 != PreviousEvaluations->end(); ++It2)
-				{
-					if (xr_strcmp(ParentSectionName, *It2) == 0)
-					{
-						Debug.fatal(DEBUG_INFO, "Section '%s' has cyclical dependencies. Ensure that sections with parents don't inherit in a loop. Check this file and its DLTX mods: %s, mod file %s", ParentSectionName.c_str(), m_file_name, currentFileName);
-					}
-				}
-
-				EvaluateSection(ParentSectionName, PreviousEvaluations);
-
-				auto ParentIt = FinalData.find(ParentSectionName);
-
-				if (ParentIt == FinalData.end())
-				{
-					Debug.fatal(DEBUG_INFO, "Section '%s' inherits from non-existent section '%s'. Check this file and its DLTX mods: %s, mod file %s", SectionName.c_str(), ParentSectionName.c_str(), m_file_name, currentFileName);
-				}
-
-				Sect* ParentSec = &ParentIt->second;
-
-				for (Item CurrentItem : ParentSec->Data)
-				{
-					InsertItemWithDelete(CurrentItem, Parent);
-				}
-			}
-		}
-
-		// Delete entries marked DLTX_DELETE
-		xr_set<shared_str> deletedItems;
-		for (auto It = CurrentSect->Data.rbegin(); It != CurrentSect->Data.rend(); ++It)
-		{
-			if (IsStringDLTXDelete(It->second))
-			{
-				CurrentSect->Data.erase(It.base() - 1);
-				deletedItems.insert(It->first);
-			}
-		}
-
-		// Process list modifications
-		if (OverrideModifyListData.find(CurrentSect->Name) != OverrideModifyListData.end())
-		{
-			for (auto It = OverrideModifyListData[CurrentSect->Name].begin(); It != OverrideModifyListData[CurrentSect->Name].end(); ++It)
-			{
-				CInifile::Item &I = *It;
-
-				char dltx_listmode = I.first[0];
-				I.first = I.first.c_str() + 1;
-
-				CInifile::SectIt_ sect_it = std::lower_bound(CurrentSect->Data.begin(), CurrentSect->Data.end(), *I.first, item_pred);
-
-				if (I.second != NULL &&
-					dltx_listmode == '>' &&
-					(sect_it == CurrentSect->Data.end() || !sect_it->first.equal(I.first)) &&
-					deletedItems.find(I.first.c_str()) == deletedItems.end()
-				)
-				{
-					CurrentSect->Data.insert(sect_it, I);
-				}
-				else if (sect_it != CurrentSect->Data.end() && sect_it->first.equal(I.first))
-				{
-					if (dltx_listmode && sect_it->second != NULL)
-					{
-						// Optimized list splitting and joining with reduced allocations
-						static auto split_list = [](shared_str items, const xr_string& delimiter = ",") {
-							xr_vector<xr_string> vec;
-							vec.reserve(16);  // Pre-allocate for typical list sizes
-							
-							const char* start = items.c_str();
-							const char* end = start + xr_strlen(start);
-							
-							for (const char* pos = start; pos < end; ++pos)
-							{
-								if (*pos == delimiter[0])
-								{
-									xr_string token(start, pos - start);
-									token.TrimInPlace();
-									vec.push_back(token);
-									start = pos + 1;
-								}
-							}
-							
-							// Add remaining token
-							if (start < end)
-							{
-								xr_string token(start, end - start);
-								token.TrimInPlace();
-								vec.push_back(token);
-							}
-							
-							return vec;
-						};
-						
-						auto sect_it_items_vec = split_list(sect_it->second);
-						auto I_items_vec = split_list(I.second);
-
-						// Add or remove from list
-						static auto find_and_store_index = [](const xr_vector<xr_string>& items_vec, const xr_string& item, int &vec_index) {
-							auto it = std::find(items_vec.begin(), items_vec.end(), item);
-							if (it != items_vec.end()) {
-								vec_index = it - items_vec.begin();
-								return true;
-							} else {
-								vec_index = -1;
-								return false;
-							}
-						};
-						
-						int vec_index = -1;
-						for (const auto &item : I_items_vec)
-						{
-							if (dltx_listmode == '>')
-							{
-								sect_it_items_vec.push_back(item);
-							}
-							else if (dltx_listmode == '<')
-							{
-								while (find_and_store_index(sect_it_items_vec, item, vec_index))
-								{
-									sect_it_items_vec.erase(sect_it_items_vec.begin() + vec_index);
-								}
-							}
-						}
-
-						// Store result back - optimized join with pre-calculated capacity
-						static auto join_list = [](const xr_vector<xr_string>& items_vec, const xr_string& delimiter = ",")
-						{
-							if (items_vec.empty())
-								return xr_string();
-							
-							// Calculate total size needed
-							size_t total_size = 0;
-							for (const auto &i : items_vec)
-							{
-								total_size += i.length() + delimiter.length();
-							}
-							
-							xr_string ret;
-							ret.reserve(total_size);
-							
-							for (size_t idx = 0; idx < items_vec.size(); ++idx)
-							{
-								if (idx > 0)
-									ret += delimiter;
-								ret += items_vec[idx];
-							}
-							return ret;
-						};
-
-						sect_it->second = join_list(sect_it_items_vec, ",").c_str();
-					}
-				}
-			}
-		}
-
-		// Pop from stack
-		auto LastElement = PreviousEvaluations->end();
-		--LastElement;
-		PreviousEvaluations->erase(LastElement);
-
-		// Finalize
-		if (!bDeleteSectionIfEmpty || CurrentSecPair.second.Data.size())
-		{
-			FinalData.emplace(CurrentSecPair.first, CurrentSecPair.second);
-		}
-
-		FinalizedSections.insert(SectionName);
-	};
-	// FUNCTION DEFINITIONS END
 
 	// CRITICAL OPTIMIZATION: Single-pass load instead of double read
 	// Parse both base and override data in one pass
@@ -1155,7 +1163,7 @@ void CInifile::Load(IReader* F, LPCSTR path
 
 	for (const auto& SectPair : BaseData)
 	{
-		EvaluateSection(SectPair.first, &PreviousEvaluations);
+		EvaluateSection(SectPair.first, &PreviousEvaluations, currentFileName);
 	}
 
 	// Handle marked-for-delete sections

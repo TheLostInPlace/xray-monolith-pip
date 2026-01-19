@@ -143,6 +143,11 @@ private:
 		string_path currentFileName,
 		BOOL bIsCurrentSectionOverride
 	);
+	void EvaluateSection(
+		shared_str SectionName,
+		RStringVec* PreviousEvaluations,
+		string_path currentFileName
+	);
 
 public:
 	void save_as(IWriter& writer, bool bcheck = false) const;
