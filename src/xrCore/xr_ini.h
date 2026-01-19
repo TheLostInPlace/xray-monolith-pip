@@ -108,7 +108,43 @@ public:
 		Base,
 		Parent
 	};
+	void LTXLoad(
+		IReader* F,
+		LPCSTR path,
+		xr_map<shared_str, Sect>* OutputBaseData,
+		xr_map<shared_str, Sect>* OutputOverrideData,
+		xr_map<shared_str, RStringVec>* BaseParentDataMap,
+		xr_map<shared_str, RStringVec>* OverrideParentDataMap,
+		BOOL bIsRootFile,
+		string_path currentFileName
+#ifndef _EDITOR
+		, allow_include_func_t allow_include_func = NULL
+#endif
+	);
+private:
+	void loadFile(
+		const string_path _fn,
+		const string_path inc_path,
+		const string_path name,
+		xr_map<shared_str, Sect>* OutputBaseData,
+		xr_map<shared_str, Sect>* OutputOverrideData,
+		xr_map<shared_str, RStringVec>* BaseParentDataMap,
+		xr_map<shared_str, RStringVec>* OverrideParentDataMap,
+		string_path currentFileName
+#ifndef _EDITOR
+		, allow_include_func_t allow_include_func
+#endif
+	);
+	void StashCurrentSection(
+		Sect*& CurrentBase,
+		Sect*& CurrentOverride,
+		xr_map<shared_str, Sect>* OutputBaseData,
+		xr_map<shared_str, Sect>* OutputOverrideData,
+		string_path currentFileName,
+		BOOL bIsCurrentSectionOverride
+	);
 
+public:
 	void save_as(IWriter& writer, bool bcheck = false) const;
 	void set_override_names(BOOL b) { m_flags.set(eOverrideNames, b); }
 	void save_at_end(BOOL b) { m_flags.set(eSaveAtEnd, b); }
