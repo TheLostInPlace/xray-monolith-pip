@@ -197,6 +197,22 @@ public:
 		}
 	}
 
+	// demonized: Swap and Pop, does NOT preserve order
+	iterator erase_fast(iterator it)
+	{
+		iterator prev = std::prev(end());
+		if (it != prev)
+			std::iter_swap(it, prev);
+		
+		pop_back();
+		return it;
+	}
+
+	iterator erase_fast(const_iterator cit)
+	{
+		return erase_fast(std::next(begin(), std::distance(cbegin(), cit)));
+	}
+
 #ifdef M_DONTDEFERCLEAR_EXT
 	void clear() { clear_and_free(); }
 #else
