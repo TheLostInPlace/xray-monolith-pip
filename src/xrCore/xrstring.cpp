@@ -423,6 +423,12 @@ xr_string xr_string::Trim(const char* t) const
 	return result;
 };
 
+void xr_string::TrimInPlace(const char* t)
+{
+	erase(find_last_not_of(t) + 1);
+	erase(0, find_first_not_of(t));
+};
+
 
 xr_string xr_string::ToLowerCase() const
 {

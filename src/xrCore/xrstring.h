@@ -58,6 +58,7 @@ public:
 	xrStringVector SplitStringMulti(xr_string separator = " ", bool includeSeparators = false, bool trimStrings = false) const;
 	xrStringVector SplitStringLimit(xr_string separator = " ", int limit = 0, bool trimStrings = false) const;
 	xr_string Trim(const char* t = " \t\n\r\f\v") const;
+	void TrimInPlace(const char* t = " \t\n\r\f\v");
 	xr_string ToLowerCase() const;
 	xr_string ReplaceAll(const xr_string& from, const xr_string& to) const;
 
