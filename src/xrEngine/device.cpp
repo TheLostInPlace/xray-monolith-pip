@@ -391,10 +391,6 @@ void CRenderDevice::on_idle()
 		GData.prev_dir[pBend].set(GData.dir[pBend].x, GData.dir[pBend].y, GData.dir[pBend].z, GData.str[pBend]);
 	}
 
-	// Save wind animation position
-	wind_anim_prev = wind_anim_saved;
-	wind_anim_saved = g_pGamePersistent->Environment().wind_anim;
-
 	//RCache.set_xform_view ( mView );
 	//RCache.set_xform_project ( mProject );
 	D3DXMatrixInverse((D3DXMATRIX*)&mInvFullTransform, 0, (D3DXMATRIX*)&mFullTransform);
@@ -462,6 +458,10 @@ void CRenderDevice::on_idle()
 #endif 
 
 	secondary_tasks.wait();
+
+	// Save wind animation position
+	wind_anim_prev = wind_anim_saved;
+	wind_anim_saved = g_pGamePersistent->Environment().wind_anim;
 
 #ifdef DEDICATED_SERVER
     u32 FrameEndTime = TimerGlobal.GetElapsed_ms();
