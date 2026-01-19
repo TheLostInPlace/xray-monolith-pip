@@ -302,10 +302,17 @@ void CInifile::Load(IReader* F, LPCSTR path
 	static shared_str DLTX_DELETE = "DLTX_DELETE";
 
 	string_path currentFileName;
-	xr_map<shared_str, RStringSet> OverrideToFilename;
-	xr_map<shared_str, shared_str> SectionToFilename;
-	RStringSet SectionsToDelete;
+	OverrideToFilename.clear();
+	SectionToFilename.clear();
+	SectionsToDelete.clear();
+	BaseParentDataMap.clear();
+	BaseData.clear();
+	OverrideParentDataMap.clear();
+	OverrideData.clear();
+	FinalData.clear();
+	FinalizedSections.clear();
 
+	// FUNCTION DEFINITIONS
 	// Single-pass LTXLoad that distinguishes override vs base data during parsing
 	std::function<void
 		(
@@ -770,23 +777,6 @@ void CInifile::Load(IReader* F, LPCSTR path
 		}
 	};
 
-	xr_map<shared_str, RStringVec> BaseParentDataMap;
-	xr_map<shared_str, Sect> BaseData;
-
-	xr_map<shared_str, RStringVec> OverrideParentDataMap;
-	xr_map<shared_str, Sect> OverrideData;
-
-	xr_map<shared_str, Sect> FinalData;
-
-	xr_set<shared_str> FinalizedSections;
-
-	enum InsertType
-	{
-		Override,
-		Base,
-		Parent
-	};
-
 	std::function<void(shared_str, RStringVec*)> EvaluateSection = [&](shared_str SectionName, RStringVec* PreviousEvaluations)
 	{
 		if (FinalizedSections.find(SectionName) != FinalizedSections.end())
@@ -819,7 +809,7 @@ void CInifile::Load(IReader* F, LPCSTR path
 			return RawString && xr_strcmp(RawString, DLTX_DELETE) == 0;
 		};
 
-		auto InsertItemWithDelete = [&](Item CurrentItem, InsertType Type)
+		auto InsertItemWithDelete = [&](Item CurrentItem, CInifile::InsertType Type)
 		{
 			if (IsStringDLTXDelete(CurrentItem.first))
 			{
@@ -834,9 +824,9 @@ void CInifile::Load(IReader* F, LPCSTR path
 					{
 						switch (Type)
 						{
-						case InsertType::Override:		return true;
-						case InsertType::Base:			return false;
-						case InsertType::Parent:		return IsStringDLTXDelete(sect_it->second);
+						case CInifile::InsertType::Override:		return true;
+						case CInifile::InsertType::Base:			return false;
+						case CInifile::InsertType::Parent:			return IsStringDLTXDelete(sect_it->second);
 						}
 						return false;
 					}();
@@ -1049,6 +1039,7 @@ void CInifile::Load(IReader* F, LPCSTR path
 
 		FinalizedSections.insert(SectionName);
 	};
+	// FUNCTION DEFINITIONS END
 
 	// CRITICAL OPTIMIZATION: Single-pass load instead of double read
 	// Parse both base and override data in one pass

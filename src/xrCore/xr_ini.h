@@ -88,9 +88,27 @@ public:
 
 	virtual ~CInifile();
 	bool save_as(LPCSTR new_fname = 0);
+
+	// DLTX
 	void DLTX_print(LPCSTR sec, LPCSTR line);
 	LPCSTR DLTX_getFilenameOfLine(LPCSTR sec, LPCSTR line);
 	bool DLTX_isOverride(LPCSTR sec, LPCSTR line);
+	xr_map<shared_str, RStringSet> OverrideToFilename;
+	xr_map<shared_str, shared_str> SectionToFilename;
+	RStringSet SectionsToDelete;
+	xr_map<shared_str, RStringVec> BaseParentDataMap;
+	xr_map<shared_str, Sect> BaseData;
+	xr_map<shared_str, RStringVec> OverrideParentDataMap;
+	xr_map<shared_str, Sect> OverrideData;
+	xr_map<shared_str, Sect> FinalData;
+	xr_set<shared_str> FinalizedSections;
+	enum InsertType
+	{
+		Override,
+		Base,
+		Parent
+	};
+
 	void save_as(IWriter& writer, bool bcheck = false) const;
 	void set_override_names(BOOL b) { m_flags.set(eOverrideNames, b); }
 	void save_at_end(BOOL b) { m_flags.set(eSaveAtEnd, b); }
