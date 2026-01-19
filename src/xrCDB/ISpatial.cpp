@@ -193,7 +193,7 @@ void ISpatial_NODE::_remove(ISpatialShared S)
 	S->spatial.node_ptr = nullptr;
 	auto it = std::find(items.begin(),items.end(),S);
 	VERIFY(it!=items.end());
-	items.erase(it);
+	items.erase_fast(it);
 	S->spatial.space->stat_objects --;
 }
 
