@@ -989,7 +989,7 @@ void CInifile::EvaluateSection(
 							if (*pos == delimiter[0])
 							{
 								xr_string token(start, pos - start);
-								token.TrimInPlace();
+								trim(token);
 								vec.push_back(token);
 								start = pos + 1;
 							}
@@ -999,7 +999,7 @@ void CInifile::EvaluateSection(
 						if (start < end)
 						{
 							xr_string token(start, end - start);
-							token.TrimInPlace();
+							trim(token);
 							vec.push_back(token);
 						}
 
