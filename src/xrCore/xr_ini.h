@@ -102,6 +102,7 @@ public:
 	xr_map<shared_str, Sect> OverrideData;
 	xr_map<shared_str, Sect> FinalData;
 	xr_set<shared_str> FinalizedSections;
+	xr_map<shared_str, xr_vector<CInifile::Item>> OverrideModifyListData;
 	enum InsertType
 	{
 		Override,
@@ -111,10 +112,6 @@ public:
 	void LTXLoad(
 		IReader* F,
 		LPCSTR path,
-		xr_map<shared_str, Sect>* OutputBaseData,
-		xr_map<shared_str, Sect>* OutputOverrideData,
-		xr_map<shared_str, RStringVec>* BaseParentDataMap,
-		xr_map<shared_str, RStringVec>* OverrideParentDataMap,
 		BOOL bIsRootFile,
 		string_path currentFileName
 #ifndef _EDITOR
@@ -126,10 +123,6 @@ private:
 		const string_path _fn,
 		const string_path inc_path,
 		const string_path name,
-		xr_map<shared_str, Sect>* OutputBaseData,
-		xr_map<shared_str, Sect>* OutputOverrideData,
-		xr_map<shared_str, RStringVec>* BaseParentDataMap,
-		xr_map<shared_str, RStringVec>* OverrideParentDataMap,
 		string_path currentFileName
 #ifndef _EDITOR
 		, allow_include_func_t allow_include_func
@@ -138,8 +131,6 @@ private:
 	void StashCurrentSection(
 		Sect*& CurrentBase,
 		Sect*& CurrentOverride,
-		xr_map<shared_str, Sect>* OutputBaseData,
-		xr_map<shared_str, Sect>* OutputOverrideData,
 		string_path currentFileName,
 		BOOL bIsCurrentSectionOverride
 	);
@@ -148,6 +139,7 @@ private:
 		RStringVec* PreviousEvaluations,
 		string_path currentFileName
 	);
+	void insert_item(CInifile::Sect* tgt, const CInifile::Item& I);
 
 public:
 	void save_as(IWriter& writer, bool bcheck = false) const;

@@ -190,9 +190,7 @@ CInifile::~CInifile()
 		xr_delete(*I);
 }
 
-xr_map<shared_str, xr_vector<CInifile::Item>> OverrideModifyListData;
-
-static void insert_item(CInifile::Sect* tgt, const CInifile::Item& I)
+void CInifile::insert_item(CInifile::Sect* tgt, const CInifile::Item& I)
 {
 	// demonized
 	// DLTX: add or remove item from the section parameter if it has a structure of "name = item1, item2, item3, ..."
@@ -295,10 +293,6 @@ void CInifile::loadFile(
 		const string_path _fn,
 		const string_path inc_path,
 		const string_path name,
-		xr_map<shared_str, Sect>* OutputBaseData,
-		xr_map<shared_str, Sect>* OutputOverrideData,
-		xr_map<shared_str, RStringVec>* BaseParentDataMap,
-		xr_map<shared_str, RStringVec>* OverrideParentDataMap,
 		string_path currentFileName
 	#ifndef _EDITOR
 		, allow_include_func_t allow_include_func
@@ -315,10 +309,6 @@ void CInifile::loadFile(
 		LTXLoad(
 			I,
 			inc_path,
-			OutputBaseData,
-			OutputOverrideData,
-			BaseParentDataMap,
-			OverrideParentDataMap,
 			false,
 			currentFileName,
 			allow_include_func
@@ -331,8 +321,6 @@ void CInifile::loadFile(
 void CInifile::StashCurrentSection(
 		Sect*& CurrentBase,
 		Sect*& CurrentOverride,
-		xr_map<shared_str, Sect>* OutputBaseData,
-		xr_map<shared_str, Sect>* OutputOverrideData,
 		string_path currentFileName,
 		BOOL bIsCurrentSectionOverride
 	)
@@ -340,8 +328,8 @@ void CInifile::StashCurrentSection(
 	// Store base section if exists
 	if (CurrentBase)
 	{
-		auto SectIt = OutputBaseData->find(CurrentBase->Name);
-		if (SectIt != OutputBaseData->end())
+		auto SectIt = BaseData.find(CurrentBase->Name);
+		if (SectIt != BaseData.end())
 		{
 			// Overwrite existing base data
 			for (Item CurrentItem : CurrentBase->Data)
@@ -351,7 +339,7 @@ void CInifile::StashCurrentSection(
 		}
 		else
 		{
-			OutputBaseData->emplace(CurrentBase->Name, *CurrentBase);
+			BaseData.emplace(CurrentBase->Name, *CurrentBase);
 			SectionToFilename[CurrentBase->Name] = currentFileName;
 		}
 		CurrentBase = NULL;
@@ -360,8 +348,8 @@ void CInifile::StashCurrentSection(
 	// Store override section if exists
 	if (CurrentOverride)
 	{
-		auto SectIt = OutputOverrideData->find(CurrentOverride->Name);
-		if (SectIt != OutputOverrideData->end())
+		auto SectIt = OverrideData.find(CurrentOverride->Name);
+		if (SectIt != OverrideData.end())
 		{
 			if (!bIsCurrentSectionOverride)
 			{
@@ -378,7 +366,7 @@ void CInifile::StashCurrentSection(
 		}
 		else
 		{
-			OutputOverrideData->emplace(CurrentOverride->Name, *CurrentOverride);
+			OverrideData.emplace(CurrentOverride->Name, *CurrentOverride);
 			OverrideToFilename[CurrentOverride->Name].insert(currentFileName);
 		}
 		CurrentOverride = NULL;
@@ -389,10 +377,6 @@ void CInifile::StashCurrentSection(
 void CInifile::LTXLoad (
 		IReader* F,
 		LPCSTR path,
-		xr_map<shared_str, Sect>* OutputBaseData,
-		xr_map<shared_str, Sect>* OutputOverrideData,
-		xr_map<shared_str, RStringVec>* BaseParentDataMap,
-		xr_map<shared_str, RStringVec>* OverrideParentDataMap,
 		BOOL bIsRootFile,
 		string_path currentFileName
 #ifndef _EDITOR
@@ -410,14 +394,14 @@ void CInifile::LTXLoad (
 	BOOL bIsCurrentSectionOverride = FALSE;
 	BOOL bHasLoadedModFiles = FALSE;
 
-	static auto GetParentStrings = [](shared_str SectionName, xr_map<shared_str, RStringVec>* ParentMap)
+	static auto GetParentStrings = [](shared_str SectionName, xr_map<shared_str, RStringVec>& ParentMap)
 	{
-		auto It = ParentMap->find(SectionName);
+		auto It = ParentMap.find(SectionName);
 
-		if (It == ParentMap->end())
+		if (It == ParentMap.end())
 		{
-			ParentMap->emplace(SectionName, RStringVec());
-			It = ParentMap->find(SectionName);
+			ParentMap.emplace(SectionName, RStringVec());
+			It = ParentMap.find(SectionName);
 		}
 
 		return &It->second;
@@ -477,8 +461,6 @@ void CInifile::LTXLoad (
 			StashCurrentSection(
 				CurrentBase,
 				CurrentOverride,
-				OutputBaseData,
-				OutputOverrideData,
 				currentFileName,
 				bIsCurrentSectionOverride
 			);
@@ -539,10 +521,6 @@ void CInifile::LTXLoad (
 					(FilePath + ModFileNameStr).c_str(),
 					FilePath.c_str(),
 					ModFileName.c_str(),
-					OutputBaseData,
-					OutputOverrideData,
-					BaseParentDataMap,
-					OverrideParentDataMap,
 					currentFileName
 #ifndef _EDITOR
 					, allow_include_func
@@ -630,10 +608,6 @@ void CInifile::LTXLoad (
 							_fn,
 							inc_path,
 							_name,
-							OutputBaseData,
-							OutputOverrideData,
-							BaseParentDataMap,
-							OverrideParentDataMap,
 							currentFileName
 #ifndef _EDITOR
 							, allow_include_func
@@ -646,10 +620,6 @@ void CInifile::LTXLoad (
 						fn,
 						inc_path,
 						inc_name,
-						OutputBaseData,
-						OutputOverrideData,
-						BaseParentDataMap,
-						OverrideParentDataMap,
 						currentFileName
 #ifndef _EDITOR
 						, allow_include_func
@@ -665,8 +635,6 @@ void CInifile::LTXLoad (
 			StashCurrentSection(
 				CurrentBase,
 				CurrentOverride,
-				OutputBaseData,
-				OutputOverrideData,
 				currentFileName,
 				bIsCurrentSectionOverride
 			);
@@ -688,8 +656,6 @@ void CInifile::LTXLoad (
 			StashCurrentSection(
 				CurrentBase,
 				CurrentOverride,
-				OutputBaseData,
-				OutputOverrideData,
 				currentFileName,
 				bIsCurrentSectionOverride
 			);
@@ -709,8 +675,8 @@ void CInifile::LTXLoad (
 			else if (isSafeOverrideSection(str))
 			{
 				bIsCurrentSectionOverride = true;
-				auto SectIt = OutputBaseData->find(SecName.c_str());
-				if (SectIt == OutputBaseData->end())
+				auto SectIt = BaseData.find(SecName.c_str());
+				if (SectIt == BaseData.end())
 				{
 					sectionsMarkedForCreate.insert(SecName.c_str());
 				}
@@ -826,8 +792,6 @@ void CInifile::LTXLoad (
 	StashCurrentSection(
 		CurrentBase,
 		CurrentOverride,
-		OutputBaseData,
-		OutputOverrideData,
 		currentFileName,
 		bIsCurrentSectionOverride
 	);
@@ -835,12 +799,12 @@ void CInifile::LTXLoad (
 	// Create empty sections that were marked with @[ and weren't defined normally
 	for (auto& SecName : sectionsMarkedForCreate)
 	{
-		auto SectIt = OutputBaseData->find(SecName);
-		if (SectIt == OutputBaseData->end())
+		auto SectIt = BaseData.find(SecName);
+		if (SectIt == BaseData.end())
 		{
 			CurrentBase = xr_new<Sect>();
 			CurrentBase->Name = SecName.c_str();
-			OutputBaseData->emplace(CurrentBase->Name, *CurrentBase);
+			BaseData.emplace(CurrentBase->Name, *CurrentBase);
 			OverrideToFilename[CurrentBase->Name].insert(currentFileName);
 			SectionToFilename[CurrentBase->Name] = currentFileName;
 			CurrentBase = NULL;
@@ -921,11 +885,11 @@ void CInifile::EvaluateSection(
 		};
 
 	// Insert variables of own data
-	static auto InsertData = [](xr_map<shared_str, Sect>* Data, BOOL bIsBase, shared_str SectionName, BOOL& bDeleteSectionIfEmpty, Sect* CurrentSect)
+	static auto InsertData = [](xr_map<shared_str, Sect>& Data, BOOL bIsBase, shared_str SectionName, BOOL& bDeleteSectionIfEmpty, Sect* CurrentSect)
 		{
-			auto It = Data->find(SectionName);
+			auto It = Data.find(SectionName);
 
-			if (It != Data->end())
+			if (It != Data.end())
 			{
 				Sect* DataSection = &It->second;
 				for (Item CurrentItem : DataSection->Data)
@@ -935,13 +899,13 @@ void CInifile::EvaluateSection(
 
 				if (!bIsBase)
 				{
-					Data->erase(It);
+					Data.erase(It);
 				}
 			}
 		};
 
-	InsertData(&OverrideData, false, SectionName, bDeleteSectionIfEmpty, CurrentSect);
-	InsertData(&BaseData, true, SectionName, bDeleteSectionIfEmpty, CurrentSect);
+	InsertData(OverrideData, false, SectionName, bDeleteSectionIfEmpty, CurrentSect);
+	InsertData(BaseData, true, SectionName, bDeleteSectionIfEmpty, CurrentSect);
 
 	// Insert variables from parents
 	if (BaseParents)
@@ -1141,16 +1105,13 @@ void CInifile::Load(IReader* F, LPCSTR path
 	OverrideData.clear();
 	FinalData.clear();
 	FinalizedSections.clear();
+	OverrideModifyListData.clear();
 
 	// CRITICAL OPTIMIZATION: Single-pass load instead of double read
 	// Parse both base and override data in one pass
 	LTXLoad(
 		F,
 		path,
-		&BaseData,
-		&OverrideData,
-		&BaseParentDataMap,
-		&OverrideParentDataMap,
 		true,
 		currentFileName
 #ifndef _EDITOR
@@ -1191,9 +1152,6 @@ void CInifile::Load(IReader* F, LPCSTR path
 		RootIt I = std::lower_bound(DATA.begin(), DATA.end(), SectPair.first.c_str(), sect_pred);
 		DATA.insert(I, NewSect);
 	}
-
-	// Clean modifiers
-	OverrideModifyListData.clear();
 
 	// Handle override warnings
 	if (OverrideData.size())
