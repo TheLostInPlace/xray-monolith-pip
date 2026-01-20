@@ -7,29 +7,66 @@
 class CInifile;
 struct xr_token;
 
-
 class XRCORE_API CInifile
 {
 public:
 	struct XRCORE_API Item
 	{
 		shared_str first;
-		shared_str second;
+		mutable shared_str second;
 
 		//demonized: add DLTX info
-		shared_str filename;
-		//#ifdef DEBUG
-		// shared_str comment;
-		//#endif
-		Item() : first(0), second(0), filename(0)
-		//#ifdef DEBUG
-		// , comment(0)
-		//#endif
+		mutable shared_str filename;
+
+		//demonized: Replace xr_vector<Item> with xr_set<Item> with comparators
+		bool operator<(const Item& other) const
 		{
-		};
+			return xr_strcmp(*first, *other.first) < 0;
+		}
+
+		template <typename T>
+		bool operator() (const T& other) const
+		{
+			if constexpr (std::is_same_v<T, shared_str>)
+				return xr_strcmp(*first, *other) < 0;
+			else
+				return xr_strcmp(*first, other) < 0;
+		}
+
+		Item() : first(0), second(0), filename(0) {};
 	};
 
-	typedef xr_vector<Item> Items;
+	struct item_comparator
+	{
+		// Allows for searching by string-likes (string, char*,...) in set
+		using is_transparent = void;
+
+		bool operator() (const Item& x, const Item& y) const
+		{
+			return xr_strcmp(*x.first, *y.first) < 0;
+		}
+
+		template <typename T>
+		bool operator() (const Item& x, const T& y) const
+		{
+			if constexpr (std::is_same_v<T, shared_str>)
+				return xr_strcmp(*x.first, *y) < 0;
+			else
+				return xr_strcmp(*x.first, y) < 0;
+		}
+
+		template <typename T>
+		bool operator() (const T& x, const Item& y) const
+		{
+			if constexpr (std::is_same_v<T, shared_str>)
+				return xr_strcmp(*x, *y.first) < 0;
+			else
+				return xr_strcmp(x, *y.first) < 0;
+		}
+	};
+
+	typedef xr_set<Item, item_comparator> Items;
+	typedef xr_vector<Item> ItemsVec;
 	typedef Items::const_iterator SectCIt;
 	typedef Items::iterator SectIt_;
 
@@ -102,7 +139,7 @@ public:
 	xr_map<shared_str, Sect> OverrideData;
 	xr_map<shared_str, Sect> FinalData;
 	RStringSet FinalizedSections;
-	xr_map<shared_str, Items> OverrideModifyListData;
+	xr_map<shared_str, ItemsVec> OverrideModifyListData;
 	enum InsertType
 	{
 		Override,

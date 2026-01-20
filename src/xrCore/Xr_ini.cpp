@@ -32,12 +32,6 @@ bool sect_pred(const CInifile::Sect* x, LPCSTR val)
 	return xr_strcmp(*x->Name, val) < 0;
 };
 
-bool item_pred(const CInifile::Item& x, LPCSTR val)
-{
-	if ((!x.first) || (!val)) return x.first < val;
-	else return xr_strcmp(*x.first, val) < 0;
-}
-
 //------------------------------------------------------------------------------
 //Тело функций Inifile
 //------------------------------------------------------------------------------
@@ -103,8 +97,8 @@ XRCORE_API void _decorate(LPSTR dest, LPCSTR src)
 
 BOOL CInifile::Sect::line_exist(LPCSTR L, LPCSTR* val)
 {
-	SectCIt A = std::lower_bound(Data.begin(), Data.end(), L, item_pred);
-	if (A != Data.end() && xr_strcmp(*A->first, L) == 0)
+	auto A = Data.find(L);
+	if (A != Data.end())
 	{
 		if (val) *val = *A->second;
 		return TRUE;
@@ -201,18 +195,15 @@ void CInifile::insert_item(Sect* tgt, const Item& I)
 		return;
 	}
 
-	CInifile::SectIt_ sect_it = std::lower_bound(tgt->Data.begin(), tgt->Data.end(), *I.first, item_pred);
-	if (sect_it != tgt->Data.end() && sect_it->first.equal(I.first))
+	auto sect_it = tgt->Data.find(I.first);
+	if (sect_it != tgt->Data.end())
 	{
 		sect_it->second = I.second;
 		sect_it->filename = I.filename;
-		//#ifdef DEBUG
-		// sect_it->comment= I.comment;
-		//#endif
 	}
 	else
 	{
-		tgt->Data.insert(sect_it, I);
+		tgt->Data.insert(I);
 	}
 }
 
@@ -859,7 +850,7 @@ void CInifile::EvaluateSection(
 		}
 		else
 		{
-			CInifile::SectIt_ sect_it = std::lower_bound(CurrentSect->Data.begin(), CurrentSect->Data.end(), *CurrentItem.first, item_pred);
+			auto sect_it = CurrentSect->Data.find(CurrentItem.first);
 			if (sect_it != CurrentSect->Data.end() && sect_it->first.equal(CurrentItem.first))
 			{
 				static auto bShouldInsertFunc = [](CInifile::InsertType Type, CInifile::SectIt_ sect_it)
@@ -881,7 +872,7 @@ void CInifile::EvaluateSection(
 			}
 			else
 			{
-				CurrentSect->Data.insert(sect_it, CurrentItem);
+				CurrentSect->Data.insert(CurrentItem);
 			}
 		}
 	};
@@ -944,12 +935,16 @@ void CInifile::EvaluateSection(
 
 	// Delete entries marked DLTX_DELETE
 	xr_set<shared_str> deletedItems;
-	for (auto It = CurrentSect->Data.rbegin(); It != CurrentSect->Data.rend(); ++It)
+	for (auto It = CurrentSect->Data.begin(); It != CurrentSect->Data.end(); )
 	{
 		if (IsStringDLTXDelete(It->second, DLTX_DELETE))
 		{
-			CurrentSect->Data.erase(It.base() - 1);
+			It = CurrentSect->Data.erase(It);
 			deletedItems.insert(It->first);
+		}
+		else
+		{
+			It++;
 		}
 	}
 
@@ -963,7 +958,7 @@ void CInifile::EvaluateSection(
 			char dltx_listmode = I.first[0];
 			I.first = I.first.c_str() + 1;
 
-			CInifile::SectIt_ sect_it = std::lower_bound(CurrentSect->Data.begin(), CurrentSect->Data.end(), *I.first, item_pred);
+			auto sect_it = CurrentSect->Data.find(I.first);
 
 			if (I.second != NULL &&
 				dltx_listmode == '>' &&
@@ -971,7 +966,7 @@ void CInifile::EvaluateSection(
 				deletedItems.find(I.first.c_str()) == deletedItems.end()
 				)
 			{
-				CurrentSect->Data.insert(sect_it, I);
+				CurrentSect->Data.insert(I);
 			}
 			else if (sect_it != CurrentSect->Data.end() && sect_it->first.equal(I.first))
 			{
@@ -1210,7 +1205,7 @@ void CInifile::DLTX_print(LPCSTR sec, LPCSTR line)
 		return;
 	}
 
-	SectCIt A = std::lower_bound(I.Data.begin(), I.Data.end(), line, item_pred);
+	auto A = I.Data.find(line);
 	Msg("[%s]", I.Name.c_str());
 	printIniItemLine(*A);
 }
@@ -1237,7 +1232,7 @@ LPCSTR CInifile::DLTX_getFilenameOfLine(LPCSTR sec, LPCSTR line)
 	}
 
 	Sect& I = r_section(sec);
-	SectCIt A = std::lower_bound(I.Data.begin(), I.Data.end(), line, item_pred);
+	auto A = I.Data.find(line);
 	auto fname = A->filename.c_str();
 	return fname;
 }
@@ -1263,9 +1258,8 @@ void CInifile::save_as(IWriter& writer, bool bcheck) const
 			writer.w_string(temp);
 		}
 
-		for (SectCIt s_it = (*r_it)->Data.begin(); s_it != (*r_it)->Data.end(); ++s_it)
+		for (const Item& I : (*r_it)->Data)
 		{
-			const Item& I = *s_it;
 			if (*I.first)
 			{
 				if (*I.second)
@@ -1319,14 +1313,14 @@ BOOL CInifile::line_exist(LPCSTR S, LPCSTR L) const
 	if (!section_exist(S)) return FALSE;
 
 	Sect& I = r_section(S);
-	SectCIt A = std::lower_bound(I.Data.begin(), I.Data.end(), L, item_pred);
-	return (A != I.Data.end() && xr_strcmp(*A->first, L) == 0);
+	auto A = I.Data.find(L);
+	return A != I.Data.end();
 }
 
 u32 CInifile::line_count(LPCSTR Sname) const
 {
 	Sect& S = r_section(Sname);
-	SectCIt I = S.Data.begin();
+	auto I = S.Data.begin();
 	u32 C = 0;
 	for (; I != S.Data.end(); I++) if (*I->first) C++;
 	return C;
@@ -1359,18 +1353,6 @@ CInifile::Sect& CInifile::r_section(LPCSTR S) const
 	RootCIt I = std::lower_bound(DATA.begin(), DATA.end(), section, sect_pred);
 	if (!(I != DATA.end() && xr_strcmp(*(*I)->Name, section) == 0))
 	{
-		//g_pStringContainer->verify();
-
-		//string_path ini_dump_fn, path;
-		//strconcat (sizeof(ini_dump_fn), ini_dump_fn, Core.ApplicationName, "_", Core.UserName, ".ini_log");
-		//
-		//FS.update_path (path, "$logs$", ini_dump_fn);
-		//IWriter* F = FS.w_open_ex(path);
-		//save_as (*F);
-		//F->w_string ("shared strings:");
-		//g_pStringContainer->dump(F);
-		//FS.w_close (F);
-
 		Debug.fatal(DEBUG_INFO, "Can't open section '%s'. Please attach [*.ini_log] file to your bug report", S);
 	}
 	return **I;
@@ -1384,8 +1366,8 @@ LPCSTR CInifile::r_string(LPCSTR S, LPCSTR L) const
 	}
 
 	Sect const& I = r_section(S);
-	SectCIt A = std::lower_bound(I.Data.begin(), I.Data.end(), L, item_pred);
-	if (A != I.Data.end() && xr_strcmp(*A->first, L) == 0) {
+	auto A = I.Data.find(L);
+	if (A != I.Data.end()) {
 		shared_str V = A->second;
 		LPCSTR res = *V;
 		return res;
@@ -1621,7 +1603,7 @@ void CInifile::w_string(LPCSTR S, LPCSTR L, LPCSTR V, LPCSTR comment)
 	//#ifdef DEBUG
 	// I.comment = (comment?comment:0);
 	//#endif
-	SectIt_ it = std::lower_bound(data.Data.begin(), data.Data.end(), *I.first, item_pred);
+	auto it = data.Data.find(I.first);
 
 	if (it != data.Data.end())
 	{
@@ -1630,16 +1612,17 @@ void CInifile::w_string(LPCSTR S, LPCSTR L, LPCSTR V, LPCSTR comment)
 		{
 			BOOL b = m_flags.test(eOverrideNames);
 			R_ASSERT2(b, make_string("name[%s] already exist in section[%s]", line, sect).c_str());
-			*it = I;
+			it->second = I.second;
+			it->filename = I.filename;
 		}
 		else
 		{
-			data.Data.insert(it, I);
+			data.Data.insert(I);
 		}
 	}
 	else
 	{
-		data.Data.insert(it, I);
+		data.Data.insert(I);
 	}
 }
 
@@ -1782,8 +1765,8 @@ void CInifile::remove_line(LPCSTR S, LPCSTR L)
 	if (line_exist(S, L))
 	{
 		Sect& data = r_section(S);
-		SectIt_ A = std::lower_bound(data.Data.begin(), data.Data.end(), L, item_pred);
-		R_ASSERT(A != data.Data.end() && xr_strcmp(*A->first, L) == 0);
+		auto A = data.Data.find(L);
+		R_ASSERT(A != data.Data.end());
 		data.Data.erase(A);
 	}
 }
