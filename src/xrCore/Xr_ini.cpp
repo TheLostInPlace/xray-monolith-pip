@@ -332,7 +332,7 @@ void CInifile::StashCurrentSection(
 		if (SectIt != BaseData.end())
 		{
 			// Overwrite existing base data
-			for (Item CurrentItem : CurrentBase->Data)
+			for (const Item& CurrentItem : CurrentBase->Data)
 			{
 				insert_item(&SectIt->second, CurrentItem);
 			}
@@ -357,7 +357,7 @@ void CInifile::StashCurrentSection(
 			}
 
 			// Overwrite existing override data
-			for (Item CurrentItem : CurrentOverride->Data)
+			for (const Item& CurrentItem : CurrentOverride->Data)
 			{
 				insert_item(&SectIt->second, CurrentItem);
 			}
@@ -894,7 +894,7 @@ void CInifile::EvaluateSection(
 		if (It != Data.end())
 		{
 			Sect* DataSection = &It->second;
-			for (Item CurrentItem : DataSection->Data)
+			for (const Item& CurrentItem : DataSection->Data)
 			{
 				InsertItemWithDelete(CurrentItem, bIsBase ? CInifile::InsertType::Base : CInifile::InsertType::Override, bDeleteSectionIfEmpty, CurrentSect);
 			}
@@ -935,7 +935,7 @@ void CInifile::EvaluateSection(
 
 			Sect* ParentSec = &ParentIt->second;
 
-			for (Item CurrentItem : ParentSec->Data)
+			for (const Item& CurrentItem : ParentSec->Data)
 			{
 				InsertItemWithDelete(CurrentItem, CInifile::InsertType::Parent, bDeleteSectionIfEmpty, CurrentSect);
 			}
@@ -1096,18 +1096,7 @@ void CInifile::Load(IReader* F, LPCSTR path
 	R_ASSERT(F);
 
 	static shared_str DLTX_DELETE = "DLTX_DELETE";
-
 	string_path currentFileName;
-	OverrideToFilename.clear();
-	SectionToFilename.clear();
-	SectionsToDelete.clear();
-	BaseParentDataMap.clear();
-	BaseData.clear();
-	OverrideParentDataMap.clear();
-	OverrideData.clear();
-	FinalData.clear();
-	FinalizedSections.clear();
-	OverrideModifyListData.clear();
 
 	// CRITICAL OPTIMIZATION: Single-pass load instead of double read
 	// Parse both base and override data in one pass
@@ -1173,6 +1162,18 @@ void CInifile::Load(IReader* F, LPCSTR path
 			}
 		}
 	}
+
+	// Cleanup
+	OverrideToFilename.clear();
+	SectionToFilename.clear();
+	SectionsToDelete.clear();
+	BaseParentDataMap.clear();
+	BaseData.clear();
+	OverrideParentDataMap.clear();
+	OverrideData.clear();
+	FinalData.clear();
+	FinalizedSections.clear();
+	OverrideModifyListData.clear();
 }
 
 // demonized: print DLTX override info
