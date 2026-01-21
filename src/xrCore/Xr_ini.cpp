@@ -195,15 +195,15 @@ void CInifile::insert_item(Sect* tgt, const Item& I)
 		return;
 	}
 
-	auto sect_it = tgt->Data.find(I.first);
-	if (sect_it != tgt->Data.end())
+	auto sect_it = tgt->Data.lower_bound(I.first);
+	if (sect_it != tgt->Data.end() && sect_it->first.equal(I.first))
 	{
 		sect_it->second = I.second;
 		sect_it->filename = I.filename;
 	}
 	else
 	{
-		tgt->Data.insert(I);
+		tgt->Data.insert(sect_it, I);
 	}
 }
 
@@ -319,8 +319,8 @@ void CInifile::StashCurrentSection(
 	// Store base section if exists
 	if (CurrentBase)
 	{
-		auto SectIt = BaseData.find(CurrentBase->Name);
-		if (SectIt != BaseData.end())
+		auto SectIt = BaseData.lower_bound(CurrentBase->Name);
+		if (SectIt != BaseData.end() && SectIt->first.equal(CurrentBase->Name))
 		{
 			// Overwrite existing base data
 			for (const Item& CurrentItem : CurrentBase->Data)
@@ -330,7 +330,7 @@ void CInifile::StashCurrentSection(
 		}
 		else
 		{
-			BaseData.emplace(CurrentBase->Name, *CurrentBase);
+			BaseData.emplace_hint(SectIt, CurrentBase->Name, *CurrentBase);
 			SectionToFilename[CurrentBase->Name] = currentFileName;
 		}
 		CurrentBase = NULL;
@@ -339,8 +339,8 @@ void CInifile::StashCurrentSection(
 	// Store override section if exists
 	if (CurrentOverride)
 	{
-		auto SectIt = OverrideData.find(CurrentOverride->Name);
-		if (SectIt != OverrideData.end())
+		auto SectIt = OverrideData.lower_bound(CurrentOverride->Name);
+		if (SectIt != OverrideData.end() && SectIt->first.equal(CurrentOverride->Name))
 		{
 			if (!bIsCurrentSectionOverride)
 			{
@@ -357,7 +357,7 @@ void CInifile::StashCurrentSection(
 		}
 		else
 		{
-			OverrideData.emplace(CurrentOverride->Name, *CurrentOverride);
+			OverrideData.emplace_hint(SectIt, CurrentOverride->Name, *CurrentOverride);
 			OverrideToFilename[CurrentOverride->Name].insert(currentFileName);
 		}
 		CurrentOverride = NULL;
@@ -391,8 +391,8 @@ void CInifile::LTXLoad (
 
 		if (It == ParentMap.end())
 		{
-			ParentMap.emplace(SectionName, RStringVec());
-			It = ParentMap.find(SectionName);
+			auto result = ParentMap.emplace(SectionName, RStringVec());
+			return &result.first->second;
 		}
 
 		return &It->second;
@@ -850,7 +850,7 @@ void CInifile::EvaluateSection(
 		}
 		else
 		{
-			auto sect_it = CurrentSect->Data.find(CurrentItem.first);
+			auto sect_it = CurrentSect->Data.lower_bound(CurrentItem.first);
 			if (sect_it != CurrentSect->Data.end() && sect_it->first.equal(CurrentItem.first))
 			{
 				static auto bShouldInsertFunc = [](CInifile::InsertType Type, CInifile::SectIt_ sect_it)
@@ -872,7 +872,7 @@ void CInifile::EvaluateSection(
 			}
 			else
 			{
-				CurrentSect->Data.insert(CurrentItem);
+				CurrentSect->Data.insert(sect_it, CurrentItem);
 			}
 		}
 	};
@@ -958,15 +958,15 @@ void CInifile::EvaluateSection(
 			char dltx_listmode = I.first[0];
 			I.first = I.first.c_str() + 1;
 
-			auto sect_it = CurrentSect->Data.find(I.first);
+			auto sect_it = CurrentSect->Data.lower_bound(I.first);
 
 			if (I.second != NULL &&
 				dltx_listmode == '>' &&
-				(sect_it == CurrentSect->Data.end() || !sect_it->first.equal(I.first)) &&
+				(!(sect_it != CurrentSect->Data.end() && sect_it->first.equal(I.first))) &&
 				deletedItems.find(I.first.c_str()) == deletedItems.end()
 				)
 			{
-				CurrentSect->Data.insert(I);
+				CurrentSect->Data.insert(sect_it, I);
 			}
 			else if (sect_it != CurrentSect->Data.end() && sect_it->first.equal(I.first))
 			{
@@ -1242,7 +1242,7 @@ bool CInifile::DLTX_isOverride(LPCSTR sec, LPCSTR line)
 	if (!fname) {
 		return false;
 	}
-	return std::string(fname).find("mod_") == 0;
+	return xr_string(fname).find("mod_") == 0;
 }
 
 void CInifile::save_as(IWriter& writer, bool bcheck) const
@@ -1603,9 +1603,9 @@ void CInifile::w_string(LPCSTR S, LPCSTR L, LPCSTR V, LPCSTR comment)
 	//#ifdef DEBUG
 	// I.comment = (comment?comment:0);
 	//#endif
-	auto it = data.Data.find(I.first);
+	auto it = data.Data.lower_bound(I.first);
 
-	if (it != data.Data.end())
+	if (it != data.Data.end() && it->first.equal(I.first))
 	{
 		// Check for "first" matching
 		if (0 == xr_strcmp(*it->first, *I.first))
@@ -1617,12 +1617,12 @@ void CInifile::w_string(LPCSTR S, LPCSTR L, LPCSTR V, LPCSTR comment)
 		}
 		else
 		{
-			data.Data.insert(I);
+			data.Data.insert(it, I);
 		}
 	}
 	else
 	{
-		data.Data.insert(I);
+		data.Data.insert(it, I);
 	}
 }
 
