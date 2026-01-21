@@ -8,9 +8,11 @@ set "DYNASM=%~dp0..\dynasm\dynasm.lua"
 if /I "%~1"=="x64" (
   echo [LuaJIT] Platform is x64, set -D P64
   set "DFLAGS=-D WIN -D JIT -D FFI -D P64"
+  set "DASC=vm_x64.dasc"
 ) else (
   echo [LuaJIT] Platform is not x64
   set "DFLAGS=-D WIN -D JIT -D FFI"
+  set "DASC=vm_x86.dasc"
 )
 
 REM Build minilua if missing
@@ -21,8 +23,8 @@ if not exist "host\minilua.exe" (
 )
 
 REM Generate buildvm_arch.h with DynASM
-echo [LuaJIT] Running DynASM to generate host\buildvm_arch.h
-"host\minilua.exe" "%DYNASM%" -LN %DFLAGS% -o "host\buildvm_arch.h" "vm_x86.dasc" || exit /b 1
+echo [LuaJIT] Running DynASM to generate host\buildvm_arch.h using %DASC%
+"host\minilua.exe" "%DYNASM%" -LN %DFLAGS% -o "host\buildvm_arch.h" "%DASC%" || exit /b 1
 
 REM Build buildvm if missing
 if not exist "host\buildvm.exe" (
@@ -33,12 +35,13 @@ if not exist "host\buildvm.exe" (
 
 REM Generate VM object and header files
 echo [LuaJIT] Generating lj_vm.obj and headers
+set ALL_LIB=lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c
 host\buildvm.exe -m peobj -o lj_vm.obj || exit /b 1
-host\buildvm.exe -m bcdef -o lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c || exit /b 1
-host\buildvm.exe -m ffdef -o lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c || exit /b 1
-host\buildvm.exe -m libdef -o lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c || exit /b 1
-host\buildvm.exe -m recdef -o lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c || exit /b 1
-host\buildvm.exe -m vmdef -o jit\vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c || exit /b 1
+host\buildvm.exe -m bcdef -o lj_bcdef.h %ALL_LIB% || exit /b 1
+host\buildvm.exe -m ffdef -o lj_ffdef.h %ALL_LIB% || exit /b 1
+host\buildvm.exe -m libdef -o lj_libdef.h %ALL_LIB% || exit /b 1
+host\buildvm.exe -m recdef -o lj_recdef.h %ALL_LIB% || exit /b 1
+host\buildvm.exe -m vmdef -o jit\vmdef.lua %ALL_LIB% || exit /b 1
 host\buildvm.exe -m folddef -o lj_folddef.h lj_opt_fold.c || exit /b 1
 
 echo [LuaJIT] Generation complete

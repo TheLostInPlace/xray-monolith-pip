@@ -178,6 +178,12 @@
     <ClCompile Include="ljamalg.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="lj_assert.c" />
+    <ClCompile Include="lj_buf.c" />
+    <ClCompile Include="lj_prng.c" />
+    <ClCompile Include="lj_profile.c" />
+    <ClCompile Include="lj_strfmt.c" />
+    <ClCompile Include="lj_strfmt_num.c" />
     <!-- Exclude the standalone interpreter from the static lib -->
     <ClCompile Include="luajit.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
@@ -244,6 +250,79 @@
     <ClCompile Include="lib_string.c" />
     <ClCompile Include="lib_table.c" />
     <ClCompile Include="xr_alloc.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="lj_alloc.h" />
+    <ClInclude Include="lj_arch.h" />
+    <ClInclude Include="lj_asm.h" />
+    <ClInclude Include="lj_asm_arm.h" />
+    <ClInclude Include="lj_asm_arm64.h" />
+    <ClInclude Include="lj_asm_mips.h" />
+    <ClInclude Include="lj_asm_ppc.h" />
+    <ClInclude Include="lj_asm_x86.h" />
+    <ClInclude Include="lj_bc.h" />
+    <ClInclude Include="lj_bcdump.h" />
+    <ClInclude Include="lj_buf.h" />
+    <ClInclude Include="lj_carith.h" />
+    <ClInclude Include="lj_ccall.h" />
+    <ClInclude Include="lj_ccallback.h" />
+    <ClInclude Include="lj_cconv.h" />
+    <ClInclude Include="lj_cdata.h" />
+    <ClInclude Include="lj_char.h" />
+    <ClInclude Include="lj_clib.h" />
+    <ClInclude Include="lj_cparse.h" />
+    <ClInclude Include="lj_crecord.h" />
+    <ClInclude Include="lj_ctype.h" />
+    <ClInclude Include="lj_debug.h" />
+    <ClInclude Include="lj_def.h" />
+    <ClInclude Include="lj_dispatch.h" />
+    <ClInclude Include="lj_emit_arm.h" />
+    <ClInclude Include="lj_emit_arm64.h" />
+    <ClInclude Include="lj_emit_mips.h" />
+    <ClInclude Include="lj_emit_ppc.h" />
+    <ClInclude Include="lj_emit_x86.h" />
+    <ClInclude Include="lj_err.h" />
+    <ClInclude Include="lj_errmsg.h" />
+    <ClInclude Include="lj_ff.h" />
+    <ClInclude Include="lj_ffrecord.h" />
+    <ClInclude Include="lj_frame.h" />
+    <ClInclude Include="lj_func.h" />
+    <ClInclude Include="lj_gc.h" />
+    <ClInclude Include="lj_gdbjit.h" />
+    <ClInclude Include="lj_ir.h" />
+    <ClInclude Include="lj_ircall.h" />
+    <ClInclude Include="lj_iropt.h" />
+    <ClInclude Include="lj_jit.h" />
+    <ClInclude Include="lj_lex.h" />
+    <ClInclude Include="lj_lib.h" />
+    <ClInclude Include="lj_mcode.h" />
+    <ClInclude Include="lj_meta.h" />
+    <ClInclude Include="lj_obj.h" />
+    <ClInclude Include="lj_parse.h" />
+    <ClInclude Include="lj_prng.h" />
+    <ClInclude Include="lj_profile.h" />
+    <ClInclude Include="lj_record.h" />
+    <ClInclude Include="lj_snap.h" />
+    <ClInclude Include="lj_state.h" />
+    <ClInclude Include="lj_str.h" />
+    <ClInclude Include="lj_strfmt.h" />
+    <ClInclude Include="lj_strscan.h" />
+    <ClInclude Include="lj_tab.h" />
+    <ClInclude Include="lj_target.h" />
+    <ClInclude Include="lj_target_arm.h" />
+    <ClInclude Include="lj_target_arm64.h" />
+    <ClInclude Include="lj_target_e2k.h" />
+    <ClInclude Include="lj_target_mips.h" />
+    <ClInclude Include="lj_target_ppc.h" />
+    <ClInclude Include="lj_target_x86.h" />
+    <ClInclude Include="lj_trace.h" />
+    <ClInclude Include="lj_traceerr.h" />
+    <ClInclude Include="lj_udata.h" />
+    <ClInclude Include="lj_vm.h" />
+    <ClInclude Include="lj_vmevent.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="vm_x64.dasc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
