@@ -124,7 +124,7 @@ int get_modded_exes_version() {
 }
 
 LPCSTR get_modded_exes_name() {
-	shared_str result = "Modded Exes";
+	shared_str result = "Modded Exes MT-TEST";
 	return result.c_str();
 }
 
