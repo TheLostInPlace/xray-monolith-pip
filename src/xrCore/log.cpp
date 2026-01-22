@@ -162,9 +162,12 @@ void xrLogger::SimpleMessage(LPCSTR Message, u32 MessageSize /*= 0*/)
 	}
 
 	xrCriticalSectionGuard guard(&logDataGuard);
-	logData->emplace(LogRecord(msgToLog.c_str(), (u32)msgToLog.size()));
-
-	UnpauseLogging();
+	if (bIsAlive)
+	{
+		logData->emplace(LogRecord(msgToLog.c_str(), (u32)msgToLog.size()));
+		UnpauseLogging();
+	}
+	
 }
 
 void xrLogger::OpenLogFile()
