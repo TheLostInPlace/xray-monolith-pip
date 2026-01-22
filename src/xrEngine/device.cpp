@@ -41,6 +41,8 @@
 
 #pragma comment( lib, "d3dx9.lib" )
 
+#include <intrin.h>
+
 ENGINE_API CRenderDevice Device;
 ENGINE_API CLoadScreenRenderer load_screen_renderer;
 ENGINE_API CRenderDevice* DevicePtr = nullptr;
@@ -437,6 +439,23 @@ void CRenderDevice::on_idle()
 		tlastf = std::chrono::high_resolution_clock::now();
 	}
 #endif // ECO_RENDER END
+
+	// demonized:: apply script changes of environment if any, solve flickering when scheduler is on second thread
+	auto CurrentEnv = g_pGamePersistent->Environment().CurrentEnv;
+	u64 pendingFlags = InterlockedExchange64((volatile LONG64*)&CurrentEnv->pendingScriptChangesFlags, 0);
+	while (pendingFlags > 0)
+	{
+		DWORD index;
+		// intrinsics for quick scanning set bits
+		if (_BitScanForward64(&index, pendingFlags));
+		{
+			// convert offset to pointer and apply change
+			char* base = reinterpret_cast<char*>(CurrentEnv);
+			float* target = reinterpret_cast<float*>(base + CEnvDescriptorMixer::pendingScriptChangesOffsets[index]);
+			*target = CurrentEnv->pendingScriptChangesData[index];
+			pendingFlags &= ~(u64(1) << index);
+		}
+	}
 
 #ifndef DEDICATED_SERVER
 	Statistic->RenderTOTAL_Real.FrameStart();

@@ -7,6 +7,7 @@
 
 // Atomic types
 using xr_atomic_u32 = std::atomic_uint32_t;
+using xr_atomic_u64 = std::atomic_uint64_t;
 using xr_atomic_s32 = std::atomic_int;
 using xr_atomic_bool = std::atomic_bool;
 

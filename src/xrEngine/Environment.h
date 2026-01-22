@@ -227,6 +227,8 @@ public:
 	shared_str m_identifier;
 };
 
+class CEnvDescriptorMixer;
+
 class ENGINE_API CEnvDescriptorMixer : public CEnvDescriptor
 {
 public:
@@ -240,6 +242,35 @@ public:
 
 	float fog_near;
 	float fog_far;
+
+	// demonized: pending script changes
+	enum PendingVariables {
+		psky_rotation,
+		pfar_plane,
+		pfog_density,
+		pfog_near,
+		pfog_distance,
+		pfog_far,
+		prain_density,
+		pbolt_period,
+		pbolt_duration,
+		pwind_velocity,
+		pwind_direction,
+		pm_fSunShaftsIntensity,
+		pm_fWaterIntensity,
+#ifdef TREE_WIND_EFFECT
+		pm_fTreeAmplitudeIntensity,
+#endif
+		pvolumetric_intensity_factor,
+		pvolumetric_distance_factor,
+		pbloom_threshold,
+		pbloom_exposure,
+		pbloom_sky_intensity,
+		pmax
+	};
+	u64 pendingScriptChangesFlags;
+	static const size_t pendingScriptChangesOffsets[PendingVariables::pmax];
+	xr_array<float, PendingVariables::pmax> pendingScriptChangesData;
 public:
 	CEnvDescriptorMixer(shared_str const& identifier);
 	INGAME_EDITOR_VIRTUAL void lerp(CEnvironment* parent, CEnvDescriptor& A, CEnvDescriptor& B, float f,
@@ -247,6 +278,30 @@ public:
 	void boost(CEnvironment* env);
 	void clear();
 	void destroy();
+};
+
+inline constexpr size_t CEnvDescriptorMixer::pendingScriptChangesOffsets[CEnvDescriptorMixer::PendingVariables::pmax] = {
+	offsetof(CEnvDescriptorMixer, sky_rotation),
+	offsetof(CEnvDescriptorMixer, far_plane),
+	offsetof(CEnvDescriptorMixer, fog_density),
+	offsetof(CEnvDescriptorMixer, fog_near),
+	offsetof(CEnvDescriptorMixer, fog_distance),
+	offsetof(CEnvDescriptorMixer, fog_far),
+	offsetof(CEnvDescriptorMixer, rain_density),
+	offsetof(CEnvDescriptorMixer, bolt_period),
+	offsetof(CEnvDescriptorMixer, bolt_duration),
+	offsetof(CEnvDescriptorMixer, wind_velocity),
+	offsetof(CEnvDescriptorMixer, wind_direction),
+	offsetof(CEnvDescriptorMixer, m_fSunShaftsIntensity),
+	offsetof(CEnvDescriptorMixer, m_fWaterIntensity),
+#ifdef TREE_WIND_EFFECT
+	offsetof(CEnvDescriptorMixer, m_fTreeAmplitudeIntensity),
+#endif
+	offsetof(CEnvDescriptorMixer, volumetric_intensity_factor),
+	offsetof(CEnvDescriptorMixer, volumetric_distance_factor),
+	offsetof(CEnvDescriptorMixer, bloom_threshold),
+	offsetof(CEnvDescriptorMixer, bloom_exposure),
+	offsetof(CEnvDescriptorMixer, bloom_sky_intensity),
 };
 
 class ENGINE_API CEnvironment
