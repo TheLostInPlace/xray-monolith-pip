@@ -1111,6 +1111,19 @@ u32 vertex_id(Fvector position)
 	return (ai().level_graph().vertex_id(position));
 }
 
+::luabind::object get_nearby_vertices(const Fvector &pos, float radius)
+{
+	xr_vector<CLevelGraph::CVertex *> nearby_vertices;
+	nearby_vertices.clear();
+	ai().level_graph().nearby_vertices(pos, radius, nearby_vertices);
+	::luabind::object lua_table = ::luabind::newtable(ai().script_engine().lua());
+	for (auto &I : nearby_vertices)
+	{
+		lua_table[ai().level_graph().vertex_id(I)] = true;
+	}
+	return lua_table;
+}
+
 u32 render_get_dx_level()
 {
 	return ::Render->get_dx_level();
@@ -2500,6 +2513,7 @@ void CLevel::script_register(lua_State* L)
 			def("remove_complex_effector", &remove_complex_effector),
 
 			def("vertex_id", &vertex_id),
+			def("get_nearby_vertices", &get_nearby_vertices),
 
 			def("game_id", &GameID),
 			def("ray_pick", &ray_pick),
