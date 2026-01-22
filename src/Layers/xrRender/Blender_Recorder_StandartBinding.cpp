@@ -984,9 +984,7 @@ static class ssfx_wind_anim : public R_constant_setup
 {
 	virtual void setup(R_constant* C)
 	{
-		// demonized: Send copy of vector to avoid flickering due to MT
-		Fvector4 val = g_pGamePersistent->Environment().wind_anim;
-		RCache.set_c(C, val);
+		RCache.set_c(C, g_pGamePersistent->Environment().wind_anim);
 	}
 }    ssfx_wind_anim;
 
@@ -994,9 +992,7 @@ static class ssfx_wind_anim_prev : public R_constant_setup
 {
 	virtual void setup(R_constant* C)
 	{
-		// demonized: Send copy of vector to avoid flickering due to MT
-		Fvector4 val = Device.wind_anim_prev;
-		RCache.set_c(C, val);
+		RCache.set_c(C, Device.wind_anim_prev);
 	}
 }    ssfx_wind_anim_prev;
 
