@@ -46,8 +46,6 @@ public:
 	void SetHudMode(bool bHudMode);
 
 	const shared_str Name();
-	void SetLiveUpdate(BOOL b);
-	BOOL GetLiveUpdate();
 
 };
 

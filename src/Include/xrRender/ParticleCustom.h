@@ -25,8 +25,6 @@ public:
 	virtual const shared_str Name() =0;
 	virtual void SetHudMode(BOOL b) =0;
 	virtual BOOL GetHudMode() =0;
-	virtual void SetLiveUpdate(BOOL b) =0;
-	virtual BOOL GetLiveUpdate() =0;
 };
 
 #endif	//	ParticleCustom_included

@@ -162,9 +162,6 @@ namespace PS
 		virtual void SetHudMode(BOOL b);
 		virtual BOOL GetHudMode();
 
-		virtual void SetLiveUpdate(BOOL b);
-		virtual BOOL GetLiveUpdate();
-
 		virtual float GetTimeLimit()
 		{
 			VERIFY(m_Def);
