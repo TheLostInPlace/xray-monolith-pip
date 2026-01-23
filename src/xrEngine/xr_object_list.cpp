@@ -75,7 +75,7 @@ void CObjectList::o_remove(Objects& v, CObject* O)
 	//. }
 	Objects::iterator _i = std::find(v.begin(), v.end(), O);
 	VERIFY(_i != v.end());
-	v.erase(_i);
+	v.erase_fast(_i);
 	//. Msg("---o_remove[%s][%d]", O->cName().c_str(), O->ID() );
 }
 
@@ -471,7 +471,7 @@ void CObjectList::Destroy(CObject* O)
 		Objects::iterator const i = std::find(crows.begin(), crows.end(), O);
 		if (i != crows.end())
 		{
-			crows.erase(i);
+			crows.erase_fast(i);
 			VERIFY(std::find(crows.begin(), crows.end(), O) == crows.end());
 		}
 	}
@@ -480,7 +480,7 @@ void CObjectList::Destroy(CObject* O)
 	Objects::iterator _i0 = std::find(crows.begin(), crows.end(), O);
 	if (_i0 != crows.end())
 	{
-		crows.erase(_i0);
+		crows.erase_fast(_i0);
 		VERIFY(std::find(crows.begin(), crows.end(), O) == crows.end());
 	}
 
@@ -488,7 +488,7 @@ void CObjectList::Destroy(CObject* O)
 	Objects::iterator _i = std::find(objects_active.begin(), objects_active.end(), O);
 	if (_i != objects_active.end())
 	{
-		objects_active.erase(_i);
+		objects_active.erase_fast(_i);
 		VERIFY(std::find(objects_active.begin(), objects_active.end(), O) == objects_active.end());
 		VERIFY(
 			std::find(
@@ -503,7 +503,7 @@ void CObjectList::Destroy(CObject* O)
 		Objects::iterator _ii = std::find(objects_sleeping.begin(), objects_sleeping.end(), O);
 		if (_ii != objects_sleeping.end())
 		{
-			objects_sleeping.erase(_ii);
+			objects_sleeping.erase_fast(_ii);
 			VERIFY(std::find(objects_sleeping.begin(), objects_sleeping.end(), O) == objects_sleeping.end());
 		}
 		else

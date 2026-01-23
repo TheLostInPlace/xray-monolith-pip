@@ -77,7 +77,7 @@ void Vision::o_delete(CObject* O)
 		[O](const feel_visible_Item& item) { return item.O == O; });
 
 	if (it != feel_visible.end()) {
-		feel_visible.erase(it);
+		feel_visible.erase_fast(it);
 	}
 }
 
@@ -101,11 +101,11 @@ void Vision::feel_vision_relcase(CObject* object)
 		xrSRWLockGuard guard(&lock_query, false);
 		xr_vector<CObject*>::iterator Io;
 		Io = std::find(seen.begin(), seen.end(), object);
-		if (Io != seen.end())seen.erase(Io);
+		if (Io != seen.end())seen.erase_fast(Io);
 		Io = std::find(query.begin(), query.end(), object);
-		if (Io != query.end())query.erase(Io);
+		if (Io != query.end())query.erase_fast(Io);
 		Io = std::find(diff.begin(), diff.end(), object);
-		if (Io != diff.end()) diff.erase(Io);
+		if (Io != diff.end()) diff.erase_fast(Io);
 	}
 	{
 		xrSRWLockGuard guard(&lock_visible, false);
@@ -113,7 +113,7 @@ void Vision::feel_vision_relcase(CObject* object)
 			[object](const feel_visible_Item& item) { return item.O == object; });
 
 		if (it != feel_visible.end()) {
-			feel_visible.erase(it);
+			feel_visible.erase_fast(it);
 		}
 	}
 }

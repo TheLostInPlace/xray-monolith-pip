@@ -52,5 +52,5 @@ void pauseMngr::Register(CTimer_paused* t) {
 void pauseMngr::UnRegister(CTimer_paused* t) {
 	xr_vector<CTimer_paused*>::iterator it = std::find(m_timers.begin(), m_timers.end(), t);
 	if (it != m_timers.end())
-		m_timers.erase(it);
+		m_timers.erase_fast(it);
 }

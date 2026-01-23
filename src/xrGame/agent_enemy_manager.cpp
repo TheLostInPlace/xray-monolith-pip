@@ -120,7 +120,7 @@ void CAgentEnemyManager::fill_enemies()
 			if (I != m_enemies.end())
 				continue;
 
-			m_wounded.erase(m_wounded.begin() + i);
+			m_wounded.erase_fast(m_wounded.begin() + i);
 			--i;
 			--n;
 		}
