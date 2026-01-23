@@ -701,7 +701,7 @@ CRenderTarget::CRenderTarget()
 		t_LUM_dest.create(r2_RT_luminance_cur);
 
 		// create pool
-		for (u32 it = 0; it < HW.Caps.iGPUNum * 2; it++)
+		for (u32 it = 0; it < 2; it++)
 		{
 			shared_str name; name.printf("%s_%d", r2_RT_luminance_pool, it);
 			rt_LUM_pool[it].create(name.c_str(), 1, 1, D3DFMT_R32F);
