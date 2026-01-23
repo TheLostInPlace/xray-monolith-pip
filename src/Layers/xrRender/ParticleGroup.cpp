@@ -241,7 +241,7 @@ void CParticleGroup::SItem::StartRelatedChild(CParticleEffect* emitter, LPCSTR e
 	M.identity();
 	Fvector vel;
 	vel.sub(m.pos, m.posB);
-	vel.div(ps_r2_particle_dt ? Device.fTimeDelta : C->m_Def->GetFStep());
+	vel.div(C->m_RT_Flags.is(CParticleEffect::flRT_LiveUpdate) ? Device.fTimeDelta : C->m_Def->GetFStep());
 	if (emitter->m_RT_Flags.is(CParticleEffect::flRT_XFORM))
 	{
 		M.set(emitter->m_XFORM);
@@ -275,7 +275,7 @@ void CParticleGroup::SItem::StartFreeChild(CParticleEffect* emitter, LPCSTR nm, 
 		M.identity();
 		Fvector vel;
 		vel.sub(m.pos, m.posB);
-		vel.div(ps_r2_particle_dt ? Device.fTimeDelta : C->m_Def->GetFStep());
+		vel.div(C->m_RT_Flags.is(CParticleEffect::flRT_LiveUpdate) ? Device.fTimeDelta : C->m_Def->GetFStep());
 		if (emitter->m_RT_Flags.is(CParticleEffect::flRT_XFORM))
 		{
 			M.set(emitter->m_XFORM);
@@ -410,7 +410,7 @@ void CParticleGroup::SItem::OnFrame(u32 u_dt, const CPGDef::SEffect& def, Fbox& 
 						M.translate(m.pos);
 						Fvector vel;
 						vel.sub(m.pos, m.posB);
-						vel.div(ps_r2_particle_dt ? Device.fTimeDelta : C->m_Def->GetFStep());
+						vel.div(C->m_RT_Flags.is(CParticleEffect::flRT_LiveUpdate) ? Device.fTimeDelta : C->m_Def->GetFStep());
 						C->UpdateParent(M, vel,FALSE);
 					}
 				}
@@ -708,6 +708,28 @@ BOOL CParticleGroup::GetHudMode()
 	{
 		CParticleEffect* E = static_cast<CParticleEffect*>(items[0]._effect);
 		return E->GetHudMode();
+	}
+
+	return FALSE;
+}
+
+void CParticleGroup::SetLiveUpdate(BOOL b)
+{
+	xrCriticalSectionGuard guard(&onframe_lock);
+	for (SItem& item : items)
+	{
+		CParticleEffect* E = static_cast<CParticleEffect*>(item._effect);
+		E->SetLiveUpdate(b);
+	}
+}
+
+BOOL CParticleGroup::GetLiveUpdate()
+{
+	xrCriticalSectionGuard guard(&onframe_lock);
+	if(items.size())
+	{
+		CParticleEffect* E = static_cast<CParticleEffect*>(items[0]._effect);
+		return E->GetLiveUpdate();
 	}
 
 	return FALSE;

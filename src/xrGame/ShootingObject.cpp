@@ -239,6 +239,7 @@ void CShootingObject::StartParticles(CParticlesObject*& pParticles, LPCSTR parti
 	}
 
 	pParticles = Particles::Details::Create(particles_name, (BOOL)auto_remove_flag).get();
+	pParticles->SetLiveUpdate(TRUE);
 
 	UpdateParticles(pParticles, pos, vel);
 
@@ -324,6 +325,7 @@ void CShootingObject::OnShellDrop(const Fvector& play_pos,
 	if (Device.vCameraPosition.distance_to_sqr(play_pos) > 2 * 2) return;
 
 	CParticlesObject* pShellParticles = Particles::Details::Create(*m_sShellParticles,TRUE).get();
+	pShellParticles->SetLiveUpdate(TRUE);
 
 	Fmatrix particles_pos;
 	particles_pos.set(get_ParticlesXFORM());
@@ -364,6 +366,7 @@ void CShootingObject::StartFlameParticles()
 
 	StopFlameParticles();
 	m_pFlameParticles = Particles::Details::Create(*m_sFlameParticlesCurrent,FALSE);
+	m_pFlameParticles->SetLiveUpdate(TRUE);
 	UpdateFlameParticles();
 
 
