@@ -9,6 +9,7 @@ using std::swap;
 #include <queue>
 #include <array>
 #include <forward_list>
+#include <type_traits>
 #include "_type_traits.h"
 
 #ifdef __BORLANDC__
@@ -202,7 +203,14 @@ public:
 	{
 		iterator prev = std::prev(end());
 		if (it != prev)
-			std::iter_swap(it, prev);
+		{
+			if constexpr (std::is_trivially_move_assignable_v<T>)
+				*it = std::move(back());
+			else if constexpr (std::is_swappable_v<T>)
+				std::iter_swap(it, prev);
+			else
+				*it = back();
+		}		
 		
 		pop_back();
 		return it;
