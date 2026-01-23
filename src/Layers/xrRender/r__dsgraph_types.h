@@ -92,7 +92,7 @@ namespace R_dsgraph
 	using ps_type = ID3DPixelShader*;
 
 	template<typename T>
-	using mapDSGraphItems = xr_concurrent_vector<DSGraphItem<T>, typename render_allocator::template helper<DSGraphItem<T>>::result>;
+	using mapDSGraphItems = xr_vector<DSGraphItem<T>, typename render_allocator::template helper<DSGraphItem<T>>::result>;
 
 	template<typename T>
 	using mapDSGraphItemsMap = FixedMAP<T, DSGraphItem<T>, render_allocator>;
@@ -122,7 +122,7 @@ namespace R_dsgraph
 		STextureList* pTextures;
 	};
 
-	using RenderQueue = xr_concurrent_vector<RenderPacket, render_allocator::helper<RenderPacket>::result>;
+	using RenderQueue = xr_vector<RenderPacket, render_allocator::helper<RenderPacket>::result>;
 	using RenderQueueArray = xr_array<xr_array<RenderQueue, SHADER_PASSES_MAX>, 2>;
 
 	struct DynamicSceneRgraph
