@@ -308,14 +308,6 @@ void CRender::Render()
 		GMBase.r_dsgraph_render_emissive(true, true);
 	}
 
-	if (g_hud)
-	{
-		if (g_hud->RenderActiveItemUIQuery())
-			GMBase.r_dsgraph_render_hud_ui();
-		if (g_hud->RenderCamAttachedUIQuery())
-			GMBase.r_dsgraph_render_cam_ui();
-	}
-
 	// Lighting, non dependant on OCCQ
 	{
 		PIX_EVENT(DEFER_LIGHT_NO_OCCQ);
@@ -344,6 +336,14 @@ void CRender::Render()
 
 	if (Details)
 		Details->details_clear();
+
+	if (g_hud)
+	{
+		if (g_hud->RenderActiveItemUIQuery())
+			GMBase.r_dsgraph_render_hud_ui();
+		if (g_hud->RenderCamAttachedUIQuery())
+			GMBase.r_dsgraph_render_cam_ui();
+	}
 
 }
 #include "../xrRender/CHudInitializer.h"

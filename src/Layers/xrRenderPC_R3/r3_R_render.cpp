@@ -192,6 +192,8 @@ void CRender::Render()
 		Target->accum_direct_blend();
 	}
 
+	phase = PHASE_NORMAL;
+
 	{
 		PIX_EVENT(DEFER_SELF_ILLUM);
 		Target->phase_accumulator();
@@ -211,14 +213,6 @@ void CRender::Render()
 		GMBase.r_dsgraph_render_emissive();
 	}
 
-	if (g_hud)
-	{
-		if (g_hud->RenderActiveItemUIQuery())
-			GMBase.r_dsgraph_render_hud_ui();
-		if (g_hud->RenderCamAttachedUIQuery())
-			GMBase.r_dsgraph_render_cam_ui();
-	}
-
 	// Lighting, non dependant on OCCQ
 	{
 		PIX_EVENT(DEFER_LIGHT_NO_OCCQ);
@@ -232,10 +226,23 @@ void CRender::Render()
 		render_lights(LP_pending);
 	}
 
+	phase = PHASE_NORMAL;
+
 	// Postprocess
 	{
 		PIX_EVENT(DEFER_LIGHT_COMBINE);
 		Target->phase_combine();
+	}
+
+	/*if (Details)
+		Details->details_clear();*/
+
+	if (g_hud)
+	{
+		if (g_hud->RenderActiveItemUIQuery())
+			GMBase.r_dsgraph_render_hud_ui();
+		if (g_hud->RenderCamAttachedUIQuery())
+			GMBase.r_dsgraph_render_cam_ui();
 	}
 
 }

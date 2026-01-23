@@ -137,14 +137,6 @@ void CRender::Render()
 		Target->phase_scene_end();
 	}
 
-	if (g_hud)
-	{
-		if (g_hud->RenderActiveItemUIQuery())
-			GMBase.r_dsgraph_render_hud_ui();
-		if (g_hud->RenderCamAttachedUIQuery())
-			GMBase.r_dsgraph_render_cam_ui();
-	}
-
 	// Wall marks
 	if (Wallmarks)
 	{
@@ -190,6 +182,17 @@ void CRender::Render()
 
 	// Postprocess
 	Target->phase_combine();
+
+	/*if (Details)
+		Details->details_clear();*/
+
+	if (g_hud)
+	{
+		if (g_hud->RenderActiveItemUIQuery())
+			GMBase.r_dsgraph_render_hud_ui();
+		if (g_hud->RenderCamAttachedUIQuery())
+			GMBase.r_dsgraph_render_cam_ui();
+	}
 }
 
 void CRender::render_forward()

@@ -521,16 +521,6 @@ void CRender::Render()
 	L_Dynamic->render(0); // addititional light sources
 	if (Wallmarks)Wallmarks->Render(); // wallmarks has priority as normal geometry
 
-	if (g_hud)
-	{
-		g_hud->Render_R1_Attachment_UI();
-
-		if (g_hud->RenderActiveItemUIQuery())
-			GMBase.r_dsgraph_render_hud_ui();
-		if (g_hud->RenderCamAttachedUIQuery())
-			GMBase.r_dsgraph_render_cam_ui();
-	}
-
 	phase = PHASE_NORMAL;
 	if (L_Shadows)L_Shadows->render(); // ... and shadows
 	GMBase.r_dsgraph_render_lods(false, true); // lods - FB
@@ -560,6 +550,16 @@ void CRender::Render()
 	if (L_Projector) L_Projector->finalize();
 
 	// HUD
+	if (g_hud)
+	{
+		g_hud->Render_R1_Attachment_UI();
+
+		if (g_hud->RenderActiveItemUIQuery())
+			GMBase.r_dsgraph_render_hud_ui();
+		if (g_hud->RenderCamAttachedUIQuery())
+			GMBase.r_dsgraph_render_cam_ui();
+	}
+
 	Device.Statistic->RenderDUMP.End();
 }
 
