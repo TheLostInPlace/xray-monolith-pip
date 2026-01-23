@@ -36,6 +36,8 @@ class PROTECT_API CDialogHolder : public pureFrame
 	xr_vector<dlgItem> m_dialogsToRender_new;
 	bool m_b_in_update;
 
+	xrCriticalSection cs;
+
 	void StartMenu(CUIDialogWnd* pDialog, bool bDoHideIndicators);
 	void StopMenu(CUIDialogWnd* pDialog);
 	void SetMainInputReceiver(CUIDialogWnd* ir, bool _find_remove);

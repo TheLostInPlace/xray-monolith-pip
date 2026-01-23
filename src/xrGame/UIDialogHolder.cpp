@@ -119,6 +119,7 @@ void CDialogHolder::AddDialogToRender(CUIWindow* pDialog)
 {
 	dlgItem itm(pDialog);
 	itm.enabled = true;
+	xrCriticalSectionGuard g(cs);
 
 	bool bAdd = (m_dialogsToRender_new.end() == std::find(m_dialogsToRender_new.begin(), m_dialogsToRender_new.end(),
 	                                                      itm));
@@ -142,6 +143,7 @@ void CDialogHolder::RemoveDialogToRender(CUIWindow* pDialog)
 
 	dlgItem itm(pDialog);
 	itm.enabled = true;
+	xrCriticalSectionGuard g(cs);
 	xr_vector<dlgItem>::iterator it = std::find(m_dialogsToRender.begin(), m_dialogsToRender.end(), itm);
 
 	if (it != m_dialogsToRender.end())
@@ -165,6 +167,7 @@ void CDialogHolder::RemoveDialogToRender(CUIWindow* pDialog)
 
 void CDialogHolder::DoRenderDialogs()
 {
+	xrCriticalSectionGuard g(cs);
 	xr_vector<dlgItem>::iterator it = m_dialogsToRender.begin();
 	for (; it != m_dialogsToRender.end(); ++it)
 	{
@@ -243,6 +246,7 @@ void CDialogHolder::StopDialog(CUIDialogWnd* pDialog)
 void CDialogHolder::OnFrame()
 {
 	PROF_EVENT("CDialogHolder::OnFrame");
+	xrCriticalSectionGuard g(cs);
 	m_b_in_update = true;
 	CUIDialogWnd* wnd = TopInputReceiver();
 	if (wnd && wnd->IsEnabled())
@@ -274,6 +278,7 @@ void CDialogHolder::CleanInternals()
 	while (!m_input_receivers.empty())
 		m_input_receivers.pop_back();
 
+	xrCriticalSectionGuard g(cs);
 	m_dialogsToRender.clear();
 	GetUICursor().Hide();
 }
