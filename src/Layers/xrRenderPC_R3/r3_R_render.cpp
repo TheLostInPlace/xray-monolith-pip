@@ -234,8 +234,8 @@ void CRender::Render()
 		Target->phase_combine();
 	}
 
-	/*if (Details)
-		Details->details_clear();*/
+	if (Details)
+		Details->details_clear();
 
 	if (g_hud)
 	{
