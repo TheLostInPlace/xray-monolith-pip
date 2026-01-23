@@ -266,11 +266,19 @@ public:
 		pbloom_threshold,
 		pbloom_exposure,
 		pbloom_sky_intensity,
+		psky_color,
+		pfog_color,
+		prain_color,
+		pambient,
+		psun_color,
+		pclouds_color,
+		phemi_color,
 		pmax
 	};
 	u64 pendingScriptChangesFlags;
-	static const size_t pendingScriptChangesOffsets[PendingVariables::pmax];
-	xr_array<float, PendingVariables::pmax> pendingScriptChangesData;
+	static constexpr const u32 pendingScriptChangesFieldCap = 4;
+	static const size_t pendingScriptChangesOffsets[PendingVariables::pmax][2];
+	xr_array<float, PendingVariables::pmax * pendingScriptChangesFieldCap> pendingScriptChangesData;
 public:
 	CEnvDescriptorMixer(shared_str const& identifier);
 	INGAME_EDITOR_VIRTUAL void lerp(CEnvironment* parent, CEnvDescriptor& A, CEnvDescriptor& B, float f,
@@ -280,28 +288,35 @@ public:
 	void destroy();
 };
 
-inline constexpr size_t CEnvDescriptorMixer::pendingScriptChangesOffsets[CEnvDescriptorMixer::PendingVariables::pmax] = {
-	offsetof(CEnvDescriptorMixer, sky_rotation),
-	offsetof(CEnvDescriptorMixer, far_plane),
-	offsetof(CEnvDescriptorMixer, fog_density),
-	offsetof(CEnvDescriptorMixer, fog_near),
-	offsetof(CEnvDescriptorMixer, fog_distance),
-	offsetof(CEnvDescriptorMixer, fog_far),
-	offsetof(CEnvDescriptorMixer, rain_density),
-	offsetof(CEnvDescriptorMixer, bolt_period),
-	offsetof(CEnvDescriptorMixer, bolt_duration),
-	offsetof(CEnvDescriptorMixer, wind_velocity),
-	offsetof(CEnvDescriptorMixer, wind_direction),
-	offsetof(CEnvDescriptorMixer, m_fSunShaftsIntensity),
-	offsetof(CEnvDescriptorMixer, m_fWaterIntensity),
+inline constexpr size_t CEnvDescriptorMixer::pendingScriptChangesOffsets[CEnvDescriptorMixer::PendingVariables::pmax][2] = {
+	{offsetof(CEnvDescriptorMixer, sky_rotation), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, far_plane), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, fog_density), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, fog_near), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, fog_distance), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, fog_far), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, rain_density), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, bolt_period), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, bolt_duration), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, wind_velocity), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, wind_direction), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, m_fSunShaftsIntensity), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, m_fWaterIntensity), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
 #ifdef TREE_WIND_EFFECT
-	offsetof(CEnvDescriptorMixer, m_fTreeAmplitudeIntensity),
+	{offsetof(CEnvDescriptorMixer, m_fTreeAmplitudeIntensity), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
 #endif
-	offsetof(CEnvDescriptorMixer, volumetric_intensity_factor),
-	offsetof(CEnvDescriptorMixer, volumetric_distance_factor),
-	offsetof(CEnvDescriptorMixer, bloom_threshold),
-	offsetof(CEnvDescriptorMixer, bloom_exposure),
-	offsetof(CEnvDescriptorMixer, bloom_sky_intensity),
+	{offsetof(CEnvDescriptorMixer, volumetric_intensity_factor), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, volumetric_distance_factor), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, bloom_threshold), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, bloom_exposure), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, bloom_sky_intensity), sizeof(float) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, sky_color), sizeof(Fvector3) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, fog_color), sizeof(Fvector3) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, rain_color), sizeof(Fvector3) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, ambient), sizeof(Fvector3) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, sun_color), sizeof(Fvector3) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, clouds_color), sizeof(Fvector4) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
+	{offsetof(CEnvDescriptorMixer, hemi_color), sizeof(Fvector4) / CEnvDescriptorMixer::pendingScriptChangesFieldCap},
 };
 
 class ENGINE_API CEnvironment
