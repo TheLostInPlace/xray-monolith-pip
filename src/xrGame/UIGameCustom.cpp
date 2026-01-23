@@ -50,6 +50,7 @@ bool g_b_ClearGameCaptions = false;
 
 CUIGameCustom::~CUIGameCustom()
 {
+	xrCriticalSectionGuard g(cs);
 	delete_data(CustomStatics);
 	g_b_ClearGameCaptions = false;
 }
@@ -58,6 +59,7 @@ void CUIGameCustom::OnFrame()
 {
 	PROF_EVENT("CUIGameCustom::OnFrame");
 	CDialogHolder::OnFrame();
+	xrCriticalSectionGuard g(cs);
 	for (auto item : CustomStatics)
 		item->Update();
 	auto comparer = [](const StaticDrawableWrapper* s1, const StaticDrawableWrapper* s2)
@@ -85,6 +87,7 @@ void CUIGameCustom::OnFrame()
 void CUIGameCustom::Render()
 {
 	PROF_EVENT("CUIGameCustom::Render");
+	xrCriticalSectionGuard g(cs);
 	for (StaticDrawableWrapper* item : CustomStatics)
 		item->Draw();
 	Window->Draw();
@@ -113,6 +116,7 @@ void CUIGameCustom::Render()
 
 StaticDrawableWrapper* CUIGameCustom::AddCustomStatic(const char* id, bool singleInstance)
 {
+	xrCriticalSectionGuard g(cs);
 	if (singleInstance)
 	{
 		auto it = std::find_if(CustomStatics.begin(), CustomStatics.end(), predicate_find_stat(id));
@@ -133,6 +137,7 @@ StaticDrawableWrapper* CUIGameCustom::AddCustomStatic(const char* id, bool singl
 
 StaticDrawableWrapper* CUIGameCustom::GetCustomStatic(const char* id)
 {
+	xrCriticalSectionGuard g(cs);
 	auto it = std::find_if(CustomStatics.begin(), CustomStatics.end(), predicate_find_stat(id));
 	if (it != CustomStatics.end())
 		return *it;
@@ -141,6 +146,7 @@ StaticDrawableWrapper* CUIGameCustom::GetCustomStatic(const char* id)
 
 void CUIGameCustom::RemoveCustomStatic(const char* id)
 {
+	xrCriticalSectionGuard g(cs);
 	auto it = std::find_if(CustomStatics.begin(), CustomStatics.end(), predicate_find_stat(id));
 	if (it != CustomStatics.end())
 	{
