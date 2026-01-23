@@ -111,7 +111,7 @@ void CPSLibrary::Remove(const char* nm)
 	{
 		(*it)->DestroyShader();
 		xr_delete(*it);
-		m_PEDs.erase(it);
+		m_PEDs.erase_fast(it);
 	}
 	else
 	{
@@ -119,7 +119,7 @@ void CPSLibrary::Remove(const char* nm)
 		if (it != m_PGDs.end())
 		{
 			xr_delete(*it);
-			m_PGDs.erase(it);
+			m_PGDs.erase_fast(it);
 		}
 	}
 }

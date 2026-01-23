@@ -412,7 +412,7 @@ void CModelPool::Discard(dxRender_Visual* & V, BOOL b_complete)
 						bForceDiscard = TRUE;
 						I->model->Release();
 						xr_delete(I->model);
-						Models.erase(I);
+						Models.erase_fast(I);
 						bForceDiscard = FALSE;
 					}
 					break;
