@@ -119,18 +119,18 @@ jobs:
     #     Start-Process -FilePath .\setup.exe -ArgumentList "modify","--add","Microsoft.VisualStudio.Component.VC.Tools.x86.x64","--includeRecommended","--includeOptional","--channelId","VisualStudio.17.Release","--productId","Microsoft.VisualStudio.Product.Enterprise","--quiet","--norestart" -Wait -PassThru
     #     Start-Process -FilePath .\setup.exe -ArgumentList "modify","--add","Microsoft.VisualStudio.Component.Vcpkg","--includeRecommended","--includeOptional","--channelId","VisualStudio.17.Release","--productId","Microsoft.VisualStudio.Product.Enterprise","--quiet","--norestart" -Wait -PassThru
 
-    # - name: Fake Build ${{matrix.buildconf}}
-    #   working-directory: ${{env.GITHUB_WORKSPACE}}
-    #   run: |
-    #     New-Item -Type Directory -Path "./_build/_game/bin_dbg"
-    #     New-Item -Path "./_build/_game/bin_dbg/${{matrix.buildconf}}.exe"
-    #     New-Item -Path "./_build/_game/bin_dbg/${{matrix.buildconf}}.pdb"
-
-    - name: Build ${{matrix.buildconf}}
+    - name: Fake Build ${{matrix.buildconf}}
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      # Add additional options to the MSBuild command line here (like platform or verbosity level).
-      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      run: msbuild /p:Configuration=${{matrix.buildconf}} ${{env.SOLUTION_FILE_PATH}}
+      run: |
+        New-Item -Type Directory -Path "./_build/_game/bin_dbg"
+        New-Item -Path "./_build/_game/bin_dbg/${{matrix.buildconf}}.exe"
+        New-Item -Path "./_build/_game/bin_dbg/${{matrix.buildconf}}.pdb"
+
+    # - name: Build ${{matrix.buildconf}}
+    #   working-directory: ${{env.GITHUB_WORKSPACE}}
+    #   # Add additional options to the MSBuild command line here (like platform or verbosity level).
+    #   # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
+    #   run: msbuild /p:Configuration=${{matrix.buildconf}} ${{env.SOLUTION_FILE_PATH}}
 
     - name: Upload Exe
       uses: actions/upload-artifact@v4.6.0
@@ -227,18 +227,18 @@ jobs:
     #     Start-Process -FilePath .\setup.exe -ArgumentList "modify","--add","Microsoft.VisualStudio.Component.VC.Tools.x86.x64","--includeRecommended","--includeOptional","--channelId","VisualStudio.17.Release","--productId","Microsoft.VisualStudio.Product.Enterprise","--quiet","--norestart" -Wait -PassThru
     #     Start-Process -FilePath .\setup.exe -ArgumentList "modify","--add","Microsoft.VisualStudio.Component.Vcpkg","--includeRecommended","--includeOptional","--channelId","VisualStudio.17.Release","--productId","Microsoft.VisualStudio.Product.Enterprise","--quiet","--norestart" -Wait -PassThru
 
-    # - name: Fake Build ${{matrix.buildconf}}
-    #   working-directory: ${{env.GITHUB_WORKSPACE}}
-    #   run: |
-    #     New-Item -Type Directory -Path "./_build/_game/bin_dbg"
-    #     New-Item -Path "./_build/_game/bin_dbg/${{matrix.buildconf}}.exe"
-    #     New-Item -Path "./_build/_game/bin_dbg/${{matrix.buildconf}}.pdb"
-
-    - name: Build ${{matrix.buildconf}}
+    - name: Fake Build ${{matrix.buildconf}}
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      # Add additional options to the MSBuild command line here (like platform or verbosity level).
-      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      run: msbuild /p:Configuration=${{matrix.buildconf}} ${{env.SOLUTION_FILE_PATH}}
+      run: |
+        New-Item -Type Directory -Path "./_build/_game/bin_dbg"
+        New-Item -Path "./_build/_game/bin_dbg/${{matrix.buildconf}}_mt.exe"
+        New-Item -Path "./_build/_game/bin_dbg/${{matrix.buildconf}}_mt.pdb"
+
+    # - name: Build ${{matrix.buildconf}}
+    #   working-directory: ${{env.GITHUB_WORKSPACE}}
+    #   # Add additional options to the MSBuild command line here (like platform or verbosity level).
+    #   # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
+    #   run: msbuild /p:Configuration=${{matrix.buildconf}} ${{env.SOLUTION_FILE_PATH}}
 
     - name: Upload Exe
       uses: actions/upload-artifact@v4.6.0
@@ -282,7 +282,7 @@ jobs:
         retention-days: 1
 
   release:
-    needs: [build, build_mt]
+    needs: [pack_gamedata, build, build_mt]
     name: Release
     runs-on: ubuntu-latest
     steps:
@@ -309,7 +309,15 @@ jobs:
         mkdir release/bin
         mkdir release/db
         mkdir release/db/mods
-        mv ${{env.PACK_GAMEDATA_NAME}}/*.db0 release/db/mods
+
+        mkdir release_mt
+        mkdir release_mt/bin
+        mkdir release_mt/db
+        mkdir release_mt/db/mods
+
+        cp ${{env.PACK_GAMEDATA_NAME}}/*.db0 release/db/mods
+        mv ${{env.PACK_GAMEDATA_NAME}}/*.db0 release_mt/db/mods
+
         mv ${{env.DX11}}_exe/*.exe release/bin
         mv ${{env.DX10}}_exe/*.exe release/bin
         mv ${{env.DX9}}_exe/*.exe release/bin
@@ -318,17 +326,7 @@ jobs:
         mv ${{env.DX10AVX}}_exe/*.exe release/bin
         mv ${{env.DX9AVX}}_exe/*.exe release/bin
         mv ${{env.DX8AVX}}_exe/*.exe release/bin
-        cd release
-        zip -r 'STALKER-Anomaly-modded-exes_${{steps.datetime.outputs.today}}.zip' ./*
-        mv 'STALKER-Anomaly-modded-exes_${{steps.datetime.outputs.today}}.zip' ../
-        cd ..
-      env:
-        RELEASE_NAME_FULL: "${{steps.datetime.outputs.today}}"
 
-    - name: Zip MT Exe folder
-      run: |
-        mkdir release_mt
-        mkdir release_mt/bin
         mv ${{env.DX11}}_mt_exe/*.exe release_mt/bin
         mv ${{env.DX10}}_mt_exe/*.exe release_mt/bin
         mv ${{env.DX9}}_mt_exe/*.exe release_mt/bin
@@ -337,9 +335,18 @@ jobs:
         mv ${{env.DX10AVX}}_mt_exe/*.exe release_mt/bin
         mv ${{env.DX9AVX}}_mt_exe/*.exe release_mt/bin
         mv ${{env.DX8AVX}}_mt_exe/*.exe release_mt/bin
+
+        cd release
+        zip -r 'STALKER-Anomaly-modded-exes_${{steps.datetime.outputs.today}}.zip' ./*
+        mv 'STALKER-Anomaly-modded-exes_${{steps.datetime.outputs.today}}.zip' ../
+        cd ..
+
         cd release_mt
-        zip -r 'STALKER-Anomaly-modded-exes-MT-TEST.zip' ./*
-        mv 'STALKER-Anomaly-modded-exes-MT-TEST.zip' ../
+        zip -r 'STALKER-Anomaly-modded-exes-MT-TEST_${{steps.datetime.outputs.today}}.zip' ./*
+        mv 'STALKER-Anomaly-modded-exes-MT-TEST_${{steps.datetime.outputs.today}}.zip' ../
+        cd ..
+      env:
+        RELEASE_NAME_FULL: "${{steps.datetime.outputs.today}}"
 
     - name: Move PDBs to folder
       run: |
@@ -352,6 +359,7 @@ jobs:
         mv ${{env.DX10AVX}}_pdb/*.zip pdb
         mv ${{env.DX9AVX}}_pdb/*.zip pdb
         mv ${{env.DX8AVX}}_pdb/*.zip pdb
+
         mv ${{env.DX11}}_mt_pdb/*.zip pdb
         mv ${{env.DX10}}_mt_pdb/*.zip pdb
         mv ${{env.DX9}}_mt_pdb/*.zip pdb
