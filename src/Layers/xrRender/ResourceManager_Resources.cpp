@@ -40,7 +40,7 @@ BOOL reclaim(xr_vector<T*>& vec, const T* ptr)
 	for (; it != end; it++)
 		if (*it == ptr)
 		{
-			vec.erase_fast(it);
+			vec.erase(it);
 			return TRUE;
 		}
 	return FALSE;

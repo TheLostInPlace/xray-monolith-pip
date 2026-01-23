@@ -782,7 +782,7 @@ void CKinematics::CalculateWallmarks()
 
 			if (wm == 0)
 			{
-				it = wallmarks.erase_fast(it);
+				it = wallmarks.erase(it);
 				continue;
 			}
 
@@ -793,7 +793,7 @@ void CKinematics::CalculateWallmarks()
 				if (::Render->ViewBase.testSphere_dirty(wm->m_Bounds.P, wm->m_Bounds.R))
 				{
 					::RImplementation.add_SkeletonWallmark(std::move(wm));
-					it = wallmarks.erase_fast(it);
+					it = wallmarks.erase(it);
 				}
 				else
 				{
@@ -804,7 +804,7 @@ void CKinematics::CalculateWallmarks()
 			else
 			{
 				// remove wallmark				
-				it = wallmarks.erase_fast(it);
+				it = wallmarks.erase(it);
 			}
 		}
 	}
