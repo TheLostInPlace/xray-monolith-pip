@@ -34,6 +34,9 @@ void Log(const char* s)
 
 void Msg(const char *format, ...)
 {
+	if (!format)
+		return;
+
 	va_list		mark;
 	va_start	(mark, format );
 	theLogger->Msg(format, mark);
@@ -42,6 +45,9 @@ void Msg(const char *format, ...)
 
 void Log(const char* msg, const char* dop)
 {
+	if (!msg)
+		return;
+
 	if (!dop)
 	{
 		Log(msg);
@@ -56,6 +62,9 @@ void Log(const char* msg, const char* dop)
 
 void Log(const char* msg, u32 dop)
 {
+	if (!msg)
+		return;
+
 	u32 buffer_size = (xr_strlen(msg) + 1 + 10 + 1) * sizeof(char);
 	PSTR buf = (PSTR)_alloca(buffer_size);
 
@@ -65,6 +74,9 @@ void Log(const char* msg, u32 dop)
 
 void Log(const char* msg, int dop)
 {
+	if (!msg)
+		return;
+
 	u32 buffer_size = (xr_strlen(msg) + 1 + 11 + 1) * sizeof(char);
 	PSTR buf = (PSTR)_alloca(buffer_size);
 
@@ -74,6 +86,9 @@ void Log(const char* msg, int dop)
 
 void Log(const char* msg, float dop)
 {
+	if (!msg)
+		return;
+
 	// actually, float string representation should be no more, than 40 characters,
 	// but we will count with slight overhead
 	u32 buffer_size = (xr_strlen(msg) + 1 + 64 + 1) * sizeof(char);
@@ -83,35 +98,49 @@ void Log(const char* msg, float dop)
 	Log(buf);
 }
 
-void Log				(const char *msg, const Fvector &dop) {
-	u32			buffer_size = (xr_strlen(msg) + 2 + 3*(64 + 1) + 1) * sizeof(char);
-    char* buf	= (char*)_alloca( buffer_size );
+void Log (const char *msg, const Fvector &dop)
+{
+	if (!msg)
+		return;
 
-	xr_sprintf	(buf, buffer_size,"%s (%f,%f,%f)",msg, VPUSH(dop) );
-	Log			(buf);
+	u32 buffer_size = (xr_strlen(msg) + 2 + 3 * (64 + 1) + 1) * sizeof(char);
+	char* buf = (char*)_alloca(buffer_size);
+
+	xr_sprintf(buf, buffer_size, "%s (%f,%f,%f)", msg, VPUSH(dop));
+	Log(buf);
 }
 
-void Log				(const char *msg, const Fmatrix &dop)	{
-	u32			buffer_size = (xr_strlen(msg) + 2 + 4*( 4*(64 + 1) + 1 ) + 1) * sizeof(char);
-	char* buf	= (char*)_alloca( buffer_size );
+void Log(const char* msg, const Fmatrix& dop)
+{
+	if (!msg)
+		return;
 
-	xr_sprintf	(buf, buffer_size,"%s:\n%f,%f,%f,%f\n%f,%f,%f,%f\n%f,%f,%f,%f\n%f,%f,%f,%f\n",
+	u32	buffer_size = (xr_strlen(msg) + 2 + 4 * (4 * (64 + 1) + 1) + 1) * sizeof(char);
+	char* buf = (char*)_alloca(buffer_size);
+
+	xr_sprintf(buf, buffer_size, "%s:\n%f,%f,%f,%f\n%f,%f,%f,%f\n%f,%f,%f,%f\n%f,%f,%f,%f\n",
 		msg,
 		dop.i.x, dop.i.y, dop.i.z, dop._14_,
 		dop.j.x, dop.j.y, dop.j.z, dop._24_,
 		dop.k.x, dop.k.y, dop.k.z, dop._34_,
 		dop.c.x, dop.c.y, dop.c.z, dop._44_
 	);
-	Log			(buf);
+	Log(buf);
 }
 
 void LogWinErr(const char* msg, long err_code)
 {
+	if (!msg)
+		return;
+
 	Msg("%s: %s", msg, Debug.error2string(err_code));
 }
 
 void xrLogger::Msg(LPCSTR Msg, va_list argList)
 {
+	if (!Msg)
+		return;
+
 	string4096	formattedMessage;
 	int MsgSize = _vsnprintf(formattedMessage, sizeof(formattedMessage) - 1, Msg, argList);
 
@@ -140,6 +169,9 @@ void xrLogger::UnpauseLogging()
 
 void xrLogger::SimpleMessage(LPCSTR Message, u32 MessageSize /*= 0*/)
 {
+	if (!Message)
+		return;
+
 	switch (MessageSize)
 	{
 	case (u32(-1)): return;
@@ -362,7 +394,13 @@ void xrLogger::InternalPrintRecord()
 
 void xrLogger::InternalPrintAllRecords()
 {
-	while (!logData->empty()) {
+	while (true)
+	{
+		{
+			xrCriticalSectionGuard g(&logDataGuard);
+			if (logData->empty())
+				break;
+		}
 		InternalPrintRecord();
 	}
 }
