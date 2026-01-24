@@ -8,34 +8,52 @@
 
 XRCORE_API xr_shared_ptr<str_container> g_pStringContainer = nullptr;
 
-str_container::str_container()
+str_container::str_container() {}
+str_container::str_container(private_constructor_key) {}
+
+xr_shared_ptr<str_container> str_container::create()
 {
+	return xr_make_shared<str_container>(private_constructor_key{});
 }
 
 str_value* str_container::dock(str_c value)
 {
 	if (!value) return nullptr;
 
-	auto s = str_value(value);
-	auto hash = s.hash % buffer_size;
+	size_t hash = xr_hash<std::string_view>()(value);
+	u32 slot = u32(hash % buffer_size);
 
 	xrSRWLockGuard guard(&rwlock, false);
-	auto it = std::find(buffer[hash].begin(), buffer[hash].end(), s);
-	if (it != buffer[hash].end())
-		return &*it;
-	buffer[hash].push_front(std::move(s));
-	return &buffer[hash].front();
+	for (auto& item : buffer[slot])
+	{
+		if (hash == item.hash && xr_strcmp(value, item.value.c_str()) == 0)
+			return &item;
+	}
+
+	str_value s(value, hash);
+	buffer[slot].push_front(std::move(s));
+	return &buffer[slot].front();
 }
 
 void str_container::erase(str_c value)
 {
 	if (!value) return;
 
-	auto s = str_value(value);
-	auto hash = s.hash % buffer_size;
+	size_t hash = xr_hash<std::string_view>()(value);
+	u32 slot = u32(hash % buffer_size);
 
 	xrSRWLockGuard guard(&rwlock, false);
-	buffer[hash].remove(s);
+	auto before = buffer[slot].before_begin();
+	for (auto it = buffer[slot].begin(); it != buffer[slot].end(); )
+	{
+		if (hash == it->hash && xr_strcmp(value, it->value.c_str()) == 0)
+			it = buffer[slot].erase_after(before);
+		else
+		{
+			before = it;
+			it++;
+		}
+	}
 }
 
 void str_container::clean()
@@ -82,11 +100,11 @@ void str_container::dump(IWriter* W)
 
 void str_container::dump_console()
 {
-	xrSRWLockGuard guard(&rwlock, true);
-	xr_set<str_value> set;
+	xr_set<xr_string> set;
 	u32 count = 0;
 	u32 loadedListCount = 0;
 
+	xrSRWLockGuard guard(&rwlock, true);
 	for (const auto& list : buffer)
 	{
 		bool isLoaded = false;
@@ -98,7 +116,7 @@ void str_container::dump_console()
 				loadedListCount++;
 			}
 			count++;
-			set.insert(s);
+			set.insert(s.value);
 		}
 			
 	}
@@ -136,7 +154,10 @@ u32 str_container::stat_economy(u32& count, u32& unique)
 
 str_container::~str_container()
 {
-	clean();
+	for (auto& list : buffer)
+	{
+		list.clear();
+	}
 }
 
 //xr_string class

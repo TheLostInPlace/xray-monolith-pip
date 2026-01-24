@@ -97,9 +97,26 @@ struct XRCORE_API str_value
 	xr_string value;
 	size_t hash;
 
-	str_value(str_c s) : dwReference(0), value(s), hash(xr_hash<xr_string>()(value)) {};
-	str_value(xr_string& s) : dwReference(0), value(s), hash(xr_hash<xr_string>()(value)) {};
-	str_value(const str_value& s) : dwReference(0), value(s.value), hash(s.hash) {};
+	str_value() : dwReference(0), hash(0) {}
+	str_value(str_c s) : dwReference(0), value(s), hash(xr_hash<std::string_view>()(s)) {};
+	str_value(str_c s, size_t hash) : dwReference(0), value(s), hash(hash) {};
+	
+	// Explicit Move Semantics
+	str_value(str_value&& other) noexcept
+		: dwReference(other.dwReference.load()), // Atomics must be loaded/stored
+		value(std::move(other.value)),
+		hash(other.hash)
+	{
+		other.hash = 0;
+		other.dwReference = 0;
+	}
+
+	// Force default Move Assignment
+	str_value& operator=(str_value&& other) noexcept = default;
+
+	// Disable Copying (Standard for interned strings to prevent accidents)
+	str_value(const str_value&) = delete;
+	str_value& operator=(const str_value&) = delete;
 
 	bool operator<(const str_value& other) const
 	{
@@ -108,7 +125,7 @@ struct XRCORE_API str_value
 
 	bool operator==(const str_value& other) const
 	{
-		return value == other.value;
+		return hash == other.hash && value == other.value;
 	}
 };
 
@@ -125,11 +142,18 @@ class IWriter;
 class XRCORE_API str_container
 {
 private:
-	static const u32 buffer_size = 1024 * 256;
+	static constexpr const u32 buffer_size = 1024 * 256;
 	xr_array<xr_forward_list<str_value>, buffer_size> buffer;
 	xrSRWLock rwlock;
-public:
+
+	// Force create only on heap
+private:
+	struct private_constructor_key { explicit private_constructor_key() = default; };
 	str_container();
+	
+public:
+	str_container(private_constructor_key);
+	static xr_shared_ptr<str_container> create();
 	~str_container();
 
 	str_value* dock(str_c value);

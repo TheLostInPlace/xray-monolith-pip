@@ -104,7 +104,7 @@ void xrMemory::_initialize(BOOL bDebug)
 #endif // DEBUG_MEMORY_MANAGER
 
 	// DUMP_PHASE;
-	g_pStringContainer = xr_make_shared<str_container>();
+    g_pStringContainer = str_container::create();
 	shared_str_initialized = true;
 	// DUMP_PHASE;
 	g_pSharedMemoryContainer = xr_new<smem_container>();
