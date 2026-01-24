@@ -301,17 +301,17 @@ void CDSGraphManager::r_dsgraph_render_emissive(bool clear, bool renderHUD)
 #if	RENDER!=R_R1
 	r_dsgraph_render_graph_sorted(RGraph.mapStaticSorted.Emissive, clear);
 	r_dsgraph_render_graph_sorted(RGraph.mapDynamicSorted.Emissive, clear);
-	{
-		//	HACK: Calculate this only once
-		CHudInitializer initializer(true);
+	
+	//	HACK: Calculate this only once
+	CHudInitializer initializer(true);
 
-		RImplementation.rmNear();
-		r_dsgraph_render_graph_sorted(RGraph.mapHUDSorted.Emissive, clear);
-		RImplementation.rmNormal();
-	}
+	RImplementation.rmNear();
+	r_dsgraph_render_graph_sorted(RGraph.mapHUDSorted.Emissive, clear);
 	
 	if (renderHUD)
-		r_dsgraph_render_sorted_hud();
+		r_dsgraph_render_graph_sorted(RGraph.mapHUDSorted.Sorted, false, true);
+
+	RImplementation.rmNormal();
 #endif
 }
 
