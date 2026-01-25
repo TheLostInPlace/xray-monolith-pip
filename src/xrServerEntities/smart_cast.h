@@ -7,11 +7,13 @@
 
 // Helper to detect if a type has a dedicated cast method
 // Specializations will be provided for known dcast methods
-template<typename _To, typename _From>
+template<typename _To, typename _From, typename = void>
 struct has_dcast : std::false_type {};
 
 #define DECLARE_SPECIALIZATION(TO, FROM, METHOD) \
 template<> struct has_dcast<TO*, FROM*> : std::true_type { \
+    static_assert(std::is_convertible_v<decltype(std::declval<FROM*>()->METHOD()), TO*>, \
+        "Specialization Error: " #METHOD " does not return " #TO "*"); \
     static TO* cast(FROM* ptr) { return ptr ? ptr->METHOD() : nullptr; } \
 };
 
