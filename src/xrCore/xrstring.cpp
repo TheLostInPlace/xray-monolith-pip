@@ -9,11 +9,11 @@
 XRCORE_API xr_shared_ptr<str_container> g_pStringContainer = nullptr;
 
 str_container::str_container() {}
-str_container::str_container(private_constructor_key) {}
+str_container::str_container(str_container_constructor_key) {}
 
 xr_shared_ptr<str_container> str_container::create()
 {
-	return xr_make_shared<str_container>(private_constructor_key{});
+	return xr_make_shared<str_container>(str_container_constructor_key{});
 }
 
 str_value* str_container::dock(str_c value)

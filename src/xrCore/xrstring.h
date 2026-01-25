@@ -148,11 +148,11 @@ private:
 
 	// Force create only on heap
 private:
-	struct private_constructor_key { explicit private_constructor_key() = default; };
+	struct str_container_constructor_key { explicit str_container_constructor_key() = default; };
 	str_container();
 	
 public:
-	str_container(private_constructor_key);
+	str_container(str_container_constructor_key);
 	static xr_shared_ptr<str_container> create();
 	~str_container();
 
