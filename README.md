@@ -197,8 +197,8 @@ How to compile exes:
 13. A short video demonstration of the entire process: https://youtu.be/MmZwyM2QO38
 
 ## Changelog
-## 2026.12.25
-* ### First release of test version of MT branch with numerous performance improvements to the engine adapted from [IX-Ray](https://github.com/ixray-team/ixray-1.6-stcop) and OpenXRay (https://github.com/OpenXRay/xray-16)
+## 2026.01.25
+* ### First release of test version of MT branch with numerous performance improvements to the engine adapted from [IX-Ray](https://github.com/ixray-team/ixray-1.6-stcop) and [OpenXRay](https://github.com/OpenXRay/xray-16)
 * Test exes are packed into separate `STALKER-Anomaly-modded-exes-MT-TEST` archive and are designated as `MT-TEST` in main menu and log
 * On average expect 30%-50% performance increase, will be higher if you were CPU bound before
 
