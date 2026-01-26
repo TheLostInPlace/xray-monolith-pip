@@ -94,21 +94,22 @@ namespace std
 struct XRCORE_API str_value
 {
 	mutable xr_atomic_u32 dwReference;
-	xr_string value;
+	char* value;
 	size_t hash;
 
-	str_value() : dwReference(0), hash(0) {}
-	str_value(str_c s) : dwReference(0), value(s), hash(xr_hash<std::string_view>()(s)) {};
-	str_value(str_c s, size_t hash) : dwReference(0), value(s), hash(hash) {};
+	str_value() : dwReference(0), value(0), hash(0) {}
+	str_value(char* s) : dwReference(0), value(s), hash(xr_hash<std::string_view>()(s)) {};
+	str_value(char* s, size_t hash) : dwReference(0), value(s), hash(hash) {};
 	
 	// Explicit Move Semantics
 	str_value(str_value&& other) noexcept
 		: dwReference(other.dwReference.load()), // Atomics must be loaded/stored
-		value(std::move(other.value)),
+		value(other.value),
 		hash(other.hash)
 	{
-		other.hash = 0;
 		other.dwReference = 0;
+		other.value = nullptr;
+		other.hash = 0;
 	}
 
 	// Force default Move Assignment
@@ -142,6 +143,15 @@ class IWriter;
 class XRCORE_API str_container
 {
 private:
+	struct pool_block {
+		char* base;     // Start of the block
+		u32 used;     // How much used in block
+		const u32 capacity; // Total size (e.g., 4MB)
+		pool_block(char* base, u32 capacity) : base(base), used(0), capacity(capacity) {}
+	};
+	xr_vector<pool_block> storage;
+	char* alloc_in_pool(str_c value, u32 len);
+	static constexpr const u32 block_size = 1024 * 1024;
 	static constexpr const u32 buffer_size = 1024 * 256;
 	xr_array<xr_forward_list<str_value>, buffer_size> buffer;
 	xrSRWLock rwlock;
@@ -252,16 +262,16 @@ public:
 		return (shared_str&)*this;
 	}
 
-	str_c operator*() const { return p_ ? p_->value.c_str() : 0; }
+	str_c operator*() const { return p_ ? p_->value : 0; }
 	bool operator!() const { return p_ == 0; }
 	char operator[](size_t id) { return p_->value[id]; }
-	str_c c_str() const { return p_ ? p_->value.c_str() : 0; }
+	str_c c_str() const { return p_ ? p_->value : 0; }
 
 	// misc func
 	u32 size() const
 	{
 		if (0 == p_) return 0;
-		else return p_->value.length();
+		else return xr_strlen(p_->value);
 	}
 
 	void swap(shared_str& rhs)

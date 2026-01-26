@@ -9,11 +9,29 @@
 XRCORE_API xr_shared_ptr<str_container> g_pStringContainer = nullptr;
 
 str_container::str_container() {}
-str_container::str_container(str_container_constructor_key) {}
+str_container::str_container(str_container_constructor_key) 
+{
+	storage.emplace_back((char*)xr_malloc(block_size), block_size);
+}
 
 xr_shared_ptr<str_container> str_container::create()
 {
 	return xr_make_shared<str_container>(str_container_constructor_key{});
+}
+
+char* str_container::alloc_in_pool(str_c s, u32 len)
+{
+	if (storage.back().used + len > storage.back().capacity)
+		storage.emplace_back((char*)xr_malloc(_max(block_size, len)), _max(block_size, len));
+
+	pool_block& b = storage.back();
+	char* dest = b.base + b.used;
+
+	// Copy the raw characters
+	std::memcpy(dest, s, len);
+	b.used += len;
+
+	return dest;
 }
 
 str_value* str_container::dock(str_c value)
@@ -26,11 +44,14 @@ str_value* str_container::dock(str_c value)
 	xrSRWLockGuard guard(&rwlock, false);
 	for (auto& item : buffer[slot])
 	{
-		if (hash == item.hash && xr_strcmp(value, item.value.c_str()) == 0)
+		if (hash == item.hash && xr_strcmp(value, item.value) == 0)
 			return &item;
 	}
 
-	str_value s(value, hash);
+	u32 len = xr_strlen(value) + 1;
+	char* pooled_ptr = alloc_in_pool(value, len);
+
+	str_value s(pooled_ptr, hash);
 	buffer[slot].push_front(std::move(s));
 	return &buffer[slot].front();
 }
@@ -46,7 +67,7 @@ void str_container::erase(str_c value)
 	auto before = buffer[slot].before_begin();
 	for (auto it = buffer[slot].begin(); it != buffer[slot].end(); )
 	{
-		if (hash == it->hash && xr_strcmp(value, it->value.c_str()) == 0)
+		if (hash == it->hash && xr_strcmp(value, it->value) == 0)
 			it = buffer[slot].erase_after(before);
 		else
 		{
@@ -60,9 +81,14 @@ void str_container::clean()
 {
 	xrSRWLockGuard guard(&rwlock, false);
 	for (auto& list : buffer)
-	{
 		list.clear();
+
+	for (auto& block : storage)
+	{
+		if (block.base)
+			xr_free(block.base);
 	}
+	storage.clear();
 }
 
 void str_container::verify()
@@ -79,7 +105,7 @@ void str_container::dump()
 	for (const auto& list : buffer)
 	{
 		for (const auto& s: list)
-			fprintf(F, "ref[%d]-len[%d] : %s\n", s.dwReference.load(), (u32)s.value.length(), s.value.c_str());
+			fprintf(F, "ref[%d]-len[%d] : %s\n", s.dwReference.load(), xr_strlen(s.value), s.value);
 	}
 	fclose(F);
 }
@@ -92,7 +118,7 @@ void str_container::dump(IWriter* W)
 		for (const auto& s : list)
 		{
 			string4096 temp;
-			xr_sprintf(temp, sizeof(temp), "ref[%d]-len[%d] : %s\n", s.dwReference.load(), (u32)s.value.length(), s.value.c_str());
+			xr_sprintf(temp, sizeof(temp), "ref[%d]-len[%d] : %s\n", s.dwReference.load(), xr_strlen(s.value), s.value);
 			W->w_string(temp);
 		}
 	}
@@ -128,7 +154,7 @@ void str_container::dump_console()
 	for (const auto& list : buffer)
 	{
 		for (const auto& s : list)
-			Msg("ref[%d]-len[%d] : %s\n", s.dwReference.load(), (u32)s.value.length(), s.value.c_str());
+			Msg("ref[%d]-len[%d] : %s\n", s.dwReference.load(), xr_strlen(s.value), s.value);
 	}
 }
 
@@ -144,7 +170,7 @@ u32 str_container::stat_economy(u32& count, u32& unique)
 		for (const auto& s : list)
 		{
 			count++;
-			size += sizeof(s) + s.value.length();
+			size += sizeof(s) + xr_strlen(s.value);
 			strings.insert(s.value);
 		}
 	}
@@ -155,9 +181,14 @@ u32 str_container::stat_economy(u32& count, u32& unique)
 str_container::~str_container()
 {
 	for (auto& list : buffer)
-	{
 		list.clear();
+
+	for (auto& block : storage)
+	{
+		if (block.base)
+			xr_free(block.base);
 	}
+	storage.clear();
 }
 
 //xr_string class
