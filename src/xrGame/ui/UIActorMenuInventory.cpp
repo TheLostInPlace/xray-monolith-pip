@@ -647,7 +647,7 @@ bool CUIActorMenu::ToSlotScript(CScriptGameObject* GO, bool force_place, u16 slo
 
 	CUIDragDropListEx* invlist = GetListByType(iActorBag);
 	CUICellContainer* c = invlist->GetContainer();
-	xrSharedCriticalSectionGuard guard(c->csUi);
+	xrCriticalSectionGuard guard(c->csUi);
 	CUIWindow::WINDOW_LIST child_list = c->GetChildWndList();
 
 	for (WINDOW_LIST_it it = child_list.begin(); child_list.end() != it; ++it)
@@ -797,7 +797,7 @@ bool CUIActorMenu::ToSlot(CUICellItem* itm, bool force_place, u16 slot_id)
 		{
 			//Alundaio: Since the player's inventory is being used as a slot we need to search for cell with matching m_pData
 			CUICellContainer* c = slot_list->GetContainer();
-			xrSharedCriticalSectionGuard guard(c->csUi);
+			xrCriticalSectionGuard guard(c->csUi);
 			CUIWindow::WINDOW_LIST child_list = c->GetChildWndList();
 
 			for (WINDOW_LIST_it it = child_list.begin(); child_list.end() != it; ++it)
@@ -915,7 +915,7 @@ bool CUIActorMenu::ToBeltScript(CScriptGameObject* GO, bool b_use_cursor_pos)
 
 	CUIDragDropListEx* invlist = GetListByType(iActorBag);
 	CUICellContainer* c = invlist->GetContainer();
-	xrSharedCriticalSectionGuard guard(c->csUi);
+	xrCriticalSectionGuard guard(c->csUi);
 	CUIWindow::WINDOW_LIST child_list = c->GetChildWndList();
 
 	for (WINDOW_LIST_it it = child_list.begin(); child_list.end() != it; ++it)

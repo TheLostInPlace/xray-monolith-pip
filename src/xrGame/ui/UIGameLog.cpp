@@ -80,7 +80,7 @@ void CUIGameLog::Update()
 	CUIScrollView::Update();
 	toDelList.clear();
 
-	xrSharedCriticalSectionGuard guard(m_pad->csUi);
+	xrCriticalSectionGuard guard(m_pad->csUi);
 	WINDOW_LIST_it it = m_pad->GetChildWndList().begin();
 	WINDOW_LIST_it it_e = m_pad->GetChildWndList().end();
 
