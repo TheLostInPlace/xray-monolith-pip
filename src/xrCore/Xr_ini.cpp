@@ -331,7 +331,7 @@ void CInifile::StashCurrentSection(
 			BaseData.emplace_hint(SectIt, CurrentBase->Name, *CurrentBase);
 			SectionToFilename[CurrentBase->Name] = currentFileName;
 		}
-		CurrentBase = NULL;
+		xr_delete(CurrentBase);
 	}
 
 	// Store override section if exists
@@ -358,7 +358,7 @@ void CInifile::StashCurrentSection(
 			OverrideData.emplace_hint(SectIt, CurrentOverride->Name, *CurrentOverride);
 			OverrideToFilename[CurrentOverride->Name].insert(currentFileName);
 		}
-		CurrentOverride = NULL;
+		xr_delete(CurrentOverride);
 	}
 };
 
@@ -803,7 +803,7 @@ void CInifile::LTXLoad (
 			BaseData.emplace(CurrentBase->Name, *CurrentBase);
 			OverrideToFilename[CurrentBase->Name].insert(currentFileName);
 			SectionToFilename[CurrentBase->Name] = currentFileName;
-			CurrentBase = NULL;
+			xr_delete(CurrentBase);
 		}
 	}
 };
