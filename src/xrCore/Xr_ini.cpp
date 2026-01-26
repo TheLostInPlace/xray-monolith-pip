@@ -331,7 +331,7 @@ void CInifile::StashCurrentSection(
 			BaseData.emplace_hint(SectIt, CurrentBase->Name, *CurrentBase);
 			SectionToFilename[CurrentBase->Name] = currentFileName;
 		}
-		CurrentBase = NULL;
+		xr_delete(CurrentBase);
 	}
 
 	// Store override section if exists
@@ -358,7 +358,7 @@ void CInifile::StashCurrentSection(
 			OverrideData.emplace_hint(SectIt, CurrentOverride->Name, *CurrentOverride);
 			OverrideToFilename[CurrentOverride->Name].insert(currentFileName);
 		}
-		CurrentOverride = NULL;
+		xr_delete(CurrentOverride);
 	}
 };
 
@@ -803,7 +803,7 @@ void CInifile::LTXLoad (
 			BaseData.emplace(CurrentBase->Name, *CurrentBase);
 			OverrideToFilename[CurrentBase->Name].insert(currentFileName);
 			SectionToFilename[CurrentBase->Name] = currentFileName;
-			CurrentBase = NULL;
+			xr_delete(CurrentBase);
 		}
 	}
 };
@@ -1096,6 +1096,17 @@ void CInifile::Load(IReader* F, LPCSTR path
 
 	static shared_str DLTX_DELETE = "DLTX_DELETE";
 	string_path currentFileName;
+
+	// Assemble paths and filename
+	MezzStringBuffer split_drive;
+	MezzStringBuffer split_dir;
+	MezzStringBuffer split_name;
+	MezzStringBuffer split_ext;
+
+	_splitpath_s(m_file_name, split_drive, split_drive.GetSize(), split_dir, split_dir.GetSize(), split_name, split_name.GetSize(), split_ext, split_ext.GetSize());
+
+	xr_string FileName = xr_string(split_name) + xr_string(split_ext);
+	strcpy(currentFileName, FileName.c_str());
 
 	// CRITICAL OPTIMIZATION: Single-pass load instead of double read
 	// Parse both base and override data in one pass
