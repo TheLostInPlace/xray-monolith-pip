@@ -90,44 +90,6 @@ xrCriticalSection::raii::~raii()
 	critical_section->Leave();
 }
 
-// xrSharedCriticalSection implementation
-xrSharedCriticalSection::xrSharedCriticalSection() : m_critical_section(xr_make_shared_cs()) {}
-xrSharedCriticalSection::xrSharedCriticalSection(const xr_shared_ptr_cs& cs) : m_critical_section(cs) {}
-xrSharedCriticalSection::xrSharedCriticalSection(xrSharedCriticalSection&& other) noexcept : m_critical_section(std::move(other.m_critical_section)) {}
-xrSharedCriticalSection& xrSharedCriticalSection::operator=(xrSharedCriticalSection&& other) noexcept
-{
-	if (this != &other)
-	    m_critical_section = std::move(other.m_critical_section);
-
-	return *this;
-}
-
-// xrSharedCriticalSectionGuard implementation
-// Use only with xrSharedCriticalSection
-xrSharedCriticalSectionGuard::xrSharedCriticalSectionGuard(const xrSharedCriticalSection& cs) : m_critical_section(cs.GetPtr()), m_owns_lock(true)
-{
-	m_critical_section->Enter();
-}
-
-xrSharedCriticalSectionGuard::xrSharedCriticalSectionGuard(const xr_shared_ptr_cs& cs) : m_critical_section(cs), m_owns_lock(true)
-{
-	m_critical_section->Enter();
-}
-
-xrSharedCriticalSectionGuard::~xrSharedCriticalSectionGuard()
-{
-	Leave();
-}
-
-void xrSharedCriticalSectionGuard::Leave()
-{
-	if (m_owns_lock && m_critical_section)
-	{
-		m_critical_section->Leave();
-		m_owns_lock = false;
-	}
-}
-
 xrSRWLock::xrSRWLock()
 {
     InitializeSRWLock(&smutex);
