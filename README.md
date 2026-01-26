@@ -35,7 +35,7 @@ Here is list of exe files for Anomaly 1.5.3 that contains all engine patches by 
 * Q: I have conflicts, crashes and bugs with shaders when i use Beef NVG, SSS, or Enhanced Shaders
 * A: If you are using those mods, install this package via MO2, and put it higher priority than those mods: https://github.com/deggua/xray-hdr10-shaders/releases/latest
 
-* Known issues with MT version
+* Known issues with MT version (Pre-release)
   * Due to aggressive culling some spots on the map might bug out and don't render properly. For example a place behind basement entrance in Rookie Village
   * Increased possibility to have a crash on loading the whole game or a savefile
   * Longer pause on escaping to main menu or saving the game
@@ -197,7 +197,7 @@ How to compile exes:
 13. A short video demonstration of the entire process: https://youtu.be/MmZwyM2QO38
 
 ## Changelog
-## 2026.01.25
+## 2026.01.25 (Pre-release)
 * ### First release of test version of MT branch with numerous performance improvements to the engine adapted from [IX-Ray](https://github.com/ixray-team/ixray-1.6-stcop) and [OpenXRay](https://github.com/OpenXRay/xray-16)
 * Test exes are packed into separate `STALKER-Anomaly-modded-exes-MT-TEST` archive and are designated as `MT-TEST` in main menu and log
 * On average expect 30%-50% performance increase, will be higher if you were CPU bound before
