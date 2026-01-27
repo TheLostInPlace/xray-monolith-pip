@@ -98,7 +98,7 @@ XRCORE_API void _decorate(LPSTR dest, LPCSTR src)
 BOOL CInifile::Sect::line_exist(LPCSTR L, LPCSTR* val)
 {
 	auto A = std::lower_bound(Data.begin(), Data.end(), L, item_comparator());
-	if (A != Data.end() && A->first.equal(L))
+	if (A != Data.end() && xr_strcmp(*A->first, L) == 0)
 	{
 		if (val) *val = *A->second;
 		return TRUE;
@@ -1292,7 +1292,7 @@ void CInifile::DLTX_print(LPCSTR sec, LPCSTR line)
 	}
 
 	auto A = std::lower_bound(I.Data.begin(), I.Data.end(), line, item_comparator());
-	if (A != I.Data.end() && A->first.equal(line))
+	if (A != I.Data.end() && xr_strcmp(*A->first, line) == 0)
 	{
 		Msg("[%s]", I.Name.c_str());
 		printIniItemLine(*A);
@@ -1323,7 +1323,7 @@ LPCSTR CInifile::DLTX_getFilenameOfLine(LPCSTR sec, LPCSTR line)
 
 	Sect& I = r_section(sec);
 	auto A = std::lower_bound(I.Data.begin(), I.Data.end(), line, item_comparator());
-	if (A != I.Data.end() && A->first.equal(line))
+	if (A != I.Data.end() && xr_strcmp(*A->first, line) == 0)
 	{
 		auto fname = A->filename.c_str();
 		return fname;
@@ -1410,7 +1410,7 @@ BOOL CInifile::line_exist(LPCSTR S, LPCSTR L) const
 
 	Sect& I = r_section(S);
 	auto A = std::lower_bound(I.Data.begin(), I.Data.end(), L, item_comparator());
-	return A != I.Data.end() && A->first.equal(L);
+	return A != I.Data.end() && xr_strcmp(*A->first, L) == 0;
 }
 
 u32 CInifile::line_count(LPCSTR Sname) const
@@ -1463,7 +1463,7 @@ LPCSTR CInifile::r_string(LPCSTR S, LPCSTR L) const
 
 	Sect const& I = r_section(S);
 	auto A = std::lower_bound(I.Data.begin(), I.Data.end(), L, item_comparator());
-	if (A != I.Data.end() && A->first.equal(L))
+	if (A != I.Data.end() && xr_strcmp(*A->first, L) == 0)
 	{
 		shared_str V = A->second;
 		LPCSTR res = *V;
@@ -1863,7 +1863,7 @@ void CInifile::remove_line(LPCSTR S, LPCSTR L)
 	{
 		Sect& data = r_section(S);
 		auto A = std::lower_bound(data.Data.begin(), data.Data.end(), L, item_comparator());
-		if (A != data.Data.end() && A->first.equal(L))
+		if (A != data.Data.end() && xr_strcmp(*A->first, L) == 0)
 			data.Data.erase(A);
 	}
 }
