@@ -17,13 +17,19 @@ public:
 		//demonized: add DLTX info
 		mutable shared_str filename;
 
-		//demonized: Replace xr_vector<Item> with xr_set<Item> with comparators
+		// depth determines load order of DLTX overrides, lower depth is more important
+		// depth order: DLTX mod_file -> its includes -> Base file -> its includes
+		int depth;
+		
+		// Insertion index will determine what kv pair in overrides will win even if the depth is the same
+		u32 insertionIndex;
+
 		bool operator<(const Item& other) const
 		{
 			return xr_strcmp(*first, *other.first) < 0;
 		}
 
-		Item() : first(0), second(0), filename(0) {};
+		Item() : first(0), second(0), filename(0), depth(0), insertionIndex(0) {};
 	};
 
 	struct item_comparator
@@ -120,16 +126,16 @@ public:
 	void DLTX_print(LPCSTR sec, LPCSTR line);
 	LPCSTR DLTX_getFilenameOfLine(LPCSTR sec, LPCSTR line);
 	bool DLTX_isOverride(LPCSTR sec, LPCSTR line);
-	xr_map<shared_str, RStringSet> OverrideToFilename;
-	xr_map<shared_str, shared_str> SectionToFilename;
-	RStringSet SectionsToDelete;
-	xr_map<shared_str, RStringVec> BaseParentDataMap;
-	xr_map<shared_str, Sect> BaseData;
-	xr_map<shared_str, RStringVec> OverrideParentDataMap;
-	xr_map<shared_str, Sect> OverrideData;
-	xr_map<shared_str, Sect> FinalData;
-	RStringSet FinalizedSections;
-	xr_map<shared_str, ItemsVec> OverrideModifyListData;
+	std::map<shared_str, std::set<shared_str>> OverrideToFilename;
+	std::map<shared_str, shared_str> SectionToFilename;
+	std::set<shared_str> SectionsToDelete;
+	std::map<shared_str, std::vector<shared_str>> BaseParentDataMap;
+	std::map<shared_str, Sect> BaseData;
+	std::map<shared_str, std::vector<shared_str>> OverrideParentDataMap;
+	std::map<shared_str, Sect> OverrideData;
+	std::map<shared_str, Sect> FinalData;
+	std::set<shared_str> FinalizedSections;
+	std::map<shared_str, std::vector<Item>> OverrideModifyListData;
 	enum InsertType
 	{
 		Override,
@@ -140,7 +146,8 @@ public:
 		IReader* F,
 		LPCSTR path,
 		BOOL bIsRootFile,
-		string_path currentFileName
+		string_path currentFileName,
+		int depth
 #ifndef _EDITOR
 		, allow_include_func_t allow_include_func = NULL
 #endif
@@ -150,7 +157,8 @@ private:
 		const string_path _fn,
 		const string_path inc_path,
 		const string_path name,
-		string_path currentFileName
+		string_path currentFileName,
+		int depth
 #ifndef _EDITOR
 		, allow_include_func_t allow_include_func
 #endif
@@ -163,10 +171,12 @@ private:
 	);
 	void EvaluateSection(
 		shared_str SectionName,
-		RStringVec* PreviousEvaluations,
+		std::vector<shared_str>* PreviousEvaluations,
 		string_path currentFileName
 	);
-	void insert_item(CInifile::Sect* tgt, const CInifile::Item& I);
+	void insert_item(CInifile::Sect* tgt, CInifile::Item& I);
+	void SortAndFilterSection(Sect& Data);
+	void SortAndFilterSectionAfterEvaluate(Sect& Data, std::set<shared_str>& deletedItems);
 
 public:
 	void save_as(IWriter& writer, bool bcheck = false) const;
