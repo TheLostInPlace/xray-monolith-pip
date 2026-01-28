@@ -54,7 +54,7 @@ str_value* str_container::dock(str_c value)
 	xrSRWLockGuard guard(&rwlock, false);
 	for (auto& item : buffer[slot])
 	{
-		if (hash == item.hash && len == item.length && memcmp(value, item.value, len) == 0)
+		if (hash == item.hash && len == item.length && std::memcmp(value, item.value, len) == 0)
 			return &item;
 	}
 
@@ -77,7 +77,7 @@ void str_container::erase(str_c value)
 	auto before = buffer[slot].before_begin();
 	for (auto it = buffer[slot].begin(); it != buffer[slot].end(); )
 	{
-		if (hash == it->hash && len == it->length && memcmp(value, it->value, len) == 0)
+		if (hash == it->hash && len == it->length && std::memcmp(value, it->value, len) == 0)
 			it = buffer[slot].erase_after(before);
 		else
 		{
