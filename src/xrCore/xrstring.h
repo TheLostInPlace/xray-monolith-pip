@@ -149,13 +149,13 @@ private:
 	struct pool_block {
 		char* base;     // Start of the block
 		u32 used;     // How much used in block
-		const u32 capacity; // Total size (e.g., 4MB)
+		const u32 capacity; // Total memory used by block
 		pool_block(char* base, u32 capacity) : base(base), used(0), capacity(capacity) {}
 	};
 	xr_vector<pool_block> storage;
 	char* alloc_in_pool(str_c value, u32 len);
-	static constexpr const u32 block_size = 1024 * 1024;
-	static constexpr const u32 buffer_size = 1024 * 256;
+	static constexpr const u32 block_size = 2 * 1024 * 1024; // 2MB
+	static constexpr const u32 buffer_size = 1024 * 256; // 262144 slots
 	xr_array<xr_forward_list<str_value>, buffer_size> buffer;
 	xrSRWLock rwlock;
 
