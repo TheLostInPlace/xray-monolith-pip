@@ -128,6 +128,27 @@ void CRender::Render()
 		HW.pContext->ClearDepthStencilView(HW.pBaseZB, D3D_CLEAR_DEPTH, 1.0f, 0);
 	}*/
 
+	if (RImplementation.o.ssfx_motionvectors)
+	{
+		Target->u_setrt(Device.dwWidth, Device.dwHeight, 0, 0, Target->rt_ssfx_motion_vectors->pRT, 0);
+
+		FLOAT ColorRGBA[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		HW.pContext->ClearRenderTargetView(Target->rt_ssfx_motion_vectors->pRT, ColorRGBA);
+
+		RCache.set_Stencil(FALSE);
+		g_pGamePersistent->Environment().RenderSky(true);
+
+		RCache.Index.Flush();
+		RCache.Vertex.Flush();
+
+		RCache.set_xform_world(Fidentity);
+	}
+
+	if (ps_r2_ls_flags.test(R2FLAG_TERRAIN_PREPASS))
+	{
+		Target->u_setrt(Device.dwWidth, Device.dwHeight, NULL, NULL, NULL, !RImplementation.o.dx10_msaa ? HW.pBaseZB : Target->rt_MSAADepth->pZRT);
+	}
+
 	//******* Main render :: PART-0	-- first
 	{
 		PIX_EVENT(DEFER_PART0_SPLIT);
@@ -171,27 +192,6 @@ void CRender::Render()
 		GMBase.r_dsgraph_render_lods(true,true);
 		if (Details) Details->Render();
 		Target->phase_scene_end();
-	}
-
-	if (RImplementation.o.ssfx_motionvectors)
-	{
-		Target->u_setrt(Device.dwWidth, Device.dwHeight, 0, 0, Target->rt_ssfx_motion_vectors->pRT, 0);
-
-		FLOAT ColorRGBA[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-		HW.pContext->ClearRenderTargetView(Target->rt_ssfx_motion_vectors->pRT, ColorRGBA);
-
-		RCache.set_Stencil(FALSE);
-		g_pGamePersistent->Environment().RenderSky(true);
-
-		RCache.Index.Flush();
-		RCache.Vertex.Flush();
-
-		RCache.set_xform_world(Fidentity);
-	}
-
-	if (ps_r2_ls_flags.test(R2FLAG_TERRAIN_PREPASS))
-	{
-		Target->u_setrt(Device.dwWidth, Device.dwHeight, NULL, NULL, NULL, !RImplementation.o.dx10_msaa ? HW.pBaseZB : Target->rt_MSAADepth->pZRT);
 	}
 
 	// Wall marks
