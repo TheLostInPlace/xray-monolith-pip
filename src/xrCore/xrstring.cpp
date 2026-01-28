@@ -127,51 +127,59 @@ void str_container::dump(IWriter* W)
 void str_container::dump_console()
 {
 	xr_set<xr_string> set;
-	u32 count = 0;
-	u32 loadedListCount = 0;
+	u32 total_strings = 0;
+	float load_factor = 0.0f;
+	u32 max_collisions = 0;
+	u32 empty_buckets = 0;
 
 	xrSRWLockGuard guard(&rwlock, true);
 	for (const auto& list : buffer)
 	{
-		bool isLoaded = false;
+		u32 count = 0;
 		for (const auto& s : list)
 		{
-			if (!isLoaded)
-			{
-				isLoaded = true;
-				loadedListCount++;
-			}
+			Msg("ref[%d]-len[%d] : %s\n", s.dwReference.load(), xr_strlen(s.value), s.value);
 			count++;
-			set.insert(s.value);
+			set.emplace(s.value);
 		}
+		if (count == 0)
+			empty_buckets++;
+		if (count > max_collisions)
+			max_collisions = count;
+		total_strings += count;
 			
 	}
+	load_factor = (float)total_strings / (float)buffer_size;
 
-	Msg("* [x-ray]: shared strings: count[%lu], unique[%lu], load factor[%.2f], distribution[%.2f]", count, set.size(), (float)count / buffer_size, _min(1.0f, (float)loadedListCount / _min(count, buffer_size)));
-	if (count != set.size())
+	Msg("* [x-ray]: shared strings: count[%lu], unique[%lu], load factor[%.2f], max_collisions[%lu]",
+		total_strings,
+		set.size(),
+		load_factor,
+		max_collisions
+	);
+	if (total_strings != set.size())
 		Msg("! [x-ray]: shared strings, count != unique");
-
-	for (const auto& list : buffer)
-	{
-		for (const auto& s : list)
-			Msg("ref[%d]-len[%d] : %s\n", s.dwReference.load(), xr_strlen(s.value), s.value);
-	}
 }
 
 u32 str_container::stat_economy(u32& count, u32& unique)
 {
 	xrSRWLockGuard guard(&rwlock, true);
+	
+	u32 size = sizeof(*this);
+	size += buffer_size * sizeof(xr_forward_list<str_value>);
+	for (const auto& block : storage) {
+		size += block.capacity;
+	}
+
 	count = 0;
-	u32 size = sizeof(buffer);
 	xr_set<xr_string> strings;
 	for (const auto& list : buffer)
 	{
-		size += sizeof(list);
 		for (const auto& s : list)
 		{
 			count++;
-			size += sizeof(s) + xr_strlen(s.value);
-			strings.insert(s.value);
+			size += sizeof(str_value) + sizeof(void*);
+			strings.emplace(s.value);
 		}
 	}
 	unique = strings.size();
