@@ -190,9 +190,14 @@ void CInifile::insert_item(Sect* tgt, Item& I)
 	// DLTX: add or remove item from the section parameter if it has a structure of "name = item1, item2, item3, ..."
 	// >name = item will add item to the list
 	// <name = item will remove item from the list
-	if (*I.first && (I.first.c_str()[0] == '<' || I.first.c_str()[0] == '>')) {
-		OverrideModifyListData[tgt->Name].push_back(I);
-		return;
+	if (*I.first)
+	{
+		ModifyListType op = static_cast<ModifyListType>(I.first.c_str()[0]);
+		if (op == ModifyListType::Insert || op == ModifyListType::Remove)
+		{
+			OverrideModifyListData[tgt->Name].push_back(I);
+			return;
+		}
 	}
 
 	// Just push back items, will be filtered later
@@ -1069,123 +1074,191 @@ void CInifile::EvaluateSection(
 	std::set<shared_str> deletedItems;
 	SortAndFilterSectionAfterEvaluate(*CurrentSect, deletedItems);
 
-	// Add or remove from list
-	static auto find_and_store_index = [](const std::vector<std::string>& items_vec, const std::string& item, int& vec_index)
-		{
-			auto it = std::find(items_vec.begin(), items_vec.end(), item);
-			if (it != items_vec.end()) {
-				vec_index = it - items_vec.begin();
-				return true;
-			}
-			else
-			{
-				vec_index = -1;
-				return false;
-			}
-		};
-
 	// Optimized list splitting and joining with reduced allocations
-	static auto split_list = [](shared_str items, const std::string& delimiter = ",")
+	static auto split_list = [](shared_str items, char delimiter = ',')
+	{
+		std::vector<std::string_view> vec;
+		vec.reserve(16);  // Pre-allocate for typical list sizes
+
+		const char* str = items.c_str();
+		if (!str || *str == '\0') return vec;
+
+		const char* start = str;
+		const char* current = str;
+
+		while (true)
 		{
-			std::vector<std::string> vec;
-			vec.reserve(16);  // Pre-allocate for typical list sizes
-
-			const char* start = items.c_str();
-			const char* end = start + xr_strlen(start);
-
-			for (const char* pos = start; pos < end; ++pos)
+			if (*current == delimiter || *current == '\0')
 			{
-				if (*pos == delimiter[0])
+				// Calculate range
+				const char* t_start = start;
+				const char* t_end = current;
+
+				// Trim leading whitespace
+				while (t_start < t_end && isspace((unsigned char)*t_start)) t_start++;
+				// Trim trailing whitespace
+				while (t_end > t_start && isspace((unsigned char)*(t_end - 1))) t_end--;
+
+				// Only add if not empty (handles ", ,")
+				if (t_start < t_end)
 				{
-					std::string token(start, pos - start);
-					trim(token);
-					vec.push_back(token);
-					start = pos + 1;
+					vec.emplace_back(t_start, t_end - t_start);
 				}
-			}
 
-			// Add remaining token
-			if (start < end)
-			{
-				std::string token(start, end - start);
-				trim(token);
-				vec.push_back(token);
+				if (*current == '\0') break;
+				start = current + 1;
 			}
+			current++;
+		}
 
-			return vec;
-		};
+		return vec;
+	};
 
 	// Store result back - optimized join with pre-calculated capacity
-	static auto join_list = [](const std::vector<std::string>& items_vec, const std::string& delimiter = ",")
+	static auto join_list = [](const std::vector<std::string_view>& items_vec, char delimiter = ',')
+	{
+		if (items_vec.empty())
+			return std::string();
+
+		// 1. Calculate exact size (avoiding the +delimiter on the last element)
+		size_t total_size = 0;
+		for (const auto& i : items_vec)
+			total_size += i.length();
+
+		total_size += (items_vec.size() - 1); // space for delimiters
+
+		// 2. Build the string
+		std::string ret;
+		ret.reserve(total_size);
+
+		for (size_t idx = 0; idx < items_vec.size(); ++idx)
 		{
-			if (items_vec.empty())
-				return std::string();
+			if (idx > 0)
+				ret.push_back(delimiter);
 
-			// Calculate total size needed
-			size_t total_size = 0;
-			for (const auto& i : items_vec)
-			{
-				total_size += i.length() + delimiter.length();
-			}
-
-			std::string ret;
-			ret.reserve(total_size);
-
-			for (size_t idx = 0; idx < items_vec.size(); ++idx)
-			{
-				if (idx > 0)
-					ret += delimiter;
-				ret += items_vec[idx];
-			}
-			return ret;
-		};
+			ret.append(items_vec[idx]);
+		}
+		return ret;
+	};
 
 	// Process list modifications
 	if (OverrideModifyListData.find(CurrentSect->Name) != OverrideModifyListData.end())
 	{
-		for (auto It = OverrideModifyListData[CurrentSect->Name].begin(); It != OverrideModifyListData[CurrentSect->Name].end(); ++It)
+		// 1. Pre-sort the modifications by key (ignoring the > / < prefix for the sort)
+		// This allows us to walk through CurrentSect.Data and OverrideModifyListData simultaneously.
+		auto& overrideData = OverrideModifyListData[CurrentSect->Name];
+		if (!overrideData.empty())
 		{
-			CInifile::Item& I = *It;
-
-			char dltx_listmode = I.first[0];
-			I.first = I.first.c_str() + 1;
-
-			auto sect_it = std::lower_bound(CurrentSect->Data.begin(), CurrentSect->Data.end(), I.first, item_comparator());
-
-			if (I.second != NULL &&
-				dltx_listmode == '>' &&
-				(!(sect_it != CurrentSect->Data.end() && sect_it->first.equal(I.first))) &&
-				deletedItems.find(I.first.c_str()) == deletedItems.end()
-				)
+			// Must use stable sort for maintaining key order in override data
+			std::stable_sort(overrideData.begin(), overrideData.end(), [](const Item& a, const Item& b)
 			{
-				CurrentSect->Data.insert(sect_it, I);
-			}
-			else if (sect_it != CurrentSect->Data.end() && sect_it->first.equal(I.first))
+				return xr_strcmp((*a.first) + 1, (*b.first) + 1) < 0;
+			});
+
+			Items result;
+			result.reserve(CurrentSect->Data.size() + overrideData.size());
+
+			auto data_it = CurrentSect->Data.begin();
+			auto mod_it = overrideData.begin();
+
+			while (data_it != CurrentSect->Data.end() || mod_it != overrideData.end())
 			{
-				if (dltx_listmode && sect_it->second != NULL)
+				// If we have a modification, check if it's valid (has a value)
+				if (mod_it != overrideData.end()) {
+					if (mod_it->second == NULL) {
+						mod_it++; // Skip modification with empty value
+						continue;
+					}
+				}
+
+				// Find the current "Active Key" to process
+				shared_str active_key;
+				if (mod_it != overrideData.end() && data_it != CurrentSect->Data.end())
 				{
-					auto sect_it_items_vec = split_list(sect_it->second);
-					auto I_items_vec = split_list(I.second);
+					shared_str mod_key = ((*mod_it->first) + 1);
+					int cmp = xr_strcmp(data_it->first, mod_key);
+					active_key = (cmp <= 0) ? data_it->first : mod_key;
+				}
+				else if (mod_it != overrideData.end())
+					active_key = ((*mod_it->first) + 1);
+				else
+					active_key = data_it->first;
 
-					int vec_index = -1;
-					for (const auto& item : I_items_vec)
+				// 2. Identify if we have an existing item and any mods for this key
+				Item* existing = (data_it != CurrentSect->Data.end() && data_it->first == active_key) ? &(*data_it) : nullptr;
+
+				// 3. Process all mods for this specific key in a sub-loop
+				if (mod_it != overrideData.end() && xr_strcmp(shared_str((*mod_it->first) + 1), active_key) == 0)
+				{
+					// Check if this is a new entry or a modification
+					Item working_item;
+					bool exists_in_output = false;
+
+					if (existing)
 					{
-						if (dltx_listmode == '>')
+						working_item = std::move(*existing);
+						exists_in_output = true;
+						data_it++;
+					}
+					else
+					{
+						// Check deletedItems block for brand new keys
+						if (deletedItems.find(active_key) == deletedItems.end())
 						{
-							sect_it_items_vec.push_back(item);
-						}
-						else if (dltx_listmode == '<')
-						{
-							while (find_and_store_index(sect_it_items_vec, item, vec_index))
-							{
-								sect_it_items_vec.erase(sect_it_items_vec.begin() + vec_index);
-							}
+							working_item.first = active_key;
+							working_item.second = ""; // Start empty
+							exists_in_output = true;
 						}
 					}
 
-					sect_it->second = join_list(sect_it_items_vec, ",").c_str();
+					// Apply all mods for this key (e.g., <item, then >newitem1, then >newitem3)
+					while (mod_it != overrideData.end() && xr_strcmp(shared_str((*mod_it->first) + 1), active_key) == 0)
+					{
+						if (exists_in_output && mod_it->second != NULL)
+						{
+							ModifyListType op = static_cast<ModifyListType>((*mod_it->first)[0]);
+
+							auto sect_it_items_vec = split_list(working_item.second);
+							auto I_items_vec = split_list(mod_it->second);
+
+							if (op == ModifyListType::Insert)
+							{
+								for (const auto& item : I_items_vec)
+								{
+									sect_it_items_vec.push_back(item);
+								}
+							}
+							else if (op == ModifyListType::Remove)
+							{
+								sect_it_items_vec.erase(std::remove_if(sect_it_items_vec.begin(), sect_it_items_vec.end(), [&I_items_vec](std::string_view existing_item)
+								{
+									// Check if the existing item is in our "to remove" list
+									return std::find(I_items_vec.begin(), I_items_vec.end(), existing_item) != I_items_vec.end();
+								}), sect_it_items_vec.end());
+							}
+
+							working_item.second = join_list(sect_it_items_vec).c_str();
+						}
+						mod_it++;
+					}
+
+					if (exists_in_output)
+					{
+						result.push_back(std::move(working_item));
+					}
+				}
+				else
+				{
+					// No mods for this key, just move the data item if it exists
+					if (existing)
+					{
+						result.push_back(std::move(*data_it));
+						data_it++;
+					}
 				}
 			}
+
+			CurrentSect->Data.swap(result);
 		}
 	}
 
