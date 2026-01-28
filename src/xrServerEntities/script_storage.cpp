@@ -768,11 +768,11 @@ bool CScriptStorage::load_buffer(lua_State* L, LPCSTR caBuffer, size_t tSize, LP
 	return (true);
 }
 
-xr_unordered_map<std::string, std::set<std::string>> unlocalizers;
+xr_unordered_map<xr_string, xr_set<xr_string>> unlocalizers;
 bool unlocalizerPassed = false;
 
-static std::string join_list(const std::vector<std::string>& items_vec, std::string delim = "\n") {
-	std::string ret;
+static xr_string join_list(const xr_vector<xr_string>& items_vec, xr_string delim = "\n") {
+	xr_string ret;
 	for (const auto& i : items_vec) {
 		if (!ret.empty()) {
 			ret += delim;
@@ -782,12 +782,12 @@ static std::string join_list(const std::vector<std::string>& items_vec, std::str
 	return ret;
 };
 
-static bool unlocalRegex(std::set<std::string>& unlocals, std::string& s, const std::regex& pattern, const int group, const std::string& replacement) {
+static bool unlocalRegex(xr_set<xr_string>& unlocals, xr_string& s, const std::regex& pattern, const int group, const xr_string& replacement) {
 	if (std::regex_match(s, pattern)) {
 		//Msg("matching local function pattern");
 		std::smatch match;
 		std::regex_search(s, match, pattern);
-		std::string variable = match[group];
+		xr_string variable = std::string(match[group]).c_str();
 		if (unlocals.find(variable) != unlocals.end()) {
 			Msg("[unlocalRegex] found variable %s to unlocal", variable.c_str());
 			s = std::regex_replace(s, pattern, replacement);
@@ -836,8 +836,7 @@ bool CScriptStorage::do_file(LPCSTR caScriptName, LPCSTR caNameSpaceName)
 				sections_type::const_iterator e = sections.end();
 				for (; i != e; ++i)
 				{
-					auto sectionName = std::string((*i)->Name.c_str());
-					toLowerCase(sectionName);
+					auto sectionName = xr_string((*i)->Name.c_str()).ToLowerCase();
 					if (unlocalizers.find(sectionName) == unlocalizers.end()) {
 
 						// construct set that contains top level variables to delocalize by section name
@@ -846,7 +845,7 @@ bool CScriptStorage::do_file(LPCSTR caScriptName, LPCSTR caNameSpaceName)
 					}
 					auto& data = (*i)->Data;
 					for (auto& item : data) {
-						unlocalizers[sectionName].insert(std::string(item.first.c_str()));
+						unlocalizers[sectionName].insert(xr_string(item.first.c_str()));
 						Msg("adding variable %s for unlocalizer for script %s", item.first.c_str(), sectionName.c_str());
 					}
 				}
@@ -870,23 +869,23 @@ bool CScriptStorage::do_file(LPCSTR caScriptName, LPCSTR caNameSpaceName)
 	auto scriptContents = static_cast<LPCSTR>(l_tpFileReader->pointer());
 	auto scriptLength = (size_t)l_tpFileReader->length();
 	bool unlocalPerformed = false;
-	std::string unlocalizerResult;
-	std::string loweredNameSpaceName = caNameSpaceName;
-	toLowerCase(loweredNameSpaceName);
+	xr_string unlocalizerResult;
+	xr_string loweredNameSpaceName = caNameSpaceName;
+	loweredNameSpaceName = loweredNameSpaceName.ToLowerCase();
 	if (unlocalizers.find(loweredNameSpaceName) != unlocalizers.end()) {
 		Msg("found script %s in unlocalizers data", caNameSpaceName);
 
 		// Get contents of the script file and split by lines
-		std::vector<std::string> tokens;
-		std::string temp;
+		xr_vector<xr_string> tokens;
+		xr_string temp;
 		while (!l_tpFileReader->eof())
 		{
 			char c = l_tpFileReader->r_u8();
 			temp += c;
 		}
 
-		std::stringstream stringStream(temp);
-		std::string line;
+		std::stringstream stringStream(std::string(temp.c_str()));
+		xr_string line;
 		tokens.clear();
 		while (std::getline(stringStream, line)) {
 			tokens.push_back(line);
@@ -925,7 +924,7 @@ bool CScriptStorage::do_file(LPCSTR caScriptName, LPCSTR caNameSpaceName)
 			if (std::regex_match(s, pattern)) {
 				std::smatch match;
 				std::regex_search(s, match, pattern);
-				std::string m = match[3];
+				xr_string m = std::string(match[3]).c_str();
 
 				// strip comments
 				std::regex r = std::regex(R"((.*)--.*)");
@@ -933,12 +932,12 @@ bool CScriptStorage::do_file(LPCSTR caScriptName, LPCSTR caNameSpaceName)
 					//Msg("found comments\n");
 					std::smatch noncomments;
 					std::regex_search(m, noncomments, r);
-					m = noncomments[1];
+					m = std::string(noncomments[1]).c_str();
 				}
 
-				auto variablesAndValues = splitStringLimit(m, "=", 1);
+				auto variablesAndValues = m.SplitStringLimit("=", 1);
 				bool hasValue = variablesAndValues.size() > 1;
-				auto variables = splitStringMulti(variablesAndValues[0], ",");
+				auto variables = variablesAndValues[0].SplitStringMulti(",");
 				for (auto v : variables) {
 					trim(v);
 					//Msg("%s\n", v.c_str());
@@ -954,7 +953,7 @@ bool CScriptStorage::do_file(LPCSTR caScriptName, LPCSTR caNameSpaceName)
 								//Msg("found comments\n");
 								std::smatch noncomments;
 								std::regex_search(s, noncomments, r);
-								s = std::string(noncomments[1]) + "= nil " + std::string(noncomments[2]);
+								s = xr_string((std::string(noncomments[1]) + "= nil " + std::string(noncomments[2])).c_str());
 							} else {
 								s += " = nil";
 							}

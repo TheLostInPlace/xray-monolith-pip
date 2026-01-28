@@ -350,7 +350,7 @@ void CScriptEngine::setup_auto_load()
 }
 
 extern void export_classes(lua_State* L);
-extern xr_unordered_map<std::string, std::set<std::string>> unlocalizers;
+extern xr_unordered_map<xr_string, xr_set<xr_string>> unlocalizers;
 extern bool unlocalizerPassed;
 
 void CScriptEngine::init()
