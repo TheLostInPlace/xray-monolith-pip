@@ -135,12 +135,17 @@ public:
 	std::map<shared_str, Sect> OverrideData;
 	std::map<shared_str, Sect> FinalData;
 	std::set<shared_str> FinalizedSections;
-	std::map<shared_str, std::vector<Item>> OverrideModifyListData;
+	std::map<shared_str, Items> OverrideModifyListData;
 	enum InsertType
 	{
 		Override,
 		Base,
 		Parent
+	};
+	enum ModifyListType : char
+	{
+		Insert = '>',
+		Remove = '<'
 	};
 	void LTXLoad(
 		IReader* F,
