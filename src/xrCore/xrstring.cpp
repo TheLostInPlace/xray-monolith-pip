@@ -131,7 +131,6 @@ void str_container::dump_console()
 	u32 total_strings = 0;
 	float load_factor = 0.0f;
 	u32 max_collisions = 0;
-	u32 empty_buckets = 0;
 
 	xrSRWLockGuard guard(&rwlock, true);
 	for (const auto& list : buffer)
@@ -143,8 +142,6 @@ void str_container::dump_console()
 			count++;
 			set.emplace(s.value);
 		}
-		if (count == 0)
-			empty_buckets++;
 		if (count > max_collisions)
 			max_collisions = count;
 		total_strings += count;
@@ -152,7 +149,8 @@ void str_container::dump_console()
 	}
 	load_factor = (float)total_strings / (float)buffer_size;
 
-	Msg("* [x-ray]: shared strings: count[%lu], unique[%lu], load factor[%.2f], max_collisions[%lu]",
+	Msg("* [x-ray]: shared strings: pool blocks[%lu], count[%lu], unique[%lu], load factor[%.2f], max_collisions[%lu]",
+		storage.size(),
 		total_strings,
 		set.size(),
 		load_factor,
@@ -164,26 +162,40 @@ void str_container::dump_console()
 
 u32 str_container::stat_economy(u32& count, u32& unique)
 {
+	float load_factor = 0.0f;
+	u32 max_collisions = 0;
+	count = 0;
+
 	xrSRWLockGuard guard(&rwlock, true);
-	
 	u32 size = sizeof(*this);
 	size += buffer_size * sizeof(xr_forward_list<str_value>);
 	for (const auto& block : storage) {
 		size += block.capacity;
 	}
 
-	count = 0;
 	xr_set<xr_string> strings;
 	for (const auto& list : buffer)
 	{
+		u32 c = 0;
 		for (const auto& s : list)
 		{
-			count++;
+			c++;
 			size += sizeof(str_value) + sizeof(void*);
 			strings.emplace(s.value);
 		}
+		if (c > max_collisions)
+			max_collisions = c;
+		count += c;
 	}
 	unique = strings.size();
+	load_factor = (float)count / (float)buffer_size;
+	Msg("* [x-ray]: shared strings: pool blocks[%lu], count[%lu], unique[%lu], load factor[%.2f], max_collisions[%lu]",
+		storage.size(),
+		count,
+		unique,
+		load_factor,
+		max_collisions
+	);
 	return size;
 }
 
