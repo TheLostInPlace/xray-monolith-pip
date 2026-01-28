@@ -11,7 +11,10 @@ XRCORE_API xr_shared_ptr<str_container> g_pStringContainer = nullptr;
 str_container::str_container() {}
 str_container::str_container(str_container_constructor_key) 
 {
-	storage.emplace_back((char*)xr_malloc(block_size), block_size);
+	auto p = xr_malloc(block_size);
+	if (!p)
+		Debug.fatal(DEBUG_INFO, "str_container, failed to allocate block size %zu", block_size);
+	storage.emplace_back((char*)p, block_size);
 }
 
 xr_shared_ptr<str_container> str_container::create()
@@ -22,7 +25,13 @@ xr_shared_ptr<str_container> str_container::create()
 char* str_container::alloc_in_pool(str_c s, u32 len)
 {
 	if (storage.back().used + len > storage.back().capacity)
-		storage.emplace_back((char*)xr_malloc(_max(block_size, len)), _max(block_size, len));
+	{
+		u32 size = _max(block_size, len);
+		auto p = xr_malloc(size);
+		if (!p)
+			Debug.fatal(DEBUG_INFO, "str_container, failed to allocate block size %zu", size);
+		storage.emplace_back((char*)p, size);
+	}
 
 	pool_block& b = storage.back();
 	char* dest = b.base + b.used;
