@@ -39,19 +39,19 @@ str_value* str_container::dock(str_c value)
 	if (!value) return nullptr;
 
 	size_t hash = xr_hash<std::string_view>()(value);
+	u32 len = xr_strlen(value);
 	u32 slot = u32(hash % buffer_size);
 
 	xrSRWLockGuard guard(&rwlock, false);
 	for (auto& item : buffer[slot])
 	{
-		if (hash == item.hash && xr_strcmp(value, item.value) == 0)
+		if (hash == item.hash && len == item.length && memcmp(value, item.value, len) == 0)
 			return &item;
 	}
 
-	u32 len = xr_strlen(value) + 1;
-	char* pooled_ptr = alloc_in_pool(value, len);
+	char* pooled_ptr = alloc_in_pool(value, len + 1);
 
-	str_value s(pooled_ptr, hash);
+	str_value s(pooled_ptr, hash, len);
 	buffer[slot].push_front(std::move(s));
 	return &buffer[slot].front();
 }
@@ -61,13 +61,14 @@ void str_container::erase(str_c value)
 	if (!value) return;
 
 	size_t hash = xr_hash<std::string_view>()(value);
+	u32 len = xr_strlen(value);
 	u32 slot = u32(hash % buffer_size);
 
 	xrSRWLockGuard guard(&rwlock, false);
 	auto before = buffer[slot].before_begin();
 	for (auto it = buffer[slot].begin(); it != buffer[slot].end(); )
 	{
-		if (hash == it->hash && xr_strcmp(value, it->value) == 0)
+		if (hash == it->hash && len == it->length && memcmp(value, it->value, len) == 0)
 			it = buffer[slot].erase_after(before);
 		else
 		{

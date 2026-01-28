@@ -93,23 +93,26 @@ namespace std
 
 struct XRCORE_API str_value
 {
-	mutable xr_atomic_u32 dwReference;
 	char* value;
 	size_t hash;
+	mutable xr_atomic_u32 dwReference;
+	u32 length;
 
-	str_value() : dwReference(0), value(0), hash(0) {}
-	str_value(char* s) : dwReference(0), value(s), hash(xr_hash<std::string_view>()(s)) {};
-	str_value(char* s, size_t hash) : dwReference(0), value(s), hash(hash) {};
+	str_value() : value(nullptr), hash(0), dwReference(0), length(0) {}
+	str_value(char* s) : value(s), hash(xr_hash<std::string_view>()(s)), dwReference(0), length(xr_strlen(s)) {};
+	str_value(char* s, size_t hash, u32 length) : value(s), hash(hash), dwReference(0), length(length)  {};
 	
 	// Explicit Move Semantics
-	str_value(str_value&& other) noexcept
-		: dwReference(other.dwReference.load()), // Atomics must be loaded/stored
+	str_value(str_value&& other) noexcept : 
 		value(other.value),
-		hash(other.hash)
+		hash(other.hash),
+		dwReference(other.dwReference.load()), // Atomics must be loaded/stored
+		length(other.length)
 	{
-		other.dwReference = 0;
 		other.value = nullptr;
 		other.hash = 0;
+		other.dwReference = 0;
+		other.length = 0;
 	}
 
 	// Force default Move Assignment
@@ -271,7 +274,7 @@ public:
 	u32 size() const
 	{
 		if (0 == p_) return 0;
-		else return xr_strlen(p_->value);
+		else return p_->length;
 	}
 
 	void swap(shared_str& rhs)
