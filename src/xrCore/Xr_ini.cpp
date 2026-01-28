@@ -193,7 +193,9 @@ void CInifile::insert_item(Sect* tgt, Item& I)
 		ModifyListType op = static_cast<ModifyListType>(I.first.c_str()[0]);
 		if (op == ModifyListType::Insert || op == ModifyListType::Remove)
 		{
+			// push_back then back because vector must be created first if it doesn't exist via []
 			OverrideModifyListData[tgt->Name].push_back(I);
+			OverrideModifyListData[tgt->Name].back().insertionIndex = OverrideModifyListData[tgt->Name].size();
 			return;
 		}
 	}
@@ -1142,15 +1144,18 @@ void CInifile::EvaluateSection(
 	// Process list modifications
 	if (OverrideModifyListData.find(CurrentSect->Name) != OverrideModifyListData.end())
 	{
-		// 1. Pre-sort the modifications by key (ignoring the > / < prefix for the sort)
+		// 1. Pre-sort the modifications by key (ignoring the > / < prefix for the sort) and insertionIndex
 		// This allows us to walk through CurrentSect.Data and OverrideModifyListData simultaneously.
 		auto& overrideData = OverrideModifyListData[CurrentSect->Name];
 		if (!overrideData.empty())
 		{
-			// Must use stable sort for maintaining key order in override data
-			std::stable_sort(overrideData.begin(), overrideData.end(), [](const Item& a, const Item& b)
+			std::sort(overrideData.begin(), overrideData.end(), [](const Item& a, const Item& b)
 			{
-				return xr_strcmp((*a.first) + 1, (*b.first) + 1) < 0;
+				int res = xr_strcmp((*a.first) + 1, (*b.first) + 1);
+				if (res != 0) return res < 0;
+
+				// Preserve original file and line order
+				return a.insertionIndex < b.insertionIndex;
 			});
 
 			Items result;
@@ -1186,7 +1191,7 @@ void CInifile::EvaluateSection(
 				Item* existing = (data_it != CurrentSect->Data.end() && data_it->first == active_key) ? &(*data_it) : nullptr;
 
 				// 3. Process all mods for this specific key in a sub-loop
-				if (mod_it != overrideData.end() && xr_strcmp(shared_str((*mod_it->first) + 1), active_key) == 0)
+				if (mod_it != overrideData.end() && xr_strcmp((*mod_it->first) + 1, active_key) == 0)
 				{
 					// Check if this is a new entry or a modification
 					Item working_item;
@@ -1210,7 +1215,7 @@ void CInifile::EvaluateSection(
 					}
 
 					// Apply all mods for this key (e.g., <item, then >newitem1, then >newitem3)
-					while (mod_it != overrideData.end() && xr_strcmp(shared_str((*mod_it->first) + 1), active_key) == 0)
+					while (mod_it != overrideData.end() && xr_strcmp((*mod_it->first) + 1, active_key) == 0)
 					{
 						if (exists_in_output && mod_it->second != NULL)
 						{
