@@ -896,6 +896,7 @@ void CLevel::MakeReconnect()
 	}
 }
 
+BOOL mt_ph_commander = FALSE;
 void CLevel::OnFrame()
 {
 	PROF_EVENT("CLevel::OnFrame()");
@@ -1046,6 +1047,15 @@ void CLevel::OnFrame()
 #endif
 	g_pGamePersistent->Environment().SetGameTime(GetEnvironmentGameDayTimeSec(),
 	                                             game->GetEnvironmentGameTimeFactor());
+	if (!mt_ph_commander)
+	{
+		PROF_EVENT("m_ph_commander");
+		ai().script_engine().script_process(ScriptEngine::eScriptProcessorLevel)->update();
+
+		m_ph_commander->update();
+		m_ph_commander_scripts->update();
+	}
+
 	// update static sounds
 	if (!g_dedicated_server)
 	{
@@ -1082,6 +1092,7 @@ int psLUA_GCSTEP = 300;
 
 void CLevel::script_gc()
 {
+	if (mt_ph_commander)
 	{
 		PROF_EVENT("m_ph_commander");
 		ai().script_engine().script_process(ScriptEngine::eScriptProcessorLevel)->update();
