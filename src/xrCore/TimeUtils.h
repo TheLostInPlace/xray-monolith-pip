@@ -18,7 +18,7 @@ xr_time_t xr_chrono_to_time_t(TP tp)
 	return system_clock::to_time_t(sctp);
 }
 
-std::string getCurrentTimeStamp(const char* format = "%H:%M:%S")
+xr_string getCurrentTimeStamp(const char* format = "%H:%M:%S")
 {
 	using namespace std::chrono;
 
@@ -40,15 +40,14 @@ std::string getCurrentTimeStamp(const char* format = "%H:%M:%S")
 	oss << std::put_time(&bt, format); // HH:MM:SS
 	oss << '.' << std::setfill('0') << std::setw(3) << ms.count();
 
-	return oss.str();
+	return oss.str().c_str();
 }
 
-std::string timeInDMYHMSMMM()
+xr_string timeInDMYHMSMMM()
 {
 	return getCurrentTimeStamp("%d.%m.%Y %H:%M:%S");
 }
-
-std::string timeInHMSMMM()
+xr_string timeInHMSMMM()
 {
 	return getCurrentTimeStamp("%H:%M:%S");
 }

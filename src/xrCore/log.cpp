@@ -179,14 +179,14 @@ void xrLogger::SimpleMessage(LPCSTR Message, u32 MessageSize /*= 0*/)
 	default:		break;
 	}
 
-	std::string msgToLog = Message;
+	xr_string msgToLog = Message;
 	if (logTimestamps)
 	{
-		std::string t = msgToLog;
-		std::string c = "";
+		xr_string t = msgToLog;
+		xr_string c = "";
 		if (!t.empty() && is_console_mark((Console_mark)t[0]))
 		{
-			c = t[0];
+			c = (LPCSTR)t[0];
 			c += " ";
 			t.erase(0, 1);
 		}

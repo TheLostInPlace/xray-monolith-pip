@@ -113,7 +113,7 @@ protected:
 	Fvector2 m_TextureOffset;
 
 public:
-	std::string m_TextureName;
+	xr_string m_TextureName;
 	CUILines* TextItemControl();
 	shared_str m_stat_hint_text;
 

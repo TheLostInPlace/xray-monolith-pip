@@ -763,7 +763,7 @@ bool getCamEffectorTransformData(::luabind::object& t, LPCSTR animationFile)
 		{
 			COMotion M;
 			if (M.LoadMotion(full_path)) {
-				std::map<EChannelType, std::string> mapOrder;
+				xr_map<EChannelType, xr_string> mapOrder;
 				mapOrder[EChannelType::ctPositionX] = "positionX";
 				mapOrder[EChannelType::ctPositionY] = "positionY";
 				mapOrder[EChannelType::ctPositionZ] = "positionZ";

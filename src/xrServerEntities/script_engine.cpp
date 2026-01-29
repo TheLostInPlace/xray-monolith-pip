@@ -226,9 +226,9 @@ void CScriptEngine::lua_error(lua_State* L)
 
 	// demonized: print first line with lua error
 	auto stack = get_lua_stack(L);
-	std::string lua_error_line = "";
+	xr_string lua_error_line = "";
 	for (auto const& s : stack) {
-		if (s.find("[Lua]") != std::string::npos) {
+		if (s.find("[Lua]") != xr_string::npos) {
 			lua_error_line = s;
 			break;
 		}
@@ -257,9 +257,9 @@ int CScriptEngine::lua_pcall_failed(lua_State* L)
 
 	// demonized: print first line with lua error
 	auto stack = get_lua_stack(L);
-	std::string lua_error_line = "";
+	xr_string lua_error_line = "";
 	for (auto const& s : stack) {
-		if (s.find("[Lua]") != std::string::npos) {
+		if (s.find("[Lua]") != xr_string::npos) {
 			lua_error_line = s;
 			break;
 		}

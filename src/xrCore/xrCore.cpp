@@ -36,7 +36,7 @@ static u32 init_counter = 0;
 extern int get_modded_exes_version();
 extern xr_string get_modded_exes_version_string();
 extern LPCSTR get_modded_exes_name();
-extern std::string timeInDMYHMSMMM();
+extern xr_string timeInDMYHMSMMM();
 
 void xrCore::_initialize(LPCSTR _ApplicationName, xrLogger::LogCallback cb, BOOL init_fs, LPCSTR fs_fname)
 {
