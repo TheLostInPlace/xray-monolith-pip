@@ -59,9 +59,7 @@ str_value* str_container::dock(str_c value)
 	}
 
 	char* pooled_ptr = alloc_in_pool(value, len + 1);
-
-	str_value s(pooled_ptr, hash, len);
-	buffer[slot].push_front(std::move(s));
+	buffer[slot].emplace_front(pooled_ptr, hash, len);
 	return &buffer[slot].front();
 }
 

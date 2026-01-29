@@ -106,17 +106,26 @@ struct XRCORE_API str_value
 	str_value(str_value&& other) noexcept : 
 		value(other.value),
 		hash(other.hash),
-		dwReference(other.dwReference.load()), // Atomics must be loaded/stored
 		length(other.length)
 	{
+		dwReference.store(other.dwReference.exchange(0));
 		other.value = nullptr;
 		other.hash = 0;
-		other.dwReference = 0;
 		other.length = 0;
 	}
 
-	// Force default Move Assignment
-	str_value& operator=(str_value&& other) noexcept = default;
+	// Move Assignment
+	str_value& operator=(str_value&& other) noexcept 
+	{
+		if (this == &other) return *this;
+
+		value = std::exchange(other.value, nullptr);
+		hash = std::exchange(other.hash, 0);
+		length = std::exchange(other.length, 0);
+		dwReference.store(other.dwReference.exchange(0));
+
+		return *this;
+	}
 
 	// Disable Copying (Standard for interned strings to prevent accidents)
 	str_value(const str_value&) = delete;
