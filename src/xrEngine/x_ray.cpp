@@ -354,7 +354,7 @@ LPCSTR xr_ToUTF8(LPCSTR input, int max_length)
 	UConverter *conv_from = ucnv_open("cp1251", &errorCode);
 	R_ASSERT3(conv_from, "[Discord RPC] Error creating UConverter!\n", std::to_string(errorCode).c_str());
 
-	std::vector<UChar> converted(strlen(input) * 2);
+	xr_vector<UChar> converted(strlen(input) * 2);
 	int32_t conv_len = ucnv_toUChars(conv_from, &converted[0], converted.size(), input, strlen(input), &errorCode);
 	if (errorCode != U_ZERO_ERROR)
 	{
@@ -366,7 +366,7 @@ LPCSTR xr_ToUTF8(LPCSTR input, int max_length)
 	ucnv_close(conv_from);
 
 	// needs to be static so the data buffer is still valid after this function returns
-	static std::string g;
+	static xr_string g;
 	g.clear();
 
 	g.resize(converted.size() * 4);

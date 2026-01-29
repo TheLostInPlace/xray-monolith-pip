@@ -159,15 +159,19 @@ namespace crash_saving {
 		NET_Packet net_packet;
 		net_packet.w_begin(M_SAVE_GAME);
 
-		std::string path = "fatal_ctd_save_";
-		std::string path_mask(path);
-		std::string path_ext = ".scop";
+		xr_string path = "fatal_ctd_save_";
+		xr_string path_mask(path);
+		xr_string path_ext = ".scop";
 		path_mask.append("*").append(path_ext);
 
 		FS_FileSet fset_temp;
 		FS.file_list(fset_temp, "$game_saves$", FS_ListFiles | FS_RootOnly, path_mask.c_str());
 
-		std::vector<FS_File> fset(fset_temp.begin(), fset_temp.end());
+		xr_vector<FS_File> fset;
+		for (auto &file : fset_temp)
+		{
+			fset.push_back(file);
+		}
 		struct {
 			bool operator()(FS_File& a, FS_File& b) {
 				return a.time_write > b.time_write;
@@ -181,14 +185,14 @@ namespace crash_saving {
 		{
 			string128 name;
 			xr_strcpy(name, sizeof(name), file.name.c_str());
-			std::string name_string(name);
+			xr_string name_string(name);
 			name_string.erase(name_string.length() - path_ext.length());
 
 			//Msg("found save file %s, save_name %s", name, name_string.c_str());
 
 			try {
 				//Msg("save number %s", name_string.substr(path.length()).c_str());
-				int name_count = std::stoi(name_string.substr(path.length()));
+				int name_count = std::stoi(name_string.substr(path.length()).c_str());
 				saveCount = name_count;
 				break;
 			} catch (...) {
