@@ -62,11 +62,16 @@ void CSector::traverse(CFrustum& F, CDSGraphManager& DM)
 {
 	auto SNODE = DM.m_sector_frustums.insert(this);
 
+	// If the map reallocates, SNODE becomes invalid, but the Index stays correct.
+	u32 snode_idx = DM.m_sector_frustums.get_index(SNODE);
+
 	Fvector& cam_pos = Device.vCameraPosition_saved;
 	float test_sphere_r = VIEWPORT_NEAR + EPS_L;
 	// Search visible portals and go through them
 	for (CPortal* PORTAL : m_portals)
 	{
+		// Refresh pointer before use (in case previous loop iteration realloc'd)
+		SNODE = DM.m_sector_frustums.get_node(snode_idx);
 		SNODE->val.portals.push_back(PORTAL);
 
 		// Early-out sphere
@@ -134,6 +139,8 @@ void CSector::traverse(CFrustum& F, CDSGraphManager& DM)
 		}
 	}
 
+	// Refresh pointer before use (in case previous loop iteration realloc'd)
+	SNODE = DM.m_sector_frustums.get_node(snode_idx);
 	SNODE->val.frustums.push_back(std::move(F));
 }
 

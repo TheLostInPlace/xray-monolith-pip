@@ -335,6 +335,16 @@ public:
         VERIFY(nodes + pool >= nodes);
         return nodes + pool;
     }
+
+    // Convert a pointer to a stable index
+    IC u32 get_index(TNode* N) {
+        return (u32)(N - nodes);
+    }
+
+    // Get the pointer back from the index 
+    IC TNode* get_node(u32 index) {
+        return nodes + index;
+    }
 };
 
 template<class K, class allocator = xr_allocator>
