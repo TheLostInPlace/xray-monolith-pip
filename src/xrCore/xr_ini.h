@@ -126,16 +126,37 @@ public:
 	void DLTX_print(LPCSTR sec, LPCSTR line);
 	LPCSTR DLTX_getFilenameOfLine(LPCSTR sec, LPCSTR line);
 	bool DLTX_isOverride(LPCSTR sec, LPCSTR line);
-	xr_map<shared_str, xr_set<shared_str>> OverrideToFilename;
+	xr_map<shared_str, RStringSet> OverrideToFilename;
 	xr_map<shared_str, shared_str> SectionToFilename;
-	xr_set<shared_str> SectionsToDelete;
-	xr_map<shared_str, xr_vector<shared_str>> BaseParentDataMap;
+	RStringSet SectionsToDelete;
+	xr_map<shared_str, RStringVec> BaseParentDataMap;
 	xr_map<shared_str, Sect> BaseData;
-	xr_map<shared_str, xr_vector<shared_str>> OverrideParentDataMap;
+	xr_map<shared_str, RStringVec> OverrideParentDataMap;
 	xr_map<shared_str, Sect> OverrideData;
-	xr_map<shared_str, Sect> FinalData;
-	xr_set<shared_str> FinalizedSections;
 	xr_map<shared_str, Items> OverrideModifyListData;
+	struct EvaluationsContext
+	{
+		xr_map<shared_str, Items> ResolvedCache; // "Black" Set
+		RStringVec RecursionStack;              // "Gray" Set
+
+		// Helper to check if we are currently visiting a section
+		bool IsInStack(const shared_str& section) const
+		{
+			return std::find(RecursionStack.begin(), RecursionStack.end(), section) != RecursionStack.end();
+		}
+
+		xr_string GetRecursionStackAsString() const
+		{
+			xr_string result;
+			for (const auto& section : RecursionStack)
+			{
+				if (!result.empty())
+					result += " -> ";
+				result += section.c_str();
+			}
+			return result;
+		}
+	};
 	enum InsertType
 	{
 		Override,
@@ -174,14 +195,19 @@ private:
 		string_path currentFileName,
 		BOOL bIsCurrentSectionOverride
 	);
-	void EvaluateSection(
+	Items EvaluateSection(
 		shared_str SectionName,
-		xr_vector<shared_str>* PreviousEvaluations,
+		EvaluationsContext& Evaluations,
 		string_path currentFileName
+	);
+	Items MergeSections(
+		const Items& BaseItems,
+		const Items& OverrideItems,
+		RStringSet& DeletedItems,
+		bool IsMergingBaseAndMod
 	);
 	void insert_item(CInifile::Sect* tgt, CInifile::Item& I);
 	void SortAndFilterSection(Sect& Data);
-	void SortAndFilterSectionAfterEvaluate(Sect& Data, xr_set<shared_str>& deletedItems);
 
 public:
 	void save_as(IWriter& writer, bool bcheck = false) const;
