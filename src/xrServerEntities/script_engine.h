@@ -99,7 +99,7 @@ private:
 
 		bool operator==(const FunctorCacheKey& other) const
 		{
-			return function_name == other.function_name && result_type_hash == other.result_type_hash;
+			return result_type_hash == other.result_type_hash && function_name == other.function_name;
 		}
 	};
 
@@ -107,7 +107,7 @@ private:
 	{
 		size_t operator()(const FunctorCacheKey& s) const noexcept
 		{
-			size_t h1 = xr_hash<xr_string>()(s.function_name);
+			size_t h1 = xr_hash<std::string_view>()(s.function_name.c_str());
 			size_t h2 = s.result_type_hash;
 			return hash_combine(0, h1, h2);
 		}
