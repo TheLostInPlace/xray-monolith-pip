@@ -1226,7 +1226,7 @@ CInifile::Items CInifile::EvaluateSection(
 						mod_it++;
 					}
 
-					if (exists_in_output)
+					if (exists_in_output && working_item.second.size())
 					{
 						result.push_back(std::move(working_item));
 					}
