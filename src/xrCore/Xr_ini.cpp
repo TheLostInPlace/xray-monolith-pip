@@ -247,7 +247,7 @@ static inline void TrimStringInPlace(xr_string& str)
 	}
 }
 
-static void MergeParentSet(xr_vector<shared_str>* ParentsBase, xr_vector<shared_str>* ParentsOverride, bool bIncludeRemovers)
+static void MergeParentSet(RStringVec* ParentsBase, RStringVec* ParentsOverride, bool bIncludeRemovers)
 {
 	// Optimized parent set merging using std::remove_if for O(n) complexity
 	for (const auto& CurrentParentStr : *ParentsOverride)
@@ -410,92 +410,6 @@ void CInifile::SortAndFilterSection(Sect& Data)
 	Data.Data.erase(write_it, Data.Data.end());
 }
 
-void CInifile::SortAndFilterSectionAfterEvaluate(Sect& Data, xr_set<shared_str>& deletedItems)
-{
-	if (Data.Data.size() < 2) return;
-
-	static shared_str DLTX_DELETE = "DLTX_DELETE";
-
-	// 1. Sort by Key, then by Depth (Ascending), then by insertionOrder (Descending).
-	std::sort(Data.Data.begin(), Data.Data.end(), [](const Item& a, const Item& b)
-	{
-		// Compare keys alpphabetically
-		int res = xr_strcmp(a.first, b.first);
-		if (res != 0) return res < 0;
-
-		// Compare depths, lower depth wins
-		if (a.depth != b.depth) return a.depth < b.depth;
-
-		// Compare insertionIndex, higher wins
-		return a.insertionIndex > b.insertionIndex;
-	});
-
-	// 2. Linear pass to keep the first (lowest depth) of each key group, but the item inserted last at that depth wins
-	// If the override or base is DLTX_DELETE, use Parent value
-	auto write_it = Data.Data.begin();
-	for (auto read_it = Data.Data.begin(); read_it != Data.Data.end(); )
-	{
-		shared_str current_key = read_it->first;
-
-		// Pointers to track our candidates within this key group
-		Item* override_ptr = nullptr;
-		Item* base_ptr = nullptr;
-		Item* parent_ptr = nullptr;
-
-		// Scan the group to identify what layers we actually have
-		auto group_it = read_it;
-		while (group_it != Data.Data.end() && group_it->first == current_key)
-		{
-			if (group_it->depth == -1 && !override_ptr)
-				override_ptr = &*group_it;
-			else if (group_it->depth == 0 && !base_ptr)
-				base_ptr = &*group_it;
-			else if (group_it->depth == 1 && !parent_ptr)
-				parent_ptr = &*group_it;
-
-			group_it++;
-		}
-
-		// Evaluation Logic
-		Item* winner = nullptr;
-
-		// If Override exists, it is the primary candidate for the current layer.
-		// If Base exists (and no override), it is the primary candidate.
-		Item* current_layer_item = override_ptr ? override_ptr : base_ptr;
-
-		if (current_layer_item)
-		{
-			// If the current layer (Override or Base) explicitly deletes the key...
-			if (current_layer_item->second == DLTX_DELETE)
-				// ...we revert to the Parent.
-				winner = parent_ptr;
-			else
-				// ...otherwise, the current layer wins.
-				winner = current_layer_item;
-		}
-		else
-			// No Override or Base exists, so Parent is the only choice.
-			winner = parent_ptr;
-
-		// Write the winner to the front if it is not DLTX_DELETE, otherwise delete the key
-		if (winner)
-		{
-			if (winner->second != DLTX_DELETE)
-			{
-				if (&*write_it != winner)
-					*write_it = std::move(*winner);
-				++write_it;
-			}
-			else
-				deletedItems.insert(winner->first);
-		}
-
-		// Jump read_it to the start of the next key group
-		read_it = group_it;
-	}
-	Data.Data.erase(write_it, Data.Data.end());
-}
-
 // Single-pass LTXLoad that distinguishes override vs base data during parsing
 void CInifile::LTXLoad (
 		IReader* F,
@@ -518,13 +432,13 @@ void CInifile::LTXLoad (
 	BOOL bIsCurrentSectionOverride = FALSE;
 	BOOL bHasLoadedModFiles = FALSE;
 
-	static auto InsertParentStringsInMap = [](shared_str SectionName, xr_map<shared_str, xr_vector<shared_str>>& ParentMap)
+	static auto InsertParentStringsInMap = [](shared_str SectionName, xr_map<shared_str, RStringVec>& ParentMap)
 	{
 		auto It = ParentMap.find(SectionName);
 
 		if (It == ParentMap.end())
 		{
-			auto result = ParentMap.emplace(SectionName, xr_vector<shared_str>());
+			auto result = ParentMap.emplace(SectionName, RStringVec());
 			return &result.first->second;
 		}
 
@@ -533,7 +447,7 @@ void CInifile::LTXLoad (
 
 	static auto GetParentsSetFromString = [](const char* ParentString, MezzStringBuffer& str2)
 	{
-		auto ParentSet = xr_vector<shared_str>();
+		auto ParentSet = RStringVec();
 
 		u32 ItemCount = _GetItemCount(ParentString);
 
@@ -571,7 +485,7 @@ void CInifile::LTXLoad (
 		return std::regex_match(InputString.c_str(), Pattern);
 	};
 
-	xr_set<shared_str> sectionsMarkedForCreate;
+	RStringSet sectionsMarkedForCreate;
 
 	while (!F->eof() || (bIsRootFile && !bHasLoadedModFiles))
 	{
@@ -954,20 +868,127 @@ void CInifile::LTXLoad (
 	}
 };
 
-void CInifile::EvaluateSection(
+CInifile::Items CInifile::MergeSections(
+		const CInifile::Items& BaseItems,
+		const CInifile::Items& OverrideItems,
+		RStringSet& DeletedItems,
+		bool IsMergingBaseAndMod
+	)
+{
+	static shared_str DLTX_DELETE = "DLTX_DELETE";
+
+	Items Result;
+	Result.reserve(BaseItems.size() + OverrideItems.size());
+	auto b_it = BaseItems.begin();
+	auto o_it = OverrideItems.begin();
+
+	while (b_it != BaseItems.end() || o_it != OverrideItems.end())
+	{
+		// 1. Handle end of streams
+		if (b_it == BaseItems.end()) 
+		{
+			if (o_it->second == DLTX_DELETE)
+			{
+				if (IsMergingBaseAndMod)
+				{
+					DeletedItems.insert(o_it->first);
+				}
+			}
+			else
+			{
+				Result.push_back(*o_it);	
+			}
+
+			o_it++;
+			continue;
+		}
+
+		if (o_it == OverrideItems.end()) 
+		{ 
+			Result.push_back(*b_it++);
+			continue; 
+		}
+
+		// 2. Compare Keys
+		int cmp = xr_strcmp(b_it->first, o_it->first);
+
+		if (cmp < 0)
+		{
+			// Base has a key that Override doesn't touch. Keep it.
+			Result.push_back(*b_it++);
+		}
+		else if (cmp > 0)
+		{
+			// Override has a new key. Add it.
+			// Check for DLTX_DELETE token and in Base+Mod merge, Add to DeletedItems for later CSV processing
+			if (o_it->second == DLTX_DELETE)
+			{
+				if (IsMergingBaseAndMod)
+				{
+					DeletedItems.insert(o_it->first);
+				}
+			}
+			else
+			{
+				Result.push_back(*o_it);
+			}
+			o_it++;
+		}
+		else
+		{
+			// Collision, key exists in both.
+			// Override wins
+			// Check for DLTX_DELETE token and
+			// 1. In Base+Mod merge, Add to DeletedItems for later CSV processing
+			// 2. In Parent+Base check, push Parent KV pair
+			if (o_it->second == DLTX_DELETE)
+			{
+				if (IsMergingBaseAndMod)
+				{
+					DeletedItems.insert(o_it->first);
+				}
+				else
+				{
+					Result.push_back(*b_it);
+				}
+			}
+			else
+			{
+				Result.push_back(*o_it);
+			}
+				
+			o_it++;
+			b_it++;
+		}
+	}
+	return Result;
+}
+
+CInifile::Items CInifile::EvaluateSection(
 	shared_str SectionName,
-	xr_vector<shared_str>* PreviousEvaluations,
+	EvaluationsContext& Evaluations,
 	string_path currentFileName
 )
 {
-	if (FinalizedSections.find(SectionName) != FinalizedSections.end())
+	auto cache_it = Evaluations.ResolvedCache.find(SectionName);
+	if (cache_it != Evaluations.ResolvedCache.end())
 	{
-		return;
+		return cache_it->second;
 	}
 
-	static shared_str DLTX_DELETE = "DLTX_DELETE";
+	if (Evaluations.IsInStack(SectionName))
+	{
+		Debug.fatal(DEBUG_INFO, "[DLTX] Section '%s' has cyclical dependencies. Cycle loop %s. Check this file and its DLTX mods: %s, mod file %s",
+			SectionName.c_str(),
+			Evaluations.GetRecursionStackAsString().c_str(),
+			m_file_name,
+			currentFileName
+		);
+	}
 
-	PreviousEvaluations->insert(PreviousEvaluations->end(), SectionName);
+	Evaluations.RecursionStack.push_back(SectionName);
+
+	static shared_str DLTX_DELETE = "DLTX_DELETE";
 
 	auto BaseParentsIt = BaseParentDataMap.find(SectionName);
 	auto OverrideParentsIt = OverrideParentDataMap.find(SectionName);
@@ -975,104 +996,63 @@ void CInifile::EvaluateSection(
 	auto* BaseParents = (BaseParentsIt != BaseParentDataMap.end()) ? &BaseParentsIt->second : nullptr;
 	auto* OverrideParents = (OverrideParentsIt != OverrideParentDataMap.end()) ? &OverrideParentsIt->second : nullptr;
 
-	BOOL bDeleteSectionIfEmpty = FALSE;
-
 	// Create base parents map if override parents exist
 	if (OverrideParents && !BaseParents)
 	{
-		auto result = BaseParentDataMap.emplace(SectionName, xr_vector<shared_str>());
+		auto result = BaseParentDataMap.emplace(SectionName, RStringVec());
 		BaseParentsIt = BaseParentDataMap.find(SectionName);
 		BaseParents = (BaseParentsIt != BaseParentDataMap.end()) ? &BaseParentsIt->second : nullptr;
+		MergeParentSet(BaseParents, OverrideParents, false);
 	}
-
-	if (BaseParents && OverrideParents)
+	else if (BaseParents && OverrideParents)
 	{
 		MergeParentSet(BaseParents, OverrideParents, false);
 	}
 
-	auto CurrentSecPair = xr_pair<shared_str, Sect>(SectionName, Sect());
-	Sect* CurrentSect = &CurrentSecPair.second;
-	CurrentSect->Name = SectionName.c_str();
-
-	static auto IsStringDLTXDelete = [](shared_str str, shared_str DLTX_DELETE)
-	{
-		return str == DLTX_DELETE;
-	};
-
-	static auto InsertItemWithDelete = [](Item& CurrentItem, CInifile::InsertType Type, BOOL& bDeleteSectionIfEmpty, Sect* CurrentSect)
-	{
-		if (IsStringDLTXDelete(CurrentItem.first, DLTX_DELETE))
-		{
-			bDeleteSectionIfEmpty = TRUE;
-		}
-		else
-		{
-			CurrentItem.insertionIndex = CurrentSect->Data.size();
-			CurrentSect->Data.push_back(CurrentItem);
-		}
-	};
-
-	// Insert variables of own data
-	static auto InsertData = [](xr_map<shared_str, Sect>& Data, BOOL bIsBase, shared_str SectionName, BOOL& bDeleteSectionIfEmpty, Sect* CurrentSect)
-	{
-		auto It = Data.find(SectionName);
-
-		if (It != Data.end())
-		{
-			Sect* DataSection = &It->second;
-			for (Item& CurrentItem : DataSection->Data)
-			{
-				CurrentItem.depth = bIsBase ? 0 : -1;
-				InsertItemWithDelete(CurrentItem, bIsBase ? CInifile::InsertType::Base : CInifile::InsertType::Override, bDeleteSectionIfEmpty, CurrentSect);
-			}
-
-			if (!bIsBase)
-			{
-				Data.erase(It);
-			}
-		}
-	};
-
-	InsertData(OverrideData, false, SectionName, bDeleteSectionIfEmpty, CurrentSect);
-	InsertData(BaseData, true, SectionName, bDeleteSectionIfEmpty, CurrentSect);
-
-	// Insert variables from parents
+	Items ResolvedParents;
+	RStringSet DeletedItems;
 	if (BaseParents)
 	{
-		for (auto It = BaseParents->begin(); It != BaseParents->end(); ++It)
+		for (const auto& parent : *BaseParents)
 		{
-			shared_str ParentSectionName = *It;
-
-			for (auto It2 = PreviousEvaluations->begin(); It2 != PreviousEvaluations->end(); ++It2)
+			auto BaseDataIt = BaseData.find(parent);
+			if (BaseDataIt == BaseData.end())
 			{
-				if (xr_strcmp(ParentSectionName, *It2) == 0)
+				auto OverrideDataIt = OverrideData.find(parent);
+				if (OverrideDataIt != OverrideData.end())
 				{
-					Debug.fatal(DEBUG_INFO, "Section '%s' has cyclical dependencies. Ensure that sections with parents don't inherit in a loop. Check this file and its DLTX mods: %s, mod file %s", ParentSectionName.c_str(), m_file_name, currentFileName);
+					Msg("~[DLTX] WARNING: Section '%s' has parent '%s' that is defined as Override. Creating parent for backwards compatibility. Check this file and its DLTX mods: %s, mod file %s",
+						SectionName.c_str(),
+						parent.c_str(),
+						m_file_name,
+						currentFileName
+					);
+					BaseData[parent].Name = parent;
+				}
+				else
+				{
+					Msg("~[DLTX] WARNING: Section '%s' inherits from non-existent section '%s'. Creating fallback empty parent section. Check this file and its DLTX mods: %s, mod file %s",
+						SectionName.c_str(),
+						parent.c_str(),
+						m_file_name,
+						currentFileName
+					);
+					BaseData[parent].Name = parent;
 				}
 			}
-
-			EvaluateSection(ParentSectionName, PreviousEvaluations, currentFileName);
-
-			auto ParentIt = FinalData.find(ParentSectionName);
-
-			if (ParentIt == FinalData.end())
-			{
-				Debug.fatal(DEBUG_INFO, "Section '%s' inherits from non-existent section '%s'. Check this file and its DLTX mods: %s, mod file %s", SectionName.c_str(), ParentSectionName.c_str(), m_file_name, currentFileName);
-			}
-
-			Sect* ParentSec = &ParentIt->second;
-
-			for (Item& CurrentItem : ParentSec->Data)
-			{
-				CurrentItem.depth = 1;
-				InsertItemWithDelete(CurrentItem, CInifile::InsertType::Parent, bDeleteSectionIfEmpty, CurrentSect);
-			}
+			Items ParentData = EvaluateSection(parent, Evaluations, currentFileName);
+			ResolvedParents = MergeSections(ResolvedParents, ParentData, DeletedItems, false);
 		}
 	}
 
-	// Process section, Delete entries marked DLTX_DELETE
-	xr_set<shared_str> deletedItems;
-	SortAndFilterSectionAfterEvaluate(*CurrentSect, deletedItems);
+	Items ResolvedBaseAndMods = BaseData[SectionName].Data;
+	auto o_it = OverrideData.find(SectionName);
+	if (o_it != OverrideData.end())
+	{
+		ResolvedBaseAndMods = MergeSections(ResolvedBaseAndMods, o_it->second.Data, DeletedItems, true);
+		OverrideData.erase(o_it);
+	}
+	Items CurrentResult = MergeSections(ResolvedParents, ResolvedBaseAndMods, DeletedItems, false);
 
 	// Optimized list splitting and joining with reduced allocations
 	static auto split_list = [](shared_str items, char delimiter = ',')
@@ -1142,11 +1122,11 @@ void CInifile::EvaluateSection(
 	};
 
 	// Process list modifications
-	if (OverrideModifyListData.find(CurrentSect->Name) != OverrideModifyListData.end())
+	if (OverrideModifyListData.find(SectionName) != OverrideModifyListData.end())
 	{
 		// 1. Pre-sort the modifications by key (ignoring the > / < prefix for the sort) and insertionIndex
 		// This allows us to walk through CurrentSect.Data and OverrideModifyListData simultaneously.
-		auto& overrideData = OverrideModifyListData[CurrentSect->Name];
+		auto& overrideData = OverrideModifyListData[SectionName];
 		if (!overrideData.empty())
 		{
 			std::sort(overrideData.begin(), overrideData.end(), [](const Item& a, const Item& b)
@@ -1159,12 +1139,12 @@ void CInifile::EvaluateSection(
 			});
 
 			Items result;
-			result.reserve(CurrentSect->Data.size() + overrideData.size());
+			result.reserve(CurrentResult.size() + overrideData.size());
 
-			auto data_it = CurrentSect->Data.begin();
+			auto data_it = CurrentResult.begin();
 			auto mod_it = overrideData.begin();
 
-			while (data_it != CurrentSect->Data.end() || mod_it != overrideData.end())
+			while (data_it != CurrentResult.end() || mod_it != overrideData.end())
 			{
 				// If we have a modification, check if it's valid (has a value)
 				if (mod_it != overrideData.end()) {
@@ -1176,7 +1156,7 @@ void CInifile::EvaluateSection(
 
 				// Find the current "Active Key" to process
 				shared_str active_key;
-				if (mod_it != overrideData.end() && data_it != CurrentSect->Data.end())
+				if (mod_it != overrideData.end() && data_it != CurrentResult.end())
 				{
 					shared_str mod_key = ((*mod_it->first) + 1);
 					int cmp = xr_strcmp(data_it->first, mod_key);
@@ -1188,7 +1168,7 @@ void CInifile::EvaluateSection(
 					active_key = data_it->first;
 
 				// 2. Identify if we have an existing item and any mods for this key
-				Item* existing = (data_it != CurrentSect->Data.end() && data_it->first == active_key) ? &(*data_it) : nullptr;
+				Item* existing = (data_it != CurrentResult.end() && data_it->first == active_key) ? &(*data_it) : nullptr;
 
 				// 3. Process all mods for this specific key in a sub-loop
 				if (mod_it != overrideData.end() && xr_strcmp((*mod_it->first) + 1, active_key) == 0)
@@ -1206,7 +1186,7 @@ void CInifile::EvaluateSection(
 					else
 					{
 						// Check deletedItems block for brand new keys
-						if (deletedItems.find(active_key) == deletedItems.end())
+						if (DeletedItems.find(active_key) == DeletedItems.end())
 						{
 							working_item.first = active_key;
 							working_item.second = ""; // Start empty
@@ -1241,11 +1221,12 @@ void CInifile::EvaluateSection(
 							}
 
 							working_item.second = join_list(sect_it_items_vec).c_str();
+							working_item.filename = mod_it->filename;
 						}
 						mod_it++;
 					}
 
-					if (exists_in_output)
+					if (exists_in_output && working_item.second.size())
 					{
 						result.push_back(std::move(working_item));
 					}
@@ -1261,22 +1242,12 @@ void CInifile::EvaluateSection(
 				}
 			}
 
-			CurrentSect->Data.swap(result);
+			CurrentResult.swap(result);
 		}
 	}
 
-	// Pop from stack
-	auto LastElement = PreviousEvaluations->end();
-	--LastElement;
-	PreviousEvaluations->erase(LastElement);
-
-	// Finalize
-	if (!bDeleteSectionIfEmpty || CurrentSecPair.second.Data.size())
-	{
-		FinalData.emplace(CurrentSecPair.first, CurrentSecPair.second);
-	}
-
-	FinalizedSections.insert(SectionName);
+	Evaluations.RecursionStack.pop_back();
+	return Evaluations.ResolvedCache[SectionName] = std::move(CurrentResult);
 };
 
 void CInifile::Load(IReader* F, LPCSTR path
@@ -1322,32 +1293,44 @@ void CInifile::Load(IReader* F, LPCSTR path
 		SortAndFilterSection(v);
 
 	// Merge base and override data together
-	xr_vector<shared_str> PreviousEvaluations;
-
+	EvaluationsContext Evaluations;
+	RStringVec BaseDataSectionNames;
+	BaseDataSectionNames.reserve(BaseData.size());
 	for (const auto& SectPair : BaseData)
 	{
-		EvaluateSection(SectPair.first, &PreviousEvaluations, currentFileName);
+		BaseDataSectionNames.push_back(SectPair.first);
+	}
+	for (const auto& SectName : BaseDataSectionNames)
+	{
+		EvaluateSection(SectName, Evaluations, currentFileName);
 	}
 
+	auto& FinalData = Evaluations.ResolvedCache;
 	// Handle marked-for-delete sections
 	for (auto &s : SectionsToDelete)
 	{
 		Msg("[DLTX] [%s] Found section %s to delete", m_file_name, s.c_str());
-		if (FinalData.find(s) != FinalData.end())
+		auto it = FinalData.find(s);
+		if (it != FinalData.end())
 		{
 			Msg("[DLTX] [%s] Deleting section %s", m_file_name, s.c_str());
-			FinalData.erase(s);
-			if (OverrideData.find(s) != OverrideData.end())
+			FinalData.erase(it);
+			auto s_it = OverrideData.find(s);
+			if (s_it != OverrideData.end())
 			{
 				Msg("[DLTX] [%s] Deleting overrides for section %s", m_file_name, s.c_str());
-				OverrideData.erase(s);
+				OverrideData.erase(s_it);
 			}
 		}
 	}
 
 	// Insert all finalized sections into final container
 	for (const auto& SectPair : FinalData)
-		DATA.push_back(xr_new<Sect>(SectPair.second));
+	{
+		DATA.push_back(xr_new<Sect>());
+		DATA.back()->Name = SectPair.first;
+		DATA.back()->Data = SectPair.second;
+	}
 
 	std::sort(DATA.begin(), DATA.end(), [](const Sect* a, const Sect* b)
 	{
@@ -1381,8 +1364,6 @@ void CInifile::Load(IReader* F, LPCSTR path
 	BaseData.clear();
 	OverrideParentDataMap.clear();
 	OverrideData.clear();
-	FinalData.clear();
-	FinalizedSections.clear();
 	OverrideModifyListData.clear();
 }
 
