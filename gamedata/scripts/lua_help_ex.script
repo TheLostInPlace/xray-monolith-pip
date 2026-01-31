@@ -90,6 +90,16 @@
         int get_modded_exes_version() // Returns modded exes version in integer format
         table get_string_table() // Returns all translated strings in [string id] = string text format 
         player_hud* get_player_hud()
+
+        -- color getters / setters
+        ClrGetA(number argb)
+        ClrGetR(number argb)
+        ClrGetG(number argb)
+        ClrGetB(number argb)
+        ClrSetA(number argb, number a)
+        ClrSetR(number argb, number r)
+        ClrSetG(number argb, number g)
+        ClrSetB(number argb, number b)
     }
 
     get_console() {
