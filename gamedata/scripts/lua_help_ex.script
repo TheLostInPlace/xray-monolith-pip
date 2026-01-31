@@ -60,6 +60,9 @@
 
         poltergeist_spawn_corpse_on_death // Poltergeists spawn corpses on death
         g_firepos_zoom // Make firepos work while aiming
+
+        g_use_non_linear_inertia // enable non linear weapon inertia movement
+
     }
 
     lua extensions {

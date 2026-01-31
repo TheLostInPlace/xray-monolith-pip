@@ -223,6 +223,8 @@ extern CrosshairSettings g_crosshair_device_far;
 	CrosshairOpacityCommands(crosshair, suffix); \
 	CrosshairLineCommands(crosshair, suffix)
 
+extern BOOL g_use_non_linear_inertia;
+
 extern float recon_show_speed;
 extern float recon_hide_speed;
 extern float recon_mindist;
@@ -2594,6 +2596,8 @@ void CCC_RegisterCommands()
 	CrosshairFarCommands(g_crosshair_weapon_far, "weapon_far");
 	CrosshairNearCommands(g_crosshair_device_near, "device_near");
 	CrosshairFarCommands(g_crosshair_device_far, "device_far");
+
+	CMD4(CCC_Integer, "g_use_non_linear_inertia", &g_use_non_linear_inertia, 0, 1);
 
 	CMD4(CCC_Float, "g_recon_show_speed", &recon_show_speed, 0.f, 20.f);
 	CMD4(CCC_Float, "g_recon_hide_speed", &recon_hide_speed, 0.f, 20.f);
