@@ -13,9 +13,6 @@ protected:
 	virtual void _create_data(ref_sound_data& S, LPCSTR fName, esound_type sound_type, int game_type);
 	virtual void _destroy_data(ref_sound_data& S);
 	CNotificationClient* pSysNotification = nullptr;
-public:
-	volatile BOOL bPendingDefaultDeviceSwitch = FALSE;
-	volatile BOOL bPendingDeviceListRefresh = FALSE;
 protected:
 	BOOL bListenerMoved;
 
@@ -69,8 +66,6 @@ public:
 	virtual void _initialize(int stage) =0;
 	virtual void _clear() =0;
 	virtual void _restart();
-	virtual void switch_device(LPCSTR device_name) {}
-	virtual void refresh_devices() {}
 
 	// Sound interface
 	void verify_refsound(ref_sound& S);
@@ -80,7 +75,6 @@ public:
 	virtual void clone(ref_sound& S, const ref_sound& from, esound_type sound_type, int game_type);
 	virtual void destroy(ref_sound& S);
 	virtual void stop_emitters();
-	virtual void restart_emitters();
 	virtual int pause_emitters(bool val);
 
 	virtual void play(ref_sound& S, CObject* O, u32 flags = 0, float delay = 0.f);
@@ -122,7 +116,6 @@ public:
 	void i_rewind(CSoundRender_Emitter* E);
 	BOOL i_allow_play(CSoundRender_Emitter* E);
 	virtual BOOL i_locked() { return bLocked; }
-	virtual BOOL is_ready() { return bReady; }
 
 	virtual void object_relcase(CObject* obj);
 	void i_create_all_sources();
