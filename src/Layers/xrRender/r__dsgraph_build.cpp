@@ -290,11 +290,11 @@ void CDSGraphManager::AddToRenderQueue(R_dsgraph::RenderQueue& queue, R_dsgraph:
 #if defined(USE_DX10) || defined(USE_DX11)
 	packet.pVS = &*pass.vs;
 	packet.pGS = pass.gs->gs;
-	packet.pPS = pass.ps->ps;
 #else
 	packet.pVS = pass.vs->vs;
-	packet.pPS = pass.ps->ps;
 #endif
+
+	packet.pPS = pass.ps->ps;
 
 #ifdef USE_DX11
 	packet.pHS = pass.hs->sh;
@@ -306,26 +306,27 @@ void CDSGraphManager::AddToRenderQueue(R_dsgraph::RenderQueue& queue, R_dsgraph:
 	packet.pTextures = pass.T._get();
 
 	// Step 3: Make sort key with bit packing
-	u64 key = 0;
+	u64 keyHigh = 0;
+	u64 keyLow = 0;
+
+	keyHigh |= ((u64)packet.pVS >> 4 & 0xFFFF) << 48;
+
 #if defined(USE_DX10) || defined(USE_DX11)
-	key |= ((u64)packet.pVS >> 4 & 0xFF) << 56;
-	key |= ((u64)packet.pGS >> 4 & 0xFF) << 48;
-	key |= ((u64)packet.pPS >> 4 & 0xFF) << 40;
-#else
-	key |= ((u64)packet.pVS >> 4 & 0xFF) << 56;
-	key |= ((u64)packet.pPS >> 4 & 0xFF) << 40;
+	keyHigh |= ((u64)packet.pGS >> 4 & 0xFFFF) << 32;
 #endif
+
+	keyHigh |= ((u64)packet.pPS >> 4 & 0xFFFF) << 16;
 
 #ifdef USE_DX11
-	key |= ((u64)packet.pHS >> 4 & 0xFF) << 32;
-	key |= ((u64)packet.pDS >> 4 & 0xFF) << 24;
+	keyHigh |= ((u64)packet.pHS >> 4 & 0xFFFF);
+	keyLow |= ((u64)packet.pDS >> 4 & 0xFFFF) << 48;
 #endif
 
-	key |= ((u64)packet.pCS >> 4 & 0xFF) << 16;
-	key |= ((u64)packet.pState >> 4 & 0xFF) << 8;
-	key |= ((u64)packet.pTextures >> 4 & 0xFF);
+	keyLow |= ((u64)packet.pCS >> 4 & 0xFFFF) << 32;
+	keyLow |= ((u64)packet.pState >> 4 & 0xFFFF) << 16;
+	keyLow |= ((u64)packet.pTextures >> 4 & 0xFFFF);
 
-	packet.sortKey = key;
+	packet.sortKey = { keyHigh, keyLow };
 	queue.push_back(packet);
 }
 

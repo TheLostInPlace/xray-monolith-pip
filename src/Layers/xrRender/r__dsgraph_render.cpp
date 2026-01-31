@@ -76,73 +76,90 @@ void CDSGraphManager::r_dsgraph_render_graph(RenderQueueArray& queues, u32 _prio
 		});
 
 		// 2. Render
+		vs_type pVS = nullptr;
+
 #if defined(USE_DX10) || defined(USE_DX11)
-		vs_type pVS = nullptr;
 		gs_type pGS = nullptr;
-#else
-		vs_type pVS = nullptr;
 #endif
+
+		ps_type pPS = nullptr;
+
 #ifdef USE_DX11
 		hs_type pHS = nullptr;
 		ds_type pDS = nullptr;
 #endif
-		ps_type pPS = nullptr;
+		
 		R_constant_table* pCS = nullptr;
 		ID3DState* pState = nullptr;
 		STextureList* pTextures = nullptr;
 
+		RenderPacketSortKey key = { 0, 0 };
+
 		for (auto& packet : queue)
 		{
-			if (packet.pVS != pVS)
+			auto& currentKey = packet.sortKey;
+			if (currentKey.high != key.high)
 			{
-				pVS = packet.pVS;
-				RCache.set_VS(pVS);
-			}
+				key.high = currentKey.high;
+
+				if (packet.pVS != pVS)
+				{
+					pVS = packet.pVS;
+					RCache.set_VS(pVS);
+				}
 
 #if defined(USE_DX10) || defined(USE_DX11)
-			if (packet.pGS != pGS)
-			{
-				pGS = packet.pGS;
-				RCache.set_GS(pGS);
-			}
+				if (packet.pGS != pGS)
+				{
+					pGS = packet.pGS;
+					RCache.set_GS(pGS);
+				}
 #endif
 
-			if (packet.pPS != pPS)
-			{
-				pPS = packet.pPS;
-				RCache.set_PS(pPS);
-			}
+				if (packet.pPS != pPS)
+				{
+					pPS = packet.pPS;
+					RCache.set_PS(pPS);
+				}
 
 #ifdef USE_DX11
-			if (packet.pHS != pHS)
-			{
-				pHS = packet.pHS;
-				RCache.set_HS(pHS);
+				if (packet.pHS != pHS)
+				{
+					pHS = packet.pHS;
+					RCache.set_HS(pHS);
+				}
+#endif
 			}
-			if (packet.pDS != pDS)
+
+			if (currentKey.low != key.low)
 			{
-				pDS = packet.pDS;
-				RCache.set_DS(pDS);
-			}
+				key.low = currentKey.low;
+#ifdef USE_DX11
+				if (packet.pDS != pDS)
+				{
+					pDS = packet.pDS;
+					RCache.set_DS(pDS);
+				}
 #endif
 
-			if (packet.pCS != pCS)
-			{
-				pCS = packet.pCS;
-				RCache.set_Constants(pCS);
-			}
+				if (packet.pCS != pCS)
+				{
+					pCS = packet.pCS;
+					RCache.set_Constants(pCS);
+				}
 
-			if (packet.pState != pState)
-			{
-				pState = packet.pState;
-				RCache.set_States(pState);
-			}
+				if (packet.pState != pState)
+				{
+					pState = packet.pState;
+					RCache.set_States(pState);
+				}
 
-			if (packet.pTextures != pTextures)
-			{
-				pTextures = packet.pTextures;
-				RCache.set_Textures(pTextures);
-				RImplementation.apply_lmaterial();
+				if (packet.pTextures != pTextures)
+				{
+					pTextures = packet.pTextures;
+					RCache.set_Textures(pTextures);
+					RImplementation.apply_lmaterial();
+				}
 			}
 
 			auto& item = packet.item;
