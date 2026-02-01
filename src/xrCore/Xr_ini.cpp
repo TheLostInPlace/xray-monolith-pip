@@ -1247,6 +1247,7 @@ CInifile::Items CInifile::EvaluateSection(
 	}
 
 	Evaluations.RecursionStack.pop_back();
+	CurrentResult.shrink_to_fit();
 	return Evaluations.ResolvedCache[SectionName] = std::move(CurrentResult);
 };
 
@@ -1280,7 +1281,6 @@ void CInifile::InsertIntoDATA(xr_unordered_flat_map<shared_str, Items>& FinalDat
 		auto s = xr_new<Sect>();
 		s->Name = SectPair.first;
 		s->Data = SectPair.second;
-		s->Data.shrink_to_fit();
 		DATA.push_back(s);
 	}
 	std::sort(DATA.begin(), DATA.end(), [](const Sect* a, const Sect* b)
