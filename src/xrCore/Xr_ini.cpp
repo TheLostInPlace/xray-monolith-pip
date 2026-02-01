@@ -1282,6 +1282,8 @@ void CInifile::Load(IReader* F, LPCSTR path
 	{
 		xr_string FileName(m_file_name);
 		toLowerCase(FileName);
+
+		xrCriticalSectionGuard g(CacheCS);
 		auto CachedDataIt = CachedData.find(FileName);
 		if (CachedDataIt != CachedData.end())
 		{
@@ -1363,6 +1365,7 @@ void CInifile::Load(IReader* F, LPCSTR path
 	{
 		xr_string FileName(m_file_name);
 		toLowerCase(FileName);
+		xrCriticalSectionGuard g(CacheCS);
 		CachedData.emplace(std::move(FileName), ResolvedData);
 	}
 
