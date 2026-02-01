@@ -51,16 +51,31 @@ str_value* str_container::dock(str_c value)
 	u32 len = xr_strlen(value);
 	u32 slot = u32(hash % buffer_size);
 
-	xrSRWLockGuard guard(&rwlock, false);
-	for (auto& item : buffer[slot])
+	// Most of the time, the string already exists. Use shared lock
 	{
-		if (hash == item.hash && len == item.length && std::memcmp(value, item.value, len) == 0)
-			return &item;
+		xrSRWLockGuard guard(&rwlock, true);
+		for (auto& item : buffer[slot])
+		{
+			if (hash == item.hash && len == item.length && std::memcmp(value, item.value, len) == 0)
+				return &item;
+		}
 	}
 
-	char* pooled_ptr = alloc_in_pool(value, len + 1);
-	buffer[slot].emplace_front(pooled_ptr, hash, len);
-	return &buffer[slot].front();
+	// String not found, upgrade to exclusive lock
+	{
+		xrSRWLockGuard guard(&rwlock, false);
+
+		// Double-check: Did another thread create this while we were swapping locks?
+		for (auto& item : buffer[slot])
+		{
+			if (hash == item.hash && len == item.length && std::memcmp(value, item.value, len) == 0)
+				return &item;
+		}
+
+		char* pooled_ptr = alloc_in_pool(value, len + 1);
+		buffer[slot].emplace_front(pooled_ptr, hash, len);
+		return &buffer[slot].front();
+	}
 }
 
 void str_container::erase(str_c value)
