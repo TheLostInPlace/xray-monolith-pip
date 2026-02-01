@@ -142,6 +142,13 @@ CConsole::CConsole()
 {
 	m_log_line_counter = 0;
 
+	m_cur_cmd.reserve(64);
+	m_last_cmd.reserve(64);
+	for (u32 i = 0; i < m_log_history.GetSize(); ++i)
+	{
+		m_log_history.Get(i).reserve(256);
+	}
+
 	m_editor = xr_new<text_editor::line_editor>((u32)CONSOLE_BUF_SIZE);
 	m_cmd_history_max = cmd_history_max;
 	m_disable_tips = false;
@@ -160,7 +167,6 @@ void CConsole::Initialize()
 
 	m_mouse_pos.x = 0;
 	m_mouse_pos.y = 0;
-	m_last_cmd = NULL;
 
 	m_cmd_history.reserve(m_cmd_history_max + 2);
 	m_cmd_history.clear_not_free();
@@ -173,7 +179,6 @@ void CConsole::Initialize()
 
 	m_tips_mode = 0;
 	m_prev_length_str = 0;
-	m_cur_cmd = NULL;
 	reset_selected_tip();
 
 	// Commands
@@ -200,7 +205,7 @@ void CConsole::Destroy()
 void CConsole::AddLogEntry(LPCSTR line)
 {
 	xrCriticalSectionGuard guard(&m_log_history_guard);
-	m_log_history.Get(m_log_history.GetHead())._set(line);
+	m_log_history.Get(m_log_history.GetHead()) = line;
 	m_log_history.MoveHead(1);
 	m_log_line_counter++;
 }
@@ -210,7 +215,7 @@ void CConsole::ClearLog()
 	xrCriticalSectionGuard guard(&m_log_history_guard);
 	for (u32 i = 0; i < m_log_history.GetSize(); ++i)
 	{
-		m_log_history.Get(i)._set(nullptr);
+		m_log_history.Get(i).clear();
 	}
 	m_log_line_counter = 0;
 }
@@ -420,7 +425,7 @@ void CConsole::OnRender()
 	ypos -= LDIST;
 	for (u32 i = scroll_delta; i < log_line; ++i)
 	{
-		const shared_str& logLine = m_log_history.GetLooped(m_log_history.GetTail() - i);
+		const xr_string& logLine = m_log_history.GetLooped(m_log_history.GetTail() - i);
 
 		if (!logLine.size()) {
 			continue;
@@ -630,7 +635,7 @@ void CConsole::ExecuteCommand(LPCSTR cmd_str, bool record_cmd)
 		c[0] = mark2;
 		c[1] = 0;
 
-		if (m_last_cmd.c_str() == 0 || xr_strcmp(m_last_cmd, edt) != 0)
+		if (m_last_cmd.c_str() == 0 || xr_strcmp(m_last_cmd.c_str(), edt) != 0)
 		{
 			Msg("%s %s", c, edt);
 			add_cmd_history(edt);
@@ -915,7 +920,7 @@ void CConsole::update_tips()
 	m_temp_tips.clear_not_free();
 	m_tips.clear_not_free();
 
-	m_cur_cmd = NULL;
+	m_cur_cmd.clear();
 	if (!bVisible)
 	{
 		return;
@@ -965,7 +970,7 @@ void CConsole::update_tips()
 
 				cc->fill_tips(m_temp_tips, mode);
 				m_tips_mode = 2;
-				m_cur_cmd._set(first);
+				m_cur_cmd = first;
 				select_for_filter(last, m_temp_tips, m_tips);
 
 				if (m_tips.size() == 0)

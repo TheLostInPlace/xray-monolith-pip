@@ -289,7 +289,7 @@ void CTextConsole::DrawLog(HDC hDC, RECT* pRect)
 		int ypos = Height - tm.tmHeight - tm.tmHeight;
 		for (u32 i = scroll_delta; i < log_line; ++i)
 		{
-			const shared_str& logLine = m_log_history.GetLooped(m_log_history.GetTail() - i);
+			const xr_string& logLine = m_log_history.GetLooped(m_log_history.GetTail() - i);
 
 			if (!logLine.size()) {
 				continue;

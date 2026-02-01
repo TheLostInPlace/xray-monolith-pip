@@ -9,7 +9,7 @@
 #include "XR_IOConsole.h"
 
 
-void CConsole::add_cmd_history(shared_str const& str)
+void CConsole::add_cmd_history(const xr_string& str)
 {
 	if (str.size() == 0)
 	{
