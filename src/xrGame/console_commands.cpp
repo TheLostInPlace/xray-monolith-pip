@@ -331,6 +331,12 @@ static void full_memory_stats()
 	Msg("* [x-ray]: shared strings: memory[%ld K], count[%lu]", _eco_strings / 1024, _eco_strings_count);
 	Msg("* [x-ray]: shared memory: memory[%ld K]", _eco_smem);
 
+	u64 DLTX_total_bytes = 0;
+	u64 DLTX_section_count = 0;
+	u64 DLTX_files_cached = 0;
+	CInifile::GetCacheStats(DLTX_files_cached, DLTX_total_bytes, DLTX_section_count);
+	Msg("* [x-ray]: DLTX Cache: Files Cached: %zu, Sections Total %zu, Usage: %.2f MB", DLTX_files_cached, DLTX_section_count, (double)DLTX_total_bytes / 1024 / 1024);
+
 #ifdef FS_DEBUG
 	Msg("* [x-ray]: file mapping: memory[%d K], count[%d]", g_file_mapped_memory / 1024, g_file_mapped_count);
 	dump_file_mappings();

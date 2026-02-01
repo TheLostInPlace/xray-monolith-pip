@@ -133,6 +133,30 @@ private:
 
 public:
 	static void InvalidateCache(LPCSTR path = nullptr);
+	static void CInifile::GetCacheStats(u64& files_cached, u64& total_bytes, u64& section_count)
+	{
+		total_bytes = 0;
+		section_count = 0;
+		files_cached = CachedData.size();
+
+		for (const auto& file_pair : CachedData)
+		{
+			// Size of the file path string
+			total_bytes += file_pair.first.capacity();
+
+			// Inner map overhead
+			for (const auto& sect_pair : file_pair.second)
+			{
+				section_count++;
+				// Each section name
+				// Plus the overhead of the xr_vector structure
+				total_bytes += sizeof(sect_pair.first) + sizeof(sect_pair.second);
+
+				// Items
+				total_bytes += sect_pair.second.capacity() * sizeof(Item);
+			}
+		}
+	}
 
 private:
 	IC bool IsValidFileNameForCache() const
