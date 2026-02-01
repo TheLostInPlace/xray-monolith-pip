@@ -1254,6 +1254,7 @@ CInifile::Items CInifile::EvaluateSection(
 };
 
 // Initialize the static cache member
+BOOL dltx_use_cache = TRUE;
 xr_unordered_flat_map<xr_string, xr_unordered_flat_map<shared_str, CInifile::Items>> CInifile::CachedData;
 xrCriticalSection CInifile::CacheCS;
 void CInifile::InvalidateCache(LPCSTR path) {
@@ -1299,7 +1300,7 @@ void CInifile::Load(IReader* F, LPCSTR path
 {
 	R_ASSERT(F);
 
-	if (IsValidFileNameForCache())
+	if (dltx_use_cache && IsValidFileNameForCache())
 	{
 		xr_string FileName(m_file_name);
 		toLowerCase(FileName);
@@ -1382,7 +1383,7 @@ void CInifile::Load(IReader* F, LPCSTR path
 		}
 	}
 
-	if (IsValidFileNameForCache())
+	if (dltx_use_cache && IsValidFileNameForCache())
 	{
 		xr_string FileName(m_file_name);
 		toLowerCase(FileName);
