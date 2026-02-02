@@ -61,7 +61,8 @@ void vision_client::eye_pp_s2()
 {
 	Device.Statistic->AI_Vis_RayTests.Begin();
 
-	// --- STEP 1: SNAPSHOT DATA (Main Thread) ---
+	// Snapshot bone data before going multithreaded
+	// Safer in order to avoid crash on get_last_local_point_on_mesh or get_new_local_point_on_mesh calls
 	VisionSnapshotList snapshots;
 
 	auto& visible_items = feel_visible;
@@ -75,8 +76,25 @@ void vision_client::eye_pp_s2()
 		snap.Object = item.O;
 		snap.HasCFORM = item.O->CFORM() != 0;
 
+		if (item.O->Visual())
+		{
+			item.O->Center(snap.Position);
+		}
+		else
+		{
+			snap.Position = item.O->Position();
+		}
+
+		// Initial Setup for new objects (added from o_new)
+		if (item.bone_id == u16(-1))
+		{
+			// If it was just added, pick its first valid point right now
+			item.cp_LP = item.O->get_new_local_point_on_mesh(item.bone_id);
+		}
+
+		// Prepare data for raycasts
 		snap.cp_LAST = item.O->get_last_local_point_on_mesh(item.cp_LP, item.bone_id);
-		snap.cp_LP = item.O->get_new_local_point_on_mesh(snap.bone_id);
+		snap.cp_LP = item.O->get_new_local_point_on_mesh(item.bone_id);
 		snap.bone_id = item.bone_id;
 	
 		snapshots.push_back(snap);

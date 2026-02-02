@@ -66,8 +66,9 @@ void Vision::o_new(CObject* O)
 	I.Cache.verts[1].set(0, 0, 0);
 	I.Cache.verts[2].set(0, 0, 0);
 	I.fuzzy = -EPS_S;
-	I.cp_LP = O->get_new_local_point_on_mesh(I.bone_id);
-	I.cp_LAST = O->get_last_local_point_on_mesh(I.cp_LP, I.bone_id);
+	I.cp_LP = O->Position();
+	I.cp_LAST = O->Position();
+	I.bone_id = u16(-1);
 }
 
 void Vision::o_delete(CObject* O)
@@ -208,18 +209,25 @@ void Vision::o_trace(Fvector& P, float dt, float vis_threshold, const VisionSnap
 			}
 		}
 
-		if (!pSnap || !pSnap->HasCFORM) {
+		bool HasCFORM = pSnap ? pSnap->HasCFORM : (I->O->CFORM() != nullptr);
+
+		if (!HasCFORM) {
 			I->fuzzy = -1;
 			continue;
 		}
 
-		// verify relation
-		// if (positive(I->fuzzy) && I->O->Position().similar(I->cp_LR_dst,lr_granularity) && P.similar(I->cp_LR_src,lr_granularity))
-		// continue;
-
-		I->cp_LR_dst = pSnap->Position;
+		if (pSnap)
+		{
+			I->cp_LR_dst = pSnap->Position;
+			I->cp_LAST = pSnap->cp_LAST;
+		}
+		else
+		{
+			Fvector pivot = I->O->Position();
+			I->cp_LR_dst = pivot;
+			I->cp_LAST = pivot;
+		}
 		I->cp_LR_src = P;
-		I->cp_LAST = pSnap->cp_LAST;
 
 		//
 		Fvector D, OP = I->cp_LAST;
@@ -317,8 +325,12 @@ void Vision::o_trace(Fvector& P, float dt, float vis_threshold, const VisionSnap
 				// INVISIBLE, choose next point
 				I->fuzzy -= fuzzy_update_novis * dt;
 				clamp(I->fuzzy, -.5f, 1.f);
-				I->cp_LP = pSnap->cp_LP;
-				I->bone_id = pSnap->bone_id;
+				if (pSnap)
+				{
+					I->cp_LP = pSnap->cp_LP;
+					I->bone_id = pSnap->bone_id;
+				}
+				
 			}
 			else
 			{
