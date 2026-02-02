@@ -208,18 +208,33 @@ void Vision::o_trace(Fvector& P, float dt, float vis_threshold, const VisionSnap
 			}
 		}
 
-		if (!pSnap || !pSnap->HasCFORM) {
-			I->fuzzy = -1;
-			continue;
+		if (!pSnap)
+		{
+			if (!I->O->CFORM())
+			{
+				I->fuzzy = -1;
+				continue;
+			}
+
+			I->cp_LR_dst = I->O->Position();
+			I->cp_LR_src = P;
+			I->cp_LAST = I->O->Position();
+		}
+		else
+		{
+			if (!pSnap->HasCFORM)
+			{
+				I->fuzzy = -1;
+				continue;
+			}
+			I->cp_LR_dst = pSnap->Position;
+			I->cp_LR_src = P;
+			I->cp_LAST = pSnap->cp_LAST;
 		}
 
 		// verify relation
 		// if (positive(I->fuzzy) && I->O->Position().similar(I->cp_LR_dst,lr_granularity) && P.similar(I->cp_LR_src,lr_granularity))
 		// continue;
-
-		I->cp_LR_dst = pSnap->Position;
-		I->cp_LR_src = P;
-		I->cp_LAST = pSnap->cp_LAST;
 
 		//
 		Fvector D, OP = I->cp_LAST;
@@ -317,8 +332,8 @@ void Vision::o_trace(Fvector& P, float dt, float vis_threshold, const VisionSnap
 				// INVISIBLE, choose next point
 				I->fuzzy -= fuzzy_update_novis * dt;
 				clamp(I->fuzzy, -.5f, 1.f);
-				I->cp_LP = pSnap->cp_LP;
-				I->bone_id = pSnap->bone_id;
+				I->cp_LP = pSnap ? pSnap->cp_LP : I->cp_LP;
+				I->bone_id = pSnap ? pSnap->bone_id : I->bone_id;
 			}
 			else
 			{
