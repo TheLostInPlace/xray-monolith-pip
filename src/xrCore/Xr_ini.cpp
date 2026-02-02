@@ -120,12 +120,17 @@ void CInifile::InvalidateCache(LPCSTR path) {
 			xrCriticalSectionGuard g(CacheCS);
 			CachedData.erase(FileName);
 		}
-
 	}
 	else
 	{
 		xrCriticalSectionGuard g(CacheCS);
+		for (auto& p : CachedData)
+		{
+			p.second.clear();
+			p.second.rehash(0);
+		}
 		CachedData.clear();
+		CachedData.rehash(0);
 	}
 };
 
@@ -140,9 +145,9 @@ void CInifile::InsertIntoDATA(xr_unordered_flat_map<shared_str, Items>& FinalDat
 		DATA.push_back(s);
 	}
 	std::sort(DATA.begin(), DATA.end(), [](const Sect* a, const Sect* b)
-		{
-			return xr_strcmp(a->Name, b->Name) < 0;
-		});
+	{
+		return xr_strcmp(a->Name, b->Name) < 0;
+	});
 }
 
 CInifile::CInifile(IReader* F, LPCSTR path
