@@ -1,7 +1,5 @@
 // ModelPool.h: interface for the CModelPool class.
 //////////////////////////////////////////////////////////////////////
-#ifndef ModelPoolH
-#define ModelPoolH
 #pragma once
 
 // refs
@@ -37,6 +35,11 @@ private:
 			refs = 0;
 			model = 0;
 		}
+
+		// Order by pointer
+		bool operator<(const ModelDef& other) const { return model < other.model; }
+		bool operator<(const dxRender_Visual* other) const { return model < other; }
+		friend bool operator<(dxRender_Visual* ptr, const ModelDef& other) { return ptr < other.model; }
 	};
 
 	typedef xr_multimap<shared_str, dxRender_Visual*, str_pred> POOL;
@@ -93,4 +96,3 @@ public:
 	void 					RenderSingle		(dxRender_Visual* m_pVisual, const Fmatrix& mTransform, float m_fLOD);
 #endif
 };
-#endif //ModelPoolH

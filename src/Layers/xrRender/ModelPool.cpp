@@ -87,14 +87,16 @@ dxRender_Visual* CModelPool::Instance_Duplicate(dxRender_Visual* V)
 	dxRender_Visual* N = Instance_Create(V->Type);
 	N->Copy(V);
 	N->Spawn();
-	// inc ref counter
-	for (xr_vector<ModelDef>::iterator I = Models.begin(); I != Models.end(); I++)
-		if (I->model == V)
+	{
+		// inc ref counter
+		xrSRWLockGuard g(ModelsLock, true);
+		auto it = std::lower_bound(Models.begin(), Models.end(), V, std::less<>{});
+		if (it != Models.end() && it->model == V)
 		{
-			I->refs++;
-			break;
+			it->refs++;
 		}
-	return N;
+		return N;
+	}
 }
 
 dxRender_Visual* CModelPool::Instance_Load(const char* N, BOOL allow_register, bool assert)
@@ -167,12 +169,13 @@ dxRender_Visual* CModelPool::Instance_Load(LPCSTR name, IReader* data, BOOL allo
 dxRender_Visual* CModelPool::Instance_Register(LPCSTR N, dxRender_Visual* V)
 {
 	// Registration
+	shared_str S(N);
 	xrSRWLockGuard g(ModelsLock);
 
 	// Double-check for duplicate model
 	for (auto& M : Models)
 	{
-		if (M.name[0] && (0 == xr_strcmp(*M.name, N)))
+		if (M.name == S)
 		{
 			// Increment the reference count
 			M.refs++;
@@ -187,9 +190,11 @@ dxRender_Visual* CModelPool::Instance_Register(LPCSTR N, dxRender_Visual* V)
 	}
 
 	ModelDef M;
-	M.name = N;
+	M.name = S;
 	M.model = V;
-	Models.push_back(M);
+
+	auto it = std::lower_bound(Models.begin(), Models.end(), V, std::less<>{});
+	Models.insert(it, std::move(M));
 
 	return V;
 }
@@ -217,15 +222,15 @@ void CModelPool::Destroy()
 	}
 
 	// Base/Reference
-	xr_vector<ModelDef>::iterator I = Models.begin();
-	xr_vector<ModelDef>::iterator E = Models.end();
-	for (; I != E; I++)
 	{
-		I->model->Release();
-		xr_delete(I->model);
+		xrSRWLockGuard g(ModelsLock);
+		for (auto& M : Models)
+		{
+			M.model->Release();
+			xr_delete(M.model);
+		}
+		Models.clear();
 	}
-
-	Models.clear();
 
 	// cleanup motions container
 	g_pMotionsContainer->clean(false);
@@ -247,14 +252,15 @@ CModelPool::~CModelPool()
 
 dxRender_Visual* CModelPool::Instance_Find(LPCSTR N)
 {
+	shared_str S(N);
 	dxRender_Visual* Model = 0;
-	xr_vector<ModelDef>::iterator I;
 	xrSRWLockGuard g(ModelsLock, true);
-	for (I = Models.begin(); I != Models.end(); I++)
+
+	for (auto& M : Models)
 	{
-		if (I->name[0] && (0 == xr_strcmp(*I->name, N)))
+		if (S == M.name)
 		{
-			Model = I->model;
+			Model = M.model;
 			break;
 		}
 	}
@@ -420,11 +426,11 @@ void CModelPool::Discard(dxRender_Visual* & V, BOOL b_complete)
 	{
 		// Base
 		const shared_str& name = it->second;
-		xr_vector<ModelDef>::iterator I = Models.begin();
-		xr_vector<ModelDef>::iterator I_e = Models.end();
+		xrSRWLockGuard g(ModelsLock);
 
-		for (; I != I_e; ++I)
+		for (u32 i = 0; i < Models.size(); i++)
 		{
+			auto I = Models.begin() + i;
 			if (I->name == name)
 			{
 				if (b_complete || strchr(*name, '#'))
@@ -436,7 +442,7 @@ void CModelPool::Discard(dxRender_Visual* & V, BOOL b_complete)
 						bForceDiscard = TRUE;
 						I->model->Release();
 						xr_delete(I->model);
-						Models.erase_fast(I);
+						Models.erase(I);
 						bForceDiscard = FALSE;
 					}
 					break;
@@ -543,6 +549,7 @@ void CModelPool::dump()
 	Log("--- model pool --- begin:");
 	u32 sz = 0;
 	u32 k = 0;
+	xrSRWLockGuard g(ModelsLock, true);
 	for (xr_vector<ModelDef>::iterator I = Models.begin(); I != Models.end(); I++)
 	{
 		CKinematics* K = PCKinematics(I->model);
@@ -583,6 +590,7 @@ void CModelPool::memory_stats(u32& vb_mem_video, u32& vb_mem_system, u32& ib_mem
 
 	xr_vector<ModelDef>::iterator it = Models.begin();
 	xr_vector<ModelDef>::const_iterator en = Models.end();
+	xrSRWLockGuard g(ModelsLock, true);
 
 	for (; it != en; ++it)
 	{
