@@ -75,9 +75,9 @@ void vision_client::eye_pp_s2()
 		snap.Object = item.O;
 		snap.HasCFORM = item.O->CFORM() != 0;
 
-		snap.cp_LAST = item.O->get_last_local_point_on_mesh(item.cp_LP, item.bone_id);
-		snap.cp_LP = item.O->get_new_local_point_on_mesh(snap.bone_id);
 		snap.bone_id = item.bone_id;
+		snap.cp_LAST = item.O->get_last_local_point_on_mesh(item.cp_LP, snap.bone_id);
+		snap.cp_LP = item.O->get_new_local_point_on_mesh(snap.bone_id);
 	
 		snapshots.push_back(snap);
 	}
