@@ -318,6 +318,7 @@ void Vision::o_trace(Fvector& P, float dt, float vis_threshold, const VisionSnap
 				I->fuzzy -= fuzzy_update_novis * dt;
 				clamp(I->fuzzy, -.5f, 1.f);
 				I->cp_LP = pSnap->cp_LP;
+				I->bone_id = pSnap->bone_id;
 			}
 			else
 			{
