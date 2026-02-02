@@ -143,7 +143,8 @@ dxRender_Visual* CModelPool::Instance_Load(const char* N, BOOL allow_register, b
 	g_pGamePersistent->RegisterModel(V);
 
 	// Registration
-	if (allow_register) Instance_Register(N, V);
+	if (allow_register) 
+		V = Instance_Register(N, V);
 
 	return V;
 }
@@ -158,18 +159,39 @@ dxRender_Visual* CModelPool::Instance_Load(LPCSTR name, IReader* data, BOOL allo
 	V->Load(name, data, 0);
 
 	// Registration
-	if (allow_register) Instance_Register(name, V);
+	if (allow_register) 
+		V = Instance_Register(name, V);
 	return V;
 }
 
-void CModelPool::Instance_Register(LPCSTR N, dxRender_Visual* V)
+dxRender_Visual* CModelPool::Instance_Register(LPCSTR N, dxRender_Visual* V)
 {
 	// Registration
+	xrSRWLockGuard g(ModelsLock);
+
+	// Double-check for duplicate model
+	for (auto& M : Models)
+	{
+		if (M.name[0] && (0 == xr_strcmp(*M.name, N)))
+		{
+			// Increment the reference count
+			M.refs++;
+
+			// Destroy the redundant one we just loaded
+			V->Release();
+			xr_delete(V);
+
+			// Return the existing model
+			return M.model;
+		}
+	}
+
 	ModelDef M;
 	M.name = N;
 	M.model = V;
-	xrSRWLockGuard g(ModelsLock);
 	Models.push_back(M);
+
+	return V;
 }
 
 

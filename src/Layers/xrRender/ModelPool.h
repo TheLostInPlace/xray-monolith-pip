@@ -63,7 +63,7 @@ public:
 	dxRender_Visual* Instance_Duplicate(dxRender_Visual* V);
 	dxRender_Visual* Instance_Load(LPCSTR N, BOOL allow_register, bool assert = true);
 	dxRender_Visual* Instance_Load(LPCSTR N, IReader* data, BOOL allow_register);
-	void Instance_Register(LPCSTR N, dxRender_Visual* V);
+	dxRender_Visual* Instance_Register(LPCSTR N, dxRender_Visual* V);
 	dxRender_Visual* Instance_Find(LPCSTR N);
 
 	dxRender_Visual* CreatePE(PS::CPEDef* source);
