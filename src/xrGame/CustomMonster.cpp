@@ -107,6 +107,8 @@ CCustomMonster::CCustomMonster() :
 
 CCustomMonster::~CCustomMonster()
 {
+	Device.secondary_tasks.wait();
+
 	xr_delete(m_sound_user_data_visitor);
 	xr_delete(m_memory_manager);
 	xr_delete(m_movement_manager);

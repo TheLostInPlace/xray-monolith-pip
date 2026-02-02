@@ -34,6 +34,7 @@ vision_client::vision_client(CEntity* object, const u32& update_interval) :
 
 vision_client::~vision_client()
 {
+	Device.secondary_tasks.wait();
 	shedule_unregister();
 	xr_delete(m_visual);
 }
