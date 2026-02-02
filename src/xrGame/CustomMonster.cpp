@@ -671,6 +671,28 @@ void CCustomMonster::eye_pp_s2()
 {
 	// Tracing
 	Device.Statistic->AI_Vis_RayTests.Begin();
+
+	// --- STEP 1: SNAPSHOT DATA (Main Thread) ---
+	VisionSnapshotList snapshots;
+
+	auto& visible_items = feel_visible;
+	snapshots.reserve(visible_items.size());
+
+	// Lock list to ensure safety
+	xrSRWLockGuard guard(&lock_visible, true);
+	for (auto& item : visible_items)
+	{
+		VisionSnapshotItem snap;
+		snap.Object = item.O;
+		snap.HasCFORM = item.O->CFORM() != 0;
+
+		snap.bone_id = item.bone_id;
+		snap.cp_LAST = item.O->get_last_local_point_on_mesh(item.cp_LP, snap.bone_id);
+		snap.cp_LP = item.O->get_new_local_point_on_mesh(snap.bone_id);
+
+		snapshots.push_back(snap);
+	}
+
 	u32 dwTime = Level().timeServer();
 	u32 dwDT = dwTime - eye_pp_timestamp;
 	eye_pp_timestamp = dwTime;
@@ -679,7 +701,7 @@ void CCustomMonster::eye_pp_s2()
 	Device.secondary_tasks.run([=]()
 	{
 		if (this_thread_id != GetCurrentThreadId()) { PROF_THREAD("X-Ray PPL Thread") }
-		feel_vision_update						(this,eye_matrix.c,float(dwDT)/1000.f,memory().visual().transparency_threshold());
+		feel_vision_update						(this,eye_matrix.c,float(dwDT)/1000.f,memory().visual().transparency_threshold(), snapshots);
 	});
 	Device.Statistic->AI_Vis_RayTests.End();
 }

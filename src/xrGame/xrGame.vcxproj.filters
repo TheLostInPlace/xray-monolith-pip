@@ -9581,12 +9581,6 @@
     <ClCompile Include="searchlight.cpp">
       <Filter>Core\Client\Objects\searchlight</Filter>
     </ClCompile>
-    <ClCompile Include="searchlight_script.cpp">
-      <Filter>Core\Client\Objects\searchlight_script</Filter>
-    </ClCompile>
-    <ClCompile Include="searchlight_struct.cpp">
-      <Filter>Core\Client\Objects\searchlight_struct</Filter>
-    </ClCompile>
     <ClCompile Include="trade.cpp">
       <Filter>Core\Client\Objects\searchlight\Trade</Filter>
     </ClCompile>
@@ -11087,6 +11081,8 @@
     <ClCompile Include="GametaskManager_script.cpp">
       <Filter>Core\Client\Objects\tasks_info_dialogs\game tasks</Filter>
     </ClCompile>
+    <ClCompile Include="searchlight_script.cpp" />
+    <ClCompile Include="searchlight_struct.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="Explosive.h">
