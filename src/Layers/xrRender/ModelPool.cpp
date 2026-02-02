@@ -168,6 +168,7 @@ void CModelPool::Instance_Register(LPCSTR N, dxRender_Visual* V)
 	ModelDef M;
 	M.name = N;
 	M.model = V;
+	xrSRWLockGuard g(ModelsLock);
 	Models.push_back(M);
 }
 
@@ -226,6 +227,7 @@ dxRender_Visual* CModelPool::Instance_Find(LPCSTR N)
 {
 	dxRender_Visual* Model = 0;
 	xr_vector<ModelDef>::iterator I;
+	xrSRWLockGuard g(ModelsLock, true);
 	for (I = Models.begin(); I != Models.end(); I++)
 	{
 		if (I->name[0] && (0 == xr_strcmp(*I->name, N)))
