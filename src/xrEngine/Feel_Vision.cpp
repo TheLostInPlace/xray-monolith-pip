@@ -150,7 +150,7 @@ void Vision::feel_vision_query(Fmatrix& mFull, Fvector& P)
 	}
 }
 
-void Vision::feel_vision_update(CObject* parent, Fvector& P, float dt, float vis_threshold)
+void Vision::feel_vision_update(CObject* parent, Fvector& P, float dt, float vis_threshold, const VisionSnapshotList& snapshots)
 {
 	PROF_EVENT("feel_vision_update");
 	{
@@ -189,18 +189,26 @@ void Vision::feel_vision_update(CObject* parent, Fvector& P, float dt, float vis
 		// Copy results and perform traces
 		query = seen;
 	}
-	o_trace(P, dt, vis_threshold);
+	o_trace(P, dt, vis_threshold, snapshots);
 }
 
-void Vision::o_trace(Fvector& P, float dt, float vis_threshold)
+void Vision::o_trace(Fvector& P, float dt, float vis_threshold, const VisionSnapshotList& snapshots)
 {
+	PROF_EVENT("feel_vision_o_trace");
 	RQR.r_clear();
 	xrSRWLockGuard guard(&lock_visible, true);
 	xr_vector<feel_visible_Item>::iterator I = feel_visible.begin(), E = feel_visible.end();
 	for (; I != E; I++)
 	{
-		if (0 == I->O->CFORM())
-		{
+		const VisionSnapshotItem* pSnap = nullptr;
+		for (const auto& s : snapshots) {
+			if (s.Object == I->O) {
+				pSnap = &s;
+				break;
+			}
+		}
+
+		if (!pSnap || !pSnap->HasCFORM) {
 			I->fuzzy = -1;
 			continue;
 		}
@@ -209,9 +217,9 @@ void Vision::o_trace(Fvector& P, float dt, float vis_threshold)
 		// if (positive(I->fuzzy) && I->O->Position().similar(I->cp_LR_dst,lr_granularity) && P.similar(I->cp_LR_src,lr_granularity))
 		// continue;
 
-		I->cp_LR_dst = I->O->Position();
+		I->cp_LR_dst = pSnap->Position;
 		I->cp_LR_src = P;
-		I->cp_LAST = I->O->get_last_local_point_on_mesh(I->cp_LP, I->bone_id);
+		I->cp_LAST = pSnap->cp_LAST;
 
 		//
 		Fvector D, OP = I->cp_LAST;
@@ -309,7 +317,7 @@ void Vision::o_trace(Fvector& P, float dt, float vis_threshold)
 				// INVISIBLE, choose next point
 				I->fuzzy -= fuzzy_update_novis * dt;
 				clamp(I->fuzzy, -.5f, 1.f);
-				I->cp_LP = I->O->get_new_local_point_on_mesh(I->bone_id);
+				I->cp_LP = pSnap->cp_LP;
 			}
 			else
 			{
