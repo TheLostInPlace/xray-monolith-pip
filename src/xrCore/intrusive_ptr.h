@@ -102,6 +102,9 @@ public:
     IC void set(object_type* rhs);
     IC void set(self_type const& rhs);
     IC object_type* get() const noexcept;
+
+private:
+	IC void release_internal(object_type* object);
 };
 
 TEMPLATE_SPECIALIZATION
@@ -133,10 +136,7 @@ TEMPLATE_SPECIALIZATION
 IC void swap(_intrusive_ptr& lhs, _intrusive_ptr& rhs) noexcept;
 
 
-// =========================================================================
 // Implementation
-// =========================================================================
-
 
 TEMPLATE_SPECIALIZATION
 IC _intrusive_ptr::intrusive_ptr() noexcept
@@ -184,19 +184,22 @@ IC _intrusive_ptr::~intrusive_ptr()
 TEMPLATE_SPECIALIZATION
 IC void _intrusive_ptr::dec()
 {
-    if (!m_object) return;
-
-    // Use standard atomic fetch_sub
-    if (m_object->base_type::m_ref_count.fetch_sub(1, std::memory_order_acq_rel) == 1)
+    if (m_object)
     {
-        // Fence to ensure the deletion happens after atomic decrement
-        std::atomic_thread_fence(std::memory_order_acquire);
         object_type* temp = m_object;
         m_object = nullptr;
-        temp->base_type::_release(temp);
+        release_internal(temp);
     }
-    else
-        m_object = nullptr;
+}
+
+TEMPLATE_SPECIALIZATION
+IC void _intrusive_ptr::release_internal(object_type* obj)
+{
+    if (obj->m_ref_count.fetch_sub(1, std::memory_order_acq_rel) == 1)
+    {
+        std::atomic_thread_fence(std::memory_order_acquire);
+        obj->_release(obj);
+    }
 }
 
 TEMPLATE_SPECIALIZATION
@@ -265,11 +268,13 @@ TEMPLATE_SPECIALIZATION
 IC void _intrusive_ptr::set(object_type* rhs)
 {
     if (rhs)
-    {
         rhs->m_ref_count.fetch_add(1, std::memory_order_relaxed);
-    }
-    dec();
+
+    object_type* old = m_object;
     m_object = rhs;
+
+    if (old)
+        release_internal(old);
 }
 
 TEMPLATE_SPECIALIZATION
