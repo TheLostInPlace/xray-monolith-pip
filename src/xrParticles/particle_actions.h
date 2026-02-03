@@ -28,7 +28,7 @@ namespace PAPI
 
 	DEFINE_VECTOR(ParticleAction*, PAVec, PAVecIt);
 
-	class ParticleActions
+	class ParticleActions : public intrusive_base
 	{
 		PAVec actions;
 	public:

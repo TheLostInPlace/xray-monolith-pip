@@ -286,7 +286,7 @@ protected:
 	ref_sound m_entrance_sound;
 
 	//объект партиклов обычного состояния зоны
-	xr_shared_ptr<CParticlesObject>		m_pIdleParticles;
+	intrusive_ptr<CParticlesObject>		m_pIdleParticles;
 
 	//////////////////////////////
 	//подсветка аномалии

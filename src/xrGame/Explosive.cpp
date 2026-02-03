@@ -390,9 +390,8 @@ void CExplosive::Explode()
 	Fvector::generate_orthonormal_basis(explode_matrix.j, explode_matrix.i, explode_matrix.k);
 	explode_matrix.c.set(pos);
 
-	CParticlesObject* pStaticPG;
-	pStaticPG = Particles::Details::Create(*m_sExplodeParticles,!m_bDynamicParticles).get();
-	if (m_bDynamicParticles) m_pExpParticle = pStaticPG;
+	intrusive_ptr<CParticlesObject> pStaticPG = Particles::Details::Create(*m_sExplodeParticles,!m_bDynamicParticles);
+	if (m_bDynamicParticles) m_pExpParticle = pStaticPG.get();
 	pStaticPG->UpdateParent(explode_matrix, vel);
 	pStaticPG->Play(false);
 

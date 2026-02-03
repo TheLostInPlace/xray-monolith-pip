@@ -291,18 +291,18 @@ void IGame_Persistent::UpdateParticles()
 	// Play req particle systems
 	while (!ps_needtoplay.empty())
 	{
-		xr_shared_ptr<CPS_Instance> pInstance = ps_needtoplay.back();
+		intrusive_ptr<CPS_Instance> pInstance = std::move(ps_needtoplay.back());
 		ps_needtoplay.pop_back();
 		pInstance->Play(false);
 	}
 
-	for (xr_shared_ptr<CPS_Instance> Part : ps_active_deffer)
+	for (intrusive_ptr<CPS_Instance>& Part : ps_active_deffer)
 	{
 		ps_active.push_back(Part);
 	}
 	ps_active_deffer.clear();
 
-	static auto eraseFunc = [](const xr_shared_ptr<CPS_Instance>& Obj)
+	static auto eraseFunc = [](const intrusive_ptr<CPS_Instance>& Obj)
 	{
 		return Obj->m_NeedDestroy;
 	};
@@ -322,7 +322,7 @@ void IGame_Persistent::destroy_particles(const bool& all_particles)
 	}
 	else
 	{
-		static auto eraseFunc = [](const xr_shared_ptr<CPS_Instance>& Obj)
+		static auto eraseFunc = [](const intrusive_ptr<CPS_Instance>& Obj)
 		{
 			return Obj->destroy_on_game_load();
 		};

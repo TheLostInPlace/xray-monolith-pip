@@ -158,7 +158,7 @@ public:
 	void OnBuildVersionChallenge();
 	void OnConnectResult(NET_Packet* P);
 	// Static particles
-	using POVec = xr_vector<xr_shared_ptr<CParticlesObject>>;
+	using POVec = xr_vector<intrusive_ptr<CParticlesObject>>;
 	using POIt = POVec::iterator;
 	POVec m_StaticParticles;
 	game_cl_GameState* game = nullptr;

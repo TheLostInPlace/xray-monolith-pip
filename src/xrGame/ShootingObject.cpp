@@ -324,7 +324,7 @@ void CShootingObject::OnShellDrop(const Fvector& play_pos,
 	if (!m_sShellParticles) return;
 	if (Device.vCameraPosition.distance_to_sqr(play_pos) > 2 * 2) return;
 
-	CParticlesObject* pShellParticles = Particles::Details::Create(*m_sShellParticles,TRUE).get();
+	intrusive_ptr<CParticlesObject> pShellParticles = Particles::Details::Create(*m_sShellParticles,TRUE);
 	pShellParticles->SetLiveUpdate(TRUE);
 
 	Fmatrix particles_pos;

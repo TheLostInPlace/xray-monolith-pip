@@ -47,7 +47,7 @@ struct SStmBarrel
 
 	shared_str m_sShellParticles;
 	shared_str m_sFlameParticles;
-	xr_shared_ptr<CParticlesObject> m_pFlameParticles;
+	intrusive_ptr<CParticlesObject> m_pFlameParticles;
 	shared_str m_sSmokeParticles;
 
 	Fcolor light_base_color;
@@ -173,7 +173,7 @@ private:
 	float m_overheat_decr_quant;
 	float m_overheat_threshold;
 	shared_str m_overheat_particles;
-	xr_shared_ptr<CParticlesObject> p_overheat;
+	intrusive_ptr<CParticlesObject> p_overheat;
 protected:
 	void UpdateBarrelDir();
 	virtual const Fvector& get_CurrentFirePoint();

@@ -38,7 +38,7 @@ class CScriptParticles
 private:
 	Fmatrix m_transform;
 public:
-	xr_shared_ptr<CScriptParticlesCustom> m_particles;
+	intrusive_ptr<CScriptParticlesCustom> m_particles;
 	CScriptParticles(LPCSTR caParticlesName);
 	virtual ~CScriptParticles();
 

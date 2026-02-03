@@ -9,11 +9,11 @@ public:
 	static void Play();
 	static void Wait();
 
-	static void ForceUpdate(CPS_Instance* Obj);
+	static void ForceUpdate(intrusive_ptr<CPS_Instance> Obj);
 	static bool NeedForceUpdate();
 
 private:
-	void UpdateParticle(CPS_Instance* particle) const;
+	void UpdateParticle(intrusive_ptr<CPS_Instance> particle) const;
 	static void Start();
 
 public:

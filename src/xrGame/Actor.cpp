@@ -584,7 +584,7 @@ void CActor::Hit(SHit* pHDS)
 				CParticlesPlayer::MakeXFORM(this, HDS.bone(), HDS.dir, HDS.p_in_bone_space, pos);
 
 				// установить particles (Set particles)
-				xr_shared_ptr<CParticlesObject> ps_ = nullptr;
+				intrusive_ptr<CParticlesObject> ps_ = nullptr;
 
 				if (eacFirstEye == cam_active && this == Level().CurrentEntity())
 					ps_ = Particles::Details::Create(invincibility_fire_shield_1st,TRUE);

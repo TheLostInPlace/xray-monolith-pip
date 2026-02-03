@@ -53,7 +53,7 @@ public:
 
 namespace Particles::Details
 {
-	xr_shared_ptr<CParticlesObject> Create(LPCSTR p_name, BOOL bAutoRemove = TRUE, bool remove_on_game_load = true);
+	intrusive_ptr<CParticlesObject> Create(LPCSTR p_name, BOOL bAutoRemove = TRUE, bool remove_on_game_load = true);
 
 	template <class T>
 	static void Destroy(T& p)

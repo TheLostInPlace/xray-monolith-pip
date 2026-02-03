@@ -117,9 +117,9 @@ const shared_str CParticlesObject::Name()
 	return (V) ? V->Name() : "";
 }
 
-xr_shared_ptr<CParticlesObject> Particles::Details::Create(LPCSTR p_name, BOOL bAutoRemove, bool remove_on_game_load)
+intrusive_ptr<CParticlesObject> Particles::Details::Create(LPCSTR p_name, BOOL bAutoRemove, bool remove_on_game_load)
 {
-	auto Particle = xr_make_shared<CParticlesObject>(p_name, bAutoRemove, remove_on_game_load);
+	intrusive_ptr<CParticlesObject> Particle = xr_new<CParticlesObject>(p_name, bAutoRemove, remove_on_game_load);
 	g_pGamePersistent->ps_active_deffer.push_back(Particle);
 
 	return Particle;

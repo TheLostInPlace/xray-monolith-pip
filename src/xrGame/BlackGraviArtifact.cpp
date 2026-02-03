@@ -45,7 +45,7 @@ BOOL CBlackGraviArtefact::net_Spawn(CSE_Abstract* DC)
 	if (!inherited::net_Spawn(DC)) return FALSE;
 
 
-	CParticlesObject* pStaticPG = Particles::Details::Create("anomaly\\galantine",FALSE).get();
+	intrusive_ptr<CParticlesObject> pStaticPG = Particles::Details::Create("anomaly\\galantine",FALSE);
 	Fmatrix pos;
 	//pos.rotateY(1.57);
 	//pos.mulA(pos);
@@ -102,7 +102,7 @@ void CBlackGraviArtefact::UpdateCLChild()
 
 			GraviStrike();
 
-			CParticlesObject* pStaticPG = Particles::Details::Create(*m_sParticleName,TRUE).get();
+			intrusive_ptr<CParticlesObject> pStaticPG = Particles::Details::Create(*m_sParticleName,TRUE);
 			Fmatrix pos;
 			pos.set(XFORM());
 			Fvector vel;

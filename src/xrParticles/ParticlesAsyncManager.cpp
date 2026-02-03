@@ -24,17 +24,17 @@ void CParticlesAsync::Start()
 
 	{
 		PROF_EVENT("Particle Update");
-		for (xr_shared_ptr<CPS_Instance> particle : g_pGamePersistent->ps_active)
+		for (intrusive_ptr<CPS_Instance>& particle : g_pGamePersistent->ps_active)
 		{
 			if (particle->m_bDead)
 				continue;
 
-			Instance.UpdateParticle(particle.get());
+			Instance.UpdateParticle(particle);
 		}
 	}
 
 	PROF_EVENT("Particle Shedule");
-	for (xr_shared_ptr<CPS_Instance> particle : g_pGamePersistent->ps_active)
+	for (intrusive_ptr<CPS_Instance>& particle : g_pGamePersistent->ps_active)
 	{
 		particle->Update(Device.dwTimeDelta);
 	}
@@ -54,7 +54,7 @@ void CParticlesAsync::Wait()
 	}
 }
 
-void CParticlesAsync::ForceUpdate(CPS_Instance* Obj)
+void CParticlesAsync::ForceUpdate(intrusive_ptr<CPS_Instance> Obj)
 {
 	if (!Instance.IsStarted)
 		return;
@@ -78,7 +78,7 @@ CParticlesAsync::CParticlesAsync()
 	Device.ParticleWorkerCallback = Start;
 }
 
-void CParticlesAsync::UpdateParticle(CPS_Instance* particle) const
+void CParticlesAsync::UpdateParticle(intrusive_ptr<CPS_Instance> particle) const
 {
 	u32 dt = Device.dwTimeGlobal - particle->dwLastTime;
 	IParticleCustom* V = smart_cast<IParticleCustom*>(particle->renderable.visual);

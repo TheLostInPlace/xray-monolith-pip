@@ -244,7 +244,7 @@ void CScriptEntity::vfUpdateParticles()
 	CScriptParticleAction& l_tParticleAction = GetCurrentAction()->m_tParticleAction;
 	if (xr_strlen(l_tParticleAction.m_caBoneName))
 	{
-		xr_shared_ptr<CParticlesObject> l_tpParticlesObject = l_tParticleAction.m_tpParticleSystem;
+		intrusive_ptr<CParticlesObject> l_tpParticlesObject = l_tParticleAction.m_tpParticleSystem;
 		l_tpParticlesObject->UpdateParent(
 			GetUpdatedMatrix(l_tParticleAction.m_caBoneName, l_tParticleAction.m_tParticlePosition,
 			                 l_tParticleAction.m_tParticleAngles), l_tParticleAction.m_tParticleVelocity);

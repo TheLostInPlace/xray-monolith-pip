@@ -6,7 +6,8 @@
 #include "irenderable.h"
 
 class ENGINE_API CPS_Instance	:
-	public IRenderable
+	public IRenderable,
+	public intrusive_base
 {
 	friend class IGame_Persistent;
 	friend class CParticlesAsync;

@@ -62,7 +62,7 @@ int CParticleManager::CreateEffect(u32 max_particles)
 	xrSRWLockGuard guard(m_effect_guard);
 	int effectId = m_effect_counter++;
 
-	auto EffectResultPair = m_effect_map.emplace(std::make_pair(effectId, xr_make_shared<ParticleEffect>(max_particles)));
+	auto EffectResultPair = m_effect_map.emplace(effectId, xr_new<ParticleEffect>(max_particles));
 	R_ASSERT2(EffectResultPair.second, "Can't create particle effect with global counter");
 
 	return effectId;
@@ -84,7 +84,7 @@ int	CParticleManager::CreateActionList()
 		std::this_thread::sleep_for(std::chrono::milliseconds(0));
 	}
 
-	auto ActionResultPair = m_alist_map.emplace(std::make_pair(actionId, xr_make_shared<ParticleActions>()));
+	auto ActionResultPair = m_alist_map.emplace(actionId, xr_new<ParticleActions>());
 	R_ASSERT2(ActionResultPair.second, "Can't create particle action with global counter");
 
 	return actionId;

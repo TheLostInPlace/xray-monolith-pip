@@ -14,7 +14,7 @@ private:
 
 	CLAItem* light_lanim;
 	ref_light light_render;
-	xr_shared_ptr<CParticlesObject> m_pFlareParticles;
+	intrusive_ptr<CParticlesObject> m_pFlareParticles;
 	float m_work_time_sec;
 	void SwitchOn();
 	void SwitchOff();

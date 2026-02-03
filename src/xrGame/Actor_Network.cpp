@@ -1935,7 +1935,7 @@ void CActor::OnPlayHeadShotParticle(NET_Packet P)
 	Fmatrix pos;
 	CParticlesPlayer::MakeXFORM(this, element, HitDir, HitPos, pos);
 	//  particles
-	xr_shared_ptr<CParticlesObject> ps = Particles::Details::Create(m_sHeadShotParticle.c_str(),TRUE);
+	intrusive_ptr<CParticlesObject> ps = Particles::Details::Create(m_sHeadShotParticle.c_str(),TRUE);
 
 	ps->UpdateParent(pos, Fvector().set(0.f, 0.f, 0.f));
 	GamePersistent().ps_needtoplay.push_back(ps);

@@ -266,7 +266,7 @@ protected:
 	//для выстрела 1м и 2м видом стрельбы
 	shared_str m_sFlameParticles;
 	//объект партиклов огня
-	xr_shared_ptr<CParticlesObject> m_pFlameParticles;
+	intrusive_ptr<CParticlesObject> m_pFlameParticles;
 
 	//имя пратиклов для дыма
 	shared_str m_sSmokeParticlesCurrent;

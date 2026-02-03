@@ -11,8 +11,8 @@ namespace PAPI
         // These are static because all threads access the same effects.
         // All accesses to these should be locked.
 
-        using SharedParticleEffect = xr_shared_ptr<ParticleEffect>;
-        using SharedParticleActions = xr_shared_ptr<ParticleActions>;
+        using SharedParticleEffect = intrusive_ptr<ParticleEffect>;
+        using SharedParticleActions = intrusive_ptr<ParticleActions>;
 
         using ParticleEffectVec = xr_hash_map<int, SharedParticleEffect>;
         using ParticleActionsVec = xr_hash_map<int, SharedParticleActions>;

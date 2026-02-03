@@ -279,7 +279,7 @@ void SStmBarrel::OnShellDrop(const Fvector &play_pos, const Fvector &parent_vel)
 {
     if (m_sShellParticles.size() == 0)
         return;
-    CParticlesObject *pShellParticles = Particles::Details::Create(m_sShellParticles.c_str(), TRUE).get();
+    intrusive_ptr<CParticlesObject> pShellParticles = Particles::Details::Create(m_sShellParticles.c_str(), TRUE);
     pShellParticles->UpdateParent(Fmatrix().set(m_fire_xfm).translate_over(play_pos), parent_vel);
     pShellParticles->Play(false);
 }

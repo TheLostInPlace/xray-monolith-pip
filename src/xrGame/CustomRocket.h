@@ -153,10 +153,10 @@ protected:
 protected:
 	//имя партиклов двигателя
 	shared_str m_sEngineParticles;
-	xr_shared_ptr<CParticlesObject> m_pEngineParticles;
+	intrusive_ptr<CParticlesObject> m_pEngineParticles;
 	//имя партиклов полета
 	shared_str m_sFlyParticles;
-	xr_shared_ptr<CParticlesObject> m_pFlyParticles;
+	intrusive_ptr<CParticlesObject> m_pFlyParticles;
 
 	Fvector m_vPrevVel;
 	float m_time_to_explode;

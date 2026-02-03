@@ -875,8 +875,7 @@ void CCustomZone::PlayBlowoutParticles()
 	if (!m_sBlowoutParticles) return;
 	if (!m_zone_flags.test(eFastMode)) return;
 
-	CParticlesObject* pParticles;
-	pParticles	= Particles::Details::Create(*m_sBlowoutParticles,TRUE).get();
+	intrusive_ptr<CParticlesObject> pParticles = Particles::Details::Create(*m_sBlowoutParticles,TRUE);
 	pParticles->UpdateParent(XFORM(), zero_vel);
 	pParticles->Play(false);
 
@@ -952,7 +951,7 @@ void CCustomZone::PlayEntranceParticles(CGameObject* pObject)
 
 		if (play_bone != BI_NONE)
 		{
-			CParticlesObject* pParticles = Particles::Details::Create(particle_str, TRUE).get();
+			intrusive_ptr<CParticlesObject> pParticles = Particles::Details::Create(particle_str, TRUE);
 			Fmatrix xform;
 			Fvector dir;
 			if (fis_zero(vel.magnitude()))
@@ -981,8 +980,7 @@ void CCustomZone::PlayBoltEntranceParticles()
 	xr_vector<CCF_Shape::shape_def>& Shapes = Sh->Shapes();
 	Fvector sP0, sP1, vel;
 
-	CParticlesObject* pParticles = NULL;
-
+	intrusive_ptr<CParticlesObject> pParticles;
 	xr_vector<CCF_Shape::shape_def>::iterator it = Shapes.begin();
 	xr_vector<CCF_Shape::shape_def>::iterator it_e = Shapes.end();
 
@@ -1019,7 +1017,7 @@ void CCustomZone::PlayBoltEntranceParticles()
 
 					PXF.c = sP1;
 
-					pParticles				= Particles::Details::Create(m_sBoltEntranceParticles.c_str(), TRUE).get();
+					pParticles = Particles::Details::Create(m_sBoltEntranceParticles.c_str(), TRUE);
 					pParticles->UpdateParent(PXF, vel);
 					pParticles->Play(false);
 				}
@@ -1038,8 +1036,7 @@ void CCustomZone::PlayBulletParticles(Fvector& pos)
 
 	if (!m_sEntranceParticlesSmall) return;
 
-	CParticlesObject* pParticles;
-	pParticles = Particles::Details::Create(*m_sEntranceParticlesSmall,TRUE).get();
+	intrusive_ptr<CParticlesObject> pParticles = Particles::Details::Create(*m_sEntranceParticlesSmall,TRUE);
 
 	Fmatrix M;
 	M = XFORM();
@@ -1490,8 +1487,7 @@ void CCustomZone::PlayAccumParticles()
 	if (!m_zone_flags.test(eFastMode)) return;
 	if (m_sAccumParticles.size())
 	{
-		CParticlesObject* pParticles;
-		pParticles	= Particles::Details::Create(*m_sAccumParticles,TRUE).get();
+		intrusive_ptr<CParticlesObject> pParticles = Particles::Details::Create(*m_sAccumParticles,TRUE);
 		pParticles->UpdateParent(XFORM(), zero_vel);
 		pParticles->Play(false);
 	}
@@ -1505,8 +1501,7 @@ void CCustomZone::PlayAwakingParticles()
 	if (!m_zone_flags.test(eFastMode)) return;
 	if (m_sAwakingParticles.size())
 	{
-		CParticlesObject* pParticles;
-		pParticles	= Particles::Details::Create(*m_sAwakingParticles,TRUE).get();
+		intrusive_ptr<CParticlesObject> pParticles = Particles::Details::Create(*m_sAwakingParticles,TRUE);
 		pParticles->UpdateParent(XFORM(), zero_vel);
 		pParticles->Play(false);
 	}
