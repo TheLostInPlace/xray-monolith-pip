@@ -177,7 +177,7 @@ void str_container::dump_console()
 		set.size(),
 		load_factor,
 		max_collisions,
-		m_ref_count.load() - 1
+		intrusive_ref_count() - 1
 	);
 	if (total_strings != set.size())
 		Msg("! [x-ray]: shared strings, count != unique");
@@ -190,7 +190,7 @@ u32 str_container::stat_economy(u32& count, u32& unique)
 	count = 0;
 
 	xrSRWLockGuard guard(&rwlock, true);
-	u32 size = sizeof(*this) + sizeof(shared_str) * m_ref_count.load() - 1;
+	u32 size = sizeof(*this) + sizeof(shared_str) * intrusive_ref_count() - 1;
 	size += buffer_size * sizeof(xr_forward_list<str_value>);
 	for (const auto& block : storage) {
 		size += block.capacity;
@@ -218,7 +218,7 @@ u32 str_container::stat_economy(u32& count, u32& unique)
 		unique,
 		load_factor,
 		max_collisions,
-		m_ref_count.load() - 1
+		intrusive_ref_count() - 1
 	);
 	return size;
 }

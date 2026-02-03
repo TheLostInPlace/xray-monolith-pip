@@ -15,11 +15,15 @@
 
 struct intrusive_base
 {
-	xr_atomic_u32 m_ref_count;
+	xr_atomic_u32 __ref_count;
+    u32 intrusive_ref_count() const
+    {
+        return __ref_count.load(std::memory_order_relaxed);
+    }
 
-	IC intrusive_base() : m_ref_count(0) {}
+	IC intrusive_base() : __ref_count(0) {}
 
-    // Support for intrusive_ptr<base> b = derived;
+    // Force virtual destructor on children
     IC virtual ~intrusive_base() {}
 
 	template <typename T>
@@ -195,7 +199,7 @@ IC void _intrusive_ptr::dec()
 TEMPLATE_SPECIALIZATION
 IC void _intrusive_ptr::release_internal(object_type* obj)
 {
-    if (obj->m_ref_count.fetch_sub(1, std::memory_order_acq_rel) == 1)
+    if (obj->__ref_count.fetch_sub(1, std::memory_order_acq_rel) == 1)
     {
         std::atomic_thread_fence(std::memory_order_acquire);
         obj->_release(obj);
@@ -268,7 +272,7 @@ TEMPLATE_SPECIALIZATION
 IC void _intrusive_ptr::set(object_type* rhs)
 {
     if (rhs)
-        rhs->m_ref_count.fetch_add(1, std::memory_order_relaxed);
+        rhs->__ref_count.fetch_add(1, std::memory_order_relaxed);
 
     object_type* old = m_object;
     m_object = rhs;
@@ -292,7 +296,7 @@ IC typename _intrusive_ptr::object_type* _intrusive_ptr::get() const noexcept
 TEMPLATE_SPECIALIZATION
 IC u32 _intrusive_ptr::size()
 {
-    return m_object ? m_object->m_ref_count.load(std::memory_order_relaxed) : 0;
+    return m_object ? m_object->__ref_count.load(std::memory_order_relaxed) : 0;
 }
 
 // Operator Implementations
