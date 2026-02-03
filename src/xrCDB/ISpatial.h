@@ -6,6 +6,7 @@
 #include "../xrCore/xrPool.h"
 
 #include "xr_collide_defs.h"
+#include "../xrCore/intrusive_ptr.h"
 
 #pragma pack(push,4)
 
@@ -92,7 +93,7 @@ class IRenderable;
 class IRender_Light;
 
 class XRCDB_API ISpatial:
-	public std::enable_shared_from_this<ISpatial>
+	public intrusive_base
 {
 	friend class ISpatialOwner;
 public:
@@ -150,7 +151,7 @@ public:
 	virtual ~ISpatial();
 };
 
-using ISpatialShared = xr_shared_ptr<ISpatial>;
+using ISpatialShared = intrusive_ptr<ISpatial>;
 
 class ISpatialOwner
 {
@@ -158,7 +159,7 @@ public:
 	ISpatialShared SpatialComponent;
 
 public:
-	virtual void spatial_create(ISpatial_DB* db, ISpatialOwner* owner, u32 type) { SpatialComponent = xr_make_shared<ISpatial>(db, owner); SpatialComponent->spatial.type = type; }
+	virtual void spatial_create(ISpatial_DB* db, ISpatialOwner* owner, u32 type) { SpatialComponent = xr_new<ISpatial>(db, owner); SpatialComponent->spatial.type = type; }
 	virtual void spatial_register() { SpatialComponent->Register(); };
 	virtual void spatial_unregister() { SpatialComponent->Unregister(); };
 

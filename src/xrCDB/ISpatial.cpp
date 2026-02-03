@@ -108,7 +108,7 @@ void ISpatial::Register()
 		// register
 		R_ASSERT(spatial.space);
 		xrSRWLockGuard guard(&spatial.space->db_lock, false);
-		spatial.space->insert(shared_from_this());
+		spatial.space->insert(this);
 		spatial.sector = 0;
 	}
 }
@@ -119,7 +119,7 @@ void ISpatial::Unregister()
 	{
 		// remove
 		xrSRWLockGuard guard(&spatial.space->db_lock, false);
-		spatial.space->remove(shared_from_this());
+		spatial.space->remove(this);
 		spatial.node_ptr = nullptr;
 		spatial.sector = nullptr;
 	}
@@ -138,8 +138,8 @@ void ISpatial::Move()
 			return;		// ???
 
 		xrSRWLockGuard guard(&spatial.space->db_lock, false);
-		spatial.space->remove(shared_from_this());
-		spatial.space->insert(shared_from_this());
+		spatial.space->remove(this);
+		spatial.space->insert(this);
 	}
 	else
 	{

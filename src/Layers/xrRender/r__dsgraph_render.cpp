@@ -464,9 +464,8 @@ void CDSGraphManager::r_dsgraph_capture_lights()
 	});
 #endif
 
-	for (ISpatialShared& SH : lstLights)
+	for (ISpatialShared& spatial : lstLights)
 	{
-		ISpatial* spatial = SH.get();
 		if (0 == spatial) continue; spatial->spatial_updatesector();
 		CSector* sector = (CSector*)spatial->spatial.sector;
 		if (0 == sector) continue;
@@ -556,7 +555,7 @@ void CDSGraphManager::r_dsgraph_capture_dynamic(CObject* O)
 			// Determine visibility for dynamic part of scene
 			for (u32 o_it = 0; o_it < lstRenderables.size(); o_it++)
 			{
-				ISpatial* spatial = lstRenderables[o_it].get();
+				ISpatialShared& spatial = lstRenderables[o_it];
 				if (0 == spatial) continue;
 				CSector* sector = (CSector*)spatial->spatial.sector;
 				if (0 == sector) continue;

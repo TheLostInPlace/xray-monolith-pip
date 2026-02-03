@@ -59,9 +59,8 @@ void XRay::Engine::CalculateBonesThread()
 		g_pGamePersistent->Environment().CurrentEnv->fog_distance
 	);
 
-	static auto eraseFunc = [](ISpatialShared& S)
+	static auto eraseFunc = [](ISpatialShared& spatial)
 	{
-		ISpatial* spatial = S.get();
 		if (!spatial) return true;
 		if (!ViewBase.testSphere_dirty(spatial->spatial.sphere.P, spatial->spatial.sphere.R))
 		{
@@ -83,9 +82,8 @@ void XRay::Engine::CalculateBonesThread()
 	};
 	std::sort(spatials.begin(), spatials.end(), sortFunc);
 
-	for (ISpatialShared& SSH : spatials)
+	for (ISpatialShared& spatial : spatials)
 	{
-		ISpatial* spatial = SSH.get();
 		if (!spatial) continue;
 
 		if ((spatial->spatial.type & STYPE_RENDERABLE) || (spatial->spatial.type & STYPE_RENDERABLESHADOW))

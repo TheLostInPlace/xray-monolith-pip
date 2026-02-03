@@ -3,6 +3,7 @@
 #pragma once
 
 #include "RenderVisual.h"
+#include "../../xrCore/intrusive_ptr.h"
 
 typedef void (* UpdateCallback)(IKinematics* P);
 
@@ -14,7 +15,7 @@ class ISpatial;
 class CBoneInstance;
 struct SEnumVerticesCallback;
 
-using ISpatialShared = xr_shared_ptr<ISpatial>;
+using ISpatialShared = intrusive_ptr<ISpatial>;
 
 // 10 fps
 #define UCalc_Interval		(u32(100))

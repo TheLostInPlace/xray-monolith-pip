@@ -3,9 +3,11 @@
 //#include "xr_collide_form.h"
 #include "xr_collide_defs.h"
 
+#include "../xrCore/intrusive_ptr.h"
+
 // refs
 class ISpatial;
-using ISpatialShared = xr_shared_ptr<ISpatial>;
+using ISpatialShared = intrusive_ptr<ISpatial>;
 
 class ICollisionForm;
 class CObject;
