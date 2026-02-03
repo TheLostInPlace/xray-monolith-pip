@@ -10,6 +10,7 @@ using str_c = const char*;
 #include <vector>
 #include "_thread_types.h"
 #include "_stl_extensions.h"
+#include "intrusive_ptr.h"
 
 class xr_string;
 
@@ -152,7 +153,7 @@ struct XRCORE_API str_value_hash
 
 class IWriter;
 
-class XRCORE_API str_container
+class XRCORE_API str_container : public intrusive_base
 {
 private:
 	struct pool_block {
@@ -166,7 +167,6 @@ private:
 	static constexpr const u32 block_size = 4 * 1024 * 1024; // 4MB
 	static constexpr const u32 buffer_size = 1 << 19; // 524288 slots
 	xr_array<xr_forward_list<str_value>, buffer_size> buffer;
-	xr_atomic_u32 obj_count;
 	xrSRWLock rwlock;
 
 	// Force create only on heap
@@ -179,9 +179,6 @@ public:
 	static str_container* create();
 	~str_container();
 
-	void add_ref();
-	void release();
-
 	str_value* dock(str_c value);
 	void erase(str_c value);
 	void clean();
@@ -192,13 +189,13 @@ public:
 	u32 stat_economy(u32& count, u32& unique);
 };
 
-XRCORE_API extern str_container* g_pStringContainer;
+XRCORE_API extern intrusive_ptr<str_container> g_pStringContainer;
 
 class shared_str
 {
 private:
 	str_value* p_ = nullptr;
-	str_container* container_ptr = nullptr;
+	intrusive_ptr<str_container> container_ptr = nullptr;
 protected:
 	// ref-counting
 	void _dec()
@@ -217,15 +214,11 @@ public:
 		auto gc = g_pStringContainer;
 		if (gc)
 		{
-			gc->add_ref();
-
 			str_value* v = gc->dock(rhs);
 			if (0 != v) v->dwReference++;
 			_dec();
 
-			if (container_ptr)
-				container_ptr->release();
-			container_ptr = gc;
+			container_ptr = gc;	
 
 			p_ = v;
 		}
@@ -233,11 +226,7 @@ public:
 		{
 			// no container available
 			_dec();
-
-			if (container_ptr)
-				container_ptr->release();
 			container_ptr = nullptr;
-
 			p_ = 0;
 		}
 	}
@@ -247,15 +236,10 @@ public:
 		if (this == &rhs)
 			return;
 
-		if (rhs.container_ptr)
-			rhs.container_ptr->add_ref();
-
 		str_value* v = rhs.p_;
 		if (0 != v) v->dwReference++;
 		_dec();
 
-		if (container_ptr)
-			container_ptr->release();
 		container_ptr = rhs.container_ptr;
 
 		p_ = v;
@@ -279,8 +263,6 @@ public:
 	~shared_str()
 	{
 		_dec();
-		if (container_ptr)
-			container_ptr->release();
 	}
 
 	// assignment & accessors

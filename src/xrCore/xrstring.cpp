@@ -6,12 +6,11 @@
 
 #include "FS_impl.h"
 
-XRCORE_API str_container* g_pStringContainer = nullptr;
+XRCORE_API intrusive_ptr<str_container> g_pStringContainer = nullptr;
 
 str_container::str_container() {}
 str_container::str_container(str_container_constructor_key) 
 {
-	obj_count = 1;
 	auto p = xr_malloc(block_size);
 	if (!p)
 		Debug.fatal(DEBUG_INFO, "str_container, failed to allocate block size %zu", block_size);
@@ -21,19 +20,6 @@ str_container::str_container(str_container_constructor_key)
 str_container* str_container::create()
 {
 	return xr_new<str_container>(str_container_constructor_key{});
-}
-
-void str_container::add_ref()
-{
-	obj_count++;
-}
-
-void str_container::release()
-{
-	if (0 == --obj_count)
-	{
-		xr_delete(this);
-	}
 }
 
 char* str_container::alloc_in_pool(str_c s, u32 len)
@@ -191,7 +177,7 @@ void str_container::dump_console()
 		set.size(),
 		load_factor,
 		max_collisions,
-		obj_count.load() - 1
+		m_ref_count.load() - 1
 	);
 	if (total_strings != set.size())
 		Msg("! [x-ray]: shared strings, count != unique");
@@ -204,7 +190,7 @@ u32 str_container::stat_economy(u32& count, u32& unique)
 	count = 0;
 
 	xrSRWLockGuard guard(&rwlock, true);
-	u32 size = sizeof(*this);
+	u32 size = sizeof(*this) + sizeof(shared_str) * m_ref_count.load() - 1;
 	size += buffer_size * sizeof(xr_forward_list<str_value>);
 	for (const auto& block : storage) {
 		size += block.capacity;
@@ -232,7 +218,7 @@ u32 str_container::stat_economy(u32& count, u32& unique)
 		unique,
 		load_factor,
 		max_collisions,
-		obj_count.load() - 1
+		m_ref_count.load() - 1
 	);
 	return size;
 }

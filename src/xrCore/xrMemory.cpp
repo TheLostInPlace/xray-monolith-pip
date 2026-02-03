@@ -130,7 +130,7 @@ void xrMemory::_destroy()
 
 	// Release own reference of g_pStringContainer
 	// The actual str_container will be destroyed only when no shared_str instances hold it
-    g_pStringContainer->release();
+    g_pStringContainer = nullptr;
 
 	xr_delete(g_pSharedMemoryContainer);
 
