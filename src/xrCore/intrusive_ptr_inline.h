@@ -90,9 +90,7 @@ IC bool _intrusive_ptr::operator!() const
 TEMPLATE_SPECIALIZATION
 IC void _intrusive_ptr::swap(self_type& rhs)
 {
-	object_type* tmp = m_object;
-	m_object = rhs.m_object;
-	rhs.m_object = tmp;
+	std::swap(m_object, rhs.m_object);
 }
 
 TEMPLATE_SPECIALIZATION
@@ -104,25 +102,16 @@ IC bool _intrusive_ptr::equal(const self_type& rhs) const
 TEMPLATE_SPECIALIZATION
 IC void _intrusive_ptr::set(object_type* rhs)
 {
-	if (m_object == rhs)
-		return;
+	if (rhs)
+		rhs->m_ref_count.fetch_add(1, std::memory_order_relaxed);
 	dec();
 	m_object = rhs;
-	if (!m_object)
-		return;
-	m_object->m_ref_count.fetch_add(1, std::memory_order_relaxed);
 }
 
 TEMPLATE_SPECIALIZATION
 IC void _intrusive_ptr::set(self_type const& rhs)
 {
-	if (m_object == rhs.m_object)
-		return;
-	dec();
-	m_object = rhs.m_object;
-	if (!m_object)
-		return;
-	m_object->m_ref_count.fetch_add(1, std::memory_order_relaxed);
+	set(rhs.m_object);
 }
 
 TEMPLATE_SPECIALIZATION
