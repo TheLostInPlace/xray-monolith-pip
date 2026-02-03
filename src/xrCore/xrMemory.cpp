@@ -128,10 +128,9 @@ void xrMemory::_destroy()
     if (debug_mode) dbg_dump_str_leaks();
 #endif // DEBUG_MEMORY_MANAGER
 
-	// Release global shared container reference
+	// Release own reference of g_pStringContainer
 	// The actual str_container will be destroyed only when no shared_str instances hold it
-	if (g_pStringContainer)
-		g_pStringContainer.reset();
+    g_pStringContainer->release();
 
 	xr_delete(g_pSharedMemoryContainer);
 

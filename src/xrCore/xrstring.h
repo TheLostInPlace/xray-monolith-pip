@@ -166,6 +166,7 @@ private:
 	static constexpr const u32 block_size = 4 * 1024 * 1024; // 4MB
 	static constexpr const u32 buffer_size = 1 << 19; // 524288 slots
 	xr_array<xr_forward_list<str_value>, buffer_size> buffer;
+	xr_atomic_u32 obj_count;
 	xrSRWLock rwlock;
 
 	// Force create only on heap
@@ -175,8 +176,11 @@ private:
 	
 public:
 	str_container(str_container_constructor_key);
-	static xr_shared_ptr<str_container> create();
+	static str_container* create();
 	~str_container();
+
+	void add_ref();
+	void release();
 
 	str_value* dock(str_c value);
 	void erase(str_c value);
@@ -188,14 +192,13 @@ public:
 	u32 stat_economy(u32& count, u32& unique);
 };
 
-XRCORE_API extern xr_shared_ptr<str_container> g_pStringContainer;
+XRCORE_API extern str_container* g_pStringContainer;
 
 class shared_str
 {
 private:
-	str_value* p_;
-	// Hold shared ownership of container so it cannot be destroyed while any shared_str exists
-	xr_shared_ptr<str_container> container_ptr;
+	str_value* p_ = nullptr;
+	str_container* container_ptr = nullptr;
 protected:
 	// ref-counting
 	void _dec()
@@ -203,7 +206,7 @@ protected:
 		if (0 == p_) return;
 		if (0 == --p_->dwReference)
 		{
-			//g_pStringContainer->erase(p_->value.c_str()); // erasing causes crashes due to invalid pointers
+			//g_pStringContainer->erase(p_->value.c_str()); // erasing causes crashes due to invalid pointers, not implemented yet
 			p_ = 0;
 		}
 	}
@@ -211,54 +214,73 @@ protected:
 public:
 	void _set(str_c rhs)
 	{
-		// Acquire shared ownership of the global container (may be null during shutdown)
-		xr_shared_ptr<str_container> gc = g_pStringContainer;
+		auto gc = g_pStringContainer;
 		if (gc)
 		{
-			container_ptr = gc;
+			gc->add_ref();
+
 			str_value* v = gc->dock(rhs);
 			if (0 != v) v->dwReference++;
 			_dec();
+
+			if (container_ptr)
+				container_ptr->release();
+			container_ptr = gc;
+
 			p_ = v;
 		}
 		else
 		{
 			// no container available
 			_dec();
-			container_ptr.reset();
+
+			if (container_ptr)
+				container_ptr->release();
+			container_ptr = nullptr;
+
 			p_ = 0;
 		}
 	}
 
 	void _set(shared_str const& rhs)
 	{
+		if (this == &rhs)
+			return;
+
+		if (rhs.container_ptr)
+			rhs.container_ptr->add_ref();
+
 		str_value* v = rhs.p_;
 		if (0 != v) v->dwReference++;
 		_dec();
-		p_ = v;
+
+		if (container_ptr)
+			container_ptr->release();
 		container_ptr = rhs.container_ptr;
+
+		p_ = v;
 	}
 
 	const str_value* _get() const { return p_; }
 
 	// construction
-	shared_str() { p_ = 0; }
+	shared_str() {}
 
 	shared_str(str_c rhs)
 	{
-		p_ = 0;
 		_set(rhs);
 	}
 
 	shared_str(shared_str const& rhs)
 	{
-		p_ = 0;
 		_set(rhs);
 	}
 
 	~shared_str()
 	{
-		_dec(); 
+		_dec();
+		if (container_ptr)
+			container_ptr->release();
 	}
 
 	// assignment & accessors
@@ -270,6 +292,9 @@ public:
 
 	shared_str& operator=(shared_str const& rhs)
 	{
+		if (this == &rhs)
+			return (shared_str&)*this;
+
 		_set(rhs);
 		return (shared_str&)*this;
 	}

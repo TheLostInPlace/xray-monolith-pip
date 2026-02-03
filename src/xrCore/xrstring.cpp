@@ -6,20 +6,34 @@
 
 #include "FS_impl.h"
 
-XRCORE_API xr_shared_ptr<str_container> g_pStringContainer = nullptr;
+XRCORE_API str_container* g_pStringContainer = nullptr;
 
 str_container::str_container() {}
 str_container::str_container(str_container_constructor_key) 
 {
+	obj_count = 1;
 	auto p = xr_malloc(block_size);
 	if (!p)
 		Debug.fatal(DEBUG_INFO, "str_container, failed to allocate block size %zu", block_size);
 	storage.emplace_back((char*)p, block_size);
 }
 
-xr_shared_ptr<str_container> str_container::create()
+str_container* str_container::create()
 {
-	return xr_make_shared<str_container>(str_container_constructor_key{});
+	return xr_new<str_container>(str_container_constructor_key{});
+}
+
+void str_container::add_ref()
+{
+	obj_count++;
+}
+
+void str_container::release()
+{
+	if (0 == --obj_count)
+	{
+		xr_delete(this);
+	}
 }
 
 char* str_container::alloc_in_pool(str_c s, u32 len)
@@ -171,12 +185,13 @@ void str_container::dump_console()
 	}
 	load_factor = (float)total_strings / (float)buffer_size;
 
-	Msg("* [x-ray]: shared strings: pool blocks[%lu], count[%lu], unique[%lu], load factor[%.2f], max_collisions[%lu]",
+	Msg("* [x-ray]: shared strings: pool blocks[%lu], count[%lu], unique[%lu], load factor[%.2f], max_collisions[%lu], shared_str objects[%lu]",
 		storage.size(),
 		total_strings,
 		set.size(),
 		load_factor,
-		max_collisions
+		max_collisions,
+		obj_count.load() - 1
 	);
 	if (total_strings != set.size())
 		Msg("! [x-ray]: shared strings, count != unique");
@@ -211,12 +226,13 @@ u32 str_container::stat_economy(u32& count, u32& unique)
 	}
 	unique = strings.size();
 	load_factor = (float)count / (float)buffer_size;
-	Msg("* [x-ray]: shared strings: pool blocks[%lu], count[%lu], unique[%lu], load factor[%.2f], max_collisions[%lu]",
+	Msg("* [x-ray]: shared strings: pool blocks[%lu], count[%lu], unique[%lu], load factor[%.2f], max_collisions[%lu], shared_str objects[%lu]",
 		storage.size(),
 		count,
 		unique,
 		load_factor,
-		max_collisions
+		max_collisions,
+		obj_count.load() - 1
 	);
 	return size;
 }
