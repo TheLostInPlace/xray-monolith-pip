@@ -537,6 +537,7 @@ bool CLevel::SpawnEventCompare(const NET_Event& a, const NET_Event& b) const
 // demonized: If called manually, be aware of ProcessPrefetchEvents thread, which may modify spawn_events queue at the same time, maybe fix later
 void CLevel::SortSpawnEventsQueue()
 {
+	xrCriticalSectionGuard g(prefetch_cs);
 	auto& queue = spawn_events->queue;
 	std::stable_sort(queue.begin(), queue.end(), [this](const NET_Event& a, const NET_Event& b) { return SpawnEventCompare(a, b); });
 }
@@ -574,10 +575,11 @@ void CLevel::ProcessPrefetchEvents(void* args)
 
 		prefetch_event_queue saved_prefetch_events;
 
-		xrCriticalSectionGuard g(prefetch_cs);
-		saved_prefetch_events = std::move(*prefetch_events); // move the events to temp queue, so we can continue processing prefetch_events in the main thread
-		pausePrefetchThreadSignal();
-		g.Leave();
+		{
+			xrCriticalSectionGuard g(prefetch_cs);
+			saved_prefetch_events = std::move(*prefetch_events); // move the events to temp queue, so we can continue processing prefetch_events in the main thread
+			pausePrefetchThreadSignal();
+		}
 
 		for (const auto& E : saved_prefetch_events)
 		{
@@ -592,13 +594,15 @@ void CLevel::ProcessPrefetchEvents(void* args)
 			}
 		}
 
-		g.Enter();
-		for (auto& E : saved_prefetch_events)
 		{
-			spawn_events->insert(E.p); // reinsert the event to spawn_events queue for further processing
-		}
+			xrCriticalSectionGuard g(prefetch_cs);
+			for (auto& E : saved_prefetch_events)
+			{
+				spawn_events->insert(E.p); // reinsert the event to spawn_events queue for further processing
+			}
 
-		if (spawn_antifreeze_debug) Msg("[ProcessPrefetchEvents] finished, spawn_events queue size %d", spawn_events->queue.size());
+			if (spawn_antifreeze_debug) Msg("[ProcessPrefetchEvents] finished, spawn_events queue size %d", spawn_events->queue.size());
+		}
 	}
 }
 
@@ -606,6 +610,7 @@ void CLevel::ProcessPrefetchEvents(void* args)
 void CLevel::ProcessSpawnEvents()
 {
 	PROF_EVENT("ProcessSpawnEvents");
+	xrCriticalSectionGuard g(prefetch_cs);
 	for (auto it = spawn_events->queue.begin(); it != spawn_events->queue.end();)
 	{
 		const NET_Event& E = *it;
@@ -944,8 +949,12 @@ void CLevel::OnFrame()
 	ProcessGameEvents();
 #ifdef SPAWN_ANTIFREEZE
 	{
-		xrCriticalSectionGuard g(prefetch_cs);
-		if (!spawn_events->queue.empty())
+		bool queueEmpty = false;
+		{
+			xrCriticalSectionGuard g(prefetch_cs);
+			queueEmpty = spawn_events->queue.empty();
+		}
+		if (!queueEmpty)
 		{
 			SortSpawnEventsQueue();
 			ProcessSpawnEvents();
