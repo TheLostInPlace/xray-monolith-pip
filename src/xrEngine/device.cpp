@@ -50,10 +50,10 @@ ENGINE_API CRenderDevice* DevicePtr = nullptr;
 ENGINE_API xr_atomic_bool g_bRendering = false;
 extern ENGINE_API float psHUD_FOV;
 
-static HANDLE RenderEventMT = nullptr;
-
 BOOL g_bLoaded = FALSE;
 ref_light precache_light = 0;
+
+BOOL mt_calc_bones = TRUE;
 
 extern discord::Core* discord_core;
 extern bool use_discord;
@@ -411,7 +411,10 @@ void CRenderDevice::on_idle()
 	// TODO: Try to move this upper
 	secondary_tasks.run(&XRay::Engine::PreRenderThread);
 
-	secondary_tasks.run(&XRay::Engine::CalculateBonesThread);
+	if (mt_calc_bones)
+		secondary_tasks.run(&XRay::Engine::CalculateBonesThread);
+	else
+		XRay::Engine::CalculateBonesThread();
 
 	secondary_tasks.run(&XRay::Engine::GameThread);
 
