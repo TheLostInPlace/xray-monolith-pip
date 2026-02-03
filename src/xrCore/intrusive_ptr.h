@@ -327,5 +327,11 @@ IC void swap(_intrusive_ptr& lhs, _intrusive_ptr& rhs) noexcept
     lhs.swap(rhs);
 }
 
+template <typename T, typename... Args>
+IC intrusive_ptr<T> make_intrusive(Args&&... args)
+{
+    return intrusive_ptr<T>(xr_new<T>(std::forward<Args>(args)...));
+}
+
 #undef TEMPLATE_SPECIALIZATION
 #undef _intrusive_ptr
