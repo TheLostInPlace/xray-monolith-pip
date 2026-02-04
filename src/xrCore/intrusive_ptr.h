@@ -16,11 +16,15 @@
 // Possible deletetion behaviors
 enum class DeletionPolicy {
     Immediate,
-    Deferred
+    Deferred,
+    Strict
 };
 
+// A simple, empty struct just for is_base_of checks
+struct intrusive_base_marker {};
+
 template <DeletionPolicy Policy = DeletionPolicy::Immediate>
-struct intrusive_base_impl
+struct intrusive_base_impl : public intrusive_base_marker
 {
     // This makes the policy visible to the smart pointer
     static constexpr DeletionPolicy deletion_policy = Policy;
@@ -47,24 +51,74 @@ struct intrusive_base_impl
 	}
 };
 
+// Forward declare the engine's internal deleter struct.
+// This is what 'xr_delete' uses under the hood
+template <bool _is_pm, typename T> struct xr_special_free;
+
+// Strict policy - forbid calling xr_delete<ptr.get()>, must have protected destructor
+template<>
+struct intrusive_base_impl<DeletionPolicy::Strict> : public intrusive_base_marker
+{
+    // This makes the policy visible to the smart pointer
+    static constexpr DeletionPolicy deletion_policy = DeletionPolicy::Strict;
+
+    xr_atomic_u32 __ref_count;
+    u32 intrusive_ref_count() const
+    {
+        return __ref_count.load(std::memory_order_relaxed);
+    }
+
+    IC intrusive_base_impl() : __ref_count(0) {}
+
+    // Grant access to the engine's memory freer.
+    // This allows 'xr_delete(base_ptr)' to work even though the destructor is protected.
+    template <bool, typename> friend struct ::xr_special_free;
+
+protected:
+    // Force virtual destructor on children
+    // Protected destructor prevents manual deletion by USERS,
+    // but the friend declaration above allows deletion by the ENGINE.
+    IC virtual ~intrusive_base_impl() {}
+
+public:
+    // Changed from template<T> to intrusive_base*
+    // This forces all derived objects to be deleted 
+    // via their base pointer. This invokes the virtual destructor chain correctly
+    // but ensures we only need to friend xr_special_free in THIS class, 
+    // not in every derived class.
+    IC void _release(intrusive_base_impl* object)
+    {
+        xr_delete(object);
+    }
+};
+
 using intrusive_base = intrusive_base_impl<DeletionPolicy::Immediate>;
 using intrusive_base_deferred = intrusive_base_impl<DeletionPolicy::Deferred>;
+using intrusive_base_strict = intrusive_base_impl<DeletionPolicy::Strict>;
 
-#define TEMPLATE_SPECIALIZATION template <typename object_type, typename base_type>
-#define _intrusive_ptr intrusive_ptr<object_type,base_type>
+#define TEMPLATE_SPECIALIZATION template <typename object_type>
+#define _intrusive_ptr intrusive_ptr<object_type>
 
-template <typename object_type, typename base_type = intrusive_base>
+TEMPLATE_SPECIALIZATION
 class intrusive_ptr
 {
 public:
-    typedef base_type base_type;
     typedef object_type object_type;
-    typedef intrusive_ptr<object_type, base_type> self_type;
+    typedef _intrusive_ptr self_type;
 
 private:
+    static constexpr DeletionPolicy policy = object_type::deletion_policy;
+
     // Static check instead of the old enum hack
-    static_assert(std::is_base_of_v<base_type, object_type> || std::is_same_v<base_type, object_type>,
+    static_assert(std::is_base_of_v<intrusive_base_marker, object_type>,
         "intrusive_ptr<T>: T must be derived from intrusive_base");
+
+    // Safety Enforcement
+    // This asserts that 'object_type' does NOT have a public destructor if policy is Strict (intrusive_base_strict).
+    // If this triggers, it means you forgot to make your destructor protected.
+    // Note: std::is_destructible_v is false if the destructor is protected/private.
+    static_assert(!(policy == DeletionPolicy::Strict && std::is_destructible_v<object_type>),
+        "intrusive_ptr<T>: T must have a protected destructor, Strict Policy");
 
     object_type* m_object;
 
@@ -73,7 +127,7 @@ protected:
 
 public:
     // Allow intrusive_ptrs of different types to access private m_object for conversion
-    template <typename U, typename V> friend class intrusive_ptr;
+    template <typename U> friend class intrusive_ptr;
 
     IC intrusive_ptr() noexcept;
     IC intrusive_ptr(object_type* rhs);
@@ -84,7 +138,7 @@ public:
 
     // Generalized Copy Constructor (Derived -> Base)
     template <typename other_type, std::enable_if_t<std::is_convertible_v<other_type*, object_type*>, int> = 0>
-    IC intrusive_ptr(intrusive_ptr<other_type, base_type> const& rhs);
+    IC intrusive_ptr(intrusive_ptr<other_type> const& rhs);
 
     IC ~intrusive_ptr();
 
@@ -96,7 +150,7 @@ public:
 
     // Generalized Assignment
     template <typename other_type, std::enable_if_t<std::is_convertible_v<other_type*, object_type*>, int> = 0>
-    IC self_type& operator=(intrusive_ptr<other_type, base_type> const& rhs);
+    IC self_type& operator=(intrusive_ptr<other_type> const& rhs);
 
     // Accessors
     IC object_type& operator*() const;
@@ -190,7 +244,7 @@ IC _intrusive_ptr::intrusive_ptr(self_type&& rhs) noexcept
 // Generalized Constructor (Derived -> Base)
 TEMPLATE_SPECIALIZATION
 template <typename other_type, std::enable_if_t<std::is_convertible_v<other_type*, object_type*>, int>>
-IC _intrusive_ptr::intrusive_ptr(intrusive_ptr<other_type, base_type> const& rhs)
+IC _intrusive_ptr::intrusive_ptr(intrusive_ptr<other_type> const& rhs)
 {
     m_object = nullptr;
     set(rhs.get());
@@ -253,7 +307,7 @@ IC typename _intrusive_ptr::self_type& _intrusive_ptr::operator=(self_type&& rhs
 // Generalized Assignment
 TEMPLATE_SPECIALIZATION
 template <typename other_type, std::enable_if_t<std::is_convertible_v<other_type*, object_type*>, int>>
-IC typename _intrusive_ptr::self_type& _intrusive_ptr::operator=(intrusive_ptr<other_type, base_type> const& rhs)
+IC typename _intrusive_ptr::self_type& _intrusive_ptr::operator=(intrusive_ptr<other_type> const& rhs)
 {
     set(rhs.get());
     return *this;
