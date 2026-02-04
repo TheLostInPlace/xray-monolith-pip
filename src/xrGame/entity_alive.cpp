@@ -410,19 +410,23 @@ void CEntityAlive::BloodyWallmarks(float P, const Fvector& dir, s16 element,
 	                   wallmark_size, &**m_pBloodMarksVector);
 }
 
+extern BOOL r_blood_decals_on_objects;
 void CEntityAlive::PlaceBloodWallmark(const Fvector& dir, const Fvector& start_pos, float trace_dist, float wallmark_size, IWallMarkArray* pwallmarks_vector)
 {
 	collide::rq_result result;
-	bool bSurfaceReached = Level().ObjectSpace.RayPick(start_pos, dir, trace_dist, collide::rqtBoth, result, nullptr);
+	bool bSurfaceReached = Level().ObjectSpace.RayPick(start_pos, dir, trace_dist, collide::rqtBoth, result, r_blood_decals_on_objects ? nullptr : this);
+	if (!r_blood_decals_on_objects)
+		bSurfaceReached = bSurfaceReached && !result.O;
 
 	if (!bSurfaceReached)
 		return;
 
 	// Calculate hit pos
-	Fvector end_point; end_point.set(0, 0, 0);
+	Fvector end_point;
+	end_point.set(0, 0, 0);
 	end_point.mad(start_pos, dir, result.range);
 
-	if (result.O)
+	if (r_blood_decals_on_objects && result.O)
 	{
 		// Dynamic object
 		IKinematics* const pK = smart_cast<IKinematics*>(result.O->Visual());
@@ -444,11 +448,6 @@ void CEntityAlive::PlaceBloodWallmark(const Fvector& dir, const Fvector& start_p
 	{
 		//вычислить нормаль к пораженной поверхности
 		Fvector* pVerts = Level().ObjectSpace.GetStaticVerts();
-
-		//вычислить точку попадания
-		Fvector end_point;
-		end_point.set(0, 0, 0);
-		end_point.mad(start_pos, dir, result.range);
 
 		//ref_shader wallmarkShader = wallmarks_vector[::Random.randI(wallmarks_vector.size())];
 		VERIFY(!pwallmarks_vector->empty());

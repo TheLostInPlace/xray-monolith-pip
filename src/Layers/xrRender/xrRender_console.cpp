@@ -516,6 +516,7 @@ float ps_r2_gloss_min = 0.0f;
 
 // demonized
 BOOL occq_debug = FALSE;
+BOOL r_blood_decals_on_objects = FALSE;
 
 int opt_static = 2;
 int opt_dynamic = 2;
@@ -1129,6 +1130,8 @@ void xrRender_initconsole()
 	CMD3(CCC_Mask, "r__no_ram_textures", &ps_r__common_flags, RFLAG_NO_RAM_TEXTURES);
 	CMD2(CCC_tf_Aniso, "r__tf_aniso", &ps_r__tf_Anisotropic); //	{1..16}
 	CMD2(CCC_tf_MipBias, "r__tf_mipbias", &ps_r__tf_Mipbias); // {-3 +3}
+
+	CMD4(CCC_Integer, "r__blood_decals_on_objects", &r_blood_decals_on_objects, 0, 1);
 
 	// R1
 	CMD4(CCC_Float, "r1_ssa_lod_a", &ps_r1_ssaLOD_A, 16, 96);
