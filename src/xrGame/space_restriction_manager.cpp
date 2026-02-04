@@ -40,7 +40,7 @@ void show_restriction(const shared_str& restrictions)
 		Msg("     %s", _GetItem(*restrictions, i, temp));
 }
 
-typedef intrusive_ptr<CSpaceRestriction, RestrictionSpace::CTimeIntrusiveBase> CRestrictionPtr;
+typedef intrusive_ptr<CSpaceRestriction> CRestrictionPtr;
 
 void show_restriction(const CRestrictionPtr& restriction)
 {
