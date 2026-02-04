@@ -13,25 +13,42 @@
 #include <cstddef> // for std::nullptr_t
 #include "_thread_types.h"
 
-struct intrusive_base
+// Possible deletetion behaviors
+enum class DeletionPolicy {
+    Immediate,
+    Deferred
+};
+
+template <DeletionPolicy Policy = DeletionPolicy::Immediate>
+struct intrusive_base_impl
 {
+    // This makes the policy visible to the smart pointer
+    static constexpr DeletionPolicy deletion_policy = Policy;
+
 	xr_atomic_u32 __ref_count;
     u32 intrusive_ref_count() const
     {
         return __ref_count.load(std::memory_order_relaxed);
     }
 
-	IC intrusive_base() : __ref_count(0) {}
+	IC intrusive_base_impl() : __ref_count(0) {}
 
     // Force virtual destructor on children
-    IC virtual ~intrusive_base() {}
+    IC virtual ~intrusive_base_impl() {}
 
+	// Deferred will use callback to use own deletion logic, ie zombie state
 	template <typename T>
 	IC void _release(T* object)
 	{
-		xr_delete(object);
+        if constexpr (Policy == DeletionPolicy::Immediate)
+            xr_delete(object);
+        else 
+            object->on_deferred_release();
 	}
 };
+
+using intrusive_base = intrusive_base_impl<DeletionPolicy::Immediate>;
+using intrusive_base_deferred = intrusive_base_impl<DeletionPolicy::Deferred>;
 
 #define TEMPLATE_SPECIALIZATION template <typename object_type, typename base_type>
 #define _intrusive_ptr intrusive_ptr<object_type,base_type>
