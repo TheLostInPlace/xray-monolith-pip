@@ -35,6 +35,14 @@ void XRay::Engine::PreRenderThread()
 	}
 }
 
+struct SpatialSnapshot
+{
+	ISpatialShared ptr;
+	Fvector P;
+	float R;
+	u32 type;
+	IRenderable* renderable;
+};
 void XRay::Engine::CalculateBonesThread()
 {
 	PROF_THREAD("Secondary Task 3");
@@ -59,43 +67,39 @@ void XRay::Engine::CalculateBonesThread()
 		g_pGamePersistent->Environment().CurrentEnv->fog_distance
 	);
 
-	static auto eraseFunc = [](ISpatialShared& spatial)
+	xr_vector<SpatialSnapshot> spatialsSnapshot;
+	spatialsSnapshot.reserve(spatials.size());
 	{
-		if (!spatial) return true;
-		if (!ViewBase.testSphere_dirty(spatial->spatial.sphere.P, spatial->spatial.sphere.R))
+		xrSRWLockGuard g(g_SpatialSpace->db_lock);
+		for (ISpatialShared& spatial : spatials)
 		{
-			if (Device.vCameraPosition_saved.distance_to_sqr(spatial->spatial.sphere.P) > 62500.f)//250 m
-				return true;
-		}
+			if (!spatial)
+				continue;
 
-		spatial->spatial_updatesector();
-
-		return false;
-	};
-	spatials.erase(std::remove_if(spatials.begin(), spatials.end(), eraseFunc), spatials.end());
-
-	static auto sortFunc = [](ISpatialShared& _1, ISpatialShared& _2)
-	{
-		if (!_1.get() || !_2.get()) return false;
-
-		return _1->spatial.sphere.P.distance_to_sqr(Device.vCameraPosition_saved) < _2->spatial.sphere.P.distance_to_sqr(Device.vCameraPosition_saved);
-	};
-	std::sort(spatials.begin(), spatials.end(), sortFunc);
-
-	for (ISpatialShared& spatial : spatials)
-	{
-		if (!spatial) continue;
-
-		if ((spatial->spatial.type & STYPE_RENDERABLE) || (spatial->spatial.type & STYPE_RENDERABLESHADOW))
-		{
-			if (IRenderable* renderable = spatial->dcast_Renderable())
+			if (!ViewBase.testSphere_dirty(spatial->spatial.sphere.P, spatial->spatial.sphere.R))
 			{
-				if (!renderable->renderable.visual) continue;
-
-				IKinematics* pKin = renderable->renderable.visual->dcast_PKinematics();
-				if (pKin)
-					pKin->CalculateBones(TRUE);
+				if (Device.vCameraPosition_saved.distance_to_sqr(spatial->spatial.sphere.P) > 62500.f)//250 m
+					continue;
 			}
+				
+			spatial->spatial_updatesector();
+			spatialsSnapshot.push_back({ spatial, spatial->spatial.sphere.P, spatial->spatial.sphere.R, spatial->spatial.type, spatial->dcast_Renderable() });
+		}
+	}
+
+	static auto sortFunc = [](const SpatialSnapshot& _1, const SpatialSnapshot& _2)
+	{
+		return _1.P.distance_to_sqr(Device.vCameraPosition_saved) < _2.P.distance_to_sqr(Device.vCameraPosition_saved);
+	};
+	std::sort(spatialsSnapshot.begin(), spatialsSnapshot.end(), sortFunc);
+
+	for (const auto& spatial : spatialsSnapshot)
+	{
+		if (spatial.renderable && spatial.renderable->renderable.visual && (spatial.type & (STYPE_RENDERABLE | STYPE_RENDERABLESHADOW)))
+		{
+			IKinematics* pKin = spatial.renderable->renderable.visual->dcast_PKinematics();
+			if (pKin)
+				pKin->CalculateBones(TRUE);
 		}
 	}
 }
