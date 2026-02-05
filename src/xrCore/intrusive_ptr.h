@@ -29,10 +29,30 @@ struct intrusive_base_impl : public intrusive_base_marker
     // This makes the policy visible to the smart pointer
     static constexpr DeletionPolicy deletion_policy = Policy;
 
-	xr_atomic_u32 __ref_count;
-    u32 intrusive_ref_count() const
+private:
+    xr_atomic_u32 __ref_count;
+
+public:
+    IC u32 intrusive_ref_count() const
     {
         return __ref_count.load(std::memory_order_relaxed);
+    }
+    IC u32 intrusive_ref_add()
+    {
+        __ref_count.fetch_add(1, std::memory_order_relaxed);
+        return intrusive_ref_count();
+    }
+
+    template <typename T>
+    IC bool intrusive_release(T* object)
+    {
+        if (__ref_count.fetch_sub(1, std::memory_order_acq_rel) == 1)
+        {
+            std::atomic_thread_fence(std::memory_order_acquire);
+            _release(object);
+            return true;
+        }
+        return false;
     }
 
 	IC intrusive_base_impl() : __ref_count(0) {}
@@ -40,6 +60,7 @@ struct intrusive_base_impl : public intrusive_base_marker
     // Force virtual destructor on children
     IC virtual ~intrusive_base_impl() {}
 
+private:
 	// Deferred will use callback to use own deletion logic, ie zombie state
 	template <typename T>
 	IC void _release(T* object)
@@ -62,10 +83,30 @@ struct intrusive_base_impl<DeletionPolicy::Strict> : public intrusive_base_marke
     // This makes the policy visible to the smart pointer
     static constexpr DeletionPolicy deletion_policy = DeletionPolicy::Strict;
 
+private:
     xr_atomic_u32 __ref_count;
-    u32 intrusive_ref_count() const
+
+public:
+    IC u32 intrusive_ref_count() const
     {
         return __ref_count.load(std::memory_order_relaxed);
+    }
+    IC u32 intrusive_ref_add()
+    {
+        __ref_count.fetch_add(1, std::memory_order_relaxed);
+        return intrusive_ref_count();
+    }
+
+    template <typename T>
+    IC bool intrusive_release(T* object)
+    {
+        if (__ref_count.fetch_sub(1, std::memory_order_acq_rel) == 1)
+        {
+            std::atomic_thread_fence(std::memory_order_acquire);
+            _release(object);
+            return true;
+        }
+        return false;
     }
 
     IC intrusive_base_impl() : __ref_count(0) {}
@@ -80,8 +121,8 @@ protected:
     // but the friend declaration above allows deletion by the ENGINE.
     IC virtual ~intrusive_base_impl() {}
 
-public:
-    // Changed from template<T> to intrusive_base*
+private:
+    // Changed from template<T> to intrusive_base_impl*
     // This forces all derived objects to be deleted 
     // via their base pointer. This invokes the virtual destructor chain correctly
     // but ensures we only need to friend xr_special_free in THIS class, 
@@ -177,9 +218,6 @@ public:
     IC void set(object_type* rhs);
     IC void set(self_type const& rhs);
     IC object_type* get() const noexcept;
-
-private:
-	IC void release_internal(object_type* object);
 };
 
 TEMPLATE_SPECIALIZATION
@@ -263,17 +301,7 @@ IC void _intrusive_ptr::dec()
     {
         object_type* temp = m_object;
         m_object = nullptr;
-        release_internal(temp);
-    }
-}
-
-TEMPLATE_SPECIALIZATION
-IC void _intrusive_ptr::release_internal(object_type* obj)
-{
-    if (obj->__ref_count.fetch_sub(1, std::memory_order_acq_rel) == 1)
-    {
-        std::atomic_thread_fence(std::memory_order_acquire);
-        obj->_release(obj);
+        temp->intrusive_release(temp);
     }
 }
 
@@ -343,13 +371,13 @@ TEMPLATE_SPECIALIZATION
 IC void _intrusive_ptr::set(object_type* rhs)
 {
     if (rhs)
-        rhs->__ref_count.fetch_add(1, std::memory_order_relaxed);
+		rhs->intrusive_ref_add();
 
     object_type* old = m_object;
     m_object = rhs;
 
     if (old)
-        release_internal(old);
+        old->intrusive_release(old);
 }
 
 TEMPLATE_SPECIALIZATION
@@ -367,7 +395,7 @@ IC typename _intrusive_ptr::object_type* _intrusive_ptr::get() const noexcept
 TEMPLATE_SPECIALIZATION
 IC u32 _intrusive_ptr::size()
 {
-    return m_object ? m_object->__ref_count.load(std::memory_order_relaxed) : 0;
+	return m_object ? m_object->intrusive_ref_count() : 0;
 }
 
 // Operator Implementations
