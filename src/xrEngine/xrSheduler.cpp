@@ -394,7 +394,7 @@ void CSheduler::ProcessStep()
 	psShedulerTarget -= psShedulerReaction;
 }
 
-void CSheduler::Update()
+void CSheduler::UpdateInit()
 {
 	PROF_EVENT();
 	R_ASSERT(Device.Statistic);
@@ -404,6 +404,11 @@ void CSheduler::Update()
 	cycles_limit = CPU::qpc_freq * u64(iCeil(psShedulerCurrent)) / 1000i64 + cycles_start;
 	internal_Registration();
 	g_bSheduleInProgress = TRUE;
+}
+
+void CSheduler::UpdateRT()
+{
+	PROF_EVENT();
 
 	// Realtime priority
 	m_processing_now = true;
@@ -420,16 +425,29 @@ void CSheduler::Update()
 
 		u32 Elapsed = dwTime - T.dwTimeOfLastExecute;
 #ifdef DEBUG
-        VERIFY(T.Object->dbg_startframe != Device.dwFrame);
-        T.Object->dbg_startframe = Device.dwFrame;
+		VERIFY(T.Object->dbg_startframe != Device.dwFrame);
+		T.Object->dbg_startframe = Device.dwFrame;
 #endif
 		T.Object->shedule_Update(Elapsed);
 		T.dwTimeOfLastExecute = dwTime;
 	}
+	m_processing_now = false;
+}
+
+void CSheduler::UpdateDeferred()
+{
+	PROF_EVENT();
 
 	// Normal (sheduled)
+	m_processing_now = true;
 	ProcessStep();
 	m_processing_now = false;
+}
+
+void CSheduler::UpdateFinalize()
+{
+	PROF_EVENT();
+
 	clamp(psShedulerTarget, 3.f, 66.f);
 	psShedulerCurrent = 0.9f * psShedulerCurrent + 0.1f * psShedulerTarget;
 	Device.Statistic->fShedulerLoad = psShedulerCurrent;
@@ -438,4 +456,14 @@ void CSheduler::Update()
 	g_bSheduleInProgress = FALSE;
 	internal_Registration();
 	Device.Statistic->Sheduler.End();
+}
+
+void CSheduler::Update()
+{
+	PROF_EVENT();
+
+	UpdateInit();
+	UpdateRT();
+	UpdateDeferred();
+	UpdateFinalize();
 }

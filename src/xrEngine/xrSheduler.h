@@ -51,6 +51,11 @@ public:
 public:
 	void ProcessStep();
 	void Process();
+
+	void UpdateInit();
+	void UpdateRT();
+	void UpdateDeferred();
+	void UpdateFinalize();
 	void Update();
 
 #ifdef DEBUG
