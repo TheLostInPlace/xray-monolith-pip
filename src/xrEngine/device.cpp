@@ -450,15 +450,12 @@ void CRenderDevice::on_idle()
 	{
 		DWORD index;
 		// intrinsics for quick scanning set bits
-		if (_BitScanForward64(&index, pendingFlags))
+		if (_BitScanForward64(&index, pendingFlags));
 		{
 			// convert offset to pointer and apply change
 			char* base = reinterpret_cast<char*>(CurrentEnv);
-			float* target = reinterpret_cast<float*>(base + CEnvDescriptorMixer::pendingScriptChangesOffsets[index][0]);
-			float* source = &CurrentEnv->pendingScriptChangesData[index * CEnvDescriptorMixer::pendingScriptChangesFieldCap];
-			size_t fieldAmount = CEnvDescriptorMixer::pendingScriptChangesOffsets[index][1];
-			for (size_t i = 0; i < fieldAmount; i++)
-				target[i] = source[i];
+			float* target = reinterpret_cast<float*>(base + CEnvDescriptorMixer::pendingScriptChangesOffsets[index]);
+			*target = CurrentEnv->pendingScriptChangesData[index];
 			pendingFlags &= ~(u64(1) << index);
 		}
 	}

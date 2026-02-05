@@ -1202,21 +1202,21 @@ void set_weather_value_numric(LPCSTR name, float val)
 	if (0 == xr_strcmp(name, "sky_rotation"))
 	{
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::psky_rotation;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::psky_rotation * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = val;
-	}
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::psky_rotation] = val;
+	}	
 	else if (0 == xr_strcmp(name, "far_plane"))
 	{
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pfar_plane;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfar_plane * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = val * psVisDistance;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfar_plane] = val * psVisDistance;
 	}
 	else if (0 == xr_strcmp(name, "fog_density"))
 	{
 		float fog_density = val;
 		float fog_near = (1.0f - fog_density) * 0.85f * E.fog_distance;
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pfog_density;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_density * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = fog_density;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_density] = fog_density;
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pfog_near;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_near * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = fog_near;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_near] = fog_near;
 	}
 	else if (0 == xr_strcmp(name, "fog_distance"))
 	{
@@ -1225,36 +1225,36 @@ void set_weather_value_numric(LPCSTR name, float val)
 		float fog_near = (1.0f - E.fog_density) * 0.85f * fog_distance;
 		float fog_far = 0.99f * fog_distance;
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pfog_distance;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_distance * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = fog_distance;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_distance] = fog_distance;
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pfog_near;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_near * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = fog_near;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_near] = fog_near;
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pfog_far;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_far * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = fog_far;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_far] = fog_far;
 	}
 	else if (0 == xr_strcmp(name, "rain_density"))
 	{
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::prain_density;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::prain_density * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = val;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::prain_density] = val;
 	}
 	else if (0 == xr_strcmp(name, "thunderbolt_period"))
 	{
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pbolt_period;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbolt_period * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = val;
-	}
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbolt_period] = val;
+	}	
 	else if (0 == xr_strcmp(name, "thunderbolt_duration"))
 	{
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pbolt_duration;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbolt_duration * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = val;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbolt_duration] = val;
 	}
 	else if (0 == xr_strcmp(name, "wind_velocity"))
 	{
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pwind_velocity;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pwind_velocity * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = val;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pwind_velocity] = val;
 	}
 	else if (0 == xr_strcmp(name, "wind_direction"))
 	{
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pwind_direction;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pwind_direction * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = deg2rad(val);
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pwind_direction] = deg2rad(val);
 	}
 	else if (0 == xr_strcmp(name, "sun_shafts_intensity"))
 	{
@@ -1264,44 +1264,44 @@ void set_weather_value_numric(LPCSTR name, float val)
 		m_fSunShaftsIntensity *= ps_r2_sun_shafts_value;
 		clamp(m_fSunShaftsIntensity, 0.0f, 1.0f);
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pm_fSunShaftsIntensity;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pm_fSunShaftsIntensity * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = m_fSunShaftsIntensity;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pm_fSunShaftsIntensity] = m_fSunShaftsIntensity;
 	}
 	else if (0 == xr_strcmp(name, "water_intensity"))
 	{
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pm_fWaterIntensity;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pm_fWaterIntensity * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = val;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pm_fWaterIntensity] = val;
 	}
 #ifdef TREE_WIND_EFFECT
 	else if (0 == xr_strcmp(name, "tree_amplitude_intensity"))
 	{
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pm_fTreeAmplitudeIntensity;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pm_fTreeAmplitudeIntensity * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = val;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pm_fTreeAmplitudeIntensity] = val;
 	}
 #endif
 	else if (0 == xr_strcmp(name, "volumetric_intensity_factor"))
 	{
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pvolumetric_intensity_factor;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pvolumetric_intensity_factor * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = val;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pvolumetric_intensity_factor] = val;
 	}
 	else if (0 == xr_strcmp(name, "volumetric_distance_factor"))
 	{
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pvolumetric_distance_factor;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pvolumetric_distance_factor * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = val;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pvolumetric_distance_factor] = val;
 	}
 	else if (0 == xr_strcmp(name, "bloom_threshold"))
 	{
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pbloom_threshold;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbloom_threshold * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = clampr(val, 1.0f, 10.0f);
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbloom_threshold] = clampr(val, 1.0f, 10.0f);
 	}
 	else if (0 == xr_strcmp(name, "bloom_exposure"))
 	{
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pbloom_exposure;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbloom_exposure * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = val;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbloom_exposure] = val;
 	}
 	else if (0 == xr_strcmp(name, "bloom_sky_intensity"))
 	{
 		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pbloom_sky_intensity;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbloom_sky_intensity * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = val;
+		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbloom_sky_intensity] = val;
 	}
 	else
 		Msg("~xrGame\level_script.cpp (set_weather_value_numric) | [%s] is not a valid numric weather parameter to set", name);
@@ -1343,59 +1343,22 @@ Fvector3 get_weather_value_vector(LPCSTR name)
 
 void set_weather_value_vector(LPCSTR name, float x, float y, float z, float w = 0)
 {
-	CEnvDescriptorMixer& E = *environment()->CurrentEnv;
+	CEnvDescriptor& E = *environment()->CurrentEnv;
 
 	if (0 == xr_strcmp(name, "sky_color"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::psky_color;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::psky_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = x;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::psky_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 1] = y;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::psky_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 2] = z;
-	}
+		E.sky_color.set(x, y, z);
 	else if (0 == xr_strcmp(name, "fog_color"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pfog_color;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = x;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 1] = y;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 2] = z;
-	}
+		E.fog_color.set(x, y, z);
 	else if (0 == xr_strcmp(name, "rain_color"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::prain_color;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::prain_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = x;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::prain_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 1] = y;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::prain_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 2] = z;
-	}
+		E.rain_color.set(x, y, z);
 	else if (0 == xr_strcmp(name, "ambient_color"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pambient;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pambient * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = x;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pambient * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 1] = y;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pambient * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 2] = z;
-	}
+		E.ambient.set(x, y, z);
 	else if (0 == xr_strcmp(name, "sun_color"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::psun_color;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::psun_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = x;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::psun_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 1] = y;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::psun_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 2] = z;
-	}
+		E.sun_color.set(x, y, z);
 	else if (0 == xr_strcmp(name, "clouds_color"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pclouds_color;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pclouds_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = x;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pclouds_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 1] = y;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pclouds_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 2] = z;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pclouds_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 3] = w;
-	}
+		E.clouds_color.set(x, y, z, w);
 	else if (0 == xr_strcmp(name, "hemisphere_color"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::phemi_color;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::phemi_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap] = x;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::phemi_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 1] = y;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::phemi_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 2] = z;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::phemi_color * CEnvDescriptorMixer::pendingScriptChangesFieldCap + 3] = w;
-	}
+		E.hemi_color.set(x, y, z, w);
 	else
 		Msg("~xrGame\level_script.cpp (set_weather_value_vector) | [%s] is not a valid vector weather parameter to set", name);
 }
