@@ -60,6 +60,10 @@
 
         poltergeist_spawn_corpse_on_death // Poltergeists spawn corpses on death
         g_firepos_zoom // Make firepos work while aiming
+
+        g_decouple_horz_recoil // calculate horz recoil independently of vert recoil
+        g_use_non_linear_inertia // enable non linear weapon inertia movement
+
     }
 
     lua extensions {
@@ -94,8 +98,18 @@
         class class_info(object) // Returns luabind class with information about object's class: name, methods, attributes
         CGameTaskManager* get_game_task_manager()
         string r_file_as_string(string path)
-    }                                                               
-                                                                    
+
+        -- color getters / setters
+        ClrGetA(number argb)
+        ClrGetR(number argb)
+        ClrGetG(number argb)
+        ClrGetB(number argb)
+        ClrSetA(number argb, number a)
+        ClrSetR(number argb, number r)
+        ClrSetG(number argb, number g)
+        ClrSetB(number argb, number b)
+    }
+
     get_console() {
         table get_variable_bounds(cmd)   
     }
