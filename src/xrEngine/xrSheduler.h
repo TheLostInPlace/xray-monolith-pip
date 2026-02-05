@@ -28,7 +28,6 @@ private:
 private:
 	xr_vector<Item> ItemsRT;
 	xr_vector<Item> Items;
-	xr_vector<Item> ItemsProcessed;
 	xr_vector<ItemReg> Registration;
 
 	xrSRWLock ItemsLock;

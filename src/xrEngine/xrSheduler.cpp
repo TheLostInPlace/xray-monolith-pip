@@ -53,7 +53,6 @@ void CSheduler::Destroy()
 		Items.clear();
 	}
 	
-	ItemsProcessed.clear();
 	Registration.clear();
 }
 
@@ -342,7 +341,8 @@ void CSheduler::ProcessStep()
 {
 	// Normal priority
 	u32 dwTime = Device.dwTimeGlobal;
-	xr_vector<Item> ItemsBatch;
+	static xr_vector<Item> ItemsBatch;
+	ItemsBatch.clear();
 	u32 ItemsCount = Items.size();
 	float target = psShedulerTarget;
 
@@ -366,8 +366,14 @@ void CSheduler::ProcessStep()
 	}
 
 	if (ItemsBatch.empty())
+	{
+		// always try to decrease target
+		psShedulerTarget -= psShedulerReaction;
 		return;
+	}
 
+	static xr_vector<Item> ItemsProcessed;
+	ItemsProcessed.clear();
 	int i = 0;
 	{
 		for (i = 0; i < ItemsBatch.size(); ++i)
