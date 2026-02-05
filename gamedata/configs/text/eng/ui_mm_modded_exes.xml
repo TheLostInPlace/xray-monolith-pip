@@ -884,6 +884,9 @@
 	<string id="ui_mm_modded_exes_optimizations_mt_scheduler">
 		<text>Multithreaded scheduler (mt_scheduler)</text>
 	</string>
+	<string id="ui_mm_modded_exes_optimizations_scheduler_batch_size">
+		<text>Scheduler batch size (scheduler_batch_size)</text>
+	</string>
 	<string id="ui_mm_modded_exes_optimizations_mt_calc_bones">
 		<text>Multithreaded bones calculations (mt_calc_bones)</text>
 	</string>

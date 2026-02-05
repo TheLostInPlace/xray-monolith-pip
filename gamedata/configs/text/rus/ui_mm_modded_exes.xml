@@ -882,6 +882,9 @@
 	<string id="ui_mm_modded_exes_optimizations_mt_scheduler">
 		<text>Многопоточный планировщик (mt_scheduler)</text>
 	</string>
+	<string id="ui_mm_modded_exes_optimizations_scheduler_batch_size">
+		<text>Макс кол-во объектов на фрейм для планировщика (scheduler_batch_size)</text>
+	</string>
 	<string id="ui_mm_modded_exes_optimizations_mt_calc_bones">
 		<text>Многопоточные вычисления костей (mt_calc_bones)</text>
 	</string>
