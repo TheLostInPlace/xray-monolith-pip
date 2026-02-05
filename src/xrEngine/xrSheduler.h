@@ -39,7 +39,9 @@ private:
 	bool m_processing_nowRT;
 
 	IC void PushImpl(Item& I);
+	IC void PushImpl(Item&& I);
 	IC void Push(Item& I);
+	IC void Push(Item&& I);
 	IC void Pop();
 	IC void PopImpl();
 	IC Item& Top()

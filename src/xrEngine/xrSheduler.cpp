@@ -107,9 +107,7 @@ void CSheduler::internal_Register(ISheduled* O, BOOL RT)
 		O->shedule.b_RT = FALSE;
 
 		// Insert into priority Queue
-		xrSRWLockGuard g(ItemsLock);
-		Items.push_back(std::move(TNext));
-		std::push_heap(Items.begin(), Items.end());
+		Push(std::move(TNext));
 	}
 }
 
@@ -308,10 +306,22 @@ void CSheduler::PushImpl(Item& I)
 	std::push_heap(Items.begin(), Items.end());
 }
 
+void CSheduler::PushImpl(Item&& I)
+{
+	Items.push_back(std::move(I));
+	std::push_heap(Items.begin(), Items.end());
+}
+
 void CSheduler::Push(Item& I)
 {
 	xrSRWLockGuard g(ItemsLock);
 	PushImpl(I);
+}
+
+void CSheduler::Push(Item&& I)
+{
+	xrSRWLockGuard g(ItemsLock);
+	PushImpl(std::move(I));
 }
 
 void CSheduler::PopImpl()
@@ -416,24 +426,52 @@ void CSheduler::ProcessStep()
 	
 	// Reinsertion
 	{
-		// Push finished
+		// Strategy
+		// Rule of thumb: if k < n / log2(n), push_heap is faster. With default batch size of 128 its always faster, start choosing only with 256
+		// Otherwise, dump and heapify
+		// For n=3000, log2(n) is ~11.5. n/11.5 is ~260.
+		// We use a simple approximation: n >> 4 (which is n / 16) for a conservative safety margin.
+		u32 k = ItemsProcessed.size() + (ItemsBatch.size() - i);
+		u32 n = Items.size();
+
 		xrSRWLockGuard g(ItemsLock);
-		for (auto& T : ItemsProcessed)
+
+		if (k < 256 || k < (n >> 4))
 		{
-			if (T.Object)
-				Items.push_back(std::move(T));
+			// Push finished
+			for (auto& T : ItemsProcessed)
+			{
+				if (T.Object)
+					PushImpl(std::move(T));
+			}
+
+			// Push unprocessed
+			for (int j = i; j < ItemsBatch.size(); ++j)
+			{
+				if (ItemsBatch[j].Object)
+					PushImpl(std::move(ItemsBatch[j]));
+			}
+		}
+		else
+		{
+			// Push finished
+			for (auto& T : ItemsProcessed)
+			{
+				if (T.Object)
+					Items.push_back(std::move(T));
+			}
+
+			// Push unprocessed
+			for (int j = i; j < ItemsBatch.size(); ++j)
+			{
+				if (ItemsBatch[j].Object)
+					Items.push_back(std::move(ItemsBatch[j]));
+			}
+
+			// Heapify
+			std::make_heap(Items.begin(), Items.end());
 		}
 		ItemsProcessed.clear();
-
-		// Push unprocessed
-		for (int j = i; j < ItemsBatch.size(); ++j)
-		{
-			if (ItemsBatch[j].Object)
-				Items.push_back(std::move(ItemsBatch[j]));
-		}
-
-		// Heapify
-		std::make_heap(Items.begin(), Items.end());
 	}
 	
 	// always try to decrease target
