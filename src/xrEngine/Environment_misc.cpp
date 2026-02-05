@@ -216,7 +216,7 @@ CEnvDescriptor::CEnvDescriptor(shared_str const& identifier) :
 	sky_color.set(1, 1, 1);
 	sky_rotation = 0.0f;
 
-	far_plane = 400.0f;
+	far_plane = 400.0f;;
 
 	fog_color.set(1, 1, 1);
 	fog_density = 0.0f;
@@ -387,8 +387,6 @@ void CEnvDescriptor::on_device_destroy()
 CEnvDescriptorMixer::CEnvDescriptorMixer(shared_str const& identifier) :
 	CEnvDescriptor(identifier)
 {
-	pendingScriptChangesFlags = 0;
-	pendingScriptChangesData.fill(0.0f);
 }
 
 void CEnvDescriptorMixer::destroy()

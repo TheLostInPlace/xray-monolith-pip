@@ -1198,111 +1198,54 @@ void set_weather_value_numric(LPCSTR name, float val)
 {
 	CEnvDescriptorMixer& E = *environment()->CurrentEnv;
 
-	// demonized: set pending variables with flags. If variable is changed, it will be applied before the render, after FrameMove() in device.cpp
 	if (0 == xr_strcmp(name, "sky_rotation"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::psky_rotation;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::psky_rotation] = val;
-	}	
+		E.sky_rotation = val;
 	else if (0 == xr_strcmp(name, "far_plane"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pfar_plane;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfar_plane] = val * psVisDistance;
-	}
+		E.far_plane = val * psVisDistance;
 	else if (0 == xr_strcmp(name, "fog_density"))
 	{
-		float fog_density = val;
-		float fog_near = (1.0f - fog_density) * 0.85f * E.fog_distance;
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pfog_density;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_density] = fog_density;
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pfog_near;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_near] = fog_near;
+		E.fog_density = val;
+		E.fog_near = (1.0f - E.fog_density) * 0.85f * E.fog_distance;
 	}
 	else if (0 == xr_strcmp(name, "fog_distance"))
 	{
-		float fog_distance = val;
-		clamp(fog_distance, 1.f, E.far_plane - 10);
-		float fog_near = (1.0f - E.fog_density) * 0.85f * fog_distance;
-		float fog_far = 0.99f * fog_distance;
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pfog_distance;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_distance] = fog_distance;
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pfog_near;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_near] = fog_near;
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pfog_far;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pfog_far] = fog_far;
+		E.fog_distance = val;
+		clamp(E.fog_distance, 1.f, E.far_plane - 10);
+		E.fog_near = (1.0f - E.fog_density) * 0.85f * E.fog_distance;
+		E.fog_far = 0.99f * E.fog_distance;
 	}
 	else if (0 == xr_strcmp(name, "rain_density"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::prain_density;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::prain_density] = val;
-	}
+		E.rain_density = val;
 	else if (0 == xr_strcmp(name, "thunderbolt_period"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pbolt_period;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbolt_period] = val;
-	}	
+		E.bolt_period = val;
 	else if (0 == xr_strcmp(name, "thunderbolt_duration"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pbolt_duration;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbolt_duration] = val;
-	}
+		E.bolt_duration = val;
 	else if (0 == xr_strcmp(name, "wind_velocity"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pwind_velocity;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pwind_velocity] = val;
-	}
+		E.wind_velocity = val;
 	else if (0 == xr_strcmp(name, "wind_direction"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pwind_direction;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pwind_direction] = deg2rad(val);
-	}
+		E.wind_direction = deg2rad(val);
 	else if (0 == xr_strcmp(name, "sun_shafts_intensity"))
 	{
-		float m_fSunShaftsIntensity = val;
-		m_fSunShaftsIntensity *= 1.0f - ps_r2_sun_shafts_min;
-		m_fSunShaftsIntensity += ps_r2_sun_shafts_min;
-		m_fSunShaftsIntensity *= ps_r2_sun_shafts_value;
-		clamp(m_fSunShaftsIntensity, 0.0f, 1.0f);
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pm_fSunShaftsIntensity;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pm_fSunShaftsIntensity] = m_fSunShaftsIntensity;
+		E.m_fSunShaftsIntensity = val;
+		E.m_fSunShaftsIntensity *= 1.0f - ps_r2_sun_shafts_min;
+		E.m_fSunShaftsIntensity += ps_r2_sun_shafts_min;
+		E.m_fSunShaftsIntensity *= ps_r2_sun_shafts_value;
+		clamp(E.m_fSunShaftsIntensity, 0.0f, 1.0f);
 	}
 	else if (0 == xr_strcmp(name, "water_intensity"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pm_fWaterIntensity;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pm_fWaterIntensity] = val;
-	}
-#ifdef TREE_WIND_EFFECT
+		E.m_fWaterIntensity = val;
 	else if (0 == xr_strcmp(name, "tree_amplitude_intensity"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pm_fTreeAmplitudeIntensity;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pm_fTreeAmplitudeIntensity] = val;
-	}
-#endif
+		E.m_fTreeAmplitudeIntensity = val;
 	else if (0 == xr_strcmp(name, "volumetric_intensity_factor"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pvolumetric_intensity_factor;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pvolumetric_intensity_factor] = val;
-	}
+		E.volumetric_intensity_factor = val;
 	else if (0 == xr_strcmp(name, "volumetric_distance_factor"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pvolumetric_distance_factor;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pvolumetric_distance_factor] = val;
-	}
+		E.volumetric_distance_factor = val;
 	else if (0 == xr_strcmp(name, "bloom_threshold"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pbloom_threshold;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbloom_threshold] = clampr(val, 1.0f, 10.0f);
-	}
+		E.bloom_threshold = clampr(val, 1.0f, 10.0f);
 	else if (0 == xr_strcmp(name, "bloom_exposure"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pbloom_exposure;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbloom_exposure] = val;
-	}
+		E.bloom_exposure = val;
 	else if (0 == xr_strcmp(name, "bloom_sky_intensity"))
-	{
-		E.pendingScriptChangesFlags |= u64(1) << CEnvDescriptorMixer::PendingVariables::pbloom_sky_intensity;
-		E.pendingScriptChangesData[CEnvDescriptorMixer::PendingVariables::pbloom_sky_intensity] = val;
-	}
+		E.bloom_sky_intensity = val;
 	else
 		Msg("~xrGame\level_script.cpp (set_weather_value_numric) | [%s] is not a valid numric weather parameter to set", name);
 }
