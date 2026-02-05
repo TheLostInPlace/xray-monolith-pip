@@ -739,6 +739,12 @@ void CGamePersistent::OnFrame()
 			PROF_EVENT("Sheduler");
 			::Engine.Sheduler.Update();
 		}
+		else
+		{
+			PROF_EVENT("Sheduler RT");
+			::Engine.Sheduler.UpdateInit();
+			::Engine.Sheduler.UpdateRT();
+		}
 
 		// update weathers ambient
 		WeathersUpdate();

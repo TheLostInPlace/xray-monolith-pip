@@ -7,27 +7,33 @@
 float psShedulerCurrent = 10.f;
 float psShedulerTarget = 10.f;
 const float psShedulerReaction = 0.1f;
-BOOL g_bSheduleInProgress = FALSE;
 
 //-------------------------------------------------------------------------------------
 void CSheduler::Initialize()
 {
 	m_current_step_obj = NULL;
 	m_processing_now = false;
+	m_processing_nowRT = false;
+	m_bTerminating = false;
 }
 
 void CSheduler::Destroy()
 {
+	m_bTerminating = true;
 	internal_Registration();
 
-	for (u32 it = 0; it < Items.size(); it++)
 	{
-		if (0 == Items[it].Object)
+		xrSRWLockGuard g(ItemsLock);
+		for (u32 it = 0; it < Items.size(); it++)
 		{
-			Items.erase(Items.begin() + it);
-			it--;
+			if (0 == Items[it].Object)
+			{
+				Items.erase(Items.begin() + it);
+				it--;
+			}
 		}
 	}
+	
 #ifdef DEBUG
     if (!Items.empty())
     {
@@ -39,45 +45,39 @@ void CSheduler::Destroy()
             Msg("%s", Items[it].Object->shedule_Name().c_str());
     }
 #endif // DEBUG
+
 	ItemsRT.clear();
-	Items.clear();
+
+	{
+		xrSRWLockGuard g(ItemsLock);
+		Items.clear();
+	}
+	
 	ItemsProcessed.clear();
 	Registration.clear();
 }
 
 void CSheduler::internal_Registration()
 {
+	xr_unordered_flat_map<ISheduled*, u32> final_states;
+	final_states.reserve(Registration.size());
+
+	// Get latest state of sheduled object
 	for (u32 it = 0; it < Registration.size(); it++)
 	{
 		ItemReg& R = Registration[it];
-		if (R.OP)
-		{
-			// register
-			// search for paired "unregister"
-			BOOL bFoundAndErased = FALSE;
-			for (u32 pair = it + 1; pair < Registration.size(); pair++)
-			{
-				ItemReg& R_pair = Registration[pair];
-				if ((!R_pair.OP) && (R_pair.Object == R.Object))
-				{
-					bFoundAndErased = TRUE;
-					Registration.erase(Registration.begin() + pair);
-					break;
-				}
-			}
-
-			// register if non-paired
-			if (!bFoundAndErased)
-			{
-				internal_Register(R.Object, R.RT);
-			}
-		}
-		else
-		{
-			// unregister
-			internal_Unregister(R.Object, R.RT);
-		}
+		final_states[R.Object] = it;
 	}
+
+	for (const auto& [object, it] : final_states)
+	{
+		ItemReg& R = Registration[it];
+		if (R.OP)
+			internal_Register(R.Object, R.RT);
+		else
+			internal_Unregister(R.Object, R.RT);
+	}
+
 	Registration.clear();
 }
 
@@ -94,7 +94,7 @@ void CSheduler::internal_Register(ISheduled* O, BOOL RT)
 		TNext.scheduled_name = O->shedule_Name();
 		O->shedule.b_RT = TRUE;
 
-		ItemsRT.push_back(TNext);
+		ItemsRT.push_back(std::move(TNext));
 	}
 	else
 	{
@@ -107,7 +107,9 @@ void CSheduler::internal_Register(ISheduled* O, BOOL RT)
 		O->shedule.b_RT = FALSE;
 
 		// Insert into priority Queue
-		Push(TNext);
+		xrSRWLockGuard g(ItemsLock);
+		Items.push_back(std::move(TNext));
+		std::push_heap(Items.begin(), Items.end());
 	}
 }
 
@@ -128,6 +130,13 @@ bool CSheduler::internal_Unregister(ISheduled* O, BOOL RT, bool warn_on_not_foun
 	}
 	else
 	{
+		if (m_current_step_obj == O)
+		{
+			m_current_step_obj = NULL;
+			return true;
+		}
+
+		xrSRWLockGuard g(ItemsLock);
 		for (u32 i = 0; i < Items.size(); i++)
 		{
 			if (Items[i].Object == O)
@@ -136,11 +145,6 @@ bool CSheduler::internal_Unregister(ISheduled* O, BOOL RT, bool warn_on_not_foun
 				return (true);
 			}
 		}
-	}
-	if (m_current_step_obj == O)
-	{
-		m_current_step_obj = NULL;
-		return true;
 	}
 
 #ifdef DEBUG
@@ -237,7 +241,7 @@ void CSheduler::Register(ISheduled* A, BOOL RT)
 	R.Object = A;
 	R.Object->shedule.b_RT = RT;
 
-	Registration.push_back(R);
+	Registration.push_back(std::move(R));
 }
 
 void CSheduler::Unregister(ISheduled* A)
@@ -246,7 +250,29 @@ void CSheduler::Unregister(ISheduled* A)
 	VERIFY(Registered(A));
 #endif
 
-	if (m_processing_now)
+	// wait until done with m_current_step_obj
+	if (m_current_step_obj == A)
+	{
+		int spin_count = 0;
+
+		// Loop until the worker releases the object
+		while (m_current_step_obj == A)
+		{
+			// Phase 1: Spin briefly (fast reaction if it finishes instantly)
+			if (spin_count < 16)
+			{
+				_mm_pause();
+				spin_count++;
+			}
+			// Phase 2: Yield CPU (don't burn 100% CPU waiting for a heavy update)
+			else
+			{
+				std::this_thread::yield();
+			}
+		}
+	}
+
+	if (!( (!A->shedule.b_RT && m_processing_now) || (A->shedule.b_RT && m_processing_nowRT) ))
 	{
 		if (internal_Unregister(A, A->shedule.b_RT, false))
 			return;
@@ -257,7 +283,7 @@ void CSheduler::Unregister(ISheduled* A)
 	R.RT = A->shedule.b_RT;
 	R.Object = A;
 
-	Registration.push_back(R);
+	Registration.push_back(std::move(R));
 }
 
 void CSheduler::EnsureOrder(ISheduled* Before, ISheduled* After)
@@ -270,126 +296,146 @@ void CSheduler::EnsureOrder(ISheduled* Before, ISheduled* After)
 		{
 			Item A = ItemsRT[i];
 			ItemsRT.erase(ItemsRT.begin() + i);
-			ItemsRT.push_back(A);
+			ItemsRT.push_back(std::move(A));
 			return;
 		}
 	}
 }
 
-void CSheduler::Push(Item& I)
+void CSheduler::PushImpl(Item& I)
 {
 	Items.push_back(I);
 	std::push_heap(Items.begin(), Items.end());
 }
 
-void CSheduler::Pop()
+void CSheduler::Push(Item& I)
+{
+	xrSRWLockGuard g(ItemsLock);
+	PushImpl(I);
+}
+
+void CSheduler::PopImpl()
 {
 	std::pop_heap(Items.begin(), Items.end());
 	Items.pop_back();
 }
 
+void CSheduler::Pop()
+{
+	xrSRWLockGuard g(ItemsLock);
+	PopImpl();
+}
+
+int SchedulerBatchSize = 128;
+BOOL SchedulerLog = FALSE;
 void CSheduler::ProcessStep()
 {
 	// Normal priority
 	u32 dwTime = Device.dwTimeGlobal;
-	CTimer eTimer;
-	for (int i = 0; !Items.empty() && Top().dwTimeForExecute < dwTime; ++i)
+	xr_vector<Item> ItemsBatch;
+	u32 ItemsCount = Items.size();
+	float target = psShedulerTarget;
+
 	{
-		u32 delta_ms = dwTime - Top().dwTimeForExecute;
-
-		// Update
-		Item T = Top();
-		u32 Elapsed = dwTime - T.dwTimeOfLastExecute;
-		bool condition;
-
-		condition = (NULL == T.Object || !T.Object->shedule_Needed());
-		if (condition)
+		xrSRWLockGuard g(ItemsLock);
+		while (!Items.empty() && Top().dwTimeForExecute < dwTime && ItemsBatch.size() < SchedulerBatchSize)
 		{
-			// Erase element
-			// if (T.Object)
-			// Msg ("0x%08x UNREGISTERS because shedule_Needed() returned false",T.Object);
-			// else
-			// Msg ("UNREGISTERS unknown object");
-			Pop();
-			continue;
-		}
+			// Optional: Also stop collecting if we are already out of time
+			// (Prevents grabbing items we won't even touch)
+			if (Device.dwPrecacheFrame == 0 && CPU::QPC() > cycles_limit)
+				break;
 
-		// Insert into priority Queue
-		Pop();
-
-		// Real update call
-#ifdef DEBUG
-        T.Object->dbg_startframe = Device.dwFrame;
-        eTimer.Start();
-#endif // DEBUG
-
-		// Calc next update interval
-		u32 dwMin = _max(u32(30), T.Object->shedule.t_min);
-		u32 dwMax = (1000 + T.Object->shedule.t_max) / 2;
-		float scale = T.Object->shedule_Scale();
-		u32 dwUpdate = dwMin + iFloor(float(dwMax - dwMin) * scale);
-		clamp(dwUpdate, u32(_max(dwMin, u32(20))), dwMax);
-
-
-		m_current_step_obj = T.Object;
-		// try {
-		T.Object->shedule_Update(clampr(Elapsed, u32(1), u32(_max(u32(T.Object->shedule.t_max), u32(1000)))));
-		if (!m_current_step_obj)
-		{
-			continue;
-		}
-		// } catch (...) {
-#ifdef DEBUG
-		// Msg ("! xrSheduler: object '%s' raised an exception", _obj_name);
-		// throw ;
-#endif // DEBUG
-		// }
-		m_current_step_obj = NULL;
-
-#ifdef DEBUG
-		// u32 execTime = eTimer.GetElapsed_ms ();
-#endif // DEBUG
-
-		// Fill item structure
-		Item TNext;
-		TNext.dwTimeForExecute = dwTime + dwUpdate;
-		TNext.dwTimeOfLastExecute = dwTime;
-		TNext.Object = T.Object;
-		TNext.scheduled_name = T.Object->shedule_Name();
-		ItemsProcessed.push_back(TNext);
-
-
-#ifdef DEBUG
-		// u32 execTime = eTimer.GetElapsed_ms ();
-        // VERIFY3 (T.Object->dbg_update_shedule == T.Object->dbg_startframe, "Broken sequence of calls to 'shedule_Update'", _obj_name );
-        if (delta_ms > 3 * dwUpdate)
-        {
-            //Msg ("! xrSheduler: failed to shedule object [%s] (%dms)", _obj_name, delta_ms );
-        }
-        // if (execTime> 15) {
-		// Msg ("* xrSheduler: too much time consumed by object [%s] (%dms)", _obj_name, execTime );
-		// }
-#endif // DEBUG
-
-		//
-		if ((i % 3) != (3 - 1))
-			continue;
-
-		if (Device.dwPrecacheFrame == 0 && CPU::QPC() > cycles_limit)
-		{
-			// we have maxed out the load - increase heap
-			psShedulerTarget += (psShedulerReaction * 3);
-			break;
+			// Add item to batch
+			Item& T = Top();
+			if (T.Object && T.Object->shedule_Needed())
+			{
+				ItemsBatch.push_back(std::move(T));
+			}	
+			PopImpl();
 		}
 	}
 
-	// Push "processed" back
-	while (ItemsProcessed.size())
+	if (ItemsBatch.empty())
+		return;
+
+	int i = 0;
 	{
-		Push(ItemsProcessed.back());
-		ItemsProcessed.pop_back();
+		for (i = 0; i < ItemsBatch.size(); ++i)
+		{
+			// Stop if about to exit
+			if (m_bTerminating)
+				break;
+
+			// Stop if really underestimated the cost of batch, check every 8th item
+			if ((i % 8) == 0 && Device.dwPrecacheFrame == 0 && CPU::QPC() > cycles_limit)
+			{
+				psShedulerTarget += (psShedulerReaction * 3);
+				break;
+			}
+
+			Item& T = ItemsBatch[i];
+			if (!T.Object)
+				continue;
+			m_current_step_obj = T.Object;
+
+			// Update
+			u32 Elapsed = dwTime - T.dwTimeOfLastExecute;
+
+			// Calc next update interval
+			u32 dwMin = _max(u32(30), T.Object->shedule.t_min);
+			u32 dwMax = (1000 + T.Object->shedule.t_max) / 2;
+			float scale = T.Object->shedule_Scale();
+			u32 dwUpdate = dwMin + iFloor(float(dwMax - dwMin) * scale);
+			clamp(dwUpdate, u32(_max(dwMin, u32(20))), dwMax);
+
+			T.Object->shedule_Update(clampr(Elapsed, u32(1), u32(_max(u32(T.Object->shedule.t_max), u32(1000)))));
+
+			// Fill item structure
+			Item TNext;
+			TNext.dwTimeForExecute = dwTime + dwUpdate;
+			TNext.dwTimeOfLastExecute = dwTime;
+			TNext.Object = T.Object;
+			TNext.scheduled_name = T.Object->shedule_Name();
+			ItemsProcessed.push_back(std::move(TNext));
+
+			m_current_step_obj = NULL;
+		}
 	}
 
+	if (SchedulerLog)
+		Msg("Sheduler: cycles_start[%llu] cycles_limit[%llu] qpc_freq[%llu] Target[%f] psShedulerReaction[%f] NewTarget[%f] ItemsCount[%d] ItemsBatch[%d], ItemsActuallyProcessed [%d]",
+			cycles_start,
+			cycles_limit,
+			CPU::qpc_freq,
+			target,
+			psShedulerReaction,
+			psShedulerTarget,
+			ItemsCount,
+			ItemsBatch.size(),
+			i);
+	
+	// Reinsertion
+	{
+		// Push finished
+		xrSRWLockGuard g(ItemsLock);
+		for (auto& T : ItemsProcessed)
+		{
+			if (T.Object)
+				Items.push_back(std::move(T));
+		}
+		ItemsProcessed.clear();
+
+		// Push unprocessed
+		for (int j = i; j < ItemsBatch.size(); ++j)
+		{
+			if (ItemsBatch[j].Object)
+				Items.push_back(std::move(ItemsBatch[j]));
+		}
+
+		// Heapify
+		std::make_heap(Items.begin(), Items.end());
+	}
+	
 	// always try to decrease target
 	psShedulerTarget -= psShedulerReaction;
 }
@@ -400,10 +446,7 @@ void CSheduler::UpdateInit()
 	R_ASSERT(Device.Statistic);
 	// Initialize
 	Device.Statistic->Sheduler.Begin();
-	cycles_start = CPU::QPC();
-	cycles_limit = CPU::qpc_freq * u64(iCeil(psShedulerCurrent)) / 1000i64 + cycles_start;
 	internal_Registration();
-	g_bSheduleInProgress = TRUE;
 }
 
 void CSheduler::UpdateRT()
@@ -411,7 +454,7 @@ void CSheduler::UpdateRT()
 	PROF_EVENT();
 
 	// Realtime priority
-	m_processing_now = true;
+	m_processing_nowRT = true;
 	u32 dwTime = Device.dwTimeGlobal;
 	for (u32 it = 0; it < ItemsRT.size(); it++)
 	{
@@ -431,12 +474,15 @@ void CSheduler::UpdateRT()
 		T.Object->shedule_Update(Elapsed);
 		T.dwTimeOfLastExecute = dwTime;
 	}
-	m_processing_now = false;
+	m_processing_nowRT = false;
 }
 
 void CSheduler::UpdateDeferred()
 {
 	PROF_EVENT();
+
+	cycles_start = CPU::QPC();
+	cycles_limit = CPU::qpc_freq * u64(iCeil(psShedulerCurrent)) / 1000ull + cycles_start;
 
 	// Normal (sheduled)
 	m_processing_now = true;
@@ -453,7 +499,6 @@ void CSheduler::UpdateFinalize()
 	Device.Statistic->fShedulerLoad = psShedulerCurrent;
 
 	// Finalize
-	g_bSheduleInProgress = FALSE;
 	internal_Registration();
 	Device.Statistic->Sheduler.End();
 }

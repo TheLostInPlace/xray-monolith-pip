@@ -125,8 +125,9 @@ void XRay::Engine::GameThread()
 	{
 		if (mt_Scheduler)
 		{
-			PROF_EVENT("Sheduler");
-			::Engine.Sheduler.Update();
+			PROF_EVENT("Sheduler Deferred");
+			::Engine.Sheduler.UpdateDeferred();
+			::Engine.Sheduler.UpdateFinalize();
 		}
 	}
 

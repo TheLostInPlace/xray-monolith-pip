@@ -167,6 +167,8 @@ extern BOOL mt_UpdateWeaponSounds;
 extern BOOL mt_Scheduler;
 extern BOOL mt_calc_bones;
 extern BOOL mt_ph_commander;
+extern int SchedulerBatchSize;
+extern BOOL SchedulerLog;
 
 extern BOOL alifeObjectHangingLampIgnoreMatchConfiguration;
 
@@ -2960,6 +2962,9 @@ void CCC_RegisterCommands()
 	CMD4(CCC_Integer, "mt_scheduler", &mt_Scheduler, 0, 1);
 	CMD4(CCC_Integer, "mt_level_call", &mt_ph_commander, 0, 1);
 	CMD4(CCC_Integer, "mt_calc_bones", &mt_calc_bones, 0, 1);
+
+	CMD4(CCC_Integer, "scheduler_batch_size", &SchedulerBatchSize, 32, 256);
+	CMD4(CCC_Integer, "scheduler_log", &SchedulerLog, 0, 1);
 
 	CMD4(CCC_Integer, "spawn_antifreeze", &spawn_antifreeze, 0, 1);
 	CMD4(CCC_Integer, "spawn_antifreeze_debug", &spawn_antifreeze_debug, 0, 1);
