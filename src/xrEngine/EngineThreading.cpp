@@ -67,8 +67,8 @@ void XRay::Engine::CalculateBonesThread()
 		g_pGamePersistent->Environment().CurrentEnv->fog_distance
 	);
 
-	xr_vector<SpatialSnapshot> spatialsSnapshot;
-	spatialsSnapshot.reserve(spatials.size());
+	static xr_vector<SpatialSnapshot> spatialsSnapshot;
+	spatialsSnapshot.clear();
 	{
 		xrSRWLockGuard g(g_SpatialSpace->db_lock);
 		for (ISpatialShared& spatial : spatials)
