@@ -34,9 +34,19 @@ void CDSGraphManager::r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItems<T
 	static auto sortFunc = [](const R_dsgraph::DSGraphItem<T>& a, const R_dsgraph::DSGraphItem<T>& b) { return a.sortKey < b.sortKey; };
 	static auto sortFuncReverse = [](const R_dsgraph::DSGraphItem<T>& a, const R_dsgraph::DSGraphItem<T>& b) { return a.sortKey > b.sortKey; };
 	if (reverse)
-		std::sort(graph.begin(), graph.end(), sortFuncReverse);
+	{
+		if (graph.size() >= 4096)
+			xr_parallel_sort(graph, sortFuncReverse);
+		else
+			xr_sort(graph, sortFuncReverse);
+	}
 	else
-		std::sort(graph.begin(), graph.end(), sortFunc);
+	{
+		if (graph.size() >= 4096)
+			xr_parallel_sort(graph, sortFunc);
+		else
+			xr_sort(graph, sortFunc);
+	}
 
 	for (R_dsgraph::DSGraphItem<T>& item : graph)
 	{
@@ -70,10 +80,14 @@ void CDSGraphManager::r_dsgraph_render_graph(RenderQueueArray& queues, u32 _prio
 			continue;
 
 		// 1. Sort by generated sort key to replicate previous fixed map behaviour
-		std::sort(queue.begin(), queue.end(), [](const RenderPacket& a, const RenderPacket& b)
+		static auto sortFunc = [](const RenderPacket& a, const RenderPacket& b)
 		{
 			return a.sortKey < b.sortKey;
-		});
+		};
+		if (queue.size() >= 4096)
+			xr_parallel_sort(queue, sortFunc);
+		else
+			xr_sort(queue, sortFunc);
 
 		// 2. Render
 		vs_type pVS = nullptr;
