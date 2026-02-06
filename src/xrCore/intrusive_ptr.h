@@ -13,8 +13,71 @@
 #include <cstddef> // for std::nullptr_t
 #include "_thread_types.h"
 
+// Counter behaviors
+enum class CounterPolicy
+{
+    Atomic,
+    NonAtomic
+};
+
+template <CounterPolicy Counter = CounterPolicy::Atomic>
+struct ref_count_storage
+{
+protected:
+    std::conditional_t<Counter == CounterPolicy::Atomic, xr_atomic_u32, u32> __ref_count;
+
+public:
+    IC u32 intrusive_ref_count() const
+    {
+        if constexpr (Counter == CounterPolicy::Atomic)
+            return __ref_count.load(std::memory_order_relaxed);
+        else
+            return __ref_count;
+    }
+    IC u32 intrusive_ref_add()
+    {
+        if constexpr (Counter == CounterPolicy::Atomic)
+        {
+            u32 t = __ref_count.fetch_add(1, std::memory_order_relaxed);
+            return t + 1;
+        }
+        else
+            return ++__ref_count;
+    }
+    IC u32 intrusive_ref_sub()
+    {
+        if constexpr (Counter == CounterPolicy::Atomic)
+        {
+            u32 t = __ref_count.fetch_sub(1, std::memory_order_acq_rel)
+            return t - 1;
+        }
+        else
+            return --__ref_count;
+    }
+
+protected:
+    IC bool intrusive_ref_sub_and_check()
+    {
+        if constexpr (Counter == CounterPolicy::Atomic)
+        {
+            if (__ref_count.fetch_sub(1, std::memory_order_acq_rel) == 1)
+            {
+                std::atomic_thread_fence(std::memory_order_acquire);
+                return true;
+            }
+            return false;
+        }
+        else
+            return (--__ref_count == 0);
+    }
+
+public:
+    IC ref_count_storage() : __ref_count(0) {}
+};
+
 // Possible deletetion behaviors
-enum class DeletionPolicy {
+enum class DeletionPolicy
+{
     Immediate,
     Deferred,
     Strict
@@ -23,39 +86,24 @@ enum class DeletionPolicy {
 // A simple, empty struct just for is_base_of checks
 struct intrusive_base_marker {};
 
-template <DeletionPolicy Policy = DeletionPolicy::Immediate>
-struct intrusive_base_impl : public intrusive_base_marker
+template <DeletionPolicy Policy = DeletionPolicy::Immediate, CounterPolicy Counter = CounterPolicy::Atomic>
+struct intrusive_base_impl : public intrusive_base_marker, ref_count_storage<Counter>
 {
     // This makes the policy visible to the smart pointer
     static constexpr DeletionPolicy deletion_policy = Policy;
 
-private:
-    xr_atomic_u32 __ref_count;
-
-public:
-    IC u32 intrusive_ref_count() const
-    {
-        return __ref_count.load(std::memory_order_relaxed);
-    }
-    IC u32 intrusive_ref_add()
-    {
-        __ref_count.fetch_add(1, std::memory_order_relaxed);
-        return intrusive_ref_count();
-    }
-
     template <typename T>
     IC bool intrusive_release(T* object)
     {
-        if (__ref_count.fetch_sub(1, std::memory_order_acq_rel) == 1)
+        if (this->intrusive_ref_sub_and_check())
         {
-            std::atomic_thread_fence(std::memory_order_acquire);
-            _release(object);
+            this->_release(object);
             return true;
         }
         return false;
     }
 
-	IC intrusive_base_impl() : __ref_count(0) {}
+	IC intrusive_base_impl() {}
 
     // Force virtual destructor on children
     IC virtual ~intrusive_base_impl() {}
@@ -77,39 +125,24 @@ private:
 template <bool _is_pm, typename T> struct xr_special_free;
 
 // Strict policy - forbid calling xr_delete<ptr.get()>, must have protected destructor
-template<>
-struct intrusive_base_impl<DeletionPolicy::Strict> : public intrusive_base_marker
+template<CounterPolicy Counter>
+struct intrusive_base_impl<DeletionPolicy::Strict, Counter> : public intrusive_base_marker, ref_count_storage<Counter>
 {
     // This makes the policy visible to the smart pointer
     static constexpr DeletionPolicy deletion_policy = DeletionPolicy::Strict;
 
-private:
-    xr_atomic_u32 __ref_count;
-
-public:
-    IC u32 intrusive_ref_count() const
-    {
-        return __ref_count.load(std::memory_order_relaxed);
-    }
-    IC u32 intrusive_ref_add()
-    {
-        __ref_count.fetch_add(1, std::memory_order_relaxed);
-        return intrusive_ref_count();
-    }
-
     template <typename T>
     IC bool intrusive_release(T* object)
     {
-        if (__ref_count.fetch_sub(1, std::memory_order_acq_rel) == 1)
+        if (this->intrusive_ref_sub_and_check())
         {
-            std::atomic_thread_fence(std::memory_order_acquire);
-            _release(object);
+            this->_release(object);
             return true;
         }
         return false;
     }
 
-    IC intrusive_base_impl() : __ref_count(0) {}
+    IC intrusive_base_impl() {}
 
     // Grant access to the engine's memory freer.
     // This allows 'xr_delete(base_ptr)' to work even though the destructor is protected.
@@ -133,9 +166,12 @@ private:
     }
 };
 
-using intrusive_base = intrusive_base_impl<DeletionPolicy::Immediate>;
-using intrusive_base_deferred = intrusive_base_impl<DeletionPolicy::Deferred>;
-using intrusive_base_strict = intrusive_base_impl<DeletionPolicy::Strict>;
+using intrusive_base = intrusive_base_impl<DeletionPolicy::Immediate, CounterPolicy::Atomic>;
+using intrusive_base_nonatomic = intrusive_base_impl<DeletionPolicy::Immediate, CounterPolicy::NonAtomic>;
+using intrusive_base_deferred = intrusive_base_impl<DeletionPolicy::Deferred, CounterPolicy::Atomic>;
+using intrusive_base_deferred_nonatomic = intrusive_base_impl<DeletionPolicy::Deferred, CounterPolicy::NonAtomic>;
+using intrusive_base_strict = intrusive_base_impl<DeletionPolicy::Strict, CounterPolicy::Atomic>;
+using intrusive_base_strict_nonatomic = intrusive_base_impl<DeletionPolicy::Strict, CounterPolicy::NonAtomic>;
 
 #define TEMPLATE_SPECIALIZATION template <typename object_type>
 #define _intrusive_ptr intrusive_ptr<object_type>
