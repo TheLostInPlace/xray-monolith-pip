@@ -30,3 +30,22 @@ inline void xr_parallel_foreach(Index Begin, Index End, Body Functor)
 {
 	concurrency::parallel_for_each(Begin, End, Functor);
 }
+
+// PPL behaviour - fallback to std::sort if chunk size < 2048 and cores < 2
+template<typename Data, typename Body>
+inline void xr_parallel_sort(Data& data, Body functor)
+{
+	concurrency::parallel_sort(std::begin(data), std::end(data), functor);
+}
+
+template<typename Data, typename Body>
+inline void xr_sort(Data& data, Body functor)
+{
+	std::sort(std::begin(data), std::end(data), functor);
+}
+
+template<typename Data, typename Body>
+inline void xr_stable_sort(Data& data, Body functor)
+{
+	std::stable_sort(std::begin(data), std::end(data), functor);
+}
