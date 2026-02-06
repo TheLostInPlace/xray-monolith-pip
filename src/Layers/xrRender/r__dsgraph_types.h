@@ -175,93 +175,124 @@ namespace R_dsgraph
 		mapDSGraphItems<float> mapScopeHUDSorted;
 		mapDSGraphItems<float> mapScopeHUD;
 #endif
-
+		template<bool free = true>
 		IC void clear_graph(RenderQueueArray& queue, u32 _priority)
 		{
 			PROF_EVENT("r_dsgraph_clear_graph");
 			for (u32 iPass = 0; iPass < SHADER_PASSES_MAX; ++iPass)
 			{
-				queue[_priority][iPass].clear();
-				queue[_priority][iPass].shrink_to_fit();
+				if constexpr (free)
+					queue[_priority][iPass].clear_and_free();
+				else
+					queue[_priority][iPass].clear();
 			}
 		}
 
+		template<bool free = true>
 		IC void clear_dynamic()
 		{
-			clear_graph(mapDynamicPasses, 0);
-			clear_graph(mapDynamicPasses, 1);
+			clear_graph<free>(mapDynamicPasses, 0);
+			clear_graph<free>(mapDynamicPasses, 1);
 
-			mapDynamicSorted.Wmark.clear();
-			mapDynamicSorted.Emissive.clear();
-			mapDynamicSorted.Sorted.clear();
-			mapDynamicSorted.Distort.clear();
-
-			mapDynamicSorted.Wmark.shrink_to_fit();
-			mapDynamicSorted.Emissive.shrink_to_fit();
-			mapDynamicSorted.Sorted.shrink_to_fit();
-			mapDynamicSorted.Distort.shrink_to_fit();
+			if constexpr (free)
+			{
+				mapDynamicSorted.Wmark.clear_and_free();
+				mapDynamicSorted.Emissive.clear_and_free();
+				mapDynamicSorted.Sorted.clear_and_free();
+				mapDynamicSorted.Distort.clear_and_free();
+			}
+			else
+			{
+				mapDynamicSorted.Wmark.clear();
+				mapDynamicSorted.Emissive.clear();
+				mapDynamicSorted.Sorted.clear();
+				mapDynamicSorted.Distort.clear();
+			}
 		}
+
+		template<bool free = true>
 		IC void clear_static()
 		{
-			clear_graph(mapStaticPasses, 0);
-			clear_graph(mapStaticPasses, 1);
+			clear_graph<free>(mapStaticPasses, 0);
+			clear_graph<free>(mapStaticPasses, 1);
 
-			mapStaticSorted.Wmark.clear();
-			mapStaticSorted.Emissive.clear();
-			mapStaticSorted.Sorted.clear();
-			mapStaticSorted.Distort.clear();
-
-			mapStaticSorted.Wmark.shrink_to_fit();
-			mapStaticSorted.Emissive.shrink_to_fit();
-			mapStaticSorted.Sorted.shrink_to_fit();
-			mapStaticSorted.Distort.shrink_to_fit();
+			if constexpr (free)
+			{
+				mapStaticSorted.Wmark.clear_and_free();
+				mapStaticSorted.Emissive.clear_and_free();
+				mapStaticSorted.Sorted.clear_and_free();
+				mapStaticSorted.Distort.clear_and_free();
+			}
+			else
+			{
+				mapStaticSorted.Wmark.clear();
+				mapStaticSorted.Emissive.clear();
+				mapStaticSorted.Sorted.clear();
+				mapStaticSorted.Distort.clear();
+			}
 		}
 
+		template<bool free = true>
 		IC void clear_hud()
 		{
-			mapHUD.clear();
-			mapHUDSorted.Wmark.clear();
-			mapHUDSorted.Emissive.clear();
-			mapHUDSorted.Sorted.clear();
-			mapHUDSorted.Distort.clear();
-			mapCamAttached.clear();
-			mapCamAttachedSorted.Wmark.clear();
-			mapCamAttachedSorted.Emissive.clear();
-			mapCamAttachedSorted.Sorted.clear();
-			mapCamAttachedSorted.Distort.clear();
+			if constexpr (free)
+			{
+				mapHUD.clear_and_free();
+				mapHUDSorted.Wmark.clear_and_free();
+				mapHUDSorted.Emissive.clear_and_free();
+				mapHUDSorted.Sorted.clear_and_free();
+				mapHUDSorted.Distort.clear_and_free();
+				mapCamAttached.clear_and_free();
+				mapCamAttachedSorted.Wmark.clear_and_free();
+				mapCamAttachedSorted.Emissive.clear_and_free();
+				mapCamAttachedSorted.Sorted.clear_and_free();
+				mapCamAttachedSorted.Distort.clear_and_free();
 
-			mapHUD.shrink_to_fit();
-			mapHUDSorted.Wmark.shrink_to_fit();
-			mapHUDSorted.Emissive.shrink_to_fit();
-			mapHUDSorted.Sorted.shrink_to_fit();
-			mapHUDSorted.Distort.shrink_to_fit();
-			mapCamAttached.shrink_to_fit();
-			mapCamAttachedSorted.Wmark.shrink_to_fit();
-			mapCamAttachedSorted.Emissive.shrink_to_fit();
-			mapCamAttachedSorted.Sorted.shrink_to_fit();
-			mapCamAttachedSorted.Distort.shrink_to_fit();
 #ifdef USE_DX11
-			mapScopeHUD.clear();
-			mapScopeHUDSorted.clear();
-
-			mapScopeHUD.shrink_to_fit();
-			mapScopeHUDSorted.shrink_to_fit();
+				mapScopeHUD.clear_and_free();
+				mapScopeHUDSorted.clear_and_free();
 #endif
+			}
+			else
+			{
+				mapHUD.clear();
+				mapHUDSorted.Wmark.clear();
+				mapHUDSorted.Emissive.clear();
+				mapHUDSorted.Sorted.clear();
+				mapHUDSorted.Distort.clear();
+				mapCamAttached.clear();
+				mapCamAttachedSorted.Wmark.clear();
+				mapCamAttachedSorted.Emissive.clear();
+				mapCamAttachedSorted.Sorted.clear();
+				mapCamAttachedSorted.Distort.clear();
+
+#ifdef USE_DX11
+				mapScopeHUD.clear();
+				mapScopeHUDSorted.clear();
+#endif
+			}
 		}
 
+		template<bool free = true>
 		IC void clear_lods()
 		{
-			mapLOD.clear();
-			mapLOD.shrink_to_fit();
+			if constexpr (free)
+				mapLOD.clear_and_free();
+			else
+				mapLOD.clear();
 		}
 
+		template<bool free = true>
 		IC void clear()
 		{
-			clear_dynamic();
-			clear_static();
-			clear_hud();
-			clear_lods();
-			mapWater.clear();
+			clear_dynamic<free>();
+			clear_static<free>();
+			clear_hud<free>();
+			clear_lods<free>();
+			if constexpr (free)
+				mapWater.clear_and_free();
+			else
+				mapWater.clear();
 		}
 	};
 };
