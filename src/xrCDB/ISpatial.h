@@ -93,7 +93,7 @@ class IRenderable;
 class IRender_Light;
 
 class XRCDB_API ISpatial:
-	public intrusive_base
+	public intrusive_base_strict
 {
 	friend class ISpatialOwner;
 public:
@@ -148,6 +148,7 @@ public:
 	bool canOptimizeCalculateBones = true;
 
 	ISpatial(ISpatial_DB* space, ISpatialOwner* TypeObject);
+protected:
 	virtual ~ISpatial();
 };
 
