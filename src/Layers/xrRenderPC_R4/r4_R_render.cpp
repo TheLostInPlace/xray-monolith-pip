@@ -157,6 +157,8 @@ void CRender::Render()
 		GMBase.traverse(RImplementation.pLastSector, ViewBase, Device.vCameraPosition, Device.mFullTransform);
 		GMBase.r_dsgraph_capture_static();
 		GMBase.r_dsgraph_render_static(0);
+		GMBase.r_dsgraph_capture_dynamic();
+		GMBase.r_dsgraph_render_dynamic(0);
 		Target->disable_aniso();
 	}
 
@@ -185,8 +187,6 @@ void CRender::Render()
 		PIX_EVENT(DEFER_PART1_SPLIT);
 		// level
 		Target->phase_scene_begin();
-		GMBase.r_dsgraph_capture_dynamic();
-		GMBase.r_dsgraph_render_dynamic(0);
 		GMBase.r_dsgraph_capture_hud();
 		GMBase.r_dsgraph_render_hud();
 		GMBase.r_dsgraph_render_lods(true,true);
