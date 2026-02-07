@@ -237,6 +237,12 @@ public:
 	std::function<void()> ParticleWorkerCallback;
 	xr_delegate<void()> ModelDefferClear;
 
+	bool isRendering;
+
+	// LuaGC
+	bool LuaGCDone;
+	std::function<int(const bool)> LuaGC;
+
 	// Dependent classes
 	//CResourceManager* Resources;
 

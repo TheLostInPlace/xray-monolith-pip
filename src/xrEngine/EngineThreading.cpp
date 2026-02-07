@@ -104,6 +104,8 @@ void XRay::Engine::CalculateBonesThread()
 	}
 }
 
+extern BOOL psLua_ParallelGC;
+int psLua_ParallelGC_CallAmount = 25;
 void XRay::Engine::GameThread()
 {
 	PROF_THREAD("Secondary Task 2")
@@ -141,5 +143,26 @@ void XRay::Engine::GameThread()
 	{
 		PROF_EVENT("seqFrameMT");
 		Device.seqFrameMT.Process(rp_Frame);
+	}
+
+	// demonized: While GPU renders frame, use time opportunity to repeatedly call Lua GC with small step value
+	// Reduces stutters since less work will be done in main GC step or no work at all
+	{
+		PROF_EVENT("seqLuaGC");
+		if (psLua_ParallelGC && Device.LuaGC)
+		{
+			int i = 0;
+
+			while (Device.isRendering && i < psLua_ParallelGC_CallAmount)
+			{
+				if (Device.LuaGC(false) == 1) // 1 informs that GC cycle is complete
+				{
+					Device.LuaGCDone = true;
+					break;
+				}
+
+				i++;
+			}				
+		}
 	}
 }

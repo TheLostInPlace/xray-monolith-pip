@@ -52,6 +52,7 @@ BOOL g_bLoaded = FALSE;
 ref_light precache_light = 0;
 
 BOOL mt_calc_bones = TRUE;
+BOOL psLua_ParallelGC = TRUE;
 
 extern discord::Core* discord_core;
 extern bool use_discord;
@@ -414,8 +415,11 @@ void CRenderDevice::on_idle()
 	else
 		XRay::Engine::CalculateBonesThread();
 
-	secondary_tasks.run(&XRay::Engine::GameThread);
+	Device.isRendering = true;
+	Device.LuaGCDone = false;
 
+	secondary_tasks.run(&XRay::Engine::GameThread);
+	
 #ifdef ECO_RENDER // ECO_RENDER START
 	if (Device.Paused() || IsMainMenuActive() || ps_framelimiter)
 	{
@@ -463,8 +467,15 @@ void CRenderDevice::on_idle()
 	Statistic->RenderTOTAL_Real.FrameEnd();
 	Statistic->RenderTOTAL.accum = Statistic->RenderTOTAL_Real.accum;
 #endif 
+	Device.isRendering = false;
 
 	secondary_tasks.wait();
+
+	if (psLua_ParallelGC && Device.LuaGC && !Device.LuaGCDone)
+	{
+		PROF_EVENT("LuaGC Cleanup");
+		Device.LuaGC(true);
+	}
 
 #ifdef DEDICATED_SERVER
     u32 FrameEndTime = TimerGlobal.GetElapsed_ms();
