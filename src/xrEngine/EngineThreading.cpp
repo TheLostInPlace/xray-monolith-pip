@@ -145,22 +145,23 @@ void XRay::Engine::GameThread()
 		Device.seqFrameMT.Process(rp_Frame);
 	}
 
-	// demonized: While GPU renders frame, use time opportunity to repeatedly call Lua GC with small step value
+	// demonized: While Renderer prepares frame and GPU renders it, use time opportunity to repeatedly call Lua GC with small step value
 	// Reduces stutters since less work will be done in main GC step or no work at all
 	{
 		PROF_EVENT("seqLuaGC");
 		if (psLua_ParallelGC && Device.LuaGC)
 		{
-			while (Device.isRendering && Device.LuaGCCount < psLua_ParallelGC_CallAmount)
+			// Do at least once
+			do
 			{
+				Device.LuaGCCount++;
 				if (Device.LuaGC(false) == 1) // 1 informs that GC cycle is complete
 				{
 					Device.LuaGCDone = true;
 					break;
 				}
 
-				Device.LuaGCCount++;
-			}				
+			} while (Device.isRendering && Device.LuaGCCount < psLua_ParallelGC_CallAmount);
 		}
 	}
 }
