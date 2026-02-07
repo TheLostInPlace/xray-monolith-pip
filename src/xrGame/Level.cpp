@@ -269,7 +269,9 @@ CLevel::CLevel() :
 #endif
 
 	Msg("%s", Core.Params);
-	Device.LuaGC = CLevel::LuaGC;
+
+	// demonized: bind LuaGC call to be available in device.cpp
+	Device.LuaGC.bind(&CLevel::LuaGC);
 	//crash_saving::save_impl = crash_saving::_save_impl; // CLevel ready, we can save now
 }
 

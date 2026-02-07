@@ -241,7 +241,7 @@ public:
 
 	// LuaGC
 	bool LuaGCDone;
-	std::function<int(const bool)> LuaGC;
+	xr_delegate<int(const bool)> LuaGC;
 
 	// Dependent classes
 	//CResourceManager* Resources;
