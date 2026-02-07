@@ -16,6 +16,7 @@ MT version is packed into separate `STALKER-Anomaly-modded-exes-MT-TEST` archive
 MT version includes all features of standard Modded Exes described below, plus:
   * Reworked render graph, sector and portal traversals
   * Optional support for wallmarks on stalkers, mutants and other dynamic objects
+  * Particle interpolation between frames for smoother appearance
   * Multithreaded: 
     * Loading resources (textures, models, CFORM (collisions))
     * HOM (Visibility tests)
