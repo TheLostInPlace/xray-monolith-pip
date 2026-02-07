@@ -240,6 +240,7 @@ public:
 	bool isRendering;
 
 	// LuaGC
+	int LuaGCCount;
 	bool LuaGCDone;
 	xr_delegate<int(const bool)> LuaGC;
 

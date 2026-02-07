@@ -417,6 +417,7 @@ void CRenderDevice::on_idle()
 
 	Device.isRendering = true;
 	Device.LuaGCDone = false;
+	Device.LuaGCCount = 0;
 
 	secondary_tasks.run(&XRay::Engine::GameThread);
 	

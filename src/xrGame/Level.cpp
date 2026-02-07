@@ -1167,7 +1167,7 @@ int CLevel::LuaGC(const bool cleanup)
 		if (psLua_ParallelGC_debug)
 		{
 			mem_kb = lua_gc(ai().script_engine().lua(), LUA_GCCOUNT, 0);
-			Msg("[Lua] CLevel::LuaGC mem_kb %llu", mem_kb);
+			Msg("[Lua] CLevel::LuaGC mem_kb %llu, times performed %d", mem_kb, Device.LuaGCCount);
 		}
 		else if (Device.dwFrame % 30 == 0)
 			mem_kb = lua_gc(ai().script_engine().lua(), LUA_GCCOUNT, 0);			

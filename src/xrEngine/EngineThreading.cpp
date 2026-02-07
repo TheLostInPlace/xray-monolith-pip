@@ -151,9 +151,7 @@ void XRay::Engine::GameThread()
 		PROF_EVENT("seqLuaGC");
 		if (psLua_ParallelGC && Device.LuaGC)
 		{
-			int i = 0;
-
-			while (Device.isRendering && i < psLua_ParallelGC_CallAmount)
+			while (Device.isRendering && Device.LuaGCCount < psLua_ParallelGC_CallAmount)
 			{
 				if (Device.LuaGC(false) == 1) // 1 informs that GC cycle is complete
 				{
@@ -161,7 +159,7 @@ void XRay::Engine::GameThread()
 					break;
 				}
 
-				i++;
+				Device.LuaGCCount++;
 			}				
 		}
 	}
