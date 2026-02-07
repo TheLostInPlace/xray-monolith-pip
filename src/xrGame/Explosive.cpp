@@ -76,7 +76,7 @@ CExplosive::CExplosive(void)
 	m_bDynamicParticles = FALSE;
 	m_pExpParticle = NULL;
 
-#ifdef CEXPLOSIVE_CHANGE
+#ifdef EXPLOSIVE_CHANGE
 	m_on_explode_callback._set("");
 #endif
 }
@@ -168,7 +168,7 @@ void CExplosive::Load(CInifile const* ini, LPCSTR section)
 	if (ini->line_exist(section, "dynamic_explosion_particles"))
 		m_bDynamicParticles = ini->r_bool(section, "dynamic_explosion_particles");
 
-#ifdef CEXPLOSIVE_CHANGE
+#ifdef EXPLOSIVE_CHANGE
 	m_on_explode_callback._set(READ_IF_EXISTS(ini, r_string, section, "on_explode", ""));
 #endif
 }
@@ -584,7 +584,7 @@ void CExplosive::OnAfterExplosion()
 
 void CExplosive::OnBeforeExplosion()
 {
-#ifdef CEXPLOSIVE_CHANGE
+#ifdef EXPLOSIVE_CHANGE
 	if (m_on_explode_callback.size())
 	{
 		::luabind::functor<void> lua_function;
@@ -869,7 +869,7 @@ bool CExplosive::Useful() const
 	return m_explosion_flags.flags == 0;
 }
 
-#ifdef CEXPLOSIVE_CHANGE
+#ifdef EXPLOSIVE_CHANGE
 void CExplosive::LoadExplosiveSection(LPCSTR section)
 {
 	CExplosive::Load(pSettings, section);
