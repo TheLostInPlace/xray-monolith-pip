@@ -505,13 +505,23 @@ bool CLevel::PostponedSpawn(u16 id)
 	return it != queue->end() || it2 != queue2.end();
 }
 
+
+// Define a helper struct to hold the heavy data
+struct ProcessGameEventsData : public intrusive_base_nonatomic
+{
+	NET_Packet P;
+	prefetch_event E;
+	NET_Packet PRespond;
+};
+
 int CLevel::GetSpawnEventPriority(const NET_Event& e) const
 {
 	if (e.ID == M_EVENT)
 		return 0;
 
 	if (e.ID == M_SPAWN) {
-		NET_Packet P;
+		auto data = make_intrusive<ProcessGameEventsData>();
+		NET_Packet& P = data->P;
 		e.implication(P);
 
 		u16 parent_id = 0;
@@ -631,8 +641,9 @@ void CLevel::ProcessSpawnEvents()
 
 	for (const auto& E : events_to_process)
 	{
+		auto data = make_intrusive<ProcessGameEventsData>();
 		u16 ID, dest, type;
-		NET_Packet P;
+		NET_Packet& P = data->P;
 		ID = E.ID;
 		dest = E.destination;
 		type = E.type;
@@ -692,7 +703,9 @@ void CLevel::ProcessGameEvents()
 			u16 ID = it->ID;
 			u16 dest = it->destination;
 			u16 type = it->type;
-			NET_Packet P;
+
+			auto data = make_intrusive<ProcessGameEventsData>();
+			auto& P = data->P;
 			it->implication(P);
 
 //AVO: spawn antifreeze implementation, originally by alpet, reritten by demonized
@@ -785,11 +798,11 @@ void CLevel::ProcessGameEvents()
 
 						if (!models.empty())
 						{
-							prefetch_event E;
-							E.p = std::move(P);
-							E.models = std::move(models);
+							auto& E = data->E;
+							E.p = P;
+							E.models = models;
 
-							events_to_prefetch.push_back(std::move(E));
+							events_to_prefetch.push_back(E);
 
 							if (spawn_antifreeze_debug) Msg("[ProcessGameEvents] added M_SPAWN to prefetch_events: section %s, obj_id %d, parent_id %d, event_id %d", section.c_str(), obj_id, parent_id, dest);
 							it++; // Move to next event
@@ -843,7 +856,7 @@ void CLevel::ProcessGameEvents()
 							break;
 						OActor->MoveActor(NewPos, NewDir);
 					}
-					NET_Packet PRespond;
+					auto& PRespond = data->PRespond;
 					PRespond.w_begin(M_MOVE_PLAYERS_RESPOND);
 					Send(PRespond, net_flags(TRUE, TRUE));
 					break;
