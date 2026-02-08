@@ -1136,7 +1136,7 @@ void CLevel::OnFrame()
 int psLUA_GCSTEP = 300;
 int psLua_ParallelGCStep = 75;
 extern BOOL psLua_ParallelGC;
-BOOL psLua_ParallelGC_debug;
+BOOL psLua_ParallelGC_debug = FALSE;
 
 void CLevel::script_gc()
 {
