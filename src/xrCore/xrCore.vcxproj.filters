@@ -607,6 +607,9 @@
     <ClInclude Include="_noncopyable.h">
       <Filter>Kernel</Filter>
     </ClInclude>
+    <ClInclude Include="_thread_types.h">
+      <Filter>Kernel</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="xrCore.rc" />
