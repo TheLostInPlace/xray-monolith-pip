@@ -30,8 +30,8 @@ MT version includes all features of standard Modded Exes described below, plus:
     * Parallel execution of `CreateTimeEvent` and `AddUniqueCall` commands (disabled by default)
     * Logger
   * Toggleable options available in Modded Exes options
-  * Proactive Parallel Lua GC
-    * When frame is prepared in Renderer, repeatedly call Lua GC with small step to keep it busy and reduce cleanup work later
+  * Idle Time Parallel Lua GC
+    * When frame is prepared in Renderer, repeatedly call Lua GC with small step to keep it busy and reduce cleanup work later, reduces stutters
     * After frame is rendered, check if Lua memory usage is good, perform big GC with usual GC step if its not
   * Updated Luabind to latest version from (https://github.com/ForserX/luabind-latest)
   * Functor cache for Lua calls, disabled by default, didn't show any performance difference
@@ -242,6 +242,7 @@ How to compile exes:
 Main and MT:
   * Preemptive trader update check are run on own timer, fixes stutters in Gamma from this side 
   * DLTX Refactor:
+    * Duplicate section check now actually works
     * DLTX Cache: evaluated files and sections are stored permanently in RAM. Next file access by `CInifile` construction will quickly return data without ever accessing disk and DLTX parsing
     * `dltx_use_cache` variable to toggle the cache
     * Vanilla usage of cache is about 50MB, on GAMMA it is up to 150MB
@@ -255,6 +256,7 @@ Main and MT:
   * erepb: actually fix sound device selection and autoswitch (https://github.com/themrdemonized/xray-monolith/pull/416)
   * PrivatePirate97: decoupled horz recoil, non-linear inertia movement, additions to lua_help_ex.script (https://github.com/themrdemonized/xray-monolith/pull/417)
   * GhenTuong: Development work for level_graph, CExplosive, CGrenade, CWeaponStatMgun, CWeapon, script mutant movement. Export CGrenade functions (https://github.com/themrdemonized/xray-monolith/pull/420)
+  * Tosox: Keyboard layout-aware text input & Caps Lock handling (https://github.com/themrdemonized/xray-monolith/pull/421)
 
 MT:
   * Fixed crash when using Glowsticks mod
@@ -272,8 +274,8 @@ MT:
     * Split real-time objects on main thread, non RT on task group when MT Scheduler is enabled. Fixes Interaction Dot Marks mod
     * `scheduler_batch_size` to control max objects to `shedule_update` per frame
     * `scheduler_log` to log info
-  * Proactive Parallel Lua GC
-    * When frame is prepared in Renderer, repeatedly call Lua GC with small step to keep it busy and reduce cleanup work later
+  * Idle Time Parallel Lua GC
+    * When frame is prepared in Renderer, repeatedly call Lua GC with small step to keep it busy and reduce cleanup work later, reduces stutters
     * After frame is rendered, check if Lua memory usage is good, perform big GC with usual GC step if its not
     * `lua_parallel_gc` to enable feature
     * `lua_parallel_gcstep` controls GC step, default 75
