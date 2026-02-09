@@ -86,8 +86,12 @@ enum class DeletionPolicy
 // A simple, empty struct just for is_base_of checks
 struct intrusive_base_marker {};
 
-template <DeletionPolicy Policy = DeletionPolicy::Immediate, CounterPolicy Counter = CounterPolicy::Atomic>
-struct intrusive_base_impl : public intrusive_base_marker, ref_count_storage<Counter>
+// Helpers for virtual or non-virtual destructor
+struct destructor_virtual { virtual ~destructor_virtual() = default; };
+struct destructor_non_virtual { ~destructor_non_virtual() = default; };
+
+template <DeletionPolicy Policy = DeletionPolicy::Immediate, CounterPolicy Counter = CounterPolicy::Atomic, bool Virtual = true>
+struct intrusive_base_impl : public intrusive_base_marker, ref_count_storage<Counter>, std::conditional_t<Virtual, destructor_virtual, destructor_non_virtual>
 {
     // This makes the policy visible to the smart pointer
     static constexpr DeletionPolicy deletion_policy = Policy;
@@ -104,9 +108,6 @@ struct intrusive_base_impl : public intrusive_base_marker, ref_count_storage<Cou
     }
 
 	IC intrusive_base_impl() {}
-
-    // Force virtual destructor on children
-    IC virtual ~intrusive_base_impl() {}
 
 private:
 	// Deferred will use callback to use own deletion logic, ie zombie state
