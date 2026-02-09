@@ -40,6 +40,9 @@ char* str_container::alloc_in_pool(str_c s, u32 len)
 	std::memcpy(dest, s, len);
 	b.used += len;
 
+	// Round up to 4-byte boundary, more performant but takes more memory, around 300KB more for 200k strings
+	b.used = (b.used + 3) & ~3; 
+
 	return dest;
 }
 
