@@ -43,7 +43,7 @@ char* str_container::alloc_in_pool(str_c s, u32 len)
 	return dest;
 }
 
-str_value* str_container::dock(str_c value)
+intrusive_ptr<str_value> str_container::dock(str_c value)
 {
 	if (!value) return nullptr;
 
@@ -78,9 +78,10 @@ str_value* str_container::dock(str_c value)
 	}
 }
 
+// do nothing for now, persist strings
 void str_container::erase(str_c value)
 {
-	if (!value) return;
+	/*if (!value) return;
 
 	size_t hash = xr_hash<std::string_view>()(value);
 	u32 len = xr_strlen(value);
@@ -97,7 +98,7 @@ void str_container::erase(str_c value)
 			before = it;
 			it++;
 		}
-	}
+	}*/
 }
 
 void str_container::clean()
@@ -128,7 +129,7 @@ void str_container::dump()
 	for (const auto& list : buffer)
 	{
 		for (const auto& s: list)
-			fprintf(F, "ref[%d]-len[%d] : %s\n", s.dwReference.load(), xr_strlen(s.value), s.value);
+			fprintf(F, "ref[%d]-len[%d] : %s\n", s.intrusive_ref_count(), xr_strlen(s.value), s.value);
 	}
 	fclose(F);
 }
@@ -141,7 +142,7 @@ void str_container::dump(IWriter* W)
 		for (const auto& s : list)
 		{
 			string4096 temp;
-			xr_sprintf(temp, sizeof(temp), "ref[%d]-len[%d] : %s\n", s.dwReference.load(), xr_strlen(s.value), s.value);
+			xr_sprintf(temp, sizeof(temp), "ref[%d]-len[%d] : %s\n", s.intrusive_ref_count(), xr_strlen(s.value), s.value);
 			W->w_string(temp);
 		}
 	}
@@ -160,7 +161,7 @@ void str_container::dump_console()
 		u32 count = 0;
 		for (const auto& s : list)
 		{
-			Msg("ref[%d]-len[%d] : %s\n", s.dwReference.load(), xr_strlen(s.value), s.value);
+			Msg("ref[%d]-len[%d] : %s\n", s.intrusive_ref_count(), xr_strlen(s.value), s.value);
 			count++;
 			set.emplace(s.value);
 		}

@@ -92,45 +92,16 @@ namespace std
 	};
 }
 
-struct XRCORE_API str_value
+// All str_value will persist in str_container, make counter non atomic, change if there will be erase functionality
+struct XRCORE_API str_value: public intrusive_base_deferred_nonatomic
 {
 	char* value;
 	size_t hash;
-	mutable xr_atomic_u32 dwReference;
 	u32 length;
 
-	str_value() : value(nullptr), hash(0), dwReference(0), length(0) {}
-	str_value(char* s) : value(s), hash(xr_hash<std::string_view>()(s)), dwReference(0), length(xr_strlen(s)) {};
-	str_value(char* s, size_t hash, u32 length) : value(s), hash(hash), dwReference(0), length(length)  {};
-	
-	// Explicit Move Semantics
-	str_value(str_value&& other) noexcept : 
-		value(other.value),
-		hash(other.hash),
-		length(other.length)
-	{
-		dwReference.store(other.dwReference.exchange(0));
-		other.value = nullptr;
-		other.hash = 0;
-		other.length = 0;
-	}
-
-	// Move Assignment
-	str_value& operator=(str_value&& other) noexcept 
-	{
-		if (this == &other) return *this;
-
-		value = std::exchange(other.value, nullptr);
-		hash = std::exchange(other.hash, 0);
-		length = std::exchange(other.length, 0);
-		dwReference.store(other.dwReference.exchange(0));
-
-		return *this;
-	}
-
-	// Disable Copying (Standard for interned strings to prevent accidents)
-	str_value(const str_value&) = delete;
-	str_value& operator=(const str_value&) = delete;
+	str_value() : value(nullptr), hash(0), length(0) {}
+	str_value(char* s) : value(s), hash(xr_hash<std::string_view>()(s)), length(xr_strlen(s)) {};
+	str_value(char* s, size_t hash, u32 length) : value(s), hash(hash), length(length)  {};
 
 	bool operator<(const str_value& other) const
 	{
@@ -140,6 +111,12 @@ struct XRCORE_API str_value
 	bool operator==(const str_value& other) const
 	{
 		return hash == other.hash && value == other.value;
+	}
+
+	// do nothing, keep string in memory
+	void on_deferred_release()
+	{
+		//
 	}
 };
 
@@ -179,7 +156,7 @@ public:
 	static str_container* create();
 	~str_container();
 
-	str_value* dock(str_c value);
+	intrusive_ptr<str_value> dock(str_c value);
 	void erase(str_c value);
 	void clean();
 	void dump();
@@ -194,19 +171,8 @@ XRCORE_API extern intrusive_ptr<str_container> g_pStringContainer;
 class shared_str
 {
 private:
-	str_value* p_ = nullptr;
+	intrusive_ptr<str_value> p_ = nullptr;
 	intrusive_ptr<str_container> container_ptr = nullptr;
-protected:
-	// ref-counting
-	void _dec()
-	{
-		if (0 == p_) return;
-		if (1 == p_->dwReference.fetch_sub(1, std::memory_order_relaxed))
-		{
-			//g_pStringContainer->erase(p_->value.c_str()); // erasing causes crashes due to invalid pointers, not implemented yet
-			p_ = 0;
-		}
-	}
 
 public:
 	void _set(str_c rhs)
@@ -214,38 +180,23 @@ public:
 		auto gc = g_pStringContainer;
 		if (gc)
 		{
-			str_value* v = gc->dock(rhs);
-			if (0 != v) v->dwReference.fetch_add(1, std::memory_order_relaxed);
-			_dec();
-
-			container_ptr = gc;	
-
-			p_ = v;
+			p_ = gc->dock(rhs);
+			container_ptr = gc;
 		}
 		else
 		{
-			// no container available
-			_dec();
+			p_ = nullptr;
 			container_ptr = nullptr;
-			p_ = 0;
 		}
 	}
 
 	void _set(shared_str const& rhs)
 	{
-		if (this == &rhs)
-			return;
-
-		str_value* v = rhs.p_;
-		if (0 != v) v->dwReference.fetch_add(1, std::memory_order_relaxed);
-		_dec();
-
+		p_ = rhs.p_;
 		container_ptr = rhs.container_ptr;
-
-		p_ = v;
 	}
 
-	const str_value* _get() const { return p_; }
+	const str_value* _get() const { return p_.get(); }
 
 	// construction
 	shared_str() {}
@@ -260,11 +211,6 @@ public:
 		_set(rhs);
 	}
 
-	~shared_str()
-	{
-		_dec();
-	}
-
 	// assignment & accessors
 	shared_str& operator=(str_c rhs)
 	{
@@ -274,9 +220,6 @@ public:
 
 	shared_str& operator=(shared_str const& rhs)
 	{
-		if (this == &rhs)
-			return (shared_str&)*this;
-
 		_set(rhs);
 		return (shared_str&)*this;
 	}

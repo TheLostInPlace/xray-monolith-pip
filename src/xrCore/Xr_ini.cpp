@@ -1514,7 +1514,7 @@ void CInifile::save_as(IWriter& writer, bool bcheck) const
 		writer.w_string(temp);
 		if (bcheck)
 		{
-			xr_sprintf(temp, sizeof(temp), "; %d %d", (*r_it)->Name._get()->dwReference.load(), xr_strlen((*r_it)->Name._get()->value));
+			xr_sprintf(temp, sizeof(temp), "; %d %d", (*r_it)->Name._get()->intrusive_ref_count(), xr_strlen((*r_it)->Name._get()->value));
 			writer.w_string(temp);
 		}
 
