@@ -201,7 +201,7 @@ protected:
 	void _dec()
 	{
 		if (0 == p_) return;
-		if (0 == --p_->dwReference)
+		if (1 == p_->dwReference.fetch_sub(1, std::memory_order_relaxed))
 		{
 			//g_pStringContainer->erase(p_->value.c_str()); // erasing causes crashes due to invalid pointers, not implemented yet
 			p_ = 0;
@@ -215,7 +215,7 @@ public:
 		if (gc)
 		{
 			str_value* v = gc->dock(rhs);
-			if (0 != v) v->dwReference++;
+			if (0 != v) v->dwReference.fetch_add(1, std::memory_order_relaxed);
 			_dec();
 
 			container_ptr = gc;	
@@ -237,7 +237,7 @@ public:
 			return;
 
 		str_value* v = rhs.p_;
-		if (0 != v) v->dwReference++;
+		if (0 != v) v->dwReference.fetch_add(1, std::memory_order_relaxed);
 		_dec();
 
 		container_ptr = rhs.container_ptr;
