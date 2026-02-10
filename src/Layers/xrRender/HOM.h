@@ -49,6 +49,19 @@ public:
 	BOOL visible(sPoly& P);
 	BOOL visible(Fbox2& B, float depth); // viewport-space (0..1)
 
+    IC void CHOM::WaitUntilRenderFinished()
+    {
+        if (!bEnabled) return;
+
+        // If the MT thread hasn't reached the end of Render() yet, 
+        // we must wait to prevent reading half-finished depth maps.
+        while (MT_frame_rendered != Device.dwFrame)
+        {
+            // Yield the CPU to the worker thread so it can finish faster
+            YieldProcessor();
+        }
+    }
+
 	CHOM();
 	~CHOM();
 
