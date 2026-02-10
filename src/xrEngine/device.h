@@ -1,5 +1,3 @@
-﻿#ifndef xr_device
-#define xr_device
 #pragma once
 
 // Note:
@@ -35,8 +33,6 @@
 #endif // #ifdef INGAME_EDITOR
 
 class engine_impl;
-
-#pragma pack(push,4)
 
 class IRenderDevice
 {
@@ -140,7 +136,6 @@ class ENGINE_API CRenderDeviceBase :
 public:
 };
 
-#pragma pack(pop)
 // refs
 class ENGINE_API CRenderDevice : public CRenderDeviceBase
 {
@@ -554,4 +549,3 @@ public:
 };
 
 extern ENGINE_API CLoadScreenRenderer load_screen_renderer;
-#endif
