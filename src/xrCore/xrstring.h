@@ -130,7 +130,7 @@ struct XRCORE_API str_value_hash
 
 class IWriter;
 
-class XRCORE_API str_container : public intrusive_base_impl<DeletionPolicy::Immediate, CounterPolicy::Atomic, false>
+class XRCORE_API str_container : public intrusive_base_impl<DeletionPolicy::Immediate, CounterPolicy::NonAtomic, false>
 {
 private:
 	struct pool_block {
