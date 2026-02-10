@@ -1,79 +1,46 @@
 #include "stdafx.h"
 #include "occRasterizer.h"
 
-static occTri* currentTri = 0;
-static u32 dwPixels = 0;
-static float currentA[3], currentB[3], currentC[3];
-
 const int BOTTOM = 0, TOP = 1;
 
-void i_order(float* A, float* B, float* C)
+void occRasterizer::i_order(const DirectX::XMFLOAT3& V0, const DirectX::XMFLOAT3& V1, const DirectX::XMFLOAT3& V2)
 {
-	float *min, *max, *mid;
-	if (A[1] <= B[1])
-	{
-		if (B[1] <= C[1])
-		{
-			min = A;
-			mid = B;
-			max = C;
-		}
-		else // C < B
-			if (A[1] <= C[1])
-			{
-				min = A;
-				mid = C;
-				max = B;
-			}
-			else
-			{
-				min = C;
-				mid = A;
-				max = B;
-			}
-	}
-	else // B < A
-	{
-		if (A[1] <= C[1])
-		{
-			min = B;
-			mid = A;
-			max = C;
-		}
-		else // C < A
-			if (B[1] <= C[1])
-			{
-				min = B;
-				mid = C;
-				max = A;
-			}
-			else
-			{
-				min = C;
-				mid = B;
-				max = A;
-			}
-	}
+    using namespace DirectX;
 
-	currentA[0] = min[0] + 2;
-	currentB[0] = mid[0] + 2;
-	currentC[0] = max[0] + 2;
-	currentA[1] = min[1] + 2;
-	currentB[1] = mid[1] + 2;
-	currentC[1] = max[1] + 2;
-	currentA[2] = min[2];
-	currentB[2] = mid[2];
-	currentC[2] = max[2];
+    // 1. Create a local array of pointers to the vertices
+    const XMFLOAT3* sorted[3] = { &V0, &V1, &V2 };
+
+    // 2. Sort by Y-coordinate (index 1)
+    // Small fixed-size sorts are often inlined and branch-optimized by the compiler
+    if (sorted[0]->y > sorted[1]->y) std::swap(sorted[0], sorted[1]);
+    if (sorted[0]->y > sorted[2]->y) std::swap(sorted[0], sorted[2]);
+    if (sorted[1]->y > sorted[2]->y) std::swap(sorted[1], sorted[2]);
+
+    const XMFLOAT3& min = *sorted[0];
+    const XMFLOAT3& mid = *sorted[1];
+    const XMFLOAT3& max = *sorted[2];
+
+    // 3. Update current state
+    // Note: The +2 offset is likely for sub-pixel centering or guarding against 
+    // negative screen coordinates in the legacy X-Ray rasterizer.
+
+    // Using XMVECTOR here allows us to perform the additions in parallel
+    XMVECTOR offset = XMVectorSet(2.0f, 2.0f, 0.0f, 0.0f);
+
+    // Now it's just a direct register-to-register operation
+    currentV[0] = XMVectorAdd(XMLoadFloat3(sorted[0]), offset);
+    currentV[1] = XMVectorAdd(XMLoadFloat3(sorted[1]), offset);
+    currentV[2] = XMVectorAdd(XMLoadFloat3(sorted[2]), offset);
 }
 
 // Find the closest min/max pixels of a point
-IC void Vclamp(int& v, int a, int b)
+void occRasterizer::Vclamp(int& v, int a, int b)
 {
 	if (v < a) v = a;
 	else if (v >= b) v = b - 1;
 }
 
-IC BOOL shared(occTri* T1, occTri* T2)
+BOOL occRasterizer::shared(occTri* T1, occTri* T2)
 {
 	if (T1 == T2) return TRUE;
 	if (T1->adjacent[0] == T2) return TRUE;
@@ -82,201 +49,163 @@ IC BOOL shared(occTri* T1, occTri* T2)
 	return FALSE;
 }
 
-IC BOOL lesser(float& a, float& b)
-{
-	u32* A = (u32*)(&a);
-	u32* B = (u32*)(&b);
-	return *A < *B;
-}
-
 const float one_div_3 = 1.f / 3.f;
 
 // Rasterize a scan line between given X point values, corresponding Z values and current color
-void i_scan(int curY, float leftX, float lhx, float rightX, float rhx, float startZ, float endZ)
+// Rasterize a scan line with SIMD Z-buffering
+void occRasterizer::i_scan(int curY, float leftX, float lhx, float rightX, float rhx, float startZ, float endZ)
 {
-	// calculate span(s)
-	float start_c = leftX + lhx;
-	float end_c = rightX + rhx;
+    using namespace DirectX;
 
-	float startR = leftX - lhx;
-	float endR = rightX - rhx;
+    // --- 1. Span Calculation (Scalar - fast enough) ---
+    float start_c = leftX + lhx;
+    float end_c = rightX + rhx;
+    float startR = leftX - lhx;
+    float endR = rightX - rhx;
 
-	float startT = startR, endT = end_c;
-	float startX = start_c, endX = endR;
-	if (start_c < startR)
-	{
-		startT = start_c;
-		startX = startR;
-	}
-	if (end_c < endR)
-	{
-		endT = endR;
-		endX = end_c;
-	}
+    float startT = startR, endT = end_c;
+    float startX = start_c, endX = endR;
 
-	// guard-banding and clipping
-	int minT = iFloor(startT) - 1, maxT = iCeil(endT) + 1;
-	Vclamp(minT, 1, occ_dim - 1);
-	Vclamp(maxT, 1, occ_dim - 1);
-	if (minT >= maxT) return;
+    if (start_c < startR) { startT = start_c; startX = startR; }
+    if (end_c < endR) { endT = endR;      endX = end_c; }
 
-	int minX = iCeil(startX), maxX = iFloor(endX);
-	Vclamp(minX, 0, occ_dim);
-	Vclamp(maxX, 0, occ_dim);
-	int limLeft, limRight;
-	if (minX > maxX)
-	{
-		limLeft = maxX;
-		limRight = minX;
-	}
-	else
-	{
-		limLeft = minX;
-		limRight = maxX;
-	}
+    // Clipping
+    int minT = iFloor(startT) - 1;
+    int maxT = iCeil(endT) + 1;
+    Vclamp(minT, 1, occ_dim - 1);
+    Vclamp(maxT, 1, occ_dim - 1);
+    if (minT >= maxT) return;
 
-	// interpolate
-	float lenR = endR - startR;
-	float Zlen = endZ - startZ;
-	float Z = startZ + (minT - startR) / lenR * Zlen; // interpolate Z to the start
-	float Zend = startZ + (maxT - startR) / lenR * Zlen; // interpolate Z to the end
-	float dZ = (Zend - Z) / (maxT - minT); // increment in Z / pixel wrt dX
+    int minX = iCeil(startX);
+    int maxX = iFloor(endX);
+    Vclamp(minX, 0, occ_dim);
+    Vclamp(maxX, 0, occ_dim);
 
-	// Move to far my dz/5 to place the pixel at the center of face that it covers. 
-	// This will make sure that objects will not be clipped for just standing next to the home from outside.
-	Z += 0.5f * _abs(dZ);
+    int limLeft, limRight;
+    if (minX > maxX) { limLeft = maxX; limRight = minX; }
+    else { limLeft = minX; limRight = maxX; }
 
-	// gain access to buffers
-	occTri** pFrame = Raster.get_frame();
-	float* pDepth = Raster.get_depth();
+    // --- 2. Z Interpolation Setup ---
+    float lenR = endR - startR;
+    float Zlen = endZ - startZ;
+    // Protect against divide-by-zero for 1-pixel wide triangles
+    float invLenR = (_abs(lenR) > EPS_S) ? (1.0f / lenR) : 0.0f;
 
-	// left connector
-	int i_base = curY * occ_dim;
-	int i = i_base + minT;
-	int limit = i_base + limLeft;
-	for (; i < limit; i++, Z += dZ)
-	{
-		if (shared(currentTri, pFrame[i - 1]))
-		{
-			//float ZR = (Z+2*pDepth[i-1])*one_div_3;
-			if (Z < pDepth[i])
-			{
-				pFrame[i] = currentTri;
-				pDepth[i] = __max(Z, pDepth[i-1]);
-				dwPixels++;
-			}
-		}
-	}
+    float Z = startZ + (minT - startR) * invLenR * Zlen;
+    float Zend = startZ + (maxT - startR) * invLenR * Zlen;
+    float dZ = (Zend - Z) / float(maxT - minT);
 
-	// compute the scanline 
-	limit = i_base + maxX;
-	for (; i < limit; i++, Z += dZ)
-	{
-		if (Z < pDepth[i])
-		{
-			pFrame[i] = currentTri;
-			pDepth[i] = Z;
-			dwPixels++;
-		}
-	}
+    // Bias Z to center of pixel to prevent self-clipping
+    Z += 0.5f * _abs(dZ);
 
-	// right connector
-	i = i_base + maxT - 1;
-	limit = i_base + limRight;
-	Z = Zend - dZ;
-	for (; i >= limit; i--, Z -= dZ)
-	{
-		if (shared(currentTri, pFrame[i + 1]))
-		{
-			//float ZR = (Z+2*pDepth[i+1])*one_div_3;
-			if (Z < pDepth[i])
-			{
-				pFrame[i] = currentTri;
-				pDepth[i] = __max(Z, pDepth[i+1]);
-				dwPixels++;
-			}
-		}
-	}
+    // Access Buffers
+    occTri** pFrame = Raster.get_frame();
+    float* pDepth = Raster.get_depth();
+    int i_base = curY * occ_dim;
+
+    // --- 3. Left Connector (Scalar) ---
+    // Handles edge stitching logic
+    int i = i_base + minT;
+    int limit = i_base + limLeft;
+
+    for (; i < limit; i++, Z += dZ)
+    {
+        if (shared(currentTri, pFrame[i - 1]))
+        {
+            if (Z < pDepth[i])
+            {
+                pFrame[i] = currentTri;
+                // Use std::max or a macro for the blend
+                pDepth[i] = (Z > pDepth[i - 1]) ? Z : pDepth[i - 1];
+                dwPixels++;
+            }
+        }
+    }
+
+    // --- 4. Main Scanline (SIMD Optimized) ---
+    // This loops covers the vast majority of pixels
+    limit = i_base + maxX;
+
+    // Check if we have enough pixels to justify SIMD (at least 4)
+    if (limit - i >= 4)
+    {
+        // Pre-calculate Z increments: [0, dZ, 2dZ, 3dZ]
+        XMVECTOR vZStep = XMVectorSet(0.0f, dZ, dZ * 2.0f, dZ * 3.0f);
+        XMVECTOR vZQuad = XMVectorAdd(XMVectorReplicate(Z), vZStep);
+        XMVECTOR vDelta = XMVectorReplicate(dZ * 4.0f);
+
+        // Align loop to 4 pixels
+        int simd_limit = limit - 3;
+        for (; i < simd_limit; i += 4)
+        {
+            // Load 4 existing depth values from buffer
+            XMVECTOR vDestDepth = _mm_loadu_ps(&pDepth[i]);
+
+            // Compare: vMask = (vZQuad < vDestDepth)
+            XMVECTOR vMask = XMVectorLess(vZQuad, vDestDepth);
+
+            // Move comparison result to an integer mask (4 bits)
+            int mask = _mm_movemask_ps(vMask);
+
+            // If mask is 0, all new Z values are behind existing geometry -> Skip
+            if (mask)
+            {
+                // Update Z-Buffer: Store Min(NewZ, OldZ)
+                // This is branchless and safe because we only want to write smaller values
+                XMVECTOR vNewDepth = XMVectorMin(vZQuad, vDestDepth);
+                _mm_storeu_ps(&pDepth[i], vNewDepth);
+
+                // Update Pointer Buffer (Scalar fallback for pointers)
+                // Since pointers are 64-bit, SIMD scatter is complex. 
+                // Unrolled scalar writes are fastest here.
+                if (mask & 1) { pFrame[i + 0] = currentTri; dwPixels++; }
+                if (mask & 2) { pFrame[i + 1] = currentTri; dwPixels++; }
+                if (mask & 4) { pFrame[i + 2] = currentTri; dwPixels++; }
+                if (mask & 8) { pFrame[i + 3] = currentTri; dwPixels++; }
+            }
+
+            // Advance Z to the next block of 4
+            vZQuad = XMVectorAdd(vZQuad, vDelta);
+        }
+
+        // Recover scalar Z for the remaining pixels
+        // We extracted Z from the vector to ensure continuity
+        Z = XMVectorGetX(vZQuad);
+    }
+
+    // Handle remaining pixels (0 to 3) using scalar loop
+    for (; i < limit; i++, Z += dZ)
+    {
+        if (Z < pDepth[i])
+        {
+            pFrame[i] = currentTri;
+            pDepth[i] = Z;
+            dwPixels++;
+        }
+    }
+
+    // --- 5. Right Connector (Scalar) ---
+    // Handles the right edge stitching
+    i = i_base + maxT - 1;
+    limit = i_base + limRight;
+
+    // Recalculate Z for the right side to avoid accumulated error
+    // (Optional: standard floating point drift might be negligible)
+    float Z_Right = Zend - dZ;
+
+    for (; i >= limit; i--, Z_Right -= dZ)
+    {
+        if (shared(currentTri, pFrame[i + 1]))
+        {
+            if (Z_Right < pDepth[i])
+            {
+                pFrame[i] = currentTri;
+                pDepth[i] = (Z_Right > pDepth[i + 1]) ? Z_Right : pDepth[i + 1];
+                dwPixels++;
+            }
+        }
+    }
 }
-
-IC void i_test_micro(int x, int y)
-{
-	if (x < 1) return;
-	else if (x >= occ_dim - 1) return;
-	if (y < 1) return;
-	else if (y >= occ_dim - 1) return;
-	int pos = y * occ_dim + x;
-	int pos_up = pos - occ_dim;
-	int pos_down = pos + occ_dim;
-
-	occTri** pFrame = Raster.get_frame();
-	occTri* T1 = pFrame[pos_up];
-	occTri* T2 = pFrame[pos_down];
-	if (T1 && shared(T1, T2))
-	{
-		float* pDepth = Raster.get_depth();
-		float ZR = (pDepth[pos_up] + pDepth[pos_down]) / 2;
-		if (ZR < pDepth[pos])
-		{
-			pFrame[pos] = T1;
-			pDepth[pos] = ZR;
-		}
-	}
-}
-
-void i_test(int x, int y)
-{
-	i_test_micro(x, y - 1);
-	i_test_micro(x, y + 1);
-	i_test_micro(x, y);
-}
-
-void i_edge(int x1, int y1, int x2, int y2)
-{
-	int dx = _abs(x2 - x1);
-	int dy = _abs(y2 - y1);
-
-	int sx = x2 >= x1 ? 1 : -1;
-	int sy = y2 >= y1 ? 1 : -1;
-
-	if (dy <= dx)
-	{
-		int d = (dy << 1) - dx;
-		int d1 = dy << 1;
-		int d2 = (dy - dx) << 1;
-
-		i_test(x1, y1);
-		for (int x = x1 + sx, y = y1, i = 1; i <= dx; i++, x += sx)
-		{
-			if (d > 0)
-			{
-				d += d2;
-				y += sy;
-			}
-			else d += d1;
-			i_test(x, y);
-		}
-	}
-	else
-	{
-		int d = (dx << 1) - dy;
-		int d1 = dx << 1;
-		int d2 = (dx - dy) << 1;
-
-		i_test(x1, y1);
-		for (int x = x1, y = y1 + sy, i = 1; i <= dy; i++, y += sy)
-		{
-			if (d > 0)
-			{
-				d += d2;
-				x += sx;
-			}
-			else d += d1;
-			i_test(x, y);
-		}
-	}
-}
-
 
 /* 
 Rasterises 1 section of the triangle a 'section' of a triangle is the portion of a triangle between 
@@ -285,152 +214,162 @@ p2.y >= p1.y, p1, p2 are start/end vertices
 E1 E2 are the triangle edge differences of the 2 bounding edges for this section
 */
 
-IC void i_section(int Sect, BOOL bMiddle)
+void occRasterizer::i_section(int Sect, BOOL bMiddle)
 {
-	// Find the start/end Y pixel coord, set the starting pts for scan line ends
-	int startY, endY;
-	float *startp1, *startp2;
-	float E1[3], E2[3];
+    using namespace DirectX;
+    int startY, endY;
+    XMVECTOR vStartP1, vStartP2;
+    XMVECTOR E1, E2;
 
-	if (Sect == BOTTOM)
-	{
-		startY = iCeil(currentA[1]);
-		endY = iFloor(currentB[1]) - 1;
-		startp1 = startp2 = currentA;
-		if (bMiddle) endY ++;
+    // 1. Calculate Bounds and Edges using SIMD
+    if (Sect == BOTTOM)
+    {
+        // currentV[0]=A, [1]=B, [2]=C
+        startY = iCeil(XMVectorGetY(currentV[0]));
+        endY = iFloor(XMVectorGetY(currentV[1])) - 1;
+        vStartP1 = vStartP2 = currentV[0];
+        if (bMiddle) endY++;
 
-		// check 'endY' for out-of-triangle 
-		int test = iFloor(currentC[1]);
-		if (endY >= test) endY --;
+        int test = iFloor(XMVectorGetY(currentV[2]));
+        if (endY >= test) endY--;
 
-		// Find the edge differences
-		E1[0] = currentB[0] - currentA[0];
-		E2[0] = currentC[0] - currentA[0];
-		E1[1] = currentB[1] - currentA[1];
-		E2[1] = currentC[1] - currentA[1];
-		E1[2] = currentB[2] - currentA[2];
-		E2[2] = currentC[2] - currentA[2];
-	}
-	else
-	{
-		startY = iCeil(currentB[1]);
-		endY = iFloor(currentC[1]);
-		startp1 = currentA;
-		startp2 = currentB;
-		if (bMiddle) startY --;
+        // E1 = B - A, E2 = C - A
+        E1 = XMVectorSubtract(currentV[1], currentV[0]);
+        E2 = XMVectorSubtract(currentV[2], currentV[0]);
+    }
+    else
+    {
+        startY = iCeil(XMVectorGetY(currentV[1]));
+        endY = iFloor(XMVectorGetY(currentV[2]));
+        vStartP1 = currentV[0];
+        vStartP2 = currentV[1];
+        if (bMiddle) startY--;
 
-		// check 'startY' for out-of-triangle 
-		int test = iCeil(currentA[1]);
-		if (startY < test) startY ++;
+        int test = iCeil(XMVectorGetY(currentV[0]));
+        if (startY < test) startY++;
 
-		// Find the edge differences
-		E1[0] = currentC[0] - currentA[0];
-		E2[0] = currentC[0] - currentB[0];
-		E1[1] = currentC[1] - currentA[1];
-		E2[1] = currentC[1] - currentB[1];
-		E1[2] = currentC[2] - currentA[2];
-		E2[2] = currentC[2] - currentB[2];
-	}
-	Vclamp(startY, 0, occ_dim);
-	Vclamp(endY, 0, occ_dim);
-	if (startY >= endY) return;
+        // E1 = C - A, E2 = C - B
+        E1 = XMVectorSubtract(currentV[2], currentV[0]);
+        E2 = XMVectorSubtract(currentV[2], currentV[1]);
+    }
 
-	// Compute the inverse slopes of the lines, ie rate of change of X by Y
-	float mE1 = E1[0] / E1[1];
-	float mE2 = E2[0] / E2[1];
+    Vclamp(startY, 0, occ_dim);
+    Vclamp(endY, 0, occ_dim);
+    if (startY >= endY) return;
 
-	// Initial Y offset for left and right (due to pixel rounding)
-	float e1_init_dY = float(startY) - startp1[1], e2_init_dY = float(startY) - startp2[1];
-	float t, leftX, leftZ, rightX, rightZ, left_dX, right_dX, left_dZ, right_dZ;
+    // 2. Compute Inverse Slopes (X/Y and Z/Y)
+    // We can calculate all slopes for an edge in one go
+    // vSlopes.x = mEx, vSlopes.z = mEz
+    XMVECTOR vInvY1 = XMVectorReciprocal(XMVectorSplatY(E1));
+    XMVECTOR vInvY2 = XMVectorReciprocal(XMVectorSplatY(E2));
+    XMVECTOR vSlopes1 = XMVectorMultiply(E1, vInvY1);
+    XMVECTOR vSlopes2 = XMVectorMultiply(E2, vInvY2);
 
-	// find initial values, step values
-	if (((mE1 < mE2) && (Sect == BOTTOM)) || ((mE1 > mE2) && (Sect == TOP)))
-	{
-		// E1 is on the Left
-		// Initial Starting values for left (from E1)
-		t = e1_init_dY / E1[1]; // Initial fraction of offset
-		leftX = startp1[0] + E1[0] * t;
-		left_dX = mE1;
-		leftZ = startp1[2] + E1[2] * t;
-		left_dZ = E1[2] / E1[1];
+    // Initial Y offset
+    float fStartY = (float)startY;
+    float e1_init_dY = fStartY - XMVectorGetY(vStartP1);
+    float e2_init_dY = fStartY - XMVectorGetY(vStartP2);
 
-		// Initial Ending values for right	(from E2)
-		t = e2_init_dY / E2[1]; // Initial fraction of offset
-		rightX = startp2[0] + E2[0] * t;
-		right_dX = mE2;
-		rightZ = startp2[2] + E2[2] * t;
-		right_dZ = E2[2] / E2[1];
-	}
-	else
-	{
-		// E2 is on left
-		// Initial Starting values for left (from E2)
-		t = e2_init_dY / E2[1]; // Initial fraction of offset
-		leftX = startp2[0] + E2[0] * t;
-		left_dX = mE2;
-		leftZ = startp2[2] + E2[2] * t;
-		left_dZ = E2[2] / E2[1];
+    float left_dX, right_dX, left_dZ, right_dZ;
+    XMVECTOR vLeft, vRight;
 
-		// Initial Ending values for right	(from E1)
-		t = e1_init_dY / E1[1]; // Initial fraction of offset
-		rightX = startp1[0] + E1[0] * t;
-		right_dX = mE1;
-		rightZ = startp1[2] + E1[2] * t;
-		right_dZ = E1[2] / E1[1];
-	}
+    // 3. Determine Edge Orientation (Left vs Right)
+    float mE1 = XMVectorGetX(vSlopes1);
+    float mE2 = XMVectorGetX(vSlopes2);
 
-	// Now scan all lines in this section
-	float lhx = left_dX / 2;
-	leftX += lhx; // half pixel
-	float rhx = right_dX / 2;
-	rightX += rhx; // half pixel
-	for (; startY <= endY; startY++)
-	{
-		i_scan(startY, leftX, lhx, rightX, rhx, leftZ, rightZ);
-		leftX += left_dX;
-		rightX += right_dX;
-		leftZ += left_dZ;
-		rightZ += right_dZ;
-	}
+    if (((mE1 < mE2) && (Sect == BOTTOM)) || ((mE1 > mE2) && (Sect == TOP)))
+    {
+        // E1 is Left, E2 is Right
+        vLeft = XMVectorMultiplyAdd(vSlopes1, XMVectorReplicate(e1_init_dY), vStartP1);
+        left_dX = mE1;
+        left_dZ = XMVectorGetZ(vSlopes1);
+
+        vRight = XMVectorMultiplyAdd(vSlopes2, XMVectorReplicate(e2_init_dY), vStartP2);
+        right_dX = mE2;
+        right_dZ = XMVectorGetZ(vSlopes2);
+    }
+    else
+    {
+        // E2 is Left, E1 is Right
+        vLeft = XMVectorMultiplyAdd(vSlopes2, XMVectorReplicate(e2_init_dY), vStartP2);
+        left_dX = mE2;
+        left_dZ = XMVectorGetZ(vSlopes2);
+
+        vRight = XMVectorMultiplyAdd(vSlopes1, XMVectorReplicate(e1_init_dY), vStartP1);
+        right_dX = mE1;
+        right_dZ = XMVectorGetZ(vSlopes1);
+    }
+
+    // 4. Scanline Loop
+    float leftX = XMVectorGetX(vLeft) + (left_dX * 0.5f);
+    float rightX = XMVectorGetX(vRight) + (right_dX * 0.5f);
+    float leftZ = XMVectorGetZ(vLeft);
+    float rightZ = XMVectorGetZ(vRight);
+
+    for (; startY <= endY; startY++)
+    {
+        // Pass to the horizontal span filler
+        i_scan(startY, leftX, left_dX * 0.5f, rightX, right_dX * 0.5f, leftZ, rightZ);
+
+        leftX += left_dX;
+        rightX += right_dX;
+        leftZ += left_dZ;
+        rightZ += right_dZ;
+    }
 }
 
-void __stdcall i_section_b0()
+void occRasterizer::i_section_b0()
 {
-	i_section(BOTTOM, 0);
+    i_section(BOTTOM, 0);
 }
 
-void __stdcall i_section_b1()
+void occRasterizer::i_section_b1()
 {
-	i_section(BOTTOM, 1);
+    i_section(BOTTOM, 1);
 }
 
-void __stdcall i_section_t0()
+void occRasterizer::i_section_t0()
 {
-	i_section(TOP, 0);
+    i_section(TOP, 0);
 }
 
-void __stdcall i_section_t1()
+void occRasterizer::i_section_t1()
 {
 	i_section(TOP, 1);
 }
 
 u32 occRasterizer::rasterize(occTri* T)
 {
-	// Order the vertices by Y
-	currentTri = T;
-	dwPixels = 0;
-	i_order(&(T->raster[0].x), &(T->raster[1].x), &(T->raster[2].x));
+    using namespace DirectX;
 
-	// Rasterize sections
-	if (currentB[1] - iFloor(currentB[1]) > .5f)
-	{
-		i_section_b1(); // Rasterise First Section
-		i_section_t0(); // Rasterise Second Section
-	}
-	else
-	{
-		i_section_b0(); // Rasterise First Section
-		i_section_t1(); // Rasterise Second Section
-	}
-	return dwPixels;
+    // Setup triangle state
+    currentTri = T;
+    dwPixels = 0;
+
+    // 1. Sort vertices by Y (Top to Bottom)
+    // i_order now populates currentV[0] (top), currentV[1] (mid), currentV[2] (low)
+    i_order(T->raster[0], T->raster[1], T->raster[2]);
+
+    // 2. Identify the middle-vertex split
+    // currentV[1] is our "Middle" vertex (formerly currentB)
+    float mid_y = XMVectorGetY(currentV[1]);
+
+    // Quick floor using SSE intrinsics if you want max speed, 
+    // or standard cast since we're already on x64
+    float mid_y_fraction = mid_y - floorf(mid_y);
+
+    // 3. Dispatch to section rasterizers
+    // The sub-pixel bias (0.5f) determines which scanline the middle vertex belongs to
+    if (mid_y_fraction > 0.5f)
+    {
+        i_section_b1(); // Bottom section, variant 1
+        i_section_t0(); // Top section, variant 0
+    }
+    else
+    {
+        i_section_b0(); // Bottom section, variant 0
+        i_section_t1(); // Top section, variant 1
+    }
+
+    return dwPixels;
 }
