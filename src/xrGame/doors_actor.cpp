@@ -35,7 +35,7 @@ static void on_door_destroy(doors_type& doors, door& door)
 {
 	doors_type::iterator const found = std::find(doors.begin(), doors.end(), &door);
 	if (found != doors.end())
-		doors.erase(found);
+		doors.erase_fast(found);
 }
 
 void actor::on_door_destroy(door& door)
@@ -199,7 +199,7 @@ bool actor::add_new_door(
 		}
 
 		VERIFY(std::find( processed_doors.begin(), processed_doors.end(), door ) == processed_doors.end());
-		locked_doors.erase(i);
+		locked_doors.erase_fast(i);
 		door->change_state(this, state);
 		if (door->is_blocked(state))
 		{
