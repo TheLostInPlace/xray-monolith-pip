@@ -20,9 +20,8 @@ void __stdcall CHOM::MT_RENDER()
 	bool b_main_menu_is_active = (g_pGamePersistent->m_pMainMenu && g_pGamePersistent->m_pMainMenu->IsActive());
 	if (MT_frame_rendered != Device.dwFrame && !b_main_menu_is_active)
 	{
-        Fmatrix mSaved = Device.mFullTransform;
 		CFrustum ViewBase;
-		ViewBase.CreateFromMatrix(mSaved, FRUSTUM_P_LRTB + FRUSTUM_P_FAR);
+		ViewBase.CreateFromMatrix(Device.mFullTransform, FRUSTUM_P_LRTB + FRUSTUM_P_FAR);
 		Enable();
 		Render(ViewBase);
 	}

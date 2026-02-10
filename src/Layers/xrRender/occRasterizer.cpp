@@ -119,17 +119,10 @@ occRasterizer::~occRasterizer()
 
 void occRasterizer::clear()
 {
-    using namespace DirectX;
-    // Use SIMD to clear the depth buffer to 1.0f (far plane)
-    // This is much faster than memset for small 64x64 buffers
-    XMVECTOR vFar = XMVectorSet(1.0f, 1.0f, 1.0f, 1.0f);
-    for (int i = 0; i < occ_dim * occ_dim; i += 4)
-    {
-        _mm_store_ps(&bufDepth[0][i], vFar);
-    }
-
-    // Clear the frame buffer to nullptr
-    ZeroMemory(bufFrame, sizeof(bufFrame));
+	u32 size = occ_dim * occ_dim;
+	float f = 1.f;
+	Memory.mem_fill32(bufFrame, 0, size * (sizeof(void*) / 4));
+	Memory.mem_fill32(bufDepth, *LPDWORD(&f), size);
 }
 
 IC BOOL shared(occTri* T1, occTri* T2)
