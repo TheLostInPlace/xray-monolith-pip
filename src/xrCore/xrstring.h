@@ -1,8 +1,5 @@
-#ifndef xrstringH
-#define xrstringH
 #pragma once
 
-#pragma pack(push,4)
 //////////////////////////////////////////////////////////////////////////
 using str_c = const char*;
 
@@ -370,7 +367,3 @@ IC xr_string UTF8_to_CP1251(xr_string const& utf8)
 
 	return utf8;
 }
-
-#pragma pack(pop)
-
-#endif
