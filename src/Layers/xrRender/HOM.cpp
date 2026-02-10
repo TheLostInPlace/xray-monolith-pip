@@ -20,8 +20,9 @@ void __stdcall CHOM::MT_RENDER()
 	bool b_main_menu_is_active = (g_pGamePersistent->m_pMainMenu && g_pGamePersistent->m_pMainMenu->IsActive());
 	if (MT_frame_rendered != Device.dwFrame && !b_main_menu_is_active)
 	{
+        Fmatrix mSaved = Device.mFullTransform;
 		CFrustum ViewBase;
-		ViewBase.CreateFromMatrix(Device.mFullTransform, FRUSTUM_P_LRTB + FRUSTUM_P_FAR);
+		ViewBase.CreateFromMatrix(mSaved, FRUSTUM_P_LRTB + FRUSTUM_P_FAR);
 		Enable();
 		Render(ViewBase);
 	}
@@ -180,94 +181,119 @@ public:
 
 void CHOM::Render_DB(CFrustum& base)
 {
-	//Update projection matrices on every frame to ensure valid HOM culling
-	float view_dim = occ_dim_0;
-	Fmatrix m_viewport = {
-		view_dim / 2.f, 0.0f, 0.0f, 0.0f,
-		0.0f, -view_dim / 2.f, 0.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f,
-		view_dim / 2.f + 0 + 0, view_dim / 2.f + 0 + 0, 0.0f, 1.0f
-	};
-	Fmatrix m_viewport_01 = {
-		1.f / 2.f, 0.0f, 0.0f, 0.0f,
-		0.0f, -1.f / 2.f, 0.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f,
-		1.f / 2.f + 0 + 0, 1.f / 2.f + 0 + 0, 0.0f, 1.0f
-	};
-	m_xform.mul(m_viewport, Device.mFullTransform);
-	m_xform_01.mul(m_viewport_01, Device.mFullTransform);
+    using namespace DirectX;
 
-	// Query DB
-	xrc.frustum_options(0);
-	xrc.frustum_query(m_pModel, base);
-	if (0 == xrc.r_count()) return;
+    // 1. Update projection matrices using DirectXMath
+    float view_dim = occ_dim_0;
 
-	// Prepare
-	CDB::RESULT* it = xrc.r_begin();
-	CDB::RESULT* end = xrc.r_end();
+    // Viewport matrix: maps NDC to screen coords [0..view_dim]
+    XMMATRIX m_viewport = XMMatrixSet(
+        view_dim / 2.f, 0.0f, 0.0f, 0.0f,
+        0.0f, -view_dim / 2.f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        view_dim / 2.f, view_dim / 2.f, 0.0f, 1.0f
+    );
 
-	Fvector COP = Device.vCameraPosition;
-	end = std::remove_if(it, end, pred_fb(m_pTris));
-	std::sort(it, end, pred_fb(m_pTris, COP));
+    XMMATRIX m_viewport_01 = XMMatrixSet(
+        0.5f, 0.0f, 0.0f, 0.0f,
+        0.0f, -0.5f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, 0.0f, 1.0f
+    );
 
-	// Build frustum with near plane only
-	CFrustum clip;
-	clip.CreateFromMatrix(Device.mFullTransform,FRUSTUM_P_NEAR);
-	sPoly src, dst;
-	u32 _frame = Device.dwFrame;
-#ifdef DEBUG
-	tris_in_frame				= xrc.r_count();
-	tris_in_frame_visible		= 0;
-#endif
+    // Load Engine's FullTransform
+    XMMATRIX m_full_xform = XMLoadFloat4x4((const XMFLOAT4X4*)&Device.mFullTransform);
 
-	// Perfrom selection, sorting, culling
-	for (; it != end; it++)
-	{
-		// Control skipping
-		occTri& T = m_pTris[it->id];
-		u32 next = _frame + ::Random.randI(3, 10);
+    // Combine matrices
+    XMMATRIX combined = XMMatrixMultiply(m_full_xform, m_viewport);
+    XMMATRIX combined_01 = XMMatrixMultiply(m_full_xform, m_viewport_01);
 
-		// Test for good occluder - should be improved :)
-		if (!(T.flags || (T.plane.classify(COP) > 0)))
-		{
-			T.skip = next;
-			continue;
-		}
+    // Store back to Fmatrix (keeping compatibility with the rest of the engine)
+    XMStoreFloat4x4((XMFLOAT4X4*)&m_xform, combined);
+    XMStoreFloat4x4((XMFLOAT4X4*)&m_xform_01, combined_01);
 
-		// Access to triangle vertices
-		CDB::TRI& t = m_pModel->get_tris()[it->id];
-		Fvector* v = m_pModel->get_verts();
-		src.clear();
-		dst.clear();
-		src.push_back(v[t.verts[0]]);
-		src.push_back(v[t.verts[1]]);
-		src.push_back(v[t.verts[2]]);
-		sPoly* P = clip.ClipPoly(src, dst);
-		if (0 == P)
-		{
-			T.skip = next;
-			continue;
-		}
+    // 2. Query DB and Sort (standard logic)
+    xrc.frustum_options(0);
+    xrc.frustum_query(m_pModel, base);
+    if (0 == xrc.r_count()) return;
 
-		// XForm and Rasterize
-#ifdef DEBUG
-		tris_in_frame_visible	++;
-#endif
-		u32 pixels = 0;
-		int limit = int(P->size()) - 1;
-		for (int v = 1; v < limit; v++)
-		{
-			m_xform.transform(T.raster[0], (*P)[0]);
-			m_xform.transform(T.raster[1], (*P)[v + 0]);
-			m_xform.transform(T.raster[2], (*P)[v + 1]);
-			pixels += Raster.rasterize(&T);
-		}
-		if (0 == pixels)
-		{
-			T.skip = next;
-			continue;
-		}
-	}
+    CDB::RESULT* it = xrc.r_begin();
+    CDB::RESULT* end = xrc.r_end();
+
+    Fvector COP = Device.vCameraPosition;
+    end = std::remove_if(it, end, pred_fb(m_pTris));
+    std::sort(it, end, pred_fb(m_pTris, COP));
+
+    // 3. Clipping Setup
+    CFrustum clip;
+    clip.CreateFromMatrix(Device.mFullTransform, FRUSTUM_P_NEAR);
+    sPoly src, dst;
+    u32 _frame = Device.dwFrame;
+
+    // 4. Rasterization Loop
+    for (; it != end; it++)
+    {
+        occTri& T = m_pTris[it->id];
+        u32 next = _frame + ::Random.randI(3, 10);
+
+        // Plane classification (Front-face culling)
+        if (!(T.flags || (T.plane.classify(COP) > 0)))
+        {
+            T.skip = next;
+            continue;
+        }
+
+        CDB::TRI& t = m_pModel->get_tris()[it->id];
+        Fvector* v = m_pModel->get_verts();
+
+        src.clear();
+        dst.clear();
+        src.push_back(v[t.verts[0]]);
+        src.push_back(v[t.verts[1]]);
+        src.push_back(v[t.verts[2]]);
+
+        sPoly* P = clip.ClipPoly(src, dst);
+        if (!P || P->size() < 3)
+        {
+            T.skip = next;
+            continue;
+        }
+
+        // 5. Transform and Rasterize using SIMD
+        u32 pixels = 0;
+        int limit = int(P->size()) - 1;
+
+        // Pre-load the transform for this triangle's vertices
+        for (int v_idx = 1; v_idx < limit; v_idx++)
+        {
+            // Transform 3 vertices of the triangle fan
+            // Note: X-Ray uses Fvector4 p in its internal FVF/Transform logic usually, 
+            // but here we map directly to occTri::raster
+            auto project_to_raster = [&](int raster_idx, const Fvector& vert)
+            {
+                XMVECTOR vIn = XMVectorSet(vert.x, vert.y, vert.z, 1.0f);
+                XMVECTOR vOut = XMVector4Transform(vIn, combined);
+
+                // Perspective divide
+                XMVECTOR w_inv = XMVectorReciprocal(XMVectorSplatW(vOut));
+                XMVECTOR projected = XMVectorMultiply(vOut, w_inv);
+
+                XMStoreFloat3((XMFLOAT3*)&T.raster[raster_idx], projected);
+            };
+
+            project_to_raster(0, (*P)[0]);
+            project_to_raster(1, (*P)[v_idx]);
+            project_to_raster(2, (*P)[v_idx + 1]);
+
+            pixels += Raster.rasterize(&T);
+        }
+
+        if (0 == pixels)
+        {
+            T.skip = next;
+            continue;
+        }
+    }
 }
 
 void CHOM::Render(CFrustum& base)
@@ -282,48 +308,51 @@ void CHOM::Render(CFrustum& base)
 	Device.Statistic->RenderCALC_HOM.End();
 }
 
-ICF BOOL xform_b0(Fvector2& min, Fvector2& max, float& minz, Fmatrix& X, float _x, float _y, float _z)
-{
-	float z = _x * X._13 + _y * X._23 + _z * X._33 + X._43;
-	if (z < EPS) return TRUE;
-	float iw = 1.f / (_x * X._14 + _y * X._24 + _z * X._34 + X._44);
-	min.x = max.x = (_x * X._11 + _y * X._21 + _z * X._31 + X._41) * iw;
-	min.y = max.y = (_x * X._12 + _y * X._22 + _z * X._32 + X._42) * iw;
-	minz = 0.f + z * iw;
-	return FALSE;
-}
-
-ICF BOOL xform_b1(Fvector2& min, Fvector2& max, float& minz, Fmatrix& X, float _x, float _y, float _z)
-{
-	float t;
-	float z = _x * X._13 + _y * X._23 + _z * X._33 + X._43;
-	if (z < EPS) return TRUE;
-	float iw = 1.f / (_x * X._14 + _y * X._24 + _z * X._34 + X._44);
-	t = (_x * X._11 + _y * X._21 + _z * X._31 + X._41) * iw;
-	if (t < min.x) min.x = t;
-	else if (t > max.x) max.x = t;
-	t = (_x * X._12 + _y * X._22 + _z * X._32 + X._42) * iw;
-	if (t < min.y) min.y = t;
-	else if (t > max.y) max.y = t;
-	t = 0.f + z * iw;
-	if (t < minz) minz = t;
-	return FALSE;
-}
-
 IC BOOL _visible(Fbox& B, Fmatrix& m_xform_01)
 {
-	// Find min/max points of xformed-box
-	Fvector2 min, max;
-	float z;
-	if (xform_b0(min, max, z, m_xform_01, B.min.x, B.min.y, B.min.z)) return TRUE;
-	if (xform_b1(min, max, z, m_xform_01, B.min.x, B.min.y, B.max.z)) return TRUE;
-	if (xform_b1(min, max, z, m_xform_01, B.max.x, B.min.y, B.max.z)) return TRUE;
-	if (xform_b1(min, max, z, m_xform_01, B.max.x, B.min.y, B.min.z)) return TRUE;
-	if (xform_b1(min, max, z, m_xform_01, B.min.x, B.max.y, B.min.z)) return TRUE;
-	if (xform_b1(min, max, z, m_xform_01, B.min.x, B.max.y, B.max.z)) return TRUE;
-	if (xform_b1(min, max, z, m_xform_01, B.max.x, B.max.y, B.max.z)) return TRUE;
-	if (xform_b1(min, max, z, m_xform_01, B.max.x, B.max.y, B.min.z)) return TRUE;
-	return Raster.test(min.x, min.y, max.x, max.y, z);
+    using namespace DirectX;
+
+    // 1. Load matrix once
+    XMMATRIX M = XMLoadFloat4x4((const XMFLOAT4X4*)&m_xform_01);
+
+    // 2. Setup initial Min/Max registers with extreme values
+    XMVECTOR vMin = XMVectorSet(FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX);
+    XMVECTOR vMax = XMVectorSet(-FLT_MAX, -FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+    // 3. Define the 8 corners
+    XMVECTOR corners[8];
+    corners[0] = XMVectorSet(B.min.x, B.min.y, B.min.z, 1.0f);
+    corners[1] = XMVectorSet(B.min.x, B.min.y, B.max.z, 1.0f);
+    corners[2] = XMVectorSet(B.max.x, B.min.y, B.max.z, 1.0f);
+    corners[3] = XMVectorSet(B.max.x, B.min.y, B.min.z, 1.0f);
+    corners[4] = XMVectorSet(B.min.x, B.max.y, B.min.z, 1.0f);
+    corners[5] = XMVectorSet(B.min.x, B.max.y, B.max.z, 1.0f);
+    corners[6] = XMVectorSet(B.max.x, B.max.y, B.max.z, 1.0f);
+    corners[7] = XMVectorSet(B.max.x, B.max.y, B.min.z, 1.0f);
+
+    for (int i = 0; i < 8; ++i)
+    {
+        XMVECTOR p = XMVector4Transform(corners[i], M);
+
+        // Early exit: if any point's Z is behind near plane, consider visible
+        if (XMVectorGetZ(p) < EPS) return TRUE;
+
+        // 4. Perspective Divide using SIMD
+        // Splat W to all components and multiply by reciprocal
+        XMVECTOR w_inv = XMVectorReciprocal(XMVectorSplatW(p));
+        XMVECTOR projected = XMVectorMultiply(p, w_inv);
+
+        // 5. Update Min/Max registers (Branchless!)
+        vMin = XMVectorMin(vMin, projected);
+        vMax = XMVectorMax(vMax, projected);
+    }
+
+    // 6. Final extraction for the Rasterizer test
+    XMFLOAT4 fMin, fMax;
+    XMStoreFloat4(&fMin, vMin);
+    XMStoreFloat4(&fMax, vMax);
+
+    return Raster.test(fMin.x, fMin.y, fMax.x, fMax.y, fMin.z);
 }
 
 BOOL CHOM::visible(Fbox3& B)
@@ -383,16 +412,47 @@ BOOL CHOM::visible(vis_data& vis)
 
 BOOL CHOM::visible(sPoly& P)
 {
-	if (!bEnabled) return TRUE;
+    if (!bEnabled) return TRUE;
+    if (P.empty()) return FALSE; // Safety check
 
-	// Find min/max points of xformed-box
-	Fvector2 min, max;
-	float z;
+    using namespace DirectX;
 
-	if (xform_b0(min, max, z, m_xform_01, P.front().x, P.front().y, P.front().z)) return TRUE;
-	for (u32 it = 1; it < P.size(); it++)
-		if (xform_b1(min, max, z, m_xform_01, P[it].x, P[it].y, P[it].z)) return TRUE;
-	return Raster.test(min.x, min.y, max.x, max.y, z);
+    // 1. Load the projection matrix once
+    XMMATRIX M = XMLoadFloat4x4((const XMFLOAT4X4*)&m_xform_01);
+
+    // 2. Initialize Min/Max registers
+    XMVECTOR vMin = XMVectorSet(FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX);
+    XMVECTOR vMax = XMVectorSet(-FLT_MAX, -FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+    // 3. Iterate through all vertices in the polygon
+    for (const auto& vert : P)
+    {
+        // Load vertex into SIMD register
+        XMVECTOR vIn = XMVectorSet(vert.x, vert.y, vert.z, 1.0f);
+        
+        // Transform
+        XMVECTOR vOut = XMVector4Transform(vIn, M);
+
+        // Near-plane clipping check (Z check)
+        // Extract Z via Splat for a quick comparison
+        if (XMVectorGetZ(vOut) < EPS) return TRUE;
+
+        // 4. Perspective Divide (W-divide)
+        XMVECTOR w_inv = XMVectorReciprocal(XMVectorSplatW(vOut));
+        XMVECTOR projected = XMVectorMultiply(vOut, w_inv);
+
+        // 5. Branchless Min/Max update
+        vMin = XMVectorMin(vMin, projected);
+        vMax = XMVectorMax(vMax, projected);
+    }
+
+    // 6. Extract results for the Rasterizer test
+    XMFLOAT4 fMin, fMax;
+    XMStoreFloat4(&fMin, vMin);
+    XMStoreFloat4(&fMax, vMax);
+
+    // Note: fMin.z represents the "minz" (closest depth) of the polygon
+    return Raster.test(fMin.x, fMin.y, fMax.x, fMax.y, fMin.z);
 }
 
 void CHOM::Disable()
