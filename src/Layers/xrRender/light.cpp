@@ -36,6 +36,7 @@ light::light()
 	omnipart_num = 0;
 	sss_id = -1;
 	sss_refresh = 0;
+    sss_remove_latency = 0;
 
 
 #if (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)

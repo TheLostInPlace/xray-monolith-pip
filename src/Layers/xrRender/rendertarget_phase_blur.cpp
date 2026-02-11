@@ -757,6 +757,7 @@ void CRenderTarget::phase_ssfx_sss_ext(light_Package& LP)
 					LightSlot[FreeSlot] = L;
 
 					L->sss_id = FreeSlot;
+                    L->sss_remove_latency = 0;
 
 					if (L->flags.type == IRender_Light::OMNIPART)
 						L->sss_refresh = true;
@@ -801,14 +802,21 @@ void CRenderTarget::phase_ssfx_sss_ext(light_Package& LP)
 				// Remove Light
 				if (!LightSlot[slot]->flags.bActive || Remove)
 				{
-					if (LightSlot[slot]->flags.type == IRender_Light::OMNIPART)
-						LightSlot[slot]->sss_refresh = true;
+                    // demonized: keep the light pointer for some frames to eliminate flicker, but also check if its actually been disabled
+                    LightSlot[slot]->sss_remove_latency++;
+                    if (!LightSlot[slot]->flags.bActive || LightSlot[slot]->sss_remove_latency > 5)
+                    {
+                        if (LightSlot[slot]->flags.type == IRender_Light::OMNIPART)
+                            LightSlot[slot]->sss_refresh = true;
 
-					LightSlot[slot]->sss_id = -1;
-					LightSlot[slot] = NULL;
+                        LightSlot[slot]->sss_id = -1;
+                        LightSlot[slot] = NULL;
+                    }
 				}
 				else
 				{
+                    LightSlot[slot]->sss_remove_latency = 0;                  
+
 					// Update Light
 					Fvector L_pos;
 
