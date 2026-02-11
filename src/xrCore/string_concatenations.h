@@ -50,7 +50,7 @@ IC char* strconcat(int dest_sz, char* dest, const char* S1, const char* S2, cons
 
 #endif
 
-int XRCORE_API _strconcatSingle(char*& destPtr, char* pDestEnd, const char* Str);
+bool XRCORE_API _strconcatSingle(char*& destPtr, char* pDestEnd, const char* src);
 
 // warning: do not comment this macro, as stack overflow check is very light
 // (consumes ~1% performance of STRCONCAT macro)
@@ -86,14 +86,36 @@ int XRCORE_API _strconcatSingle(char*& destPtr, char* pDestEnd, const char* Str)
 template<typename StringReceiverType, typename... ArgList>
 char* xr_strconcat(StringReceiverType& receiver, ArgList... args)
 {
-	static_assert(std::is_array< StringReceiverType>::value); // must be array...
-	static_assert(std::is_same<typename std::remove_extent< StringReceiverType>::type, char>::value); // ... of chars
+    static_assert(std::is_array< StringReceiverType>::value); // must be array...
+    static_assert(std::is_same<typename std::remove_extent< StringReceiverType>::type, char>::value); // ... of chars
 
-	char* pStrCursor = &receiver[0];
-	char* pStrEnd = &receiver[0] + sizeof(StringReceiverType);
-	int dummy[] = { _strconcatSingle(pStrCursor, pStrEnd, args)... };
-	(void)dummy;
+    char* pStrCursor = &receiver[0];
+    char* pStrEnd = &receiver[0] + sizeof(StringReceiverType);
+    const char* errorSource = nullptr;
 
-	*pStrCursor = '\0';
-	return &receiver[0];
+    // Use a lambda to process args and catch the first one that fails
+    auto process = [&](const char* s)
+    {
+        if (!errorSource && !_strconcatSingle(pStrCursor, pStrEnd, s))
+        {
+            errorSource = s;
+        }
+    };
+
+    // Fold expression (C++17) or initializer list trick to process args
+    (process(args), ...);
+
+    // If errorSource is set, one of the strings was truncated
+    if (errorSource)
+    {
+        Debug.fatal(DEBUG_INFO,
+            "String Buffer Overflow!\n"
+            "Max Capacity: %zu bytes\n"
+            "Failed at string: \"%s\"\n"
+            "Current buffer state: \"%s\"",
+            sizeof(StringReceiverType), errorSource, &receiver[0]);
+    }
+
+    *pStrCursor = '\0'; // Guaranteed safe because of the -1 check in _strconcatSingle
+    return &receiver[0];
 }
