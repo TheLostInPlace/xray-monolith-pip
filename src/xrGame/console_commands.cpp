@@ -361,6 +361,11 @@ static void full_memory_stats()
 	size_t lua_mem = lua_gc(ai().script_engine().lua(), LUA_GCCOUNT, 0);
 	Msg("* [Lua]: Memory usage: %u K", lua_mem);
 
+	if (Console)
+	{
+		Console->DumpHistoryToLog();
+	}
+
 #ifdef FS_DEBUG
 	Msg("* [x-ray]: file mapping: memory[%d K], count[%d]", g_file_mapped_memory / 1024, g_file_mapped_count);
 	dump_file_mappings();

@@ -129,7 +129,7 @@ void CConsole::Next_cmd() // DIK_DOWN + Ctrl
 
 void CConsole::Prev_tip() // DIK_UP
 {
-	if (xr_strlen(ec().str_edit()) == 0)
+	if (m_cmd_history_idx != -1 || xr_strlen(ec().str_edit()) == 0 || m_tips.empty())
 	{
 		prev_cmd_history_idx();
 		SelectCommand();
@@ -138,12 +138,20 @@ void CConsole::Prev_tip() // DIK_UP
 	prev_selected_tip();
 }
 
-void CConsole::Next_tip() // DIK_DOWN + Ctrl
+void CConsole::Next_tip() // DIK_DOWN
 {
-	if (xr_strlen(ec().str_edit()) == 0)
+	if (m_cmd_history_idx != -1 || xr_strlen(ec().str_edit()) == 0 || m_tips.empty())
 	{
 		next_cmd_history_idx();
-		SelectCommand();
+
+		if (m_cmd_history_idx == -1)
+		{
+			ec().set_edit("");
+		}
+		else
+		{
+			SelectCommand();
+		}
 		return;
 	}
 	next_selected_tip();
