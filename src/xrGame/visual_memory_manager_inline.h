@@ -10,12 +10,12 @@
 
 IC const CVisualMemoryManager::VISIBLES& CVisualMemoryManager::objects() const
 {
-	return (*m_objects);
+	return (*m_objectsShared.get());
 }
 
 IC const CVisualMemoryManager::VISIBLES* CVisualMemoryManager::objectsPtr() const
 {
-	return m_objects;
+	return m_objectsShared.get();
 }
 
 IC const CVisualMemoryManager::RAW_VISIBLES& CVisualMemoryManager::raw_objects() const
@@ -30,9 +30,16 @@ IC const CVisualMemoryManager::NOT_YET_VISIBLES& CVisualMemoryManager::not_yet_v
 
 IC void CVisualMemoryManager::set_squad_objects(VISIBLES* squad_objects)
 {
-	m_objects = squad_objects;
-	if (!m_objects)
-		m_not_yet_visible_objects.clear();
+    if (squad_objects)
+    {
+        // Use null deleter since owning object can delete this vector
+        m_objectsShared = xr_make_shared_with_deleter(squad_objects, [](VISIBLES*) {});
+    }
+    else
+    {
+        m_objectsShared.reset();
+        m_not_yet_visible_objects.clear();
+    }
 }
 
 IC float CVisualMemoryManager::visibility_threshold() const
