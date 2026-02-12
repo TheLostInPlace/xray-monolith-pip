@@ -97,23 +97,28 @@ namespace R_dsgraph
 	template<typename T>
 	using mapDSGraphItemsMap = FixedMAP<T, DSGraphItem<T>, render_allocator>;
 
-	struct RenderPacketSortKey
+	struct alignas(16) RenderPacketSortKey
 	{
 		// Calculated key for sorting
 		u64 high; // VS, GS, PS, HS
 		u64 low; // DS, Constants, State, Textures
 
-		bool operator<(const RenderPacketSortKey& other) const
+		bool operator<(const RenderPacketSortKey& other) const noexcept
 		{
 			if (high != other.high)
 				return high < other.high;
 			return low < other.low;
 		}
 
-		bool operator!=(const RenderPacketSortKey& other) const
+		bool operator!=(const RenderPacketSortKey& other) const noexcept
 		{
 			return (high != other.high) || (low != other.low);
 		}
+
+        bool operator==(const RenderPacketSortKey& other) const noexcept
+        {
+            return (high == other.high) && (low == other.low);
+        }
 	};
 
 	struct RenderPacket

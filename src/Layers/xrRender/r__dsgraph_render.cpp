@@ -31,8 +31,8 @@ ICF float calcLOD(float ssa/*fDistSq*/, float R)
 template<typename T>
 void CDSGraphManager::r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItems<T>& graph, bool _clear, bool reverse)
 {
-	static auto sortFunc = [](const R_dsgraph::DSGraphItem<T>& a, const R_dsgraph::DSGraphItem<T>& b) { return a.sortKey < b.sortKey; };
-	static auto sortFuncReverse = [](const R_dsgraph::DSGraphItem<T>& a, const R_dsgraph::DSGraphItem<T>& b) { return a.sortKey > b.sortKey; };
+	static auto sortFunc = [](const R_dsgraph::DSGraphItem<T>& a, const R_dsgraph::DSGraphItem<T>& b) noexcept { return a.sortKey < b.sortKey; };
+	static auto sortFuncReverse = [](const R_dsgraph::DSGraphItem<T>& a, const R_dsgraph::DSGraphItem<T>& b) noexcept { return a.sortKey > b.sortKey; };
 	if (reverse)
 	{
 		if (graph.size() >= 4096)
@@ -80,10 +80,7 @@ void CDSGraphManager::r_dsgraph_render_graph(RenderQueueArray& queues, u32 _prio
 			continue;
 
 		// 1. Sort by generated sort key to replicate previous fixed map behaviour
-		static auto sortFunc = [](const RenderPacket& a, const RenderPacket& b)
-		{
-			return a.sortKey < b.sortKey;
-		};
+		static auto sortFunc = [](const RenderPacket& a, const RenderPacket& b) noexcept { return a.sortKey < b.sortKey; };
 		if (queue.size() >= 4096)
 			xr_parallel_sort(queue, sortFunc);
 		else
@@ -350,7 +347,7 @@ void CDSGraphManager::r_dsgraph_render_water_ssr()
 {
 #ifdef USE_DX11
 	PROF_EVENT("r_dsgraph_render_water_ssr");
-	static auto sortFunc = [](const R_dsgraph::DSGraphItem<float>& a, const R_dsgraph::DSGraphItem<float>& b) { return a.sortKey < b.sortKey; };
+	static auto sortFunc = [](const R_dsgraph::DSGraphItem<float>& a, const R_dsgraph::DSGraphItem<float>& b) noexcept { return a.sortKey < b.sortKey; };
 	std::sort(RGraph.mapWater.begin(), RGraph.mapWater.end(), sortFunc);
 	for (R_dsgraph::DSGraphItem<float>& N : RGraph.mapWater)
 	{
@@ -377,7 +374,7 @@ void CDSGraphManager::r_dsgraph_render_water_ssr()
 void CDSGraphManager::r_dsgraph_render_water()
 {
 	PROF_EVENT("r_dsgraph_render_water_ssr");
-	static auto sortFunc = [](const R_dsgraph::DSGraphItem<float>& a, const R_dsgraph::DSGraphItem<float>& b) { return a.sortKey < b.sortKey; };
+	static auto sortFunc = [](const R_dsgraph::DSGraphItem<float>& a, const R_dsgraph::DSGraphItem<float>& b) noexcept { return a.sortKey < b.sortKey; };
 	std::sort(RGraph.mapWater.begin(), RGraph.mapWater.end(), sortFunc);
 	for (R_dsgraph::DSGraphItem<float>& N : RGraph.mapWater)
 	{
