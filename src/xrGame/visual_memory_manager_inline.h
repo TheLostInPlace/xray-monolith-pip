@@ -8,14 +8,14 @@
 
 #pragma once
 
-IC const CVisualMemoryManager::VISIBLES& CVisualMemoryManager::objects() const
+IC xr_shared_ptr<CVisualMemoryManager::VISIBLES> CVisualMemoryManager::objects() const
 {
-	return (*m_objectsShared.get());
+	return m_objectsShared;
 }
 
-IC const CVisualMemoryManager::VISIBLES* CVisualMemoryManager::objectsPtr() const
+IC xr_shared_ptr<CVisualMemoryManager::VISIBLES> CVisualMemoryManager::objectsPtr() const
 {
-	return m_objectsShared.get();
+	return m_objectsShared;
 }
 
 IC const CVisualMemoryManager::RAW_VISIBLES& CVisualMemoryManager::raw_objects() const

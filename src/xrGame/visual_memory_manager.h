@@ -126,8 +126,8 @@ public:
 	IC void enable(bool value);
 
 public:
-	IC const VISIBLES& objects() const;
-	IC const VISIBLES* objectsPtr() const;
+	IC xr_shared_ptr<VISIBLES> objects() const;
+	IC xr_shared_ptr<VISIBLES> objectsPtr() const;
 	IC const RAW_VISIBLES& raw_objects() const;
 	IC const NOT_YET_VISIBLES& not_yet_visible_objects() const;
 	IC const CVisionParameters& current_state() const;

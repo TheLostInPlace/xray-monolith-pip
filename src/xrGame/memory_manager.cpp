@@ -158,6 +158,12 @@ void CMemoryManager::enable(const CObject* object, bool enable)
 }
 
 template <typename T>
+void CMemoryManager::update(const xr_shared_ptr<xr_vector<T>> objects, bool add_enemies)
+{
+    update(*objects.get(), add_enemies);
+}
+
+template <typename T>
 void CMemoryManager::update(const xr_vector<T>& objects, bool add_enemies)
 {
 	PROF_EVENT("CMemoryManager::update");
@@ -207,9 +213,9 @@ CMemoryInfo CMemoryManager::memory(const CObject* object) const
 	squad_mask_type mask = m_stalker ? m_stalker->agent_manager().member().mask(m_stalker) : squad_mask_type(-1);
 
 	{
-		xr_vector<CVisibleObject>::const_iterator I = std::find(visual().objects().begin(), visual().objects().end(),
+		xr_vector<CVisibleObject>::const_iterator I = std::find(visual().objects()->begin(), visual().objects()->end(),
 		                                                        object_id(object));
-		if (visual().objects().end() != I)
+		if (visual().objects()->end() != I)
 		{
 			(CMemoryObject<CGameObject>&)result = (CMemoryObject<CGameObject>&)(*I);
 			result.visible((*I).visible(mask));
@@ -256,9 +262,9 @@ u32 CMemoryManager::memory_time(const CObject* object) const
 	VERIFY(game_object);
 
 	{
-		xr_vector<CVisibleObject>::const_iterator I = std::find(visual().objects().begin(), visual().objects().end(),
+		xr_vector<CVisibleObject>::const_iterator I = std::find(visual().objects()->begin(), visual().objects()->end(),
 		                                                        object_id(object));
-		if (visual().objects().end() != I)
+		if (visual().objects()->end() != I)
 			result = (*I).m_level_time;
 	}
 
@@ -290,9 +296,9 @@ Fvector CMemoryManager::memory_position(const CObject* object) const
 	VERIFY(game_object);
 
 	{
-		xr_vector<CVisibleObject>::const_iterator I = std::find(visual().objects().begin(), visual().objects().end(),
+		xr_vector<CVisibleObject>::const_iterator I = std::find(visual().objects()->begin(), visual().objects()->end(),
 		                                                        object_id(object));
-		if (visual().objects().end() != I)
+		if (visual().objects()->end() != I)
 		{
 			time = (*I).m_level_time;
 			result = (*I).m_object_params.m_position;
