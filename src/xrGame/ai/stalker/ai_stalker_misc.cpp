@@ -180,8 +180,9 @@ void CAI_Stalker::process_enemies()
 	typedef CVisualMemoryManager::VISIBLES VISIBLES;
 
 	squad_mask_type mask = memory().visual().mask();
-	auto I = memory().visual().objects()->begin();
-	auto E = memory().visual().objects()->end();
+    auto objects = memory().visual().objects();
+	auto I = objects->begin();
+	auto E = objects->end();
 	for (; I != E; ++I)
 	{
 		if (!(*I).visible(mask))

@@ -161,8 +161,9 @@ bool CScriptEntity::CheckTypeVisibility(const char* section_name)
 	if (!m_monster)
 		return (false);
 
-	auto I = m_monster->memory().visual().objects()->begin();
-	auto E = m_monster->memory().visual().objects()->end();
+    auto objects = m_monster->memory().visual().objects();
+	auto I = objects->begin();
+    auto E = objects->end();
 	for (; I != E; ++I)
 	{
 		VERIFY((*I).m_object);
