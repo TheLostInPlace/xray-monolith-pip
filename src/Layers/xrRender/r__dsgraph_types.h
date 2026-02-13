@@ -134,11 +134,14 @@ namespace R_dsgraph
 		vs_type pVS;
 		gs_type pGS;
 #else
-		vs_type pVS;
+        vs_type pVS;
+        u64 _unused_pad_gs;
 #endif
 #ifdef USE_DX11
 		hs_type pHS;
 		ds_type pDS;
+#else
+        u64 _unused_pad_hs, _unused_pad_ds;
 #endif
 		ps_type pPS;
 		R_constant_table* pCS;
