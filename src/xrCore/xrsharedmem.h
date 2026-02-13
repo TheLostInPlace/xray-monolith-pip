@@ -1,15 +1,13 @@
-#ifndef xrsharedmemH
-#define xrsharedmemH
 #pragma once
+#include "_thread_types.h"
 
-#include <atomic>
 #pragma pack(push,4)
 //////////////////////////////////////////////////////////////////////////
 #pragma warning(push)
 #pragma warning(disable : 4200)
 struct XRCORE_API smem_value
 {
-	std::atomic<u32> dwReference;
+	xr_atomic_u32 dwReference;
 	u32 dwCRC;
 	u32 dwLength;
 	u32 _align_16;
@@ -166,5 +164,3 @@ template <class T>
 IC void swap(ref_smem<T>& lhs, ref_smem<T>& rhs) { lhs.swap(rhs); }
 
 #pragma pack(pop)
-
-#endif

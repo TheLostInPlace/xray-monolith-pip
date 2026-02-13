@@ -2,7 +2,6 @@
 #define xrstringH
 #pragma once
 
-#include <atomic>
 #pragma pack(push,4)
 //////////////////////////////////////////////////////////////////////////
 typedef const char* str_c;
@@ -12,7 +11,7 @@ typedef const char* str_c;
 #pragma warning(disable : 4200)
 struct XRCORE_API str_value
 {
-	std::atomic<u32> dwReference;
+	u32 dwReference;
 	u32 dwLength;
 	u32 dwCRC;
 	str_value* next;
@@ -68,14 +67,15 @@ protected:
 	void _dec()
 	{
 		if (0 == p_) return;
-		if (p_->dwReference.fetch_sub(1, std::memory_order_acq_rel) == 1) p_ = 0;
+		p_->dwReference--;
+		if (0 == p_->dwReference) p_ = 0;
 	}
 
 public:
 	void _set(str_c rhs)
 	{
 		str_value* v = g_pStringContainer->dock(rhs);
-		if (0 != v) v->dwReference.fetch_add(1, std::memory_order_relaxed);
+		if (0 != v) v->dwReference++;
 		_dec();
 		p_ = v;
 	}
@@ -83,7 +83,7 @@ public:
 	void _set(shared_str const& rhs)
 	{
 		str_value* v = rhs.p_;
-		if (0 != v) v->dwReference.fetch_add(1, std::memory_order_relaxed);
+		if (0 != v) v->dwReference++;
 		_dec();
 		p_ = v;
 	}

@@ -1,6 +1,6 @@
 #pragma once
 #include <fast_dynamic_cast/fast_dynamic_cast.hpp>
-#include <atomic>
+#include "_thread_types.h"
 
 // resource itself, the base class for all derived resources
 class XRCORE_API xr_resource
@@ -9,7 +9,7 @@ public:
 	enum { RF_REGISTERED = 1 << 0 };
 
 public:
-	std::atomic<u32> dwReference;
+	xr_atomic_u32 dwReference;
 
 	xr_resource() : dwReference(0) {}
 	xr_resource(const xr_resource&) : dwReference(0) {}
