@@ -45,25 +45,25 @@ IC bool p_sort_constants(ref_constant& C1, ref_constant& C2)
 	return xr_strcmp(C1->name, C2->name) < 0;
 }
 
-ref_constant R_constant_table::get(LPCSTR S)
+R_constant* R_constant_table::get(LPCSTR S)
 {
 	PROF_EVENT("R_constant_table::get LPCSTR");
 	// assumption - sorted by name
 	c_table::iterator I = std::lower_bound(table.begin(), table.end(), S, [](ref_constant & C, LPCSTR S) { return xr_strcmp(*C->name, S) < 0; });
-	if (I == table.end() || (0 != xr_strcmp(*(*I)->name, S))) return 0;
-	else return *I;
+	if (I == table.end() || (0 != xr_strcmp(*(*I)->name, S))) return nullptr;
+	else return &**I;
 }
 
-ref_constant R_constant_table::get(shared_str& S)
+R_constant* R_constant_table::get(shared_str& S)
 {
 	PROF_EVENT("R_constant_table::get shared_str");
 	// linear search, but only ptr-compare
 	for (ref_constant& C : table)
 	{
 		if (C->name.equal(S))
-			return C;
+            return &*C;
 	}
-	return 0;
+	return nullptr;
 }
 
 #if !defined(USE_DX10) && !defined(USE_DX11)
