@@ -550,12 +550,12 @@ inline std::pair<_Ty1, _Ty2> mk_pair(_Ty1 _Val1, _Ty2 _Val2) { return (std::pair
 
 struct pred_str
 {
-	IC bool operator()(const char* x, const char* y) const { return xr_strcmp(x, y) < 0; }
+	IC bool operator()(const char* x, const char* y) const noexcept { return xr_strcmp(x, y) < 0; }
 };
 
 struct pred_stri
 {
-	IC bool operator()(const char* x, const char* y) const { return stricmp(x, y) < 0; }
+	IC bool operator()(const char* x, const char* y) const noexcept { return stricmp(x, y) < 0; }
 };
 
 // STL extensions
