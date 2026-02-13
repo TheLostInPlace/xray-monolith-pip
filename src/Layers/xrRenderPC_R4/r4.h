@@ -70,6 +70,7 @@ public:
 		u32 ssao_ultra : 1;
 		u32 hbao_vectorized : 1;
 
+		u32 volsize : 16;
 		u32 smapsize : 16;
 		u32 depth16 : 1;
 		u32 mrt : 1;
