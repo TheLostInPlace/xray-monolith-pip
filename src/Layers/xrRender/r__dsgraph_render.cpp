@@ -104,14 +104,14 @@ void CDSGraphManager::r_dsgraph_render_graph(RenderQueueArray& queues, u32 _prio
 		ID3DState* pState = nullptr;
 		STextureList* pTextures = nullptr;
 
-		RenderPacketSortKey key = { 0, 0 };
+        u64 high = 0;
 
         for (auto& packet : queue)
         {
             auto& currentKey = packet.sortKey;
-            if (currentKey.high != key.high)
+            if (currentKey.high != high)
             {
-                key.high = currentKey.high;
+                high = currentKey.high;
 
                 if (packet.pState != pState)
                 {
@@ -141,34 +141,30 @@ void CDSGraphManager::r_dsgraph_render_graph(RenderQueueArray& queues, u32 _prio
 #endif
             }
 
-            if (currentKey.low != key.low)
+            // Compare low key stuff regardless, too high collision probability
+            if (packet.pVS != pVS)
             {
-                key.low = currentKey.low;
+                pVS = packet.pVS;
+                RCache.set_VS(pVS);
+            }
 
-                if (packet.pVS != pVS)
-                {
-                    pVS = packet.pVS;
-                    RCache.set_VS(pVS);
-                }
+            if (packet.pPS != pPS)
+            {
+                pPS = packet.pPS;
+                RCache.set_PS(pPS);
+            }
 
-                if (packet.pPS != pPS)
-                {
-                    pPS = packet.pPS;
-                    RCache.set_PS(pPS);
-                }
+            if (packet.pCS != pCS)
+            {
+                pCS = packet.pCS;
+                RCache.set_Constants(pCS);
+            }
 
-                if (packet.pCS != pCS)
-                {
-                    pCS = packet.pCS;
-                    RCache.set_Constants(pCS);
-                }
-
-                if (packet.pTextures != pTextures)
-                {
-                    pTextures = packet.pTextures;
-                    RCache.set_Textures(pTextures);
-                    RImplementation.apply_lmaterial();
-                }
+            if (packet.pTextures != pTextures)
+            {
+                pTextures = packet.pTextures;
+                RCache.set_Textures(pTextures);
+                RImplementation.apply_lmaterial();
             }
 
 			auto& item = packet.item;

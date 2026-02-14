@@ -309,6 +309,7 @@ void CDSGraphManager::AddToRenderQueue(R_dsgraph::RenderQueue& queue, R_dsgraph:
     // Optimized grouping based on profiling, example
     // States:4, GS:0, HS:0, DS:0 they are pretty much unused and/or unchanged
     // VS:13, PS:28, CS:93, Tex:179. Grouping based on increasing change of state
+    // Low key is used just for sorting
     u64 keyHigh = 0;
     u64 keyLow = 0;
 
