@@ -108,10 +108,6 @@ void CRender::Render()
 		HOM.Enable();
 		HOM.Render(ViewBase);
 	}
-    else
-    {
-        HOM.WaitUntilRenderFinished();
-    }
 
 	Target->phase_scene_prepare();
 

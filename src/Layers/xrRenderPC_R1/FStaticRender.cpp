@@ -1,4 +1,4 @@
-// CRender.cpp: implementation of the CRender class.
+﻿// CRender.cpp: implementation of the CRender class.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -440,10 +440,6 @@ void CRender::Calculate()
 		HOM.Enable();
 		HOM.Render(ViewBase);
 	}
-    else
-    {
-        HOM.WaitUntilRenderFinished();
-    }
 	gm_SetNearer(FALSE);
 	phase = PHASE_NORMAL;
 
