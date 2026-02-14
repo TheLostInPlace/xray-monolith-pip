@@ -127,25 +127,27 @@ namespace R_dsgraph
 		RenderPacketSortKey sortKey;
 
 		// Visual data
-		DSGraphItem<dxRender_Visual*> item;
+		DSGraphItem<u32> item;
 
 		// Pointers to resources (previously keys in FixedMAPs)
+        ID3DState* pState;
+
 #if defined(USE_DX10) || defined(USE_DX11)
-		vs_type pVS;
 		gs_type pGS;
 #else
-        vs_type pVS;
         u64 _unused_pad_gs;
 #endif
+
 #ifdef USE_DX11
 		hs_type pHS;
 		ds_type pDS;
 #else
         u64 _unused_pad_hs, _unused_pad_ds;
 #endif
+
+        vs_type pVS;
 		ps_type pPS;
-		R_constant_table* pCS;
-		ID3DState* pState;
+        R_constant_table* pCS;
 		STextureList* pTextures;
 	};
 

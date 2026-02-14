@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 
 #include "fhierrarhyvisual.h"
 #include "SkeletonCustom.h"
@@ -157,8 +157,8 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 
 	// Shadows registering
 #if RENDER==R_R1
-	DSGraphItem<dxRender_Visual*> item = { pVisual, SSA, val_pObject, pVisual, xform, nullptr, i_mask[CDSGraphManager::fl_hud] };
-	R_dsgraph::mapDSGraphItemsMap<dxRender_Visual*>::TNode N = { pVisual, item };
+	DSGraphItem<u32> item = { 0, SSA, val_pObject, pVisual, xform, nullptr, i_mask[CDSGraphManager::fl_hud] };
+	R_dsgraph::mapDSGraphItemsMap<u32>::TNode N = { 0, item };
 	RImplementation.L_Shadows->add_element(N);
 #endif
 	if (i_mask[CDSGraphManager::fl_invisible])
@@ -207,7 +207,7 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 #if RENDER==R_R1
 		packet.item = item;
 #else
-		packet.item = { pVisual, SSA, val_pObject, pVisual, xform, nullptr, i_mask[CDSGraphManager::fl_hud] };
+		packet.item = { 0, SSA, val_pObject, pVisual, xform, nullptr, i_mask[CDSGraphManager::fl_hud] };
 #endif
 
 		AddToRenderQueue(RGraph.mapDynamicPasses[shader_priority][iPass], packet, pass);
@@ -279,7 +279,7 @@ void CDSGraphManager::r_dsgraph_insert_static(dxRender_Visual *pVisual)
 
 		// Step 1: Create render packet
 		RenderPacket packet;
-		packet.item = { pVisual, SSA, nullptr, pVisual };
+		packet.item = { 0, SSA, nullptr, pVisual };
 		AddToRenderQueue(RGraph.mapStaticPasses[shader_priority][iPass], packet, pass);
 	}
 }
@@ -305,26 +305,28 @@ void CDSGraphManager::AddToRenderQueue(R_dsgraph::RenderQueue& queue, R_dsgraph:
 	packet.pState = pass.state->state;
 	packet.pTextures = pass.T._get();
 
-	// Step 3: Make sort key with bit packing
-	u64 keyHigh = 0;
-	u64 keyLow = 0;
+    // Step 3: Make sort key with bit 
+    // Optimized grouping based on profiling, example
+    // States:4, GS:0, HS:0, DS:0 they are pretty much unused and/or unchanged
+    // VS:13, PS:28, CS:93, Tex:179. Grouping based on increasing change of state
+    u64 keyHigh = 0;
+    u64 keyLow = 0;
 
-	keyHigh |= ((u64)packet.pVS >> 4 & 0xFFFF) << 48;
+    keyHigh |= ((u64)packet.pState >> 4 & 0xFFFF) << 48;
 
 #if defined(USE_DX10) || defined(USE_DX11)
-	keyHigh |= ((u64)packet.pGS >> 4 & 0xFFFF) << 32;
+    keyHigh |= ((u64)packet.pGS >> 4 & 0xFFFF) << 32;
 #endif
-
-	keyHigh |= ((u64)packet.pPS >> 4 & 0xFFFF) << 16;
 
 #ifdef USE_DX11
-	keyHigh |= ((u64)packet.pHS >> 4 & 0xFFFF);
-	keyLow |= ((u64)packet.pDS >> 4 & 0xFFFF) << 48;
+    keyHigh |= ((u64)packet.pHS >> 4 & 0xFFFF) << 16;
+    keyHigh |= ((u64)packet.pDS >> 4 & 0xFFFF);
 #endif
 
-	keyLow |= ((u64)packet.pCS >> 4 & 0xFFFF) << 32;
-	keyLow |= ((u64)packet.pState >> 4 & 0xFFFF) << 16;
-	keyLow |= ((u64)packet.pTextures >> 4 & 0xFFFF);
+    keyLow |= ((u64)packet.pVS >> 4 & 0xFFFF) << 48;
+    keyLow |= ((u64)packet.pPS >> 4 & 0xFFFF) << 32;
+    keyLow |= ((u64)packet.pCS >> 4 & 0xFFFF) << 16;
+    keyLow |= ((u64)packet.pTextures >> 4 & 0xFFFF);
 
 	packet.sortKey = { keyHigh, keyLow };
 	queue.push_back(packet);
