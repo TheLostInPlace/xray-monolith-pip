@@ -79,7 +79,7 @@ void CLightProjector::set_object(IRenderable* O, IDSGraphManager& DM)
 
 		if (current)
 		{
-			ISpatialShared& spatial = O->SpatialComponent;
+			ISpatialShared spatial = O->SpatialComponent;
 			if (0 == spatial) current = 0;
 			else
 			{
@@ -392,7 +392,7 @@ void CLightProjector::calculate()
 		BB.set(min, max);
 		R.UVclamp_min.set(min).add(.05f); // shrink a little
 		R.UVclamp_max.set(max).sub(.05f); // shrink a little
-		ISpatialShared& spatial = O->SpatialComponent;
+		ISpatialShared spatial = O->SpatialComponent;
 		if (spatial)
 		{
 			spatial->spatial_updatesector();

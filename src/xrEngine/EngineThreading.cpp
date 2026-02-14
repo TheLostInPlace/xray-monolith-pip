@@ -70,8 +70,7 @@ void XRay::Engine::CalculateBonesThread()
 	static xr_vector<SpatialSnapshot> spatialsSnapshot;
 	spatialsSnapshot.clear();
 	{
-		xrSRWLockGuard g(g_SpatialSpace->db_lock);
-		for (ISpatialShared& spatial : spatials)
+		for (ISpatialShared spatial : spatials)
 		{
 			if (!spatial)
 				continue;
@@ -87,7 +86,7 @@ void XRay::Engine::CalculateBonesThread()
 		}
 	}
 
-	static auto sortFunc = [](const SpatialSnapshot& _1, const SpatialSnapshot& _2)
+	static auto sortFunc = [](const SpatialSnapshot& _1, const SpatialSnapshot& _2) noexcept
 	{
 		return _1.P.distance_to_sqr(Device.vCameraPosition_saved) < _2.P.distance_to_sqr(Device.vCameraPosition_saved);
 	};

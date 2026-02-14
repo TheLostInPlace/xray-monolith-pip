@@ -465,7 +465,7 @@ void CDSGraphManager::r_dsgraph_capture_lights()
 	);
 
 #if	RENDER==R_R1
-	std::sort(lstLights.begin(), lstLights.end(), [](ISpatialShared& _1, ISpatialShared& _2)
+	std::sort(lstLights.begin(), lstLights.end(), [](const ISpatialShared& _1, const ISpatialShared& _2) noexcept
 	{
 		if (!_1.get() || !_2.get()) return false;
 
@@ -473,7 +473,7 @@ void CDSGraphManager::r_dsgraph_capture_lights()
 	});
 #endif
 
-	for (ISpatialShared& spatial : lstLights)
+	for (ISpatialShared spatial : lstLights)
 	{
 		if (0 == spatial) continue; spatial->spatial_updatesector();
 		CSector* sector = (CSector*)spatial->spatial.sector;
@@ -518,7 +518,7 @@ void CDSGraphManager::r_dsgraph_capture_dynamic(CObject* O)
 #if	RENDER==R_R1
 			if (i_mask[CDSGraphManager::fl_normal])//normal phase
 			{
-				std::sort(lstRenderables.begin(), lstRenderables.end(), [](ISpatialShared& _1, ISpatialShared& _2)
+				std::sort(lstRenderables.begin(), lstRenderables.end(), [](const ISpatialShared& _1, const ISpatialShared& _2) noexcept
 				{
 					if (!_1.get() || !_2.get()) return false;
 
@@ -564,7 +564,7 @@ void CDSGraphManager::r_dsgraph_capture_dynamic(CObject* O)
 			// Determine visibility for dynamic part of scene
 			for (u32 o_it = 0; o_it < lstRenderables.size(); o_it++)
 			{
-				ISpatialShared& spatial = lstRenderables[o_it];
+				ISpatialShared spatial = lstRenderables[o_it];
 				if (0 == spatial) continue;
 				CSector* sector = (CSector*)spatial->spatial.sector;
 				if (0 == sector) continue;
