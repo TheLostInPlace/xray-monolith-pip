@@ -157,7 +157,7 @@ ShaderElement* CResourceManager::_CreateElement(ShaderElement& S)
 {
 	if (S.passes.empty()) return 0;
 
-	xrCriticalSectionGuard guard(shaderGuard);
+	xrSRWLockGuard guard(shaderGuard);
 
 	// Search equal in shaders array
     auto it = v_elements.find(S);
@@ -172,7 +172,7 @@ ShaderElement* CResourceManager::_CreateElement(ShaderElement& S)
 
 void CResourceManager::_DeleteElement(const ShaderElement* S)
 {
-	xrCriticalSectionGuard guard(shaderGuard);
+	xrSRWLockGuard guard(shaderGuard);
 	if (0 == (S->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
 	if (reclaim(v_elements, S)) return;
 	Msg("! ERROR: Failed to find compiled 'shader-element'");
@@ -181,8 +181,6 @@ void CResourceManager::_DeleteElement(const ShaderElement* S)
 Shader* CResourceManager::_cpp_Create(IBlender* B, LPCSTR s_shader, LPCSTR s_textures, LPCSTR s_constants,
                                       LPCSTR s_matrices)
 {
-	xrCriticalSectionGuard guard(shaderGuard);
-
 	CBlender_Compile C;
 	Shader S;
 
@@ -279,9 +277,12 @@ Shader* CResourceManager::_cpp_Create(IBlender* B, LPCSTR s_shader, LPCSTR s_tex
 	}
 
 	// Search equal in shaders array
-    auto it = v_shaders.find(&S);
-    if (it != v_shaders.end()) return *it;
-
+    {
+        xrSRWLockGuard guard(shaderGuard);
+        auto it = v_shaders.find(&S);
+            if (it != v_shaders.end()) return *it;
+    }
+    
 	// Create _new_ entry
 	Shader* ResultShader = _CreateShader(&S);
 	return ResultShader;
@@ -383,7 +384,7 @@ void CResourceManager::Delete(const Shader* S)
 	if (0 == (S->dwFlags & xr_resource_flagged::RF_REGISTERED))
 		return;
 
-	xrCriticalSectionGuard guard(shaderGuard);
+	xrSRWLockGuard guard(shaderGuard);
 
 	if (reclaim(v_shaders, S))
 		return;
@@ -444,7 +445,7 @@ void	CResourceManager::ED_UpdateTextures(AStringVec* names)
 
 Shader* CResourceManager::_CreateShader(Shader* InShader)
 {
-	xrCriticalSectionGuard guard(shaderGuard);
+	xrSRWLockGuard guard(shaderGuard);
 
 	// Search equal in shaders array
     auto it = v_shaders.find(InShader);

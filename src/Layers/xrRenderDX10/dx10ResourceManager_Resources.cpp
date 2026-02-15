@@ -84,7 +84,7 @@ BOOL reclaim(xr_unordered_flat_set<T*, H, E>& vec, const T* ptr)
 //--------------------------------------------------------------------------------------------------------------
 SState* CResourceManager::_CreateState(SimulatorStates& state_code)
 {
-	xrCriticalSectionGuard guard(stateGuard);
+	xrSRWLockGuard guard(stateGuard);
 
 	// Search equal state-code 
     auto it = v_states.find(state_code);
@@ -112,7 +112,7 @@ SState* CResourceManager::_CreateState(SimulatorStates& state_code)
 void CResourceManager::_DeleteState(const SState* state)
 {
 	if (0 == (state->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(stateGuard);
+	xrSRWLockGuard guard(stateGuard);
 	if (reclaim(v_states, state)) return;
 	Msg("! ERROR: Failed to find compiled stateblock");
 }
@@ -120,7 +120,7 @@ void CResourceManager::_DeleteState(const SState* state)
 //--------------------------------------------------------------------------------------------------------------
 SPass* CResourceManager::_CreatePass(const SPass& proto)
 {
-	xrCriticalSectionGuard guard(shaderGuard);
+	xrSRWLockGuard guard(shaderGuard);
     auto it = v_passes.find(proto);
     if (it != v_passes.end()) return *it;
 
@@ -149,7 +149,7 @@ SPass* CResourceManager::_CreatePass(const SPass& proto)
 void CResourceManager::_DeletePass(const SPass* P)
 {
 	if (0 == (P->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(shaderGuard);
+	xrSRWLockGuard guard(shaderGuard);
 	if (reclaim(v_passes, P)) return;
 	Msg("! ERROR: Failed to find compiled pass");
 }
@@ -157,7 +157,7 @@ void CResourceManager::_DeletePass(const SPass* P)
 //--------------------------------------------------------------------------------------------------------------
 SVS* CResourceManager::_CreateVS(LPCSTR _name)
 {
-	xrCriticalSectionGuard guard(shaderGuard);
+	xrSRWLockGuard guard(shaderGuard);
 	xr_string res_name = _name;
 
 	const int m_skinning = Engine.External.GetSkinningMode();
@@ -248,7 +248,7 @@ SVS* CResourceManager::_CreateVS(LPCSTR _name)
 void CResourceManager::_DeleteVS(const SVS* vs)
 {
 	if (0 == (vs->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(shaderGuard);
+	xrSRWLockGuard guard(shaderGuard);
 	LPSTR N = LPSTR(*vs->cName);
 	map_VS::iterator I = m_vs.find(N);
 	if (I != m_vs.end())
@@ -273,7 +273,7 @@ void CResourceManager::_DeleteVS(const SVS* vs)
 //--------------------------------------------------------------------------------------------------------------
 SPS* CResourceManager::_CreatePS(LPCSTR _name)
 {
-	xrCriticalSectionGuard guard(shaderGuard);
+	xrSRWLockGuard guard(shaderGuard);
 	string_path name;
 	xr_strcpy(name, _name);
 	if (0 == ::Render->m_MSAASample) xr_strcat(name, "_0");
@@ -377,7 +377,7 @@ SPS* CResourceManager::_CreatePS(LPCSTR _name)
 void CResourceManager::_DeletePS(const SPS* ps)
 {
 	if (0 == (ps->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(shaderGuard);
+	xrSRWLockGuard guard(shaderGuard);
 	LPSTR N = LPSTR(*ps->cName);
 	map_PS::iterator I = m_ps.find(N);
 	if (I != m_ps.end())
@@ -391,7 +391,7 @@ void CResourceManager::_DeletePS(const SPS* ps)
 //--------------------------------------------------------------------------------------------------------------
 SGS* CResourceManager::_CreateGS(LPCSTR name)
 {
-	xrCriticalSectionGuard guard(shaderGuard);
+	xrSRWLockGuard guard(shaderGuard);
 	LPSTR N = LPSTR(name);
 	map_GS::iterator I = m_gs.find(N);
 	if (I != m_gs.end()) return I->second;
@@ -451,7 +451,7 @@ SGS* CResourceManager::_CreateGS(LPCSTR name)
 void CResourceManager::_DeleteGS(const SGS* gs)
 {
 	if (0 == (gs->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(shaderGuard);
+	xrSRWLockGuard guard(shaderGuard);
 	LPSTR N = LPSTR(*gs->cName);
 	map_GS::iterator I = m_gs.find(N);
 	if (I != m_gs.end())
@@ -474,7 +474,7 @@ static BOOL dcl_equal(D3DVERTEXELEMENT9* a, D3DVERTEXELEMENT9* b)
 
 SDeclaration* CResourceManager::_CreateDecl(D3DVERTEXELEMENT9* dcl)
 {
-	xrCriticalSectionGuard guard(declGuard);
+	xrSRWLockGuard guard(declGuard);
 	// Search equal code
 	auto it = v_declarations.find(dcl);
 	if (it != v_declarations.end()) return *it;
@@ -494,7 +494,7 @@ SDeclaration* CResourceManager::_CreateDecl(D3DVERTEXELEMENT9* dcl)
 void CResourceManager::_DeleteDecl(const SDeclaration* dcl)
 {
 	if (0 == (dcl->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(declGuard);
+	xrSRWLockGuard guard(declGuard);
 	if (reclaim(v_declarations, dcl)) return;
 	Msg("! ERROR: Failed to find compiled vertex-declarator");
 }
@@ -504,7 +504,7 @@ R_constant_table* CResourceManager::_CreateConstantTable(R_constant_table& C)
 {
 	if (C.empty())		return NULL;
 
-	xrCriticalSectionGuard guard(constantGuard);
+	xrSRWLockGuard guard(constantGuard);
     auto it = v_constant_tables.find(C);
     if (it != v_constant_tables.end()) return *it;
 
@@ -517,7 +517,7 @@ R_constant_table* CResourceManager::_CreateConstantTable(R_constant_table& C)
 void CResourceManager::_DeleteConstantTable(const R_constant_table* C)
 {
 	if (0 == (C->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(constantGuard);
+	xrSRWLockGuard guard(constantGuard);
 	if (reclaim(v_constant_tables, C)) return;
 	Msg("! ERROR: Failed to find compiled constant-table");
 }
@@ -533,7 +533,7 @@ CRT* CResourceManager::_CreateRT(LPCSTR Name, u32 w, u32 h, D3DFORMAT f, u32 Sam
 
 	// ***** first pass - search already created RT
 	LPSTR N = LPSTR(Name);
-	xrCriticalSectionGuard guard(rtargetGuard);
+	xrSRWLockGuard guard(rtargetGuard);
 	map_RT::iterator I = m_rtargets.find(N);
 	if (I != m_rtargets.end()) return I->second;
 	else
@@ -554,7 +554,7 @@ void CResourceManager::_DeleteRT(const CRT* RT)
 {
 	if (0 == (RT->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
 	LPSTR N = LPSTR(*RT->cName);
-	xrCriticalSectionGuard guard(rtargetGuard);
+	xrSRWLockGuard guard(rtargetGuard);
 	map_RT::iterator I = m_rtargets.find(N);
 	if (I != m_rtargets.end())
 	{
@@ -591,7 +591,7 @@ SGeometry* CResourceManager::CreateGeom(D3DVERTEXELEMENT9* decl, ID3DVertexBuffe
 
     SGeometry_key key = { dcl, vb, ib, vb_stride };
 
-    xrCriticalSectionGuard guard(geomGuard);
+    xrSRWLockGuard guard(geomGuard);
 
 	// ***** first pass - search already loaded shader
     auto it = v_geoms.find(key);
@@ -610,7 +610,6 @@ SGeometry* CResourceManager::CreateGeom(D3DVERTEXELEMENT9* decl, ID3DVertexBuffe
 SGeometry* CResourceManager::CreateGeom(u32 FVF, ID3DVertexBuffer* vb, ID3DIndexBuffer* ib)
 {
 	D3DVERTEXELEMENT9 dcl [MAX_FVF_DECL_SIZE];
-	xrCriticalSectionGuard guard(geomGuard);
 	CHK_DX(D3DXDeclaratorFromFVF(FVF,dcl));
 	SGeometry* g = CreateGeom(dcl, vb, ib);
 	return g;
@@ -619,7 +618,7 @@ SGeometry* CResourceManager::CreateGeom(u32 FVF, ID3DVertexBuffer* vb, ID3DIndex
 void CResourceManager::DeleteGeom(const SGeometry* Geom)
 {
 	if (0 == (Geom->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(geomGuard);
+	xrSRWLockGuard guard(geomGuard);
 	if (reclaim(v_geoms, Geom)) return;
 	Msg("! ERROR: Failed to find compiled geometry-declaration");
 }
@@ -633,7 +632,7 @@ CTexture* CResourceManager::_CreateTexture(LPCSTR _Name)
 	if (0 == xr_strcmp(_Name, "null")) return 0;
 	//Msg("texture %s", _Name);
 	R_ASSERT(_Name && _Name[0]);
-	xrCriticalSectionGuard guard(textureGuard);
+	xrSRWLockGuard guard(textureGuard);
 	string_path Name;
 	xr_strcpy(Name, _Name); //. andy if (strext(Name)) *strext(Name)=0;
 	fix_texture_name(Name);
@@ -666,7 +665,7 @@ void CResourceManager::_DeleteTexture(const CTexture* T)
 	// DBG_VerifyTextures	();
 
 	if (0 == (T->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(textureGuard);
+	xrSRWLockGuard guard(textureGuard);
 	LPSTR N = LPSTR(*T->cName);
 	map_Texture::iterator I = m_textures.find(N);
 	if (I != m_textures.end())
@@ -699,7 +698,7 @@ CMatrix* CResourceManager::_CreateMatrix(LPCSTR Name)
 	if (0 == stricmp(Name, "$null")) return NULL;
 
 	LPSTR N = LPSTR(Name);
-	xrCriticalSectionGuard guard(matrixGuard);
+	xrSRWLockGuard guard(matrixGuard);
 	map_Matrix::iterator I = m_matrices.find(N);
 	if (I != m_matrices.end()) return I->second;
 	else
@@ -715,7 +714,7 @@ CMatrix* CResourceManager::_CreateMatrix(LPCSTR Name)
 void CResourceManager::_DeleteMatrix(const CMatrix* M)
 {
 	if (0 == (M->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(matrixGuard);
+	xrSRWLockGuard guard(matrixGuard);
 	LPSTR N = LPSTR(*M->cName);
 	map_Matrix::iterator I = m_matrices.find(N);
 	if (I != m_matrices.end())
@@ -733,7 +732,7 @@ CConstant* CResourceManager::_CreateConstant(LPCSTR Name)
 	if (0 == stricmp(Name, "$null")) return NULL;
 
 	LPSTR N = LPSTR(Name);
-	xrCriticalSectionGuard guard(constantGuard);
+	xrSRWLockGuard guard(constantGuard);
 	map_Constant::iterator I = m_constants.find(N);
 	if (I != m_constants.end()) return I->second;
 	else
@@ -749,7 +748,7 @@ CConstant* CResourceManager::_CreateConstant(LPCSTR Name)
 void CResourceManager::_DeleteConstant(const CConstant* C)
 {
 	if (0 == (C->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(constantGuard);
+	xrSRWLockGuard guard(constantGuard);
 	LPSTR N = LPSTR(*C->cName);
 	map_Constant::iterator I = m_constants.find(N);
 	if (I != m_constants.end())
@@ -770,7 +769,7 @@ STextureList* CResourceManager::_CreateTextureList(STextureList& L)
 {
 	std::sort(L.begin(), L.end(), cmp_tl);
 
-    xrCriticalSectionGuard guard(textureGuard);
+    xrSRWLockGuard guard(textureGuard);
     auto it = lst_textures.find(L);
     if (it != lst_textures.end()) return *it;
 
@@ -783,7 +782,7 @@ STextureList* CResourceManager::_CreateTextureList(STextureList& L)
 void CResourceManager::_DeleteTextureList(const STextureList* L)
 {
 	if (0 == (L->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(textureGuard);
+	xrSRWLockGuard guard(textureGuard);
 	if (reclaim(lst_textures, L)) return;
 	Msg("! ERROR: Failed to find compiled list of textures");
 }
@@ -802,7 +801,7 @@ SMatrixList* CResourceManager::_CreateMatrixList(SMatrixList& L)
     }
     if (bEmpty) return nullptr;
 
-	xrCriticalSectionGuard guard(matrixGuard);
+	xrSRWLockGuard guard(matrixGuard);
     auto it = lst_matrices.find(L);
     if (it != lst_matrices.end()) return *it;
 
@@ -815,7 +814,7 @@ SMatrixList* CResourceManager::_CreateMatrixList(SMatrixList& L)
 void CResourceManager::_DeleteMatrixList(const SMatrixList* L)
 {
 	if (0 == (L->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(matrixGuard);
+	xrSRWLockGuard guard(matrixGuard);
 	if (reclaim(lst_matrices, L)) return;
 	Msg("! ERROR: Failed to find compiled list of xform-defs");
 }
@@ -834,7 +833,7 @@ SConstantList* CResourceManager::_CreateConstantList(SConstantList& L)
     }
     if (bEmpty) return nullptr;
 
-	xrCriticalSectionGuard guard(constantGuard);
+	xrSRWLockGuard guard(constantGuard);
     auto it = lst_constants.find(L);
     if (it != lst_constants.end()) return *it;
 
@@ -847,7 +846,7 @@ SConstantList* CResourceManager::_CreateConstantList(SConstantList& L)
 void CResourceManager::_DeleteConstantList(const SConstantList* L)
 {
 	if (0 == (L->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(constantGuard);
+	xrSRWLockGuard guard(constantGuard);
 	if (reclaim(lst_constants, L)) return;
 	Msg("! ERROR: Failed to find compiled list of r1-constant-defs");
 }
@@ -857,7 +856,7 @@ dx10ConstantBuffer* CResourceManager::_CreateConstantBuffer(ID3DShaderReflection
 {
 	VERIFY(pTable);
 
-	xrCriticalSectionGuard guard(bufferGuard);
+	xrSRWLockGuard guard(bufferGuard);
     auto it = v_constant_buffer.find(pTable);
     if (it != v_constant_buffer.end()) return *it;
 
@@ -871,7 +870,7 @@ dx10ConstantBuffer* CResourceManager::_CreateConstantBuffer(ID3DShaderReflection
 void CResourceManager::_DeleteConstantBuffer(const dx10ConstantBuffer* pBuffer)
 {
 	if (0 == (pBuffer->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(bufferGuard);
+	xrSRWLockGuard guard(bufferGuard);
 	if (reclaim(v_constant_buffer, pBuffer)) return;
 	Msg("! ERROR: Failed to find compiled constant buffer");
 }
@@ -880,7 +879,7 @@ void CResourceManager::_DeleteConstantBuffer(const dx10ConstantBuffer* pBuffer)
 SInputSignature* CResourceManager::_CreateInputSignature(ID3DBlob* pBlob)
 {
 	VERIFY(pBlob);
-	xrCriticalSectionGuard guard(bufferGuard);
+	xrSRWLockGuard guard(bufferGuard);
 
     auto it = v_input_signature.find(pBlob);
     if (it != v_input_signature.end()) return *it;
@@ -896,7 +895,7 @@ SInputSignature* CResourceManager::_CreateInputSignature(ID3DBlob* pBlob)
 void CResourceManager::_DeleteInputSignature(const SInputSignature* pSignature)
 {
 	if (0 == (pSignature->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
-	xrCriticalSectionGuard guard(bufferGuard);
+	xrSRWLockGuard guard(bufferGuard);
 	if (reclaim(v_input_signature, pSignature)) return;
 	Msg("! ERROR: Failed to find compiled input signature");
 }

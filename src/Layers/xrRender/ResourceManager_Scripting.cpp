@@ -446,22 +446,21 @@ void CResourceManager::LS_Unload()
 
 BOOL CResourceManager::_lua_HasShader(LPCSTR s_shader)
 {
-	xrCriticalSectionGuard guard(shaderGuard);
-	string256 undercorated;
-	for (int i = 0, l = xr_strlen(s_shader) + 1; i < l; i++)
-		undercorated[i] = ('\\' == s_shader[i]) ? '_' : s_shader[i];
+    xrSRWLockGuard guard(shaderGuard);
+    string256 undercorated;
+    for (int i = 0, l = xr_strlen(s_shader) + 1; i < l; i++)
+        undercorated[i] = ('\\' == s_shader[i]) ? '_' : s_shader[i];
 
 #ifdef _EDITOR
-	return Script::bfIsObjectPresent(LSVM,undercorated,"editor",LUA_TFUNCTION);
+    return Script::bfIsObjectPresent(LSVM, undercorated, "editor", LUA_TFUNCTION);
 #else
-	return Script::bfIsObjectPresent(LSVM, undercorated, "normal",LUA_TFUNCTION) ||
-		Script::bfIsObjectPresent(LSVM, undercorated, "l_special",LUA_TFUNCTION);
+    return Script::bfIsObjectPresent(LSVM, undercorated, "normal", LUA_TFUNCTION) ||
+        Script::bfIsObjectPresent(LSVM, undercorated, "l_special", LUA_TFUNCTION);
 #endif
 }
 
 Shader* CResourceManager::_lua_Create(LPCSTR d_shader, LPCSTR s_textures)
 {
-	xrCriticalSectionGuard guard(shaderGuard);
 	CBlender_Compile C;
 	Shader S;
 
@@ -543,9 +542,12 @@ Shader* CResourceManager::_lua_Create(LPCSTR d_shader, LPCSTR s_textures)
 	}
 
 	// Search equal in shaders array
-    auto it = v_shaders.find(S);
-    if (it != v_shaders.end()) return *it;
-
+    {
+        xrSRWLockGuard guard(shaderGuard);
+        auto it = v_shaders.find(S);
+        if (it != v_shaders.end()) return *it;
+    }
+    
 	// Create _new_ entry
 	Shader* N = xr_new<Shader>(S);
 	N->dwFlags |= xr_resource_flagged::RF_REGISTERED;
