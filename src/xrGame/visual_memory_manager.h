@@ -99,6 +99,7 @@ public:
 
 public:
 	IC void set_squad_objects(xr_vector<CVisibleObject>* squad_objects);
+    IC void set_squad_objects(xr_shared_ptr<xr_vector<CVisibleObject>> squad_objects);
 	CVisibleObject* visible_object(const CGameObject* game_object);
 
 public:
