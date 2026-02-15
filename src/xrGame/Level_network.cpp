@@ -533,6 +533,7 @@ void CLevel::ClearAllObjects()
 	while (ParentFound)
 	{
 		ParentFound = false;
+        xrSRWLockGuard g(prefetch_lock);
 		for (u32 i = 0; i < CLObjNum; i++)
 		{
 			CObject* pObj = Level().Objects.o_get_by_iterator(i);
@@ -559,6 +560,7 @@ void CLevel::ClearAllObjects()
 
 	CLObjNum = Level().Objects.o_count();
 
+    xrSRWLockGuard g(prefetch_lock);
 	for (u32 i = 0; i < CLObjNum; i++)
 	{
 		CObject* pObj = Level().Objects.o_get_by_iterator(i);

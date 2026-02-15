@@ -100,21 +100,19 @@ void CLevel::ClientReceive()
 				cl_Process_Spawn(*P);
 				/*/
 				//Msg("--- Client received M_SPAWN message...");
+                xrSRWLockGuard g(prefetch_lock);
 				game_events->insert(*P);
 				if (g_bDebugEvents) ProcessGameEvents();
 				//*/
 			}
 			break;
 		case M_EVENT:
-			/*if (!game_configured)
-			{
-				Msg("! WARNING: ignoring game event [%d] - game not configured...", m_type);
-				break;
-			}*/
-			//Msg("Client received M_EVENT message...");
-			game_events->insert(*P);
-			if (g_bDebugEvents) ProcessGameEvents();
-			break;
+            {
+                xrSRWLockGuard g(prefetch_lock);
+                game_events->insert(*P);
+                if (g_bDebugEvents) ProcessGameEvents();
+            }
+            break;
 		case M_EVENT_PACK:
 			{
 				/*if (!game_configured)
@@ -123,6 +121,7 @@ void CLevel::ClientReceive()
 					break;
 				}*/
 				NET_Packet tmpP;
+                xrSRWLockGuard g(prefetch_lock);
 				while (!P->r_eof())
 				{
 					tmpP.B.count = P->r_u8();
@@ -208,6 +207,7 @@ void CLevel::ClientReceive()
 					Msg("! WARNING: ignoring game event [%d] - game not configured...", m_type);
 					break;
 				}*/
+                xrSRWLockGuard g(prefetch_lock);
 				game_events->insert(*P);
 				if (g_bDebugEvents) ProcessGameEvents();
 			}
@@ -299,6 +299,7 @@ void CLevel::ClientReceive()
 					break;
 				}*/
 				if (!game) break;
+                xrSRWLockGuard g(prefetch_lock);
 				game_events->insert(*P);
 				if (g_bDebugEvents) ProcessGameEvents();
 			}
@@ -464,6 +465,7 @@ void CLevel::ClientReceive()
 			{
 				Msg("--- CL: On Update Request");
 				if (!game) break;
+                xrSRWLockGuard g(prefetch_lock);
 				game_events->insert(*P);
 				if (g_bDebugEvents) ProcessGameEvents();
 			}
@@ -478,6 +480,7 @@ void CLevel::ClientReceive()
 			break;
 		case M_FILE_TRANSFER:
 			{
+                xrSRWLockGuard g(prefetch_lock);
 				game_events->insert(*P);
 				if (g_bDebugEvents) ProcessGameEvents();
 			}
