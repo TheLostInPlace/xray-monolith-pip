@@ -69,29 +69,44 @@ BOOL reclaim(xr_vector<T*>& vec, const T* ptr)
 	return FALSE;
 }
 
+template <class T, class H, class E>
+BOOL reclaim(xr_unordered_set<T*, H, E>& vec, const T* ptr)
+{
+    return (BOOL)vec.erase(const_cast<T*>(ptr));
+}
+
+template <class T, class H, class E>
+BOOL reclaim(xr_unordered_flat_set<T*, H, E>& vec, const T* ptr)
+{
+    return (BOOL)vec.erase(const_cast<T*>(ptr));
+}
+
 //--------------------------------------------------------------------------------------------------------------
 SState* CResourceManager::_CreateState(SimulatorStates& state_code)
 {
 	xrCriticalSectionGuard guard(stateGuard);
 
 	// Search equal state-code 
-	for (u32 it = 0; it < v_states.size(); it++)
-	{
-		SState* C = v_states[it];;
-		SimulatorStates& base = C->state_code;
-		if (base.equal(state_code)) return C;
-	}
+    auto it = v_states.find(state_code);
+
+    /* to use C++17 std::unordered_set, you'd have to change the above to: (Same for all other sets)
+       SState temp; temp.state_code = state_code;
+       auto it = v_states.find(&temp);
+    */
+
+    if (it != v_states.end()) return *it;
 
 	// Create New
-	v_states.push_back(xr_new<SState>());
-	v_states.back()->dwFlags |= xr_resource_flagged::RF_REGISTERED;
+    SState* New = xr_new<SState>();
+    New->dwFlags |= xr_resource_flagged::RF_REGISTERED;
 #if defined(USE_DX10) || defined(USE_DX11)
-	v_states.back()->state = ID3DState::Create(state_code);
+    New->state = ID3DState::Create(state_code);
 #else	//	USE_DX10
-	v_states.back()->state		= state_code.record();
+    New->state = state_code.record();
 #endif	//	USE_DX10
-	v_states.back()->state_code = state_code;
-	return v_states.back();
+    New->state_code = state_code;
+    v_states.insert(New);
+    return New;
 }
 
 void CResourceManager::_DeleteState(const SState* state)
@@ -106,9 +121,8 @@ void CResourceManager::_DeleteState(const SState* state)
 SPass* CResourceManager::_CreatePass(const SPass& proto)
 {
 	xrCriticalSectionGuard guard(shaderGuard);
-	for (u32 it = 0; it < v_passes.size(); it++)
-		if (v_passes[it]->equal(proto))
-			return v_passes[it];
+    auto it = v_passes.find(proto);
+    if (it != v_passes.end()) return *it;
 
 	SPass* P = xr_new<SPass>();
 	P->dwFlags |= xr_resource_flagged::RF_REGISTERED;
@@ -128,8 +142,8 @@ SPass* CResourceManager::_CreatePass(const SPass& proto)
 #endif
 	P->C = proto.C;
 
-	v_passes.push_back(P);
-	return v_passes.back();
+	v_passes.insert(P);
+	return P;
 }
 
 void CResourceManager::_DeletePass(const SPass* P)
@@ -240,8 +254,7 @@ void CResourceManager::_DeleteVS(const SVS* vs)
 	if (I != m_vs.end())
 	{
 		m_vs.erase(I);
-		xr_vector<SDeclaration*>::iterator iDecl;
-		for (iDecl = v_declarations.begin(); iDecl != v_declarations.end(); ++iDecl)
+		for (auto iDecl = v_declarations.begin(); iDecl != v_declarations.end(); ++iDecl)
 		{
 			xr_map<ID3DBlob*, ID3DInputLayout*>::iterator iLayout;
 			iLayout = (*iDecl)->vs_to_layout.find(vs->signature->signature);
@@ -463,11 +476,8 @@ SDeclaration* CResourceManager::_CreateDecl(D3DVERTEXELEMENT9* dcl)
 {
 	xrCriticalSectionGuard guard(declGuard);
 	// Search equal code
-	for (u32 it = 0; it < v_declarations.size(); it++)
-	{
-		SDeclaration* D = v_declarations[it];;
-		if (dcl_equal(dcl, &*D->dcl_code.begin())) return D;
-	}
+	auto it = v_declarations.find(dcl);
+	if (it != v_declarations.end()) return *it;
 
 	// Create _new
 	SDeclaration* D = xr_new<SDeclaration>();
@@ -477,7 +487,7 @@ SDeclaration* CResourceManager::_CreateDecl(D3DVERTEXELEMENT9* dcl)
 	D->dcl_code.assign(dcl, dcl + dcl_size);
 	dx10BufferUtils::ConvertVertexDeclaration(D->dcl_code, D->dx10_dcl_code);
 	D->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-	v_declarations.push_back(D);
+	v_declarations.insert(D);
 	return D;
 }
 
@@ -495,18 +505,13 @@ R_constant_table* CResourceManager::_CreateConstantTable(R_constant_table& C)
 	if (C.empty())		return NULL;
 
 	xrCriticalSectionGuard guard(constantGuard);
-
-	for (u32 it = 0; it < v_constant_tables.size(); it++)
-		if (v_constant_tables[it]->equal(C))
-			return v_constant_tables[it];
+    auto it = v_constant_tables.find(C);
+    if (it != v_constant_tables.end()) return *it;
 
 	auto NewElem = xr_new<R_constant_table>(C);
-	//NewElem->_copy(C);
 	NewElem->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-	v_constant_tables.push_back(NewElem);
+	v_constant_tables.insert(NewElem);
 	return NewElem;
-
-	return v_constant_tables.back();
 }
 
 void CResourceManager::_DeleteConstantTable(const R_constant_table* C)
@@ -579,18 +584,18 @@ void CResourceManager::DBG_VerifyGeoms()
 
 SGeometry* CResourceManager::CreateGeom(D3DVERTEXELEMENT9* decl, ID3DVertexBuffer* vb, ID3DIndexBuffer* ib)
 {
-	xrCriticalSectionGuard guard(geomGuard);
 	R_ASSERT(decl && vb);
 
 	SDeclaration* dcl = _CreateDecl(decl);
 	u32 vb_stride = D3DXGetDeclVertexSize(decl, 0);
 
+    SGeometry_key key = { dcl, vb, ib, vb_stride };
+
+    xrCriticalSectionGuard guard(geomGuard);
+
 	// ***** first pass - search already loaded shader
-	for (u32 it = 0; it < v_geoms.size(); it++)
-	{
-		SGeometry& G = *(v_geoms[it]);
-		if ((G.dcl == dcl) && (G.vb == vb) && (G.ib == ib) && (G.vb_stride == vb_stride)) return v_geoms[it];
-	}
+    auto it = v_geoms.find(key);
+    if (it != v_geoms.end()) return *it;
 
 	SGeometry* Geom = xr_new<SGeometry>();
 	Geom->dwFlags |= xr_resource_flagged::RF_REGISTERED;
@@ -598,7 +603,7 @@ SGeometry* CResourceManager::CreateGeom(D3DVERTEXELEMENT9* decl, ID3DVertexBuffe
 	Geom->vb = vb;
 	Geom->vb_stride = vb_stride;
 	Geom->ib = ib;
-	v_geoms.push_back(Geom);
+    v_geoms.insert(Geom);
 	return Geom;
 }
 
@@ -763,18 +768,15 @@ bool cmp_tl(const std::pair<u32, ref_texture>& _1, const std::pair<u32, ref_text
 
 STextureList* CResourceManager::_CreateTextureList(STextureList& L)
 {
-	xrCriticalSectionGuard guard(textureGuard);
 	std::sort(L.begin(), L.end(), cmp_tl);
-	for (u32 it = 0; it < lst_textures.size(); it++)
-	{
-		STextureList* base = lst_textures[it];
-		if (L.equal(*base)) return base;
-	}
-	STextureList* lst = xr_new<STextureList>(L);
-	//lst->_copy(L);
-	lst->dwFlags |= xr_resource_flagged::RF_REGISTERED;
 
-	lst_textures.push_back(lst);
+    xrCriticalSectionGuard guard(textureGuard);
+    auto it = lst_textures.find(L);
+    if (it != lst_textures.end()) return *it;
+
+	STextureList* lst = xr_new<STextureList>(L);
+	lst->dwFlags |= xr_resource_flagged::RF_REGISTERED;
+	lst_textures.insert(lst);
 	return lst;
 }
 
@@ -789,25 +791,24 @@ void CResourceManager::_DeleteTextureList(const STextureList* L)
 //--------------------------------------------------------------------------------------------------------------
 SMatrixList* CResourceManager::_CreateMatrixList(SMatrixList& L)
 {
-BOOL bEmpty = TRUE;
-for (u32 i = 0; i < L.size(); i++)
-	if (L[i])
-	{
-		bEmpty = FALSE;
-		break;
-	}
-if (bEmpty) return nullptr;
-	xrCriticalSectionGuard guard(matrixGuard);
+    BOOL bEmpty = TRUE;
+    for (u32 i = 0; i < L.size(); i++)
+    {
+        if (L[i])
+        {
+            bEmpty = FALSE;
+            break;
+        }
+    }
+    if (bEmpty) return nullptr;
 
-	for (u32 it = 0; it < lst_matrices.size(); it++)
-	{
-		SMatrixList* base = lst_matrices[it];
-		if (L.equal(*base)) return base;
-	}
+	xrCriticalSectionGuard guard(matrixGuard);
+    auto it = lst_matrices.find(L);
+    if (it != lst_matrices.end()) return *it;
+
 	SMatrixList* lst = xr_new<SMatrixList>(L);
-	//lst->_copy(L);
 	lst->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-	lst_matrices.push_back(lst);
+	lst_matrices.insert(lst);
 	return lst;
 }
 
@@ -822,26 +823,24 @@ void CResourceManager::_DeleteMatrixList(const SMatrixList* L)
 //--------------------------------------------------------------------------------------------------------------
 SConstantList* CResourceManager::_CreateConstantList(SConstantList& L)
 {
-BOOL bEmpty = TRUE;
-for (u32 i = 0; i < L.size(); i++)
-	if (L[i])
-	{
-		bEmpty = FALSE;
-		break;
-	}
-if (bEmpty) return nullptr;
+    BOOL bEmpty = TRUE;
+    for (u32 i = 0; i < L.size(); i++)
+    {
+        if (L[i])
+        {
+            bEmpty = FALSE;
+            break;
+        }
+    }
+    if (bEmpty) return nullptr;
+
 	xrCriticalSectionGuard guard(constantGuard);
+    auto it = lst_constants.find(L);
+    if (it != lst_constants.end()) return *it;
 
-	for (u32 it = 0; it < lst_constants.size(); it++)
-	{
-		SConstantList* base = lst_constants[it];
-		if (L.equal(*base)) return base;
-	}
 	SConstantList* lst = xr_new<SConstantList>(L);
-	//lst->_copy(L);
-
 	lst->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-	lst_constants.push_back(lst);
+	lst_constants.insert(lst);
 	return lst;
 }
 
@@ -857,21 +856,14 @@ void CResourceManager::_DeleteConstantList(const SConstantList* L)
 dx10ConstantBuffer* CResourceManager::_CreateConstantBuffer(ID3DShaderReflectionConstantBuffer* pTable)
 {
 	VERIFY(pTable);
+
 	xrCriticalSectionGuard guard(bufferGuard);
-	dx10ConstantBuffer* pTempBuffer = xr_new<dx10ConstantBuffer>(pTable);
+    auto it = v_constant_buffer.find(pTable);
+    if (it != v_constant_buffer.end()) return *it;
 
-	for (u32 it = 0; it < v_constant_buffer.size(); it++)
-	{
-		dx10ConstantBuffer* buf = v_constant_buffer[it];
-		if (pTempBuffer->Similar(*buf))
-		{
-			xr_delete(pTempBuffer);
-			return buf;
-		}
-	}
-
+    dx10ConstantBuffer* pTempBuffer = xr_new<dx10ConstantBuffer>(pTable);
 	pTempBuffer->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-	v_constant_buffer.push_back(pTempBuffer);
+	v_constant_buffer.insert(pTempBuffer);
 	return pTempBuffer;
 }
 
@@ -890,20 +882,12 @@ SInputSignature* CResourceManager::_CreateInputSignature(ID3DBlob* pBlob)
 	VERIFY(pBlob);
 	xrCriticalSectionGuard guard(bufferGuard);
 
-	for (u32 it = 0; it < v_input_signature.size(); it++)
-	{
-		SInputSignature* sign = v_input_signature[it];
-		if ((pBlob->GetBufferSize() == sign->signature->GetBufferSize()) &&
-			(!(memcmp(pBlob->GetBufferPointer(), sign->signature->GetBufferPointer(), pBlob->GetBufferSize()))))
-		{
-			return sign;
-		}
-	}
+    auto it = v_input_signature.find(pBlob);
+    if (it != v_input_signature.end()) return *it;
 
 	SInputSignature* pSign = xr_new<SInputSignature>(pBlob);
-
 	pSign->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-	v_input_signature.push_back(pSign);
+	v_input_signature.insert(pSign);
 
 	return pSign;
 }
@@ -914,5 +898,5 @@ void CResourceManager::_DeleteInputSignature(const SInputSignature* pSignature)
 	if (0 == (pSignature->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
 	xrCriticalSectionGuard guard(bufferGuard);
 	if (reclaim(v_input_signature, pSignature)) return;
-	Msg("! ERROR: Failed to find compiled constant buffer");
+	Msg("! ERROR: Failed to find compiled input signature");
 }
