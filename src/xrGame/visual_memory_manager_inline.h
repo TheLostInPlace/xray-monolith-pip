@@ -10,12 +10,14 @@
 
 IC xr_shared_ptr<CVisualMemoryManager::VISIBLES> CVisualMemoryManager::objects() const
 {
+    if (!m_objectsShared)
+        return nullptr;
 	return m_objectsShared;
 }
 
 IC xr_shared_ptr<CVisualMemoryManager::VISIBLES> CVisualMemoryManager::objectsPtr() const
 {
-	return m_objectsShared;
+	return objects();
 }
 
 IC const CVisualMemoryManager::RAW_VISIBLES& CVisualMemoryManager::raw_objects() const
@@ -34,6 +36,19 @@ IC void CVisualMemoryManager::set_squad_objects(VISIBLES* squad_objects)
     {
         // Use null deleter since owning object can delete this vector
         m_objectsShared = xr_make_shared_with_deleter(squad_objects, [](VISIBLES*) {});
+    }
+    else
+    {
+        m_objectsShared.reset();
+        m_not_yet_visible_objects.clear();
+    }
+}
+
+IC void CVisualMemoryManager::set_squad_objects(xr_shared_ptr<VISIBLES> squad_objects)
+{
+    if (squad_objects)
+    {
+        m_objectsShared = squad_objects;
     }
     else
     {
