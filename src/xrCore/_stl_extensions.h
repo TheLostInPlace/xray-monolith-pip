@@ -355,14 +355,14 @@ using xr_pair = robin_hood::pair<K, V>;
 template <typename K, class V, class Hasher = xr_hash<K>>
 using xr_unordered_map = robin_hood::unordered_node_map<K, V, Hasher>;
 
-template <class T, class Hasher = xr_hash<T>>
-using xr_unordered_set = robin_hood::unordered_node_set<T, Hasher>;
+template <class T, class Hasher = xr_hash<T>, class Equal = std::equal_to<T>>
+using xr_unordered_set = robin_hood::unordered_node_set<T, Hasher, Equal>;
 
 template <typename K, class V, class Hasher = xr_hash<K>>
 using xr_unordered_flat_map = robin_hood::unordered_flat_map<K, V, Hasher>;
 
-template <class T, class Hasher = xr_hash<T>>
-using xr_unordered_flat_set = robin_hood::unordered_flat_set<T, Hasher>;
+template <class T, class Hasher = xr_hash<T>, class Equal = std::equal_to<T>>
+using xr_unordered_flat_set = robin_hood::unordered_flat_set<T, Hasher, Equal>;
 
 #else
 
