@@ -358,8 +358,8 @@ using xr_unordered_map = robin_hood::unordered_node_map<K, V, Hasher>;
 template <class T, class Hasher = xr_hash<T>, class Equal = std::equal_to<T>>
 using xr_unordered_set = robin_hood::unordered_node_set<T, Hasher, Equal>;
 
-template <typename K, class V, class Hasher = xr_hash<K>>
-using xr_unordered_flat_map = robin_hood::unordered_flat_map<K, V, Hasher>;
+template <typename K, class V, class Hasher = xr_hash<K>, class Equal = std::equal_to<K>>
+using xr_unordered_flat_map = robin_hood::unordered_flat_map<K, V, Hasher, Equal>;
 
 template <class T, class Hasher = xr_hash<T>, class Equal = std::equal_to<T>>
 using xr_unordered_flat_set = robin_hood::unordered_flat_set<T, Hasher, Equal>;
@@ -569,6 +569,8 @@ struct pred_stri
 #define DEFINE_VECTOR(T,N,I) typedef xr_vector< T > N; typedef N::iterator I;
 #define DEFINE_MAP(K,T,N,I) typedef xr_map< K , T > N; typedef N::iterator I;
 #define DEFINE_MAP_PRED(K,T,N,I,P) typedef xr_map< K, T, P > N; typedef N::iterator I;
+#define DEFINE_UNORDERED_FLAT_MAP_PRED(K,T,N,I,P) typedef xr_unordered_flat_map< K, T, P > N; typedef N::iterator I;
+#define DEFINE_UNORDERED_FLAT_MAP_PRED_EQUAL(K,T,N,I,P,E) typedef xr_unordered_flat_map< K, T, P, E > N; typedef N::iterator I;
 #define DEFINE_MMAP(K,T,N,I) typedef xr_multimap< K, T > N; typedef N::iterator I;
 #define DEFINE_SVECTOR(T,C,N,I) typedef svector< T, C > N; typedef N::iterator I;
 #define DEFINE_SET(T,N,I) typedef xr_set< T > N; typedef N::iterator I;
