@@ -10,7 +10,7 @@
 
 IC xr_shared_ptr<CVisualMemoryManager::VISIBLES> CVisualMemoryManager::objects() const
 {
-    if (!m_objectsShared)
+    if (!this || !m_objectsShared)
         return nullptr;
 	return m_objectsShared;
 }
