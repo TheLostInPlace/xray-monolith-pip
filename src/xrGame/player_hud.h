@@ -112,12 +112,31 @@ struct movement_layer
 
 	const Fmatrix& XFORM(u8 part)
 	{
-		blend.set(anm->XFORM());
-		blend.mul(blend_amount[part] * m_power);
-		blend.m[0][0] = 1.f;
-		blend.m[1][1] = 1.f;
-		blend.m[2][2] = 1.f;
+		auto cubic_bezier = [](float t) {
+			return 10 * t * t * t - 15 * t * t * t * t + 6 * t * t * t * t * t;
+		};
 
+		float eased = cubic_bezier(blend_amount[part]);
+
+		// Rotation interpolation
+		Fquaternion qA; qA.identity();
+		Fquaternion qB; qB.set(anm->XFORM());
+		{
+			// Take m_power into account
+			Fvector axis;
+			float angle;
+			if (qB.get_axis_angle(axis, angle)) {
+				angle *= m_power;
+				qB.rotation(axis, angle);
+			}
+		}
+		Fquaternion q; q.slerp(qA, qB, eased);
+
+		// Translation interpolation
+		Fvector t = anm->XFORM().c;
+		t.mul(m_power * eased);
+
+		blend.mk_xform(q, t);
 		return blend;
 	}
 };
