@@ -144,8 +144,9 @@ void r_dsgraph_render_R1_box(xr_vector<dxRender_Visual*>& lstVisuals, CSector* _
 	lstVisuals.clear();
 	lstVisuals.push_back(S->root());
 
-	for (dxRender_Visual* V : lstVisuals)
+	for (u32 i = 0; i < lstVisuals.size(); ++i)
 	{
+        auto V = lstVisuals[i];
 		// Visual is 100% visible - simply add it
 		switch (V->Type)
 		{
