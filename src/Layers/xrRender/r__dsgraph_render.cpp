@@ -28,27 +28,18 @@ ICF float calcLOD(float ssa/*fDistSq*/, float R)
 	return _sqrt(clampr((ssa - r_ssaGLOD_end) / (r_ssaGLOD_start - r_ssaGLOD_end), 0.f, 1.f));
 }
 
-template<typename T>
-void CDSGraphManager::r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItems<T>& graph, bool _clear, bool reverse)
+template<typename T, bool Reverse>
+void CDSGraphManager::r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItems<T, Reverse>& graph, bool _clear)
 {
-	static auto sortFunc = [](const R_dsgraph::DSGraphItem<T>& a, const R_dsgraph::DSGraphItem<T>& b) noexcept { return a.sortKey < b.sortKey; };
-	static auto sortFuncReverse = [](const R_dsgraph::DSGraphItem<T>& a, const R_dsgraph::DSGraphItem<T>& b) noexcept { return a.sortKey > b.sortKey; };
-	if (reverse)
-	{
-		if (graph.size() >= 4096)
-			xr_parallel_sort(graph, sortFuncReverse);
-		else
-			xr_sort(graph, sortFuncReverse);
-	}
-	else
-	{
-		if (graph.size() >= 4096)
-			xr_parallel_sort(graph, sortFunc);
-		else
-			xr_sort(graph, sortFunc);
-	}
+    if (graph.empty())
+        return;
 
-	for (R_dsgraph::DSGraphItem<T>& item : graph)
+    if (graph.size() >= 4096)
+        xr_parallel_sort(graph);
+    else
+        xr_sort(graph);
+
+	for (auto& item : graph)
 	{
 		dxRender_Visual* V = item.pVisual;
 		VERIFY(V && V->shader._get());
@@ -80,11 +71,10 @@ void CDSGraphManager::r_dsgraph_render_graph(RenderQueueArray& queues, u32 _prio
 			continue;
 
 		// 1. Sort by generated sort key to replicate previous fixed map behaviour
-		static auto sortFunc = [](const RenderPacket& a, const RenderPacket& b) noexcept { return a.sortKey < b.sortKey; };
 		if (queue.size() >= 4096)
-			xr_parallel_sort(queue, sortFunc);
+			xr_parallel_sort(queue);
 		else
-			xr_sort(queue, sortFunc);
+			xr_sort(queue);
 
 		// 2. Render
 		vs_type pVS = nullptr;
@@ -258,8 +248,8 @@ void CDSGraphManager::r_dsgraph_render_sorted(bool render_hud)
 	{
 		PROF_EVENT("r_dsgraph_render_sorted");
 		// Rendering
-		r_dsgraph_render_graph_sorted(RGraph.mapStaticSorted.Sorted, true, true);
-		r_dsgraph_render_graph_sorted(RGraph.mapDynamicSorted.Sorted, true, true);
+		r_dsgraph_render_graph_sorted(RGraph.mapStaticSorted.Sorted, true);
+		r_dsgraph_render_graph_sorted(RGraph.mapDynamicSorted.Sorted, true);
 	}
 
 	if (render_hud)
@@ -273,7 +263,7 @@ void CDSGraphManager::r_dsgraph_render_sorted(bool render_hud)
 		CHudInitializer initializer(2);
 
 		// Rendering
-		r_dsgraph_render_graph_sorted(RGraph.mapCamAttachedSorted.Sorted, true, true);
+		r_dsgraph_render_graph_sorted(RGraph.mapCamAttachedSorted.Sorted, true);
 		RImplementation.rmNormal();
 	}
 }
@@ -297,7 +287,7 @@ void CDSGraphManager::r_dsgraph_render_ScopeSorted()  //  Redotix99: for 3D Shad
 
 	// Rendering
 	RImplementation.rmNear();
-	r_dsgraph_render_graph_sorted(RGraph.mapScopeHUDSorted, true, true);
+	r_dsgraph_render_graph_sorted(RGraph.mapScopeHUDSorted, true);
 	RImplementation.rmNormal();
 }
 #endif
@@ -311,7 +301,7 @@ void CDSGraphManager::r_dsgraph_render_sorted_hud()
 	CHudInitializer initializer(true);
 
 	RImplementation.rmNear();
-	r_dsgraph_render_graph_sorted(RGraph.mapHUDSorted.Sorted, true, true);
+	r_dsgraph_render_graph_sorted(RGraph.mapHUDSorted.Sorted, true);
 	RImplementation.rmNormal();
 }
 
@@ -331,7 +321,7 @@ void CDSGraphManager::r_dsgraph_render_emissive(bool clear, bool renderHUD)
 	r_dsgraph_render_graph_sorted(RGraph.mapHUDSorted.Emissive, clear);
 	
 	if (renderHUD)
-		r_dsgraph_render_graph_sorted(RGraph.mapHUDSorted.Sorted, false, true);
+		r_dsgraph_render_graph_sorted(RGraph.mapHUDSorted.Sorted, false);
 
 	RImplementation.rmNormal();
 #endif
@@ -341,9 +331,8 @@ void CDSGraphManager::r_dsgraph_render_water_ssr()
 {
 #ifdef USE_DX11
 	PROF_EVENT("r_dsgraph_render_water_ssr");
-	static auto sortFunc = [](const R_dsgraph::DSGraphItem<float>& a, const R_dsgraph::DSGraphItem<float>& b) noexcept { return a.sortKey < b.sortKey; };
-	std::sort(RGraph.mapWater.begin(), RGraph.mapWater.end(), sortFunc);
-	for (R_dsgraph::DSGraphItem<float>& N : RGraph.mapWater)
+	std::sort(RGraph.mapWater.begin(), RGraph.mapWater.end());
+	for (auto& N : RGraph.mapWater)
 	{
 		dxRender_Visual* V = N.pVisual;
 		VERIFY(V);
@@ -368,9 +357,8 @@ void CDSGraphManager::r_dsgraph_render_water_ssr()
 void CDSGraphManager::r_dsgraph_render_water()
 {
 	PROF_EVENT("r_dsgraph_render_water_ssr");
-	static auto sortFunc = [](const R_dsgraph::DSGraphItem<float>& a, const R_dsgraph::DSGraphItem<float>& b) noexcept { return a.sortKey < b.sortKey; };
-	std::sort(RGraph.mapWater.begin(), RGraph.mapWater.end(), sortFunc);
-	for (R_dsgraph::DSGraphItem<float>& N : RGraph.mapWater)
+    std::sort(RGraph.mapWater.begin(), RGraph.mapWater.end());
+    for (auto& N : RGraph.mapWater)
 	{
 		dxRender_Visual* V = N.pVisual;
 		VERIFY(V);
@@ -420,8 +408,8 @@ void CDSGraphManager::r_dsgraph_render_distort()
 {
 	PROF_EVENT("r_dsgraph_render_distort");
 	// Rendering
-	r_dsgraph_render_graph_sorted(RGraph.mapStaticSorted.Distort, true, true);
-	r_dsgraph_render_graph_sorted(RGraph.mapDynamicSorted.Distort, true, true);
+	r_dsgraph_render_graph_sorted(RGraph.mapStaticSorted.Distort, true);
+	r_dsgraph_render_graph_sorted(RGraph.mapDynamicSorted.Distort, true);
 	//	HACK: Calculate this only once
 	CHudInitializer initalizer(true);
 

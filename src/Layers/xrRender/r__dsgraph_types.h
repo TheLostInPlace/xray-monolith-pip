@@ -67,7 +67,7 @@ class dxRender_Visual;
 
 namespace R_dsgraph
 {
-	template<typename T>
+	template<typename T, bool Reverse>
 	struct DSGraphItem
 	{
 		T sortKey;
@@ -77,6 +77,20 @@ namespace R_dsgraph
 		Fmatrix* pMatrix = nullptr;
 		ShaderElement* pSE = nullptr;
 		bool b_hud_mode = false;
+
+        DSGraphItem(T key, float _ssa, IRenderable* obj, dxRender_Visual* vis,
+            Fmatrix* mat, ShaderElement* se, bool hud)
+            : sortKey(key), ssa(_ssa), pObject(obj), pVisual(vis),
+            pMatrix(mat), pSE(se), b_hud_mode(hud) {
+        }
+
+        bool operator<(const DSGraphItem& other) const noexcept
+        {
+            if constexpr (Reverse)
+                return other.sortKey < sortKey;
+            else
+                return sortKey < other.sortKey;
+        }
 	};
 
 #if defined(USE_DX10) || defined(USE_DX11)	//	DX10 needs shader signature to propperly bind deometry to shader
@@ -91,11 +105,11 @@ namespace R_dsgraph
 #endif	//	USE_DX10
 	using ps_type = ID3DPixelShader*;
 
-	template<typename T>
-	using mapDSGraphItems = xr_vector<DSGraphItem<T>, typename render_allocator::template helper<DSGraphItem<T>>::result>;
+	template<typename T, bool Reverse>
+	using mapDSGraphItems = xr_vector<DSGraphItem<T, Reverse>, typename render_allocator::template helper<DSGraphItem<T, Reverse>>::result>;
 
-	template<typename T>
-	using mapDSGraphItemsMap = FixedMAP<T, DSGraphItem<T>, render_allocator>;
+	template<typename T, bool Reverse>
+	using mapDSGraphItemsMap = FixedMAP<T, DSGraphItem<T, Reverse>, render_allocator>;
 
 	struct alignas(16) RenderPacketSortKey
 	{
@@ -124,10 +138,10 @@ namespace R_dsgraph
 	struct RenderPacket
 	{
 		// Sorting key
-		RenderPacketSortKey sortKey;
+        RenderPacketSortKey sortKey;
 
 		// Visual data
-		DSGraphItem<u32> item;
+		DSGraphItem<u32, false> item;
 
 		// Pointers to resources (previously keys in FixedMAPs)
         ID3DState* pState;
@@ -149,6 +163,14 @@ namespace R_dsgraph
 		ps_type pPS;
         R_constant_table* pCS;
 		STextureList* pTextures;
+
+        RenderPacket() = default;
+        RenderPacket(const DSGraphItem<u32, false>& _item) : item(_item) {}
+
+        bool operator<(const RenderPacket& other) const noexcept
+        {
+            return sortKey < other.sortKey;
+        }
 	};
 
 	using RenderQueue = xr_vector<RenderPacket, render_allocator::helper<RenderPacket>::result>;
@@ -156,34 +178,34 @@ namespace R_dsgraph
 
 	struct DynamicSceneRgraph
 	{
-		template<typename T>
+		template<typename T, bool Reverse1, bool Reverse2, bool Reverse3, bool Reverse4>
 		struct mapSorted
 		{
-			mapDSGraphItems<T> Sorted;
+			mapDSGraphItems<T, Reverse1> Sorted;
 
-			mapDSGraphItems<T> Wmark;
-			mapDSGraphItems<T> Emissive;
-			mapDSGraphItems<T> Distort;
+			mapDSGraphItems<T, Reverse2> Wmark;
+			mapDSGraphItems<T, Reverse3> Emissive;
+			mapDSGraphItems<T, Reverse4> Distort;
 		};
 
-		mapSorted<float> mapStaticSorted;
-		mapSorted<float> mapDynamicSorted;
+		mapSorted<float, true, false, false, true> mapStaticSorted;
+		mapSorted<float, true, false, false, true> mapDynamicSorted;
 
 		RenderQueueArray mapStaticPasses;
 		RenderQueueArray mapDynamicPasses;
 
-		mapDSGraphItems<float> mapHUD;
-		mapSorted<float> mapHUDSorted;
+		mapDSGraphItems<float, false> mapHUD;
+		mapSorted<float, true, false, false, false> mapHUDSorted;
 
-		mapDSGraphItems<float> mapLOD;
+		mapDSGraphItems<float, false> mapLOD;
 
 		// Anomaly
-		mapDSGraphItems<float> mapCamAttached;
-		mapSorted<float> mapCamAttachedSorted;
-		mapDSGraphItems<float> mapWater;
+		mapDSGraphItems<float, false> mapCamAttached;
+		mapSorted<float, true, false, false, false> mapCamAttachedSorted;
+		mapDSGraphItems<float, false> mapWater;
 #ifdef USE_DX11
-		mapDSGraphItems<float> mapScopeHUDSorted;
-		mapDSGraphItems<float> mapScopeHUD;
+		mapDSGraphItems<float, true> mapScopeHUDSorted;
+		mapDSGraphItems<float, false> mapScopeHUD;
 #endif
 		template<bool free = true>
 		IC void clear_graph(RenderQueueArray& queue, u32 _priority)
