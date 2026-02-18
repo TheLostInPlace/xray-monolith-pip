@@ -62,5 +62,5 @@ inline void xr_stable_sort(Data& data, Body functor)
 template<typename Data>
 inline void xr_stable_sort(Data& data)
 {
-    std::stable_sort(std::begin(data), std::end(data), functor);
+    std::stable_sort(std::begin(data), std::end(data));
 }
