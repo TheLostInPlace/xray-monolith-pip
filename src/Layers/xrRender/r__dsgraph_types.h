@@ -62,6 +62,7 @@ using render_allocator = xr_allocator;
 #endif // USE_DOUG_LEA_ALLOCATOR_FOR_RENDER
 
 class dxRender_Visual;
+struct SPass;
 
 // #define	USE_RESOURCE_DEBUGGER
 
@@ -164,8 +165,53 @@ namespace R_dsgraph
         R_constant_table* pCS;
 		STextureList* pTextures;
 
-        RenderPacket() = default;
-        RenderPacket(const DSGraphItem<u32, false>& _item) : item(_item) {}
+        RenderPacket(const DSGraphItem<u32, false>& _item, const SPass& pass) : item(_item)
+        {
+            // Extract resource pointers from shader pass (previously used as map keys)
+#if defined(USE_DX10) || defined(USE_DX11)
+            pVS = &*pass.vs;
+            pGS = pass.gs->gs;
+#else
+            pVS = pass.vs->vs;
+#endif
+
+            pPS = pass.ps->ps;
+
+#ifdef USE_DX11
+            pHS = pass.hs->sh;
+            pDS = pass.ds->sh;
+#endif
+
+            pCS = pass.constants._get();
+            pState = pass.state->state;
+            pTextures = pass.T._get();
+
+            // Build sort key
+            // Optimized grouping based on profiling, example:
+            // States:4, GS:0, HS:0, DS:0 they are pretty much unused and/or unchanged
+            // VS:13, PS:28, CS:93, Tex:179. Grouping based on increasing change of state
+            // Low key is used just for sorting
+            u64 keyHigh = 0;
+            u64 keyLow = 0;
+
+            keyHigh |= ((u64)pState >> 4 & 0xFFFF) << 48;
+
+#if defined(USE_DX10) || defined(USE_DX11)
+            keyHigh |= ((u64)pGS >> 4 & 0xFFFF) << 32;
+#endif
+
+#ifdef USE_DX11
+            keyHigh |= ((u64)pHS >> 4 & 0xFFFF) << 16;
+            keyHigh |= ((u64)pDS >> 4 & 0xFFFF);
+#endif
+
+            keyLow |= ((u64)pVS >> 4 & 0xFFFF) << 48;
+            keyLow |= ((u64)pPS >> 4 & 0xFFFF) << 32;
+            keyLow |= ((u64)pCS >> 4 & 0xFFFF) << 16;
+            keyLow |= ((u64)pTextures >> 4 & 0xFFFF);
+
+            sortKey = { keyHigh, keyLow };
+        }
 
         bool operator<(const RenderPacket& other) const noexcept
         {

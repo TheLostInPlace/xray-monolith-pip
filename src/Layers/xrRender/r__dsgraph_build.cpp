@@ -201,15 +201,11 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 
 		SPass& pass = *sh->passes[iPass];
 
-		// Step 1: Create render packet
-
 #if RENDER==R_R1
-        RenderPacket packet(item);
+		AddToRenderQueue(RGraph.mapDynamicPasses[shader_priority][iPass], item, pass);
 #else
-        RenderPacket packet({ 0, SSA, val_pObject, pVisual, xform, nullptr, i_mask[CDSGraphManager::fl_hud] });
+		AddToRenderQueue(RGraph.mapDynamicPasses[shader_priority][iPass], { 0, SSA, val_pObject, pVisual, xform, nullptr, i_mask[CDSGraphManager::fl_hud] }, pass);
 #endif
-
-		AddToRenderQueue(RGraph.mapDynamicPasses[shader_priority][iPass], packet, pass);
 	}
 }
 
@@ -276,59 +272,13 @@ void CDSGraphManager::r_dsgraph_insert_static(dxRender_Visual *pVisual)
 
 		SPass& pass	= *sh->passes[iPass];
 
-		// Step 1: Create render packet
-		RenderPacket packet({ 0, SSA, nullptr, pVisual, nullptr, nullptr, false });
-		AddToRenderQueue(RGraph.mapStaticPasses[shader_priority][iPass], packet, pass);
+		AddToRenderQueue(RGraph.mapStaticPasses[shader_priority][iPass], { 0, SSA, nullptr, pVisual, nullptr, nullptr, false }, pass);
 	}
 }
 
-void CDSGraphManager::AddToRenderQueue(R_dsgraph::RenderQueue& queue, R_dsgraph::RenderPacket& packet, SPass& pass)
+void CDSGraphManager::AddToRenderQueue(R_dsgraph::RenderQueue& queue, const R_dsgraph::DSGraphItem<u32, false>& item, const SPass& pass)
 {
-	// Step 2: extract pointers (Previously map keys)
-#if defined(USE_DX10) || defined(USE_DX11)
-	packet.pVS = &*pass.vs;
-	packet.pGS = pass.gs->gs;
-#else
-	packet.pVS = pass.vs->vs;
-#endif
-
-	packet.pPS = pass.ps->ps;
-
-#ifdef USE_DX11
-	packet.pHS = pass.hs->sh;
-	packet.pDS = pass.ds->sh;
-#endif
-
-	packet.pCS = pass.constants._get();
-	packet.pState = pass.state->state;
-	packet.pTextures = pass.T._get();
-
-    // Step 3: Make sort key with bit 
-    // Optimized grouping based on profiling, example
-    // States:4, GS:0, HS:0, DS:0 they are pretty much unused and/or unchanged
-    // VS:13, PS:28, CS:93, Tex:179. Grouping based on increasing change of state
-    // Low key is used just for sorting
-    u64 keyHigh = 0;
-    u64 keyLow = 0;
-
-    keyHigh |= ((u64)packet.pState >> 4 & 0xFFFF) << 48;
-
-#if defined(USE_DX10) || defined(USE_DX11)
-    keyHigh |= ((u64)packet.pGS >> 4 & 0xFFFF) << 32;
-#endif
-
-#ifdef USE_DX11
-    keyHigh |= ((u64)packet.pHS >> 4 & 0xFFFF) << 16;
-    keyHigh |= ((u64)packet.pDS >> 4 & 0xFFFF);
-#endif
-
-    keyLow |= ((u64)packet.pVS >> 4 & 0xFFFF) << 48;
-    keyLow |= ((u64)packet.pPS >> 4 & 0xFFFF) << 32;
-    keyLow |= ((u64)packet.pCS >> 4 & 0xFFFF) << 16;
-    keyLow |= ((u64)packet.pTextures >> 4 & 0xFFFF);
-
-	packet.sortKey = { keyHigh, keyLow };
-	queue.push_back(packet);
+	queue.emplace_back(item, pass);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
