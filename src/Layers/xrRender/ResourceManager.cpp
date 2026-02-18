@@ -278,7 +278,7 @@ Shader* CResourceManager::_cpp_Create(IBlender* B, LPCSTR s_shader, LPCSTR s_tex
 
 	// Search equal in shaders array
     {
-        xrSRWLockGuard guard(shaderGuard);
+        xrSRWLockGuard guard(shaderGuard, true);
         auto it = v_shaders.find(&S);
             if (it != v_shaders.end()) return *it;
     }
