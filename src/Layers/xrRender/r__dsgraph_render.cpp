@@ -34,10 +34,7 @@ void CDSGraphManager::r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItems<T
     if (graph.empty())
         return;
 
-    if (graph.size() >= 4096)
-        xr_parallel_sort(graph);
-    else
-        xr_sort(graph);
+    xr_sort(graph);
 
 	for (auto& item : graph)
 	{
