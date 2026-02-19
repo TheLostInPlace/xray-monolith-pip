@@ -239,6 +239,8 @@ public:
 	// LuaGC
 	int LuaGCCount;
 	bool LuaGCDone;
+    bool LuaGCIsRunning;
+    bool LuaGCTerminate;
 	xr_delegate<int(const bool)> LuaGC;
 
 	// Dependent classes
