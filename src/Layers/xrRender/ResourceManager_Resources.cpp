@@ -58,6 +58,20 @@ BOOL reclaim(xr_unordered_flat_set<T*, H, E>& vec, const T* ptr)
     return (BOOL)vec.erase(const_cast<T*>(ptr));
 }
 
+template <class T, class H, class E>
+BOOL reclaim_safe(xr_unordered_flat_set<T*, H, E>& vec, const T* ptr)
+{
+    for (auto it = vec.begin(); it != vec.end(); it++)
+    {
+        if ((*it) == ptr)
+        {
+            vec.erase(it);
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 //--------------------------------------------------------------------------------------------------------------
 SState* CResourceManager::_CreateState(SimulatorStates& state_code)
 {
@@ -622,7 +636,7 @@ void CResourceManager::_DeleteTextureList(const STextureList* L)
 {
     if (0 == (L->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
     xrSRWLockGuard guard(textureGuard);
-    if (reclaim(lst_textures, L)) return;
+    if (reclaim(lst_textures, L) || reclaim_safe(lst_textures, L)) return;
     Msg("! ERROR: Failed to find compiled list of textures");
 }
 
