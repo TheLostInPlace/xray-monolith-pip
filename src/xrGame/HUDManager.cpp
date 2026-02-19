@@ -172,11 +172,12 @@ void CHUDManager::OnFrame()
 }
 
 xrCriticalSection ui_lock;
+extern BOOL mt_TaskManager;
 void CHUDManager::OnFrameMT()
 {
 	PROF_EVENT("CHUDManager::OnFrameMT");
 
-	if (Device.dwPrecacheFrame == 0)
+	if (mt_TaskManager && Device.dwPrecacheFrame == 0)
 		Level().GameTaskManager()->UpdateTasks();
 }
 

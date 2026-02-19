@@ -956,6 +956,7 @@ void CLevel::MakeReconnect()
 }
 
 BOOL mt_ph_commander = FALSE;
+BOOL mt_TaskManager = FALSE;
 void CLevel::OnFrame()
 {
 	PROF_EVENT("CLevel::OnFrame()");
@@ -1020,7 +1021,11 @@ void CLevel::OnFrame()
 			Device.seqParallel.push_back(xr_make_delegate(m_map_manager, &CMapManager::Update));
 		else
 			MapManager().Update();
+
+        if (!mt_TaskManager && Device.dwPrecacheFrame == 0)
+            GameTaskManager()->UpdateTasks();
 	}
+
 	// Inherited update
 	inherited::OnFrame();
 	// Draw client/server stats
