@@ -53,7 +53,6 @@ ref_light precache_light = 0;
 
 BOOL mt_calc_bones = TRUE;
 BOOL psLua_ParallelGC = TRUE;
-int psLua_ParallelGC_CallAmount = 25;
 
 extern discord::Core* discord_core;
 extern bool use_discord;
@@ -304,42 +303,6 @@ void mt_FreezeThread(void *ptr) {
 	}
 }
 
-// demonized: While Renderer prepares frame and GPU renders it, use time opportunity to repeatedly call Lua GC with small step value
-// Reduces stutters since less work will be done in main GC step or no work at all
-ThreadID LuaGCHandle;
-void mt_LuaGCThread(void*)
-{
-    while (true)
-    {
-        WaitForSingleObject(LuaGCHandle, INFINITE);
-
-        if (Device.LuaGCTerminate)
-        {
-            Msg("[mt_LuaGCThread] pApp destroyed, killing thread");
-            CloseHandle(LuaGCHandle);
-            return;
-        }
-
-        if (psLua_ParallelGC && Device.LuaGC)
-        {
-            // Do at least once
-            PROF_EVENT("seqLuaGC");
-            Device.LuaGCIsRunning = true;
-            do
-            {
-                Device.LuaGCCount++;
-                if (Device.LuaGC(false) == 1) // 1 informs that GC cycle is complete
-                {
-                    Device.LuaGCDone = true;
-                    break;
-                }
-
-            } while (Device.isRendering && Device.LuaGCCount < psLua_ParallelGC_CallAmount);
-            Device.LuaGCIsRunning = false;
-        }
-    }
-}
-
 void CRenderDevice::on_idle()
 {
 
@@ -536,8 +499,6 @@ void CRenderDevice::on_idle()
 	Device.isRendering = false;
 
 	secondary_tasks.wait();
-    while (Device.LuaGCIsRunning)
-        YieldProcessor();
 
 	if (psLua_ParallelGC && Device.LuaGC && !Device.LuaGCDone)
 	{
@@ -638,12 +599,8 @@ void CRenderDevice::Run()
 	}
 
 	// Start extra threads
-    Device.LuaGCTerminate = false;
-    Device.LuaGCIsRunning = false;
-    LuaGCHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	thread_spawn(mt_FreezeThread, "Freeze detecting thread", 0, 0);
 	thread_spawn(mt_DiscordThread, "X-RAY Discord thread", 0, 0);
-    thread_spawn(mt_LuaGCThread, "X-RAY LuaGC thread", 0, 0);
 
 	// Message cycle
 	seqAppStart.Process(rp_AppStart);
@@ -655,11 +612,6 @@ void CRenderDevice::Run()
 	seqAppEnd.Process(rp_AppEnd);
 
 	secondary_tasks.wait();
-    while (Device.LuaGCIsRunning) {
-        YieldProcessor();
-    }
-    Device.LuaGCTerminate = true;
-    SetEvent(LuaGCHandle);
 	ParticleWorkerCallback = nullptr;
 }
 
