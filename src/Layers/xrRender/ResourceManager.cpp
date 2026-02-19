@@ -45,6 +45,18 @@ BOOL reclaim(xr_vector<T*>& vec, const T* ptr)
 	return FALSE;
 }
 
+template <class T, class H, class E>
+BOOL reclaim(xr_unordered_set<T*, H, E>& vec, const T* ptr)
+{
+    return (BOOL)vec.erase(const_cast<T*>(ptr));
+}
+
+template <class T, class H, class E>
+BOOL reclaim(xr_unordered_flat_set<T*, H, E>& vec, const T* ptr)
+{
+    return (BOOL)vec.erase(const_cast<T*>(ptr));
+}
+
 //--------------------------------------------------------------------------------------------------------------
 IBlender* CResourceManager::_GetBlender(LPCSTR Name)
 {
@@ -94,7 +106,7 @@ void CResourceManager::ED_UpdateBlender(LPCSTR Name, IBlender* data)
 	}
 	else
 	{
-		m_blenders.insert(mk_pair(xr_strdup(Name), data));
+		m_blenders.emplace(xr_strdup(Name), data);
 	}
 }
 
@@ -148,14 +160,13 @@ ShaderElement* CResourceManager::_CreateElement(ShaderElement& S)
 	xrSRWLockGuard guard(shaderGuard);
 
 	// Search equal in shaders array
-	for (u32 it = 0; it < v_elements.size(); it++)
-		if (S.equal(*(v_elements[it]))) return v_elements[it];
+    auto it = v_elements.find(S);
+    if (it != v_elements.end()) return *it;
 
 	// Create _new_ entry
 	ShaderElement* N = xr_new<ShaderElement>(S);
-	//N->_copy(S);
 	N->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-	v_elements.push_back(N);
+	v_elements.insert(N);
 	return N;
 }
 
@@ -268,8 +279,8 @@ Shader* CResourceManager::_cpp_Create(IBlender* B, LPCSTR s_shader, LPCSTR s_tex
 	// Search equal in shaders array
     {
         xrSRWLockGuard guard(shaderGuard);
-        for (u32 it = 0; it < v_shaders.size(); it++)
-            if (S.equal(v_shaders[it])) return v_shaders[it];
+        auto it = v_shaders.find(&S);
+            if (it != v_shaders.end()) return *it;
     }
     
 	// Create _new_ entry
@@ -437,18 +448,13 @@ Shader* CResourceManager::_CreateShader(Shader* InShader)
 	xrSRWLockGuard guard(shaderGuard);
 
 	// Search equal in shaders array
-	for (Shader* it : v_shaders)
-	{
-		if (InShader->equal(it))
-			return it;
-	}
+    auto it = v_shaders.find(InShader);
+    if (it != v_shaders.end()) return *it;
 
 	// Create _new_ entry
 	Shader* N = xr_new<Shader>(*InShader);
-	//N->_copy(*InShader);
 	N->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-	v_shaders.push_back(N);
-
+	v_shaders.insert(N);
 	return N;
 }
 
