@@ -438,16 +438,15 @@ void CRenderDevice::on_idle()
 	// TODO: Try to move this upper
 	secondary_tasks.run(&XRay::Engine::PreRenderThread);
 
+	Device.isRendering = true;
+	Device.LuaGCDone = false;
+	Device.LuaGCCount = 0;
+	secondary_tasks.run(&XRay::Engine::GameThread);
+
 	if (mt_calc_bones)
 		secondary_tasks.run(&XRay::Engine::CalculateBonesThread);
 	else
 		XRay::Engine::CalculateBonesThread();
-
-	Device.isRendering = true;
-	Device.LuaGCDone = false;
-	Device.LuaGCCount = 0;
-
-	secondary_tasks.run(&XRay::Engine::GameThread);
 	
 #ifdef ECO_RENDER // ECO_RENDER START
 	if (Device.Paused() || IsMainMenuActive() || ps_framelimiter)
