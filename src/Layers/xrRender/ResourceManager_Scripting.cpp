@@ -542,14 +542,16 @@ Shader* CResourceManager::_lua_Create(LPCSTR d_shader, LPCSTR s_textures)
 	}
 
 	// Search equal in shaders array
-	xrSRWLockGuard guard(shaderGuard);
-	auto it = v_shaders.find(S);
-	if (it != v_shaders.end()) return *it;
+
+        xrSRWLockGuard guard(shaderGuard);
+        for (u32 it = 0; it < v_shaders.size(); it++)
+            if (S.equal(v_shaders[it])) return v_shaders[it];
     
 	// Create _new_ entry
 	Shader* N = xr_new<Shader>(S);
+	//N->_copy(S);
 	N->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-	v_shaders.insert(N);
+	v_shaders.push_back(N);
 	return N;
 }
 

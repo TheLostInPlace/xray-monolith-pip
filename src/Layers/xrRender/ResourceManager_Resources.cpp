@@ -46,54 +46,24 @@ BOOL reclaim(xr_vector<T*>& vec, const T* ptr)
 	return FALSE;
 }
 
-template <class T, class H, class E>
-BOOL reclaim(xr_unordered_set<T*, H, E>& vec, const T* ptr)
-{
-    return (BOOL)vec.erase(const_cast<T*>(ptr));
-}
-
-template <class T, class H, class E>
-BOOL reclaim(xr_unordered_flat_set<T*, H, E>& vec, const T* ptr)
-{
-    return (BOOL)vec.erase(const_cast<T*>(ptr));
-}
-
-template <class T, class H, class E>
-BOOL reclaim_safe(xr_unordered_flat_set<T*, H, E>& vec, const T* ptr)
-{
-    for (auto it = vec.begin(); it != vec.end(); it++)
-    {
-        if ((*it) == ptr)
-        {
-            vec.erase(it);
-            return TRUE;
-        }
-    }
-    return FALSE;
-}
-
 //--------------------------------------------------------------------------------------------------------------
 SState* CResourceManager::_CreateState(SimulatorStates& state_code)
 {
     xrSRWLockGuard guard(stateGuard);
-
     // Search equal state-code 
-    auto it = v_states.find(state_code);
-
-    /* to use C++17 std::unordered_set, you'd have to change the above to: (Same for all other sets)
-       SState temp; temp.state_code = state_code;
-       auto it = v_states.find(&temp);
-    */
-
-    if (it != v_states.end()) return *it;
+    for (u32 it = 0; it < v_states.size(); it++)
+    {
+        SState* C = v_states[it];;
+        SimulatorStates& base = C->state_code;
+        if (base.equal(state_code)) return C;
+    }
 
     // Create New
-    SState* New = xr_new<SState>();
-    New->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-    New->state = state_code.record();
-    New->state_code = state_code;
-    v_states.insert(New);
-    return New;
+    v_states.push_back(xr_new<SState>());
+    v_states.back()->dwFlags |= xr_resource_flagged::RF_REGISTERED;
+    v_states.back()->state = state_code.record();
+    v_states.back()->state_code = state_code;
+    return v_states.back();
 }
 
 void CResourceManager::_DeleteState(const SState* state)
@@ -108,8 +78,9 @@ void CResourceManager::_DeleteState(const SState* state)
 SPass* CResourceManager::_CreatePass(const SPass& proto)
 {
     xrSRWLockGuard guard(shaderGuard);
-    auto it = v_passes.find(proto);
-    if (it != v_passes.end()) return *it;
+    for (u32 it = 0; it < v_passes.size(); it++)
+        if (v_passes[it]->equal(proto))
+            return v_passes[it];
 
     SPass* P = xr_new<SPass>();
     P->dwFlags |= xr_resource_flagged::RF_REGISTERED;
@@ -123,8 +94,8 @@ SPass* CResourceManager::_CreatePass(const SPass& proto)
 #endif
     P->C = proto.C;
 
-    v_passes.insert(P);
-    return P;
+    v_passes.push_back(P);
+    return v_passes.back();
 }
 
 void CResourceManager::_DeletePass(const SPass* P)
@@ -149,8 +120,11 @@ SDeclaration* CResourceManager::_CreateDecl(D3DVERTEXELEMENT9* dcl)
 {
     // Search equal code
     xrSRWLockGuard guard(declGuard);
-    auto it = v_declarations.find(dcl);
-    if (it != v_declarations.end()) return *it;
+    for (u32 it = 0; it < v_declarations.size(); it++)
+    {
+        SDeclaration* D = v_declarations[it];;
+        if (dcl_equal(dcl, &*D->dcl_code.begin())) return D;
+    }
 
     // Create _new
     SDeclaration* D = xr_new<SDeclaration>();
@@ -158,7 +132,7 @@ SDeclaration* CResourceManager::_CreateDecl(D3DVERTEXELEMENT9* dcl)
     CHK_DX(HW.pDevice->CreateVertexDeclaration(dcl, &D->dcl));
     D->dcl_code.assign(dcl, dcl + dcl_size);
     D->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-    v_declarations.insert(D);
+    v_declarations.push_back(D);
     return D;
 }
 
@@ -191,7 +165,7 @@ SVS* CResourceManager::_CreateVS(LPCSTR _name)
     {
         SVS* _vs = xr_new<SVS>();
         _vs->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-        m_vs.emplace(_vs->set_name(name), _vs);
+        m_vs.insert(mk_pair(_vs->set_name(name), _vs));
         if (0 == stricmp(_name, "null"))
         {
             _vs->vs = NULL;
@@ -277,7 +251,7 @@ SPS* CResourceManager::_CreatePS(LPCSTR name)
     {
         SPS* _ps = xr_new<SPS>();
         _ps->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-        m_ps.emplace(_ps->set_name(name), _ps);
+        m_ps.insert(mk_pair(_ps->set_name(name), _ps));
         if (0 == stricmp(name, "null"))
         {
             _ps->ps = NULL;
@@ -366,12 +340,14 @@ R_constant_table* CResourceManager::_CreateConstantTable(R_constant_table& C)
     if (C.empty()) return NULL;
 
     xrSRWLockGuard guard(constantGuard);
-    auto it = v_constant_tables.find(C);
-    if (it != v_constant_tables.end()) return *it;
+    for (u32 it = 0; it < v_constant_tables.size(); it++)
+        if (v_constant_tables[it]->equal(C))
+            return v_constant_tables[it];
 
     auto NewElem = xr_new<R_constant_table>(C);
+    //NewElem->_copy(C);
     NewElem->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-    v_constant_tables.insert(NewElem);
+    v_constant_tables.push_back(NewElem);
     return NewElem;
 }
 
@@ -396,7 +372,7 @@ CRT* CResourceManager::_CreateRT(LPCSTR Name, u32 w, u32 h, D3DFORMAT f, u32 Sam
     {
         CRT* RT = xr_new<CRT>();
         RT->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-        m_rtargets.emplace(RT->set_name(Name), RT);
+        m_rtargets.insert(mk_pair(RT->set_name(Name), RT));
         if (RDEVICE.b_is_Ready) RT->create(Name, w, h, f);
         return RT;
     }
@@ -436,18 +412,18 @@ void CResourceManager::DBG_VerifyGeoms()
 
 SGeometry* CResourceManager::CreateGeom(D3DVERTEXELEMENT9* decl, IDirect3DVertexBuffer9* vb, IDirect3DIndexBuffer9* ib)
 {
+    xrSRWLockGuard guard(geomGuard);
     R_ASSERT(decl && vb);
 
     SDeclaration* dcl = _CreateDecl(decl);
     u32 vb_stride = D3DXGetDeclVertexSize(decl, 0);
 
-    SGeometry_key key = { dcl, vb, ib, vb_stride };
-
-    xrSRWLockGuard guard(geomGuard);
-
     // ***** first pass - search already loaded shader
-    auto it = v_geoms.find(key);
-    if (it != v_geoms.end()) return *it;
+    for (u32 it = 0; it < v_geoms.size(); it++)
+    {
+        SGeometry& G = *(v_geoms[it]);
+        if ((G.dcl == dcl) && (G.vb == vb) && (G.ib == ib) && (G.vb_stride == vb_stride)) return v_geoms[it];
+    }
 
     SGeometry* Geom = xr_new<SGeometry>();
     Geom->dwFlags |= xr_resource_flagged::RF_REGISTERED;
@@ -455,13 +431,14 @@ SGeometry* CResourceManager::CreateGeom(D3DVERTEXELEMENT9* decl, IDirect3DVertex
     Geom->vb = vb;
     Geom->vb_stride = vb_stride;
     Geom->ib = ib;
-    v_geoms.insert(Geom);
+    v_geoms.push_back(Geom);
     return Geom;
 }
 
 SGeometry* CResourceManager::CreateGeom(u32 FVF, IDirect3DVertexBuffer9* vb, IDirect3DIndexBuffer9* ib)
 {
     D3DVERTEXELEMENT9 dcl[MAX_FVF_DECL_SIZE];
+    xrSRWLockGuard guard(geomGuard);
     CHK_DX(D3DXDeclaratorFromFVF(FVF, dcl));
     SGeometry* g = CreateGeom(dcl, vb, ib);
     return g;
@@ -499,7 +476,7 @@ CTexture* CResourceManager::_CreateTexture(LPCSTR _Name)
     {
         CTexture* T = xr_new<CTexture>();
         T->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-        m_textures.emplace(T->set_name(Name), T);
+        m_textures.insert(mk_pair(T->set_name(Name), T));
         T->Preload();
         if (Device.b_is_Ready)
         {
@@ -559,7 +536,7 @@ CMatrix* CResourceManager::_CreateMatrix(LPCSTR Name)
         CMatrix* M = xr_new<CMatrix>();
         M->dwFlags |= xr_resource_flagged::RF_REGISTERED;
         M->dwReference.store(1, std::memory_order_relaxed);
-        m_matrices.emplace(M->set_name(Name), M);
+        m_matrices.insert(mk_pair(M->set_name(Name), M));
         return M;
     }
 }
@@ -593,7 +570,7 @@ CConstant* CResourceManager::_CreateConstant(LPCSTR Name)
         CConstant* C = xr_new<CConstant>();
         C->dwFlags |= xr_resource_flagged::RF_REGISTERED;
         C->dwReference.store(1, std::memory_order_relaxed);
-        m_constants.emplace(C->set_name(Name), C);
+        m_constants.insert(mk_pair(C->set_name(Name), C));
         return C;
     }
 }
@@ -620,15 +597,18 @@ bool cmp_tl(const std::pair<u32, ref_texture>& _1, const std::pair<u32, ref_text
 
 STextureList* CResourceManager::_CreateTextureList(STextureList& L)
 {
-    std::sort(L.begin(), L.end(), cmp_tl);
-
     xrSRWLockGuard guard(textureGuard);
-    auto it = lst_textures.find(L);
-    if (it != lst_textures.end()) return *it;
-
+    std::sort(L.begin(), L.end(), cmp_tl);
+    for (u32 it = 0; it < lst_textures.size(); it++)
+    {
+        STextureList* base = lst_textures[it];
+        if (L.equal(*base)) return base;
+    }
     STextureList* lst = xr_new<STextureList>(L);
+    //lst->_copy(L);
     lst->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-    lst_textures.insert(lst);
+
+    lst_textures.push_back(lst);
     return lst;
 }
 
@@ -636,7 +616,7 @@ void CResourceManager::_DeleteTextureList(const STextureList* L)
 {
     if (0 == (L->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
     xrSRWLockGuard guard(textureGuard);
-    if (reclaim(lst_textures, L) || reclaim_safe(lst_textures, L)) return;
+    if (reclaim(lst_textures, L)) return;
     Msg("! ERROR: Failed to find compiled list of textures");
 }
 
@@ -645,22 +625,22 @@ SMatrixList* CResourceManager::_CreateMatrixList(SMatrixList& L)
 {
     BOOL bEmpty = TRUE;
     for (u32 i = 0; i < L.size(); i++)
-    {
         if (L[i])
         {
             bEmpty = FALSE;
             break;
         }
-    }
     if (bEmpty) return nullptr;
-
     xrSRWLockGuard guard(matrixGuard);
-    auto it = lst_matrices.find(L);
-    if (it != lst_matrices.end()) return *it;
 
+    for (u32 it = 0; it < lst_matrices.size(); it++)
+    {
+        SMatrixList* base = lst_matrices[it];
+        if (L.equal(*base)) return base;
+    }
     SMatrixList* lst = xr_new<SMatrixList>(L);
     lst->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-    lst_matrices.insert(lst);
+    lst_matrices.push_back(lst);
     return lst;
 }
 
@@ -677,22 +657,22 @@ SConstantList* CResourceManager::_CreateConstantList(SConstantList& L)
 {
     BOOL bEmpty = TRUE;
     for (u32 i = 0; i < L.size(); i++)
-    {
         if (L[i])
         {
             bEmpty = FALSE;
             break;
         }
-    }
     if (bEmpty) return nullptr;
-
     xrSRWLockGuard guard(constantGuard);
-    auto it = lst_constants.find(L);
-    if (it != lst_constants.end()) return *it;
 
+    for (u32 it = 0; it < lst_constants.size(); it++)
+    {
+        SConstantList* base = lst_constants[it];
+        if (L.equal(*base)) return base;
+    }
     SConstantList* lst = xr_new<SConstantList>(L);
     lst->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-    lst_constants.insert(lst);
+    lst_constants.push_back(lst);
     return lst;
 }
 
@@ -754,7 +734,7 @@ SVS*	CResourceManager::_CreateVS		(LPCSTR _name)
 	{
 		SVS*	_vs					= xr_new<SVS>	();
 		_vs->dwFlags				|= xr_resource_flagged::RF_REGISTERED;
-		m_vs.emplace(_vs->set_name(name),_vs);
+		m_vs.insert					(mk_pair(_vs->set_name(name),_vs));
 		if (0==stricmp(_name,"null"))	{
 			_vs->vs				= NULL;
 			return _vs;
@@ -862,7 +842,7 @@ SPS*	CResourceManager::_CreatePS			(LPCSTR name)
 	{
 		SPS*	_ps					=	xr_new<SPS>	();
 		_ps->dwFlags				|=	xr_resource_flagged::RF_REGISTERED;
-		m_ps.emplace(_ps->set_name(name),_ps);
+		m_ps.insert					(mk_pair(_ps->set_name(name),_ps));
 		if (0==stricmp(name,"null"))	{
 			_ps->ps				= NULL;
 			return _ps;
