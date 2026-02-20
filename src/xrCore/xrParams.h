@@ -93,7 +93,12 @@ enum class ECoreParams : u8
 	sound_constant_speed,
 	savescreenshots,
 	lua_studio,
-	clear_cs_constants
+	clear_cs_constants,
+
+    //.peak volumetrics
+    volumetric1,
+    volumetric2,
+    volumetric4,
 };
 
 namespace xrParams {

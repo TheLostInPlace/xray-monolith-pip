@@ -521,7 +521,7 @@ BOOL r_blood_decals_on_objects = FALSE;
 int opt_static = 2;
 int opt_dynamic = 2;
 
-int ps_pfx_volumetric_mode = 1;
+int ps_pfx_volumetric_mode = 0;
 
 #ifndef _EDITOR
 #include	"../../xrEngine/xr_ioconsole.h"

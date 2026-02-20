@@ -361,7 +361,7 @@ void CRenderTarget::phase_ssfx_volumetric_blur()
 	p0.set(0.0f, 0.0f);
 	p1.set(1.0f, 1.0f);
 
-	// Volumetric always at 1/8 res
+	// Volumetric always at volsize res, default 1/8
 	set_viewport_size(HW.pContext, w / RImplementation.o.volsize, h / RImplementation.o.volsize);
 
 	ref_rt* rt_VolBlur[2] = { &rt_ssfx_volumetric_tmp, &rt_ssfx_volumetric };
