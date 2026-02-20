@@ -49,6 +49,7 @@ public:
     int sss_remove_latency;
 	s8 sss_priority;
 	bool sss_is_playerlight;
+    xr_delegate<void(light*)> sss_on_light_destroy;
 
 	light* omipart_parent;
 	float distance;

@@ -71,6 +71,8 @@ light::~light()
 #endif // (RENDER==R_R2) || (RENDER==R_R3) || (RENDER==R_R4)
 	ignore_object = nullptr;
 	for (int f=0; f<6; f++) decor_object[f] = nullptr;
+    if (sss_on_light_destroy)
+        sss_on_light_destroy(this);
 }
 
 void light::destroy(bool deffered)
