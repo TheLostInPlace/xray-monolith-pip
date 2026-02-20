@@ -283,7 +283,9 @@ void CRenderTarget::accum_volumetric_lv(light* L)
 	// [ SSS ] Fade through distance volumetric lights.
 	if (ps_ssfx_volumetric.x > 0)
 	{
-		float Falloff = ps_ssfx_volumetric.y - std::min(std::max((L->vis.distance - 20) * 0.01f, 0.0f), 1.0f) * ps_ssfx_volumetric.y;
+        // demonized: lower intensity by 3 times to be comparable to SSS volumetric
+        float intensity = ps_ssfx_volumetric.y / 3.f;
+		float Falloff = intensity - std::min(std::max((L->vis.distance - 20) * 0.01f, 0.0f), 1.0f) * intensity;
 		L->m_volumetric_intensity = Falloff;
 		L->flags.bVolumetric = Falloff <= 0 ? false : true;
 	}
