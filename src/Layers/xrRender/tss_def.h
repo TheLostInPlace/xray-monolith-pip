@@ -5,7 +5,7 @@
 
 class SimulatorStates
 {
-public:
+private:
 	struct State
 	{
 		u32 type; // 0=RS, 1=TSS
@@ -35,13 +35,14 @@ public:
 			v3 = c;
 		}
 	};
-	
+
+private:
+	xr_vector<State> States;
 public:
-    xr_vector<State> States;
 	void set_RS(u32 a, u32 b);
 	void set_TSS(u32 a, u32 b, u32 c);
 	void set_SAMP(u32 a, u32 b, u32 c);
-	BOOL equal(const SimulatorStates& S) const;
+	BOOL equal(SimulatorStates& S);
 	void clear();
 	IDirect3DStateBlock9* record();
 #if defined(USE_DX10) || defined(USE_DX11)
