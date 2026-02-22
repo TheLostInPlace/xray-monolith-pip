@@ -89,14 +89,14 @@ private:
         {
             if (lhs == rhs) return true;
             if (!lhs || !rhs) return false;
-            return const_cast<SState*>(lhs)->state_code.equal(const_cast<SState*>(rhs)->state_code);
+            return lhs->state_code.equal(rhs->state_code);
         }
 
         // Pointer vs Raw Code (Transparent)
         bool operator()(const SState* lhs, const SimulatorStates& rhs) const
         {
             if (!lhs) return false;
-            return const_cast<SState*>(lhs)->state_code.equal(const_cast<SimulatorStates&>(rhs));
+            return lhs->state_code.equal(rhs);
         }
 
         // Raw Code vs Pointer
@@ -274,14 +274,14 @@ private:
         {
             if (lhs == rhs) return true;
             if (!lhs || !rhs) return false;
-            return const_cast<R_constant_table*>(lhs)->equal(*const_cast<R_constant_table*>(rhs));
+            return lhs->equal(*rhs);
         }
 
         // Table* vs Table& (Transparent)
         bool operator()(const R_constant_table* lhs, const R_constant_table& rhs) const
         {
             if (!lhs) return false;
-            return const_cast<R_constant_table*>(lhs)->equal(const_cast<R_constant_table&>(rhs));
+            return lhs->equal(rhs);
         }
 
         // Table& vs Table* (Symmetry)
@@ -342,7 +342,7 @@ private:
         // Pointer vs Pointer
         bool operator()(const dx10ConstantBuffer* lhs, const dx10ConstantBuffer* rhs) const
         {
-            return const_cast<dx10ConstantBuffer*>(lhs)->Similar(*const_cast<dx10ConstantBuffer*>(rhs));
+            return lhs->Similar(*rhs);
         }
 
         // Pointer vs Reflection Interface
@@ -470,13 +470,13 @@ private:
         {
             if (lhs == rhs) return true;
             if (!lhs || !rhs) return false;
-            return const_cast<STextureList*>(lhs)->equal(*const_cast<STextureList*>(rhs));
+            return lhs->equal(*rhs);
         }
 
         bool operator()(const STextureList* lhs, const STextureList& rhs) const
         {
             if (!lhs) return false;
-            return const_cast<STextureList*>(lhs)->equal(const_cast<STextureList&>(rhs));
+            return lhs->equal(rhs);
         }
 
         bool operator()(const STextureList& lhs, const STextureList* rhs) const
@@ -517,12 +517,12 @@ private:
         bool operator()(const SMatrixList* lhs, const SMatrixList* rhs) const {
             if (lhs == rhs) return true;
             if (!lhs || !rhs) return false;
-            return const_cast<SMatrixList*>(lhs)->equal(*const_cast<SMatrixList*>(rhs));
+            return lhs->equal(*rhs);
         }
 
         bool operator()(const SMatrixList* lhs, const SMatrixList& rhs) const {
             if (!lhs) return false;
-            return const_cast<SMatrixList*>(lhs)->equal(const_cast<SMatrixList&>(rhs));
+            return lhs->equal(rhs);
         }
 
         bool operator()(const SMatrixList& lhs, const SMatrixList* rhs) const {
@@ -564,13 +564,13 @@ private:
         {
             if (lhs == rhs) return true;
             if (!lhs || !rhs) return false;
-            return const_cast<SConstantList*>(lhs)->equal(*const_cast<SConstantList*>(rhs));
+            return lhs->equal(*rhs);
         }
 
         bool operator()(const SConstantList* lhs, const SConstantList& rhs) const
         {
             if (!lhs) return false;
-            return const_cast<SConstantList*>(lhs)->equal(const_cast<SConstantList&>(rhs));
+            return lhs->equal(rhs);
         }
 
         bool operator()(const SConstantList& lhs, const SConstantList* rhs) const
@@ -612,13 +612,13 @@ private:
         {
             if (lhs == rhs) return true;
             if (!lhs || !rhs) return false;
-            return const_cast<SPass*>(lhs)->equal(*const_cast<SPass*>(rhs));
+            return lhs->equal(*rhs);
         }
 
         bool operator()(const SPass* lhs, const SPass& rhs) const
         {
             if (!lhs) return false;
-            return const_cast<SPass*>(lhs)->equal(const_cast<SPass&>(rhs));
+            return lhs->equal(rhs);
         }
 
         bool operator()(const SPass& lhs, const SPass* rhs) const
@@ -680,13 +680,13 @@ private:
         {
             if (lhs == rhs) return true;
             if (!lhs || !rhs) return false;
-            return const_cast<ShaderElement*>(lhs)->equal(*const_cast<ShaderElement*>(rhs));
+            return lhs->equal(*rhs);
         }
 
         bool operator()(const ShaderElement* lhs, const ShaderElement& rhs) const
         {
             if (!lhs) return false;
-            return const_cast<ShaderElement*>(lhs)->equal(const_cast<ShaderElement&>(rhs));
+            return lhs->equal(rhs);
         }
 
         bool operator()(const ShaderElement& lhs, const ShaderElement* rhs) const {
@@ -728,13 +728,13 @@ private:
         {
             if (lhs == rhs) return true;
             if (!lhs || !rhs) return false;
-            return const_cast<Shader*>(lhs)->equal(*const_cast<Shader*>(rhs));
+            return lhs->equal(*rhs);
         }
 
         bool operator()(const Shader* lhs, const Shader& rhs) const
         {
             if (!lhs) return false;
-            return const_cast<Shader*>(lhs)->equal(const_cast<Shader&>(rhs));
+            return lhs->equal(rhs);
         }
 
         bool operator()(const Shader& lhs, const Shader* rhs) const

@@ -82,7 +82,7 @@ void resptrcode_geom::create(D3DVERTEXELEMENT9* decl, ID3DVertexBuffer* vb, ID3D
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
-BOOL SPass::equal(const SPass& other)
+BOOL SPass::equal(const SPass& other) const
 {
 	if (state != other.state) return FALSE;
 	if (ps != other.ps) return FALSE;
@@ -126,7 +126,7 @@ ShaderElement::ShaderElement()
 	//	3 = eReticleLense
 }
 
-BOOL ShaderElement::equal(ShaderElement& S)
+BOOL ShaderElement::equal(const ShaderElement& S) const
 {
 	if (flags.iPriority != S.flags.iPriority) return FALSE;
 	if (flags.bStrictB2F != S.flags.bStrictB2F) return FALSE;
@@ -143,7 +143,7 @@ BOOL ShaderElement::equal(ShaderElement& S)
 	return TRUE;
 }
 
-BOOL ShaderElement::equal(ShaderElement* S)
+BOOL ShaderElement::equal(const ShaderElement* S) const
 {
 	if (0 == S && 0 == this) return TRUE;
 	if (0 == S || 0 == this) return FALSE;
@@ -151,7 +151,7 @@ BOOL ShaderElement::equal(ShaderElement* S)
 }
 
 //
-BOOL Shader::equal(Shader& S)
+BOOL Shader::equal(const Shader& S) const
 {
 	return
 		E[0]->equal(&*S.E[0]) &&
@@ -161,7 +161,7 @@ BOOL Shader::equal(Shader& S)
 		E[4]->equal(&*S.E[4]);
 }
 
-BOOL Shader::equal(Shader* S)
+BOOL Shader::equal(const Shader* S) const
 {
 	return equal(*S);
 }

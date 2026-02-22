@@ -52,7 +52,7 @@ dx10ConstantBuffer::dx10ConstantBuffer(ID3DShaderReflectionConstantBuffer* pTabl
 	VERIFY(m_pBufferData);
 }
 
-bool dx10ConstantBuffer::Similar(dx10ConstantBuffer& _in)
+bool dx10ConstantBuffer::Similar(const dx10ConstantBuffer& _in) const
 {
 	if (m_strBufferName._get() != _in.m_strBufferName._get())
 		return false;
