@@ -498,7 +498,7 @@ void CResourceManager::LS_Unload()
 
 BOOL CResourceManager::_lua_HasShader(LPCSTR s_shader)
 {
-    xrSRWLockGuard guard(shaderGuard, true);
+    xrSRWLockGuard guard(shaderGuard);
     string256 undercorated;
     for (int i = 0, l = xr_strlen(s_shader) + 1; i < l; i++)
         undercorated[i] = ('\\' == s_shader[i]) ? '_' : s_shader[i];
@@ -604,9 +604,11 @@ Shader* CResourceManager::_lua_Create(LPCSTR d_shader, LPCSTR s_textures)
 	}
 
 	// Search equal in shaders array
-	xrSRWLockGuard guard(shaderGuard);
-	auto it = v_shaders.find(S);
-	if (it != v_shaders.end()) return *it;
+    {
+        xrSRWLockGuard guard(shaderGuard);
+        auto it = v_shaders.find(S);
+        if (it != v_shaders.end()) return *it;
+    }
 
 	// Create _new_ entry
 	Shader* N = xr_new<Shader>(S);
