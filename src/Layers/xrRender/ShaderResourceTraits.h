@@ -88,7 +88,7 @@ inline T* CResourceManager::CreateShader(const char* name)
         T* sh = xr_new<T>();
 
         sh->dwFlags |= xr_resource_flagged::RF_REGISTERED;
-        sh_map.emplace(sh->set_name(name), sh);
+        sh_map.insert(mk_pair(sh->set_name(name), sh));
         if (0 == stricmp(name, "null"))
         {
             sh->sh = NULL;

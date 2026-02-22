@@ -106,7 +106,7 @@ void CResourceManager::ED_UpdateBlender(LPCSTR Name, IBlender* data)
 	}
 	else
 	{
-		m_blenders.emplace(xr_strdup(Name), data);
+		m_blenders.insert(mk_pair(xr_strdup(Name), data));
 	}
 }
 
