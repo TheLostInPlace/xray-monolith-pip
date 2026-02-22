@@ -246,8 +246,6 @@ Main and MT:
 
 MT:
   * Fixed buggy lighting on objects in DX8
-  * Separate SRW locks instead of single CS for resources creation and deletion
-  * Reorganized resources data to use unordered sets instead of vectors for faster lookup
   * More safety features for visual memory manager
   * Light refactor of building and rendering `dsgraph` items
   * `mt_task_manager` console command to toggle Task Manager between main and second thread, default is 0, main thread
@@ -1765,4 +1763,3 @@ override = true
 
 * Exported distance_to_xz_sqr() function of Fvector
 * Redesigned duplicate section error, it will additionally print what file adds the section in the first place in addition to the file that has the duplicate
-
