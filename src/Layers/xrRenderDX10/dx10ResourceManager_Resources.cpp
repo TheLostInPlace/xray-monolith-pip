@@ -241,7 +241,6 @@ void CResourceManager::_DeleteVS(const SVS* vs)
 	{
 		m_vs.erase(I);
 		xr_vector<SDeclaration*>::iterator iDecl;
-        xrCriticalSectionGuard guard(declGuard);
 		for (iDecl = v_declarations.begin(); iDecl != v_declarations.end(); ++iDecl)
 		{
 			xr_map<ID3DBlob*, ID3DInputLayout*>::iterator iLayout;
