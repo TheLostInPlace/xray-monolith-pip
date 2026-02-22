@@ -92,7 +92,7 @@ void SimulatorStates::set_SAMP(u32 a, u32 b, u32 c)
 	States.push_back(st);
 }
 
-BOOL SimulatorStates::equal(const SimulatorStates& S) const
+BOOL SimulatorStates::equal(SimulatorStates& S)
 {
 	if (States.size() != S.States.size()) return FALSE;
 	if (0 != memcmp(&*States.begin(), &*S.States.begin(), States.size() * sizeof(State))) return FALSE;

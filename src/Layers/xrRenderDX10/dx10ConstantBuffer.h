@@ -11,7 +11,7 @@ public:
 	dx10ConstantBuffer(ID3DShaderReflectionConstantBuffer* pTable);
 	~dx10ConstantBuffer();
 
-	bool Similar(const dx10ConstantBuffer& _in) const;
+	bool Similar(dx10ConstantBuffer& _in);
 	ID3DBuffer* GetBuffer() { return m_pBuffer; }
 
 	void Flush();

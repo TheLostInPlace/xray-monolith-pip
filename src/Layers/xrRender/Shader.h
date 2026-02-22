@@ -125,7 +125,7 @@ struct ECORE_API SPass : public xr_resource_flagged
 
 	~SPass();
 
-	BOOL equal(const SPass& other) const;
+	BOOL equal(const SPass& other);
 };
 
 typedef resptr_core<SPass, resptr_base<SPass>> ref_pass;
@@ -157,8 +157,8 @@ public:
 
 	//ShaderElement& operator=(const ShaderElement& Other) = delete;
 
-	BOOL equal(const ShaderElement& S) const;
-	BOOL equal(const ShaderElement* S) const;
+	BOOL equal(ShaderElement& S);
+	BOOL equal(ShaderElement* S);
 	void _copy(const ShaderElement& Other);
 };
 
@@ -174,8 +174,8 @@ public:
 	//Shader& operator=(const Shader& Other) = delete;
 
 	~Shader();
-	BOOL equal(const Shader& S) const;
-	BOOL equal(const Shader* S) const;
+	BOOL equal(Shader& S);
+	BOOL equal(Shader* S);
 
 	void _copy(Shader& Other);
 };

@@ -105,7 +105,7 @@ struct ECORE_API R_constant_load
 	{
 	};
 
-	IC BOOL equal(const R_constant_load& C) const
+	IC BOOL equal(R_constant_load& C)
 	{
 		return (index == C.index) && (cls == C.cls);
 	}
@@ -160,13 +160,13 @@ struct ECORE_API R_constant : public xr_resource
 		return fake;
 	}
 
-	IC BOOL equal(const R_constant& C) const
+	IC BOOL equal(R_constant& C)
 	{
 		return (0 == xr_strcmp(name, C.name)) && (type == C.type) && (destination == C.destination) && ps.equal(C.ps) &&
 			vs.equal(C.vs) && samp.equal(C.samp) && handler == C.handler;
 	}
 
-	IC BOOL equal(const R_constant* C) const
+	IC BOOL equal(R_constant* C)
 	{
 		return equal(*C);
 	}
@@ -217,8 +217,8 @@ public:
 	R_constant* get(LPCSTR name); // slow search
 	R_constant* get(shared_str& name); // fast search
 
-	BOOL equal(const R_constant_table& C) const;
-	BOOL equal(const R_constant_table* C) const { return equal(*C); }
+	BOOL equal(R_constant_table& C);
+	BOOL equal(R_constant_table* C) { return equal(*C); }
 	BOOL empty() { return 0 == table.size(); }
 
 };
