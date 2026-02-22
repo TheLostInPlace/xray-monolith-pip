@@ -18,13 +18,27 @@ class dx10ConstantBuffer;
 class ECORE_API CResourceManager
 {
 private:
-	struct str_pred
-	{
-		IC bool operator()(LPCSTR x, LPCSTR y) const
-		{
-			return xr_strcmp(x, y) < 0;
-		}
-	};
+    struct str_hash
+    {
+        using is_transparent = void;
+        size_t operator()(const char* s) const
+        {
+            return xr_hash<std::string_view>{}(s);
+        }
+        size_t operator()(const shared_str& s) const
+        {
+            return xr_hash<std::string_view>{}(s.c_str());
+        }
+    };
+
+    struct str_equal
+    {
+        using is_transparent = void;
+        bool operator()(const char* lhs, const char* rhs) const
+        {
+            return xr_strcmp(lhs, rhs) == 0;
+        }
+    };
 
 	struct texture_detail
 	{
@@ -33,24 +47,24 @@ private:
 	};
 
 public:
-	DEFINE_MAP_PRED(const char*, IBlender*, map_Blender, map_BlenderIt, str_pred);
-	DEFINE_MAP_PRED(const char*, CTexture*, map_Texture, map_TextureIt, str_pred);
-	DEFINE_MAP_PRED(const char*, CMatrix*, map_Matrix, map_MatrixIt, str_pred);
-	DEFINE_MAP_PRED(const char*, CConstant*, map_Constant, map_ConstantIt, str_pred);
-	DEFINE_MAP_PRED(const char*, CRT*, map_RT, map_RTIt, str_pred);
-	//	DX10 cut DEFINE_MAP_PRED(const char*,CRTC*,			map_RTC,		map_RTCIt,			str_pred);
-	DEFINE_MAP_PRED(const char*, SVS*, map_VS, map_VSIt, str_pred);
+    DEFINE_UNORDERED_FLAT_MAP_PRED_EQUAL(const char*, IBlender*, map_Blender, map_BlenderIt, str_hash, str_equal);
+    DEFINE_UNORDERED_FLAT_MAP_PRED_EQUAL(const char*, CTexture*, map_Texture, map_TextureIt, str_hash, str_equal);
+    DEFINE_UNORDERED_FLAT_MAP_PRED_EQUAL(const char*, CMatrix*, map_Matrix, map_MatrixIt, str_hash, str_equal);
+    DEFINE_UNORDERED_FLAT_MAP_PRED_EQUAL(const char*, CConstant*, map_Constant, map_ConstantIt, str_hash, str_equal);
+    DEFINE_UNORDERED_FLAT_MAP_PRED_EQUAL(const char*, CRT*, map_RT, map_RTIt, str_hash, str_equal);
+    //	DX10 cut DEFINE_UNORDERED_FLAT_MAP_PRED_EQUAL(const char*,CRTC*,			map_RTC,		map_RTCIt,			str_hash, str_equal);
+    DEFINE_UNORDERED_FLAT_MAP_PRED_EQUAL(const char*, SVS*, map_VS, map_VSIt, str_hash, str_equal);
 #if defined(USE_DX10) || defined(USE_DX11)
-	DEFINE_MAP_PRED(const char*,SGS*,			map_GS,			map_GSIt,			str_pred);
+    DEFINE_UNORDERED_FLAT_MAP_PRED_EQUAL(const char*, SGS*, map_GS, map_GSIt, str_hash, str_equal);
 #endif	//	USE_DX10
 #ifdef USE_DX11
-	DEFINE_MAP_PRED(const char*, SHS*,			map_HS,			map_HSIt,			str_pred);
-	DEFINE_MAP_PRED(const char*, SDS*,			map_DS,			map_DSIt,			str_pred);
-	DEFINE_MAP_PRED(const char*, SCS*,			map_CS,			map_CSIt,			str_pred);
+    DEFINE_UNORDERED_FLAT_MAP_PRED_EQUAL(const char*, SHS*, map_HS, map_HSIt, str_hash, str_equal);
+    DEFINE_UNORDERED_FLAT_MAP_PRED_EQUAL(const char*, SDS*, map_DS, map_DSIt, str_hash, str_equal);
+    DEFINE_UNORDERED_FLAT_MAP_PRED_EQUAL(const char*, SCS*, map_CS, map_CSIt, str_hash, str_equal);
 #endif
 
-	DEFINE_MAP_PRED(const char*, SPS*, map_PS, map_PSIt, str_pred);
-	DEFINE_MAP_PRED(const char*, texture_detail, map_TD, map_TDIt, str_pred);
+    DEFINE_UNORDERED_FLAT_MAP_PRED_EQUAL(const char*, SPS*, map_PS, map_PSIt, str_hash, str_equal);
+    DEFINE_UNORDERED_FLAT_MAP_PRED_EQUAL(const char*, texture_detail, map_TD, map_TDIt, str_hash, str_equal);
 private:
 	// data
 	map_Blender m_blenders;
