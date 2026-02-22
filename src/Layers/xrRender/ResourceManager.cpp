@@ -145,7 +145,7 @@ ShaderElement* CResourceManager::_CreateElement(ShaderElement& S)
 {
 	if (S.passes.empty()) return 0;
 
-	xrSRWLockGuard guard(shaderGuard);
+	xrCriticalSectionGuard guard(shaderGuard);
 
 	// Search equal in shaders array
 	for (u32 it = 0; it < v_elements.size(); it++)
@@ -161,7 +161,7 @@ ShaderElement* CResourceManager::_CreateElement(ShaderElement& S)
 
 void CResourceManager::_DeleteElement(const ShaderElement* S)
 {
-	xrSRWLockGuard guard(shaderGuard);
+	xrCriticalSectionGuard guard(shaderGuard);
 	if (0 == (S->dwFlags & xr_resource_flagged::RF_REGISTERED)) return;
 	if (reclaim(v_elements, S)) return;
 	Msg("! ERROR: Failed to find compiled 'shader-element'");
@@ -170,6 +170,8 @@ void CResourceManager::_DeleteElement(const ShaderElement* S)
 Shader* CResourceManager::_cpp_Create(IBlender* B, LPCSTR s_shader, LPCSTR s_textures, LPCSTR s_constants,
                                       LPCSTR s_matrices)
 {
+	xrCriticalSectionGuard guard(shaderGuard);
+
 	CBlender_Compile C;
 	Shader S;
 
@@ -266,12 +268,9 @@ Shader* CResourceManager::_cpp_Create(IBlender* B, LPCSTR s_shader, LPCSTR s_tex
 	}
 
 	// Search equal in shaders array
-    {
-        xrSRWLockGuard guard(shaderGuard);
-        for (u32 it = 0; it < v_shaders.size(); it++)
-            if (S.equal(v_shaders[it])) return v_shaders[it];
-    }
-    
+	for (u32 it = 0; it < v_shaders.size(); it++)
+		if (S.equal(v_shaders[it])) return v_shaders[it];
+
 	// Create _new_ entry
 	Shader* ResultShader = _CreateShader(&S);
 	return ResultShader;
@@ -373,7 +372,7 @@ void CResourceManager::Delete(const Shader* S)
 	if (0 == (S->dwFlags & xr_resource_flagged::RF_REGISTERED))
 		return;
 
-	xrSRWLockGuard guard(shaderGuard);
+	xrCriticalSectionGuard guard(shaderGuard);
 
 	if (reclaim(v_shaders, S))
 		return;
@@ -434,7 +433,7 @@ void	CResourceManager::ED_UpdateTextures(AStringVec* names)
 
 Shader* CResourceManager::_CreateShader(Shader* InShader)
 {
-	xrSRWLockGuard guard(shaderGuard);
+	xrCriticalSectionGuard guard(shaderGuard);
 
 	// Search equal in shaders array
 	for (Shader* it : v_shaders)

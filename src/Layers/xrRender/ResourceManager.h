@@ -89,15 +89,15 @@ private:
 	xr_vector<ref_texture> m_necessary;
 	// misc
     // separate locks for resource categories to reduce contention
-    xrSRWLock shaderGuard;   // shaders, elements, passes, shader maps
-    xrSRWLock textureGuard;  // textures and texture lists
-    xrSRWLock matrixGuard;   // matrices and matrix lists
-    xrSRWLock constantGuard; // constants, constant lists, constant tables
-    xrSRWLock rtargetGuard;  // render targets
-    xrSRWLock declGuard;     // declarations
-    xrSRWLock stateGuard;    // simulator states
-    xrSRWLock geomGuard;     // geometries
-    xrSRWLock bufferGuard;   // constant buffers, input signatures (DX10/11)
+    xrCriticalSection shaderGuard;   // shaders, elements, passes, shader maps
+    xrCriticalSection textureGuard;  // textures and texture lists
+    xrCriticalSection matrixGuard;   // matrices and matrix lists
+    xrCriticalSection constantGuard; // constants, constant lists, constant tables
+    xrCriticalSection rtargetGuard;  // render targets
+    xrCriticalSection declGuard;     // declarations
+    xrCriticalSection stateGuard;    // simulator states
+    xrCriticalSection geomGuard;     // geometries
+    xrCriticalSection bufferGuard;   // constant buffers, input signatures (DX10/11)
 
 public:
 	CTextureDescrMngr m_textures_description;
