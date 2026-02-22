@@ -361,8 +361,8 @@ using xr_unordered_map = robin_hood::unordered_node_map<K, V, Hasher>;
 template <class T, class Hasher = xr_hash<T>, class Equal = std::equal_to<T>>
 using xr_unordered_set = robin_hood::unordered_node_set<T, Hasher, Equal>;
 
-template <typename K, class V, class Hasher = xr_hash<K>>
-using xr_unordered_flat_map = robin_hood::unordered_flat_map<K, V, Hasher>;
+template <typename K, class V, class Hasher = xr_hash<K>, class Equal = std::equal_to<K>>
+using xr_unordered_flat_map = robin_hood::unordered_flat_map<K, V, Hasher, Equal>;
 
 template <class T, class Hasher = xr_hash<T>, class Equal = std::equal_to<T>>
 using xr_unordered_flat_set = robin_hood::unordered_flat_set<T, Hasher, Equal>;
