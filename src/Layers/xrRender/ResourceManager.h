@@ -770,17 +770,9 @@ private:
     xr_unordered_flat_set<Shader*, Shader_hash, Shader_equal> v_shaders;
 	
 	xr_vector<ref_texture> m_necessary;
+
 	// misc
-    // separate locks for resource categories to reduce contention
-    xrSRWLock shaderGuard;   // shaders, elements, passes, shader maps
-    xrSRWLock textureGuard;  // textures and texture lists
-    xrSRWLock matrixGuard;   // matrices and matrix lists
-    xrSRWLock constantGuard; // constants, constant lists, constant tables
-    xrSRWLock rtargetGuard;  // render targets
-    xrSRWLock declGuard;     // declarations
-    xrSRWLock stateGuard;    // simulator states
-    xrSRWLock geomGuard;     // geometries
-    xrSRWLock bufferGuard;   // constant buffers, input signatures (DX10/11)
+    xrCriticalSection creationGuard;
 
 public:
 	CTextureDescrMngr m_textures_description;
