@@ -258,7 +258,8 @@ void CHangingLamp::UpdateCL()
 			{
 				Fmatrix& M = smart_cast<IKinematics*>(Visual())->LL_GetTransform_safed(light_bone);
 				xf.mul(XFORM(), M);
-				VERIFY(!fis_zero(DET(xf)));
+				if (fis_zero(DET(xf)))
+					xf = XFORM();
 			}
 			else
 			{

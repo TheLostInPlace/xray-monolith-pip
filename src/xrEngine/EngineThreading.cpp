@@ -82,6 +82,10 @@ void XRay::Engine::CalculateBonesThread()
 			}
 				
 			spatial->spatial_updatesector();
+
+            if ((spatial->spatial.type & STYPE_PARTICLE) || (spatial->spatial.type & STYPE_LIGHTSOURCE))
+                continue;
+
 			spatialsSnapshot.push_back({ spatial, spatial->spatial.sphere.P, spatial->spatial.sphere.R, spatial->spatial.type, spatial->dcast_Renderable() });
 		}
 	}

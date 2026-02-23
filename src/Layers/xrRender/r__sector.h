@@ -54,7 +54,7 @@ protected:
 public:
 	// Main interface
 	dxRender_Visual* root() { return m_root; }
-	void traverse(CFrustum& F, CDSGraphManager& DM);
+	void traverse(CFrustum&& F, CDSGraphManager& DM);
 	void load(IReader& fs);
 
 	CSector() { m_root = NULL; }

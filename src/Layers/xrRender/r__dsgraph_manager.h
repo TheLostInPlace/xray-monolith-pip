@@ -15,11 +15,6 @@ public:
 	};
 
 	R_dsgraph::DynamicSceneRgraph RGraph;
-	struct TraverserData
-	{
-		xr_vector<CFrustum> frustums;
-		xr_vector<CPortal*> portals;
-	};
 	u32										i_options;		// input:	culling options
 	u32										i_doptions;
 	Fvector									i_vBase;		// input:	"view" point
@@ -29,7 +24,7 @@ public:
 	xrCriticalSection						P_CS;
 	xrSRWLock								S_LC;
 
-	FixedMAP<CSector*, TraverserData>		m_sector_frustums;
+	FixedMAP<CSector*, std::pair<xr_vector<CFrustum>, FixedSet<CPortal*>>>		m_sector_frustums;
 	xr_vector<ISpatialShared>				lstRenderables, lstLights;
 	FixedMAP<CPortal*, float>				f_portals;
 	sPoly S, D;
@@ -52,7 +47,7 @@ public:
 			if(m_sector_frustums.size())
 			{
 				if (auto node = m_sector_frustums.find(sector))
-					return !node->val.frustums.empty();
+					return !node->val.first.empty();
 			}
 		}
 
@@ -127,8 +122,8 @@ public:
 		{
 			for (auto& pair : m_sector_frustums)
 			{
-				pair.val.frustums.clear();
-				pair.val.portals.clear();
+				pair.val.first.clear();
+				pair.val.second.clear();
 			}
 			m_sector_frustums.clear();
 		}

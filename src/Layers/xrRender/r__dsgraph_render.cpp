@@ -427,7 +427,7 @@ void CDSGraphManager::r_dsgraph_capture_static()
 			// Determine visibility for static geometry hierrarhy
 			for (auto& pair : m_sector_frustums)
 			{
-				for (auto& frustum_node : pair.val.frustums)
+				for (auto& frustum_node : pair.val.first)
 					add_Static((IRenderVisual*)pair.key->root(), frustum_node, frustum_node.getMask());
 			}
 		}
@@ -587,7 +587,7 @@ void CDSGraphManager::r_dsgraph_capture_dynamic(CObject* O)
 				if (!is_sector_visible(sector))
 					continue;
 
-				for (CFrustum& frustum : m_sector_frustums.find(sector)->val.frustums)
+				for (CFrustum& frustum : m_sector_frustums.find(sector)->val.first)
 				{
 					if (frustum.testSphere_dirty(spatial->spatial.sphere.P, spatial->spatial.sphere.R))
 					{
