@@ -109,8 +109,18 @@ void CUISequencer::Start(LPCSTR tutor_name)
 
 	m_name = tutor_name;
 
-	CUIXml uiXml;
-	uiXml.Load(CONFIG_PATH, UI_PATH, "game_tutorials.xml");
+    static CUIXml uiXml;
+    static bool uiXmlLoaded;
+    if (uiXmlLoaded)
+    {
+        uiXml.SetLocalRoot(uiXml.GetRoot());
+    }
+    else
+    {
+        uiXmlLoaded = true;
+        uiXml.Load(CONFIG_PATH, UI_PATH, "game_tutorials.xml");
+    }
+        
 
 	int items_count = uiXml.GetNodesNum(tutor_name, 0, "item");
 	VERIFY(items_count>0);
