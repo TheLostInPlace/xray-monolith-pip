@@ -89,7 +89,8 @@ namespace std
 	};
 }
 
-struct XRCORE_API str_value: public intrusive_base_impl<DeletionPolicy::Deferred, CounterPolicy::Atomic, false>
+// All str_value will persist in str_container, make counter non atomic, change if there will be erase functionality
+struct XRCORE_API str_value: public intrusive_base_impl<DeletionPolicy::Deferred, CounterPolicy::NonAtomic, false>
 {
 	char* value;
 	size_t hash;
