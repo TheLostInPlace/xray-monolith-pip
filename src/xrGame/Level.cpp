@@ -1160,7 +1160,7 @@ BOOL psLua_ParallelGC_debug = FALSE;
 
 void CLevel::script_gc()
 {
-	if (!(psLua_ParallelGC && Device.LuaGC && g_pGameLevel && g_pGameLevel->bReady))
+	if (!(psLua_ParallelGC && Device.LuaGC))
 	{	
 		PROF_EVENT();	
 		lua_gc(ai().script_engine().lua(), LUA_GCSTEP, psLUA_GCSTEP);
