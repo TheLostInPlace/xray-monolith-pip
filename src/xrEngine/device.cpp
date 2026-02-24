@@ -208,7 +208,7 @@ void mt_Thread(void* ptr)
 		// Reduces stutters since less work will be done in main GC step or no work at all
 		{
 			PROF_EVENT("seqLuaGC");
-			if (psLua_ParallelGC && Device.LuaGC)
+			if (psLua_ParallelGC && Device.LuaGC && g_pGameLevel && g_pGameLevel->bReady)
 			{
 				// Do at least once
 				do
@@ -537,7 +537,7 @@ void CRenderDevice::on_idle()
 		seqFrameMT.Process(rp_Frame);
 	}
 
-	if (psLua_ParallelGC && Device.LuaGC && !Device.LuaGCDone)
+	if (psLua_ParallelGC && Device.LuaGC && g_pGameLevel && g_pGameLevel->bReady && !Device.LuaGCDone)
 	{
 		PROF_EVENT("LuaGC Cleanup");
 		Device.LuaGC(true);
