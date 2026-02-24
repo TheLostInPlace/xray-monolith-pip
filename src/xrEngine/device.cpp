@@ -500,7 +500,7 @@ void CRenderDevice::on_idle()
 
 	secondary_tasks.wait();
 
-	if (psLua_ParallelGC && Device.LuaGC && !Device.LuaGCDone)
+	if (psLua_ParallelGC && Device.LuaGC && g_pGameLevel && g_pGameLevel->bReady && !Device.LuaGCDone)
 	{
 		PROF_EVENT("LuaGC Cleanup");
 		Device.LuaGC(true);

@@ -1171,7 +1171,7 @@ void CLevel::script_gc()
 		m_ph_commander->update();
 		m_ph_commander_scripts->update();
 	}
-	if (!(psLua_ParallelGC && Device.LuaGC))
+	if (!(psLua_ParallelGC && Device.LuaGC && g_pGameLevel && g_pGameLevel->bReady))
 	{
 		PROF_EVENT("CLevel::script_gc");
 		lua_gc(ai().script_engine().lua(), LUA_GCSTEP, psLUA_GCSTEP);

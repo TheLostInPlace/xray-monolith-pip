@@ -147,7 +147,7 @@ void XRay::Engine::GameThread()
     // Reduces stutters since less work will be done in main GC step or no work at all
     static auto LuaGC = []()
     {
-        if (psLua_ParallelGC && Device.LuaGC)
+        if (psLua_ParallelGC && Device.LuaGC && g_pGameLevel && g_pGameLevel->bReady)
         {
             PROF_EVENT("seqLuaGC");
             // Do at least once
