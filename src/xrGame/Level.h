@@ -216,6 +216,7 @@ public:
 	virtual void net_Stop();
 	virtual bool net_Start_client(const char* name);
 	virtual void net_Update();
+    virtual bool Load(u32 dwNum);
 	virtual bool Load_GameSpecific_Before();
 	virtual bool Load_GameSpecific_After();
 	virtual void Load_GameSpecific_CFORM(CDB::TRI* T, u32 count);

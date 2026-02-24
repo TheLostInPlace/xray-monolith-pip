@@ -282,9 +282,6 @@ CLevel::CLevel() :
 #endif
 
 	Msg("%s", Core.Params);
-
-	// demonized: bind LuaGC call to be available in device.cpp
-	Device.LuaGC.bind(&CLevel::LuaGC);
 	//crash_saving::save_impl = crash_saving::_save_impl; // CLevel ready, we can save now
 }
 
@@ -1177,6 +1174,14 @@ void CLevel::script_gc()
 		lua_gc(ai().script_engine().lua(), LUA_GCSTEP, psLUA_GCSTEP);
 	}
 	
+}
+
+// demonized: bind LuaGC call to be available in device.cpp
+bool CLevel::Load(u32 dwNum)
+{
+    inherited::Load(dwNum);
+    Device.LuaGC.bind(&CLevel::LuaGC);
+    return true;
 }
 
 // demonized: called from Device, via Device.LuaGC pointer
