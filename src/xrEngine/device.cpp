@@ -344,12 +344,6 @@ void CRenderDevice::on_idle()
 		g_SASH.StartBenchmark();
 	}
 
-	if (g_pGamePersistent != nullptr)
-	{
-		PROF_EVENT("Update Particles");
-		g_pGamePersistent->UpdateParticles();
-	}
-
 	if (Device.ModelDefferClear)
 	{
 		Device.ModelDefferClear();
@@ -364,6 +358,12 @@ void CRenderDevice::on_idle()
 	}
 
 	FrameMove();
+
+    if (g_pGamePersistent != nullptr)
+    {
+        PROF_EVENT("Update Particles");
+        g_pGamePersistent->UpdateParticles();
+    }
 
 	// Precache
 	if (dwPrecacheFrame)
