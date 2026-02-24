@@ -1177,8 +1177,6 @@ void CAI_Stalker::shedule_Update(u32 DT)
 						memory().update(dt);
 					STOP_PROFILE
 
-					update_can_kill_info();
-
 				STOP_PROFILE
 			}
 
@@ -1647,7 +1645,7 @@ void CAI_Stalker::LookAtActorSoftReset(CBoneInstance* headBone)
 
 void CAI_Stalker::LookAtActor(CBoneInstance* headBone) {
 	if (!g_Alive()) return;
-	if (!g_actor) return;
+	if (!Actor()) return;
 	if (wounded()) return;
 	if (!_valid(headBone->mTransform)) return;
 

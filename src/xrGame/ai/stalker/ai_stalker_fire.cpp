@@ -813,6 +813,7 @@ float CAI_Stalker::pick_distance()
 	if (!inventory().ActiveItem())
 		return (start_pick_distance());
 
+	update_can_kill_info();
 	return (m_pick_distance);
 }
 
@@ -1380,12 +1381,14 @@ bool CAI_Stalker::can_kill_member()
 	if (!animation().script_animations().empty())
 		return (false);
 
+	update_can_kill_info();
 	return (m_can_kill_member);
 }
 
 bool CAI_Stalker::can_kill_enemy()
 {
 	VERIFY(inventory().ActiveItem());
+	update_can_kill_info();
 	return (m_can_kill_enemy);
 }
 
