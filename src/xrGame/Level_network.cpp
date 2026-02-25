@@ -165,6 +165,7 @@ void CLevel::net_Stop()
 	}
 
     Device.LuaGC.clear();
+    Device.LuaGCDebug.clear();
 
 	if (!g_dedicated_server)
 		ai().script_engine().collect_all_garbage();

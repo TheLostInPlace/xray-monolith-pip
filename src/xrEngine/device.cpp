@@ -53,6 +53,7 @@ ref_light precache_light = 0;
 
 BOOL mt_calc_bones = TRUE;
 BOOL psLua_ParallelGC = TRUE;
+BOOL psLua_ParallelGC_debug = FALSE;
 
 extern discord::Core* discord_core;
 extern bool use_discord;
@@ -500,10 +501,9 @@ void CRenderDevice::on_idle()
 
 	secondary_tasks.wait();
 
-	if (psLua_ParallelGC && Device.LuaGC && !Device.LuaGCDone)
+	if (psLua_ParallelGC_debug && psLua_ParallelGC && Device.LuaGCDebug)
 	{
-		PROF_EVENT("LuaGC Cleanup");
-		Device.LuaGC(true);
+		Device.LuaGCDebug();
 	}
 
 #ifdef DEDICATED_SERVER

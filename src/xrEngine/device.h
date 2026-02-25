@@ -239,7 +239,8 @@ public:
 	// LuaGC
 	int LuaGCCount;
 	bool LuaGCDone;
-	xr_delegate<int(const bool)> LuaGC;
+    xr_delegate<int()> LuaGC;
+    xr_delegate<void()> LuaGCDebug;
 
 	// Dependent classes
 	//CResourceManager* Resources;

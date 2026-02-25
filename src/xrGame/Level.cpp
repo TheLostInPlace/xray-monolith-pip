@@ -1156,7 +1156,7 @@ void CLevel::OnFrame()
 int psLUA_GCSTEP = 300;
 int psLua_ParallelGCStep = 75;
 extern BOOL psLua_ParallelGC;
-BOOL psLua_ParallelGC_debug = FALSE;
+extern BOOL psLua_ParallelGC_debug;
 
 void CLevel::script_gc()
 {
@@ -1181,35 +1181,20 @@ bool CLevel::Load(u32 dwNum)
 {
     inherited::Load(dwNum);
     Device.LuaGC.bind(&CLevel::LuaGC);
+    Device.LuaGCDebug.bind(&CLevel::LuaGCDebug);
     return true;
 }
 
 // demonized: called from Device, via Device.LuaGC pointer
-int CLevel::LuaGC(const bool cleanup)
+int CLevel::LuaGC()
 {
-    if (!cleanup)
-        return lua_gc(ai().script_engine().lua(), LUA_GCSTEP, psLua_ParallelGCStep);
-
-    // Call cleanup only if memory is at the limit, check every 120 frames
+    return lua_gc(ai().script_engine().lua(), LUA_GCSTEP, psLua_ParallelGCStep);
+}
+void CLevel::LuaGCDebug()
+{
     static int mem_kb = 0;
-
-    if (psLua_ParallelGC_debug)
-    {
-        mem_kb = lua_gc(ai().script_engine().lua(), LUA_GCCOUNT, 0);
-        Msg("[Lua] CLevel::LuaGC mem_kb %llu, times performed %d", mem_kb, Device.LuaGCCount);
-    }
-    else if (Device.dwFrame % 120 == 0)
-        mem_kb = lua_gc(ai().script_engine().lua(), LUA_GCCOUNT, 0);
-
-    if (mem_kb > 90000)
-    {
-        if (psLua_ParallelGC_debug)
-            Msg("![Lua] CLevel::LuaGC cleanup");
-
-        return lua_gc(ai().script_engine().lua(), LUA_GCSTEP, psLUA_GCSTEP);
-    }
-
-    return 0;
+    mem_kb = lua_gc(ai().script_engine().lua(), LUA_GCCOUNT, 0);
+    Msg("[Lua] CLevel::LuaGCDebug mem_kb %llu, times performed %d", mem_kb, Device.LuaGCCount);
 }
 
 #ifdef DEBUG_PRECISE_PATH

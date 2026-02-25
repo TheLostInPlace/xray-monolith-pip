@@ -147,23 +147,21 @@ void XRay::Engine::GameThread()
     // Reduces stutters since less work will be done in main GC step or no work at all
     static auto LuaGC = []()
     {
-        if (psLua_ParallelGC && Device.LuaGC)
+        PROF_EVENT("seqLuaGC");
+        // Do at least once
+        do
         {
-            PROF_EVENT("seqLuaGC");
-            // Do at least once
-            do
+            Device.LuaGCCount++;
+            if (Device.LuaGC() == 1) // 1 informs that GC cycle is complete
             {
-                Device.LuaGCCount++;
-                if (Device.LuaGC(false) == 1) // 1 informs that GC cycle is complete
-                {
-                    Device.LuaGCDone = true;
-                    break;
-                }
+                Device.LuaGCDone = true;
+                break;
+            }
 
-            } while (Device.isRendering && Device.LuaGCCount < psLua_ParallelGC_CallAmount);
-        }
+        } while (Device.isRendering && Device.LuaGCCount < psLua_ParallelGC_CallAmount);
     };
-    Device.secondary_tasks.run(LuaGC);
+    if (psLua_ParallelGC && Device.LuaGC)
+        Device.secondary_tasks.run(LuaGC);
 
 	{
 		PROF_EVENT("seqFrameMT");
