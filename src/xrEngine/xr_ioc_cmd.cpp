@@ -1044,7 +1044,6 @@ void CCC_Register()
 	CMD1(CCC_SND_Restart, "snd_restart");
 	CMD3(CCC_Mask, "snd_acceleration", &psSoundFlags, ss_Hardware);
 	CMD3(CCC_Mask, "snd_efx", &psSoundFlags, ss_EFX);
-	CMD4(CCC_Integer, "snd_efx_overwrite", &snd_efx_overwrite, -1, 10);
 	CMD4(CCC_Float, "snd_efx_environment_change_time", &snd_efx_environment_change_time, 0.f, 3.f);
 	CMD4(CCC_Integer, "snd_targets", &psSoundTargets, 32, 1024);
 	CMD4(CCC_Integer, "snd_cache_size", &psSoundCacheSizeMB, 8, 256);
@@ -1059,6 +1058,31 @@ void CCC_Register()
 	// Doppler effect power
 	CMD4(CCC_Float, "snd_doppler_power", &soundSmoothingParams::power, 0.f, 5.f);
 	CMD4(CCC_SoundParamsSmoothing, "snd_doppler_smoothing", &soundSmoothingParams::steps, 1, 100);
+
+    // EFX Reverb overwrite
+    CMD4(CCC_Integer, "snd_efx_reverb_overwrite", &reverb_overwrite, FALSE, TRUE);
+
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_density", &psReverbDensity, 0.f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_diffusion", &psReverbDiffusion, 0.f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_gain", &psReverbGain, 0.f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_gain_hf", &psReverbGainHF, 0.f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_gain_lf", &psReverbGainLF, 0.f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_decay_time", &psReverbDecayTime, 0.1f, 20.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_decay_hf_ratio", &psReverbDecayHFRatio, 0.1f, 20.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_decay_lf_ratio", &psReverbDecayLFRatio, 0.1f, 20.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_reflections_gain", &psReverbReflectionsGain, 0.f, 3.16f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_reflections_delay", &psReverbReflectionsDelay, 0.f, 0.3f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_late_reverb_gain", &psReverbLateReverbGain, 0.f, 10.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_late_reverb_delay", &psReverbLateReverbDelay, 0.f, 0.1f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_echo_time", &psReverbEchoTime, 0.075f, 0.25f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_echo_depth", &psReverbEchoDepth, 0.f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_modulation_time", &psReverbModulationTime, 0.04f, 4.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_modulation_depth", &psReverbModulationDepth, 0.f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_air_absorption_gain_hf", &psReverbAirAbsorptionGainHF, 0.892f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_hf_reference", &psReverbHFReference, 1000.f, 20000.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_lf_reference", &psReverbLFReference, 20.f, 1000.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_room_rolloff_factor", &psReverbRoomRolloffFactor, 0.f, 10.f);
+    CMD4(CCC_Integer, "snd_efx_reverb_overwrite_decay_hf_limit", &psReverbDecayHFLimit, FALSE, TRUE);
 
 #ifdef DEBUG
     CMD3(CCC_Mask, "snd_stats", &g_stats_flags, st_sound);

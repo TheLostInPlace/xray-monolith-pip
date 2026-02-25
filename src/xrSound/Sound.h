@@ -40,11 +40,37 @@ XRSOUND_API extern float psSoundOcclusionScale;
 XRSOUND_API extern Flags32 psSoundFlags;
 XRSOUND_API extern int psSoundTargets;
 XRSOUND_API extern float snd_efx_environment_change_time;
-XRSOUND_API extern float snd_efx_overwrite;
 XRSOUND_API extern float psSpeedOfSound;
 XRSOUND_API extern int psSoundCacheSizeMB;
 XRSOUND_API extern xr_token* snd_devices_token;
 XRSOUND_API extern xr_string snd_device_name;
+
+// reverb overwrite
+extern BOOL reverb_overwrite;
+
+extern float psReverbDensity;
+extern float psReverbDiffusion;
+extern float psReverbGain;
+extern float psReverbGainHF;
+extern float psReverbGainLF;
+extern float psReverbDecayTime;
+extern float psReverbDecayHFRatio;
+extern float psReverbDecayLFRatio;
+extern float psReverbReflectionsGain;
+extern float psReverbReflectionsDelay;
+extern float psReverbReflectionsPan;
+extern float psReverbLateReverbGain;
+extern float psReverbLateReverbDelay;
+extern float psReverbLateReflectionsPan;
+extern float psReverbEchoTime;
+extern float psReverbEchoDepth;
+extern float psReverbModulationTime;
+extern float psReverbModulationDepth;
+extern float psReverbAirAbsorptionGainHF;
+extern float psReverbHFReference;
+extern float psReverbLFReference;
+extern float psReverbRoomRolloffFactor;
+extern BOOL   psReverbDecayHFLimit;
 
 // Flags
 enum
