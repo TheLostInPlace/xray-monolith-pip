@@ -172,7 +172,7 @@ void CSoundRender_CoreA::set_listener(const CSoundRender_Environment& env)
 			A_CHK(alEffectf(effect, AL_EAXREVERB_LFREFERENCE, env.LFReference));
 			A_CHK(alEffectf(effect, AL_EAXREVERB_DENSITY, env.Density));
 	}
-	load_reverb(effect, EFX_REVERB_PRESET_ROOM);
+	load_reverb(effect, &reverbs[2]);
 }
 
 void CSoundRender_CoreA::get_listener(CSoundRender_Environment& env)
