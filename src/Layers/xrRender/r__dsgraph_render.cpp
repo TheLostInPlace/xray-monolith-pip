@@ -34,7 +34,7 @@ void CDSGraphManager::r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItems<T
     if (graph.empty())
         return;
 
-    xr_sort(graph);
+    xr_sort(graph.begin(), graph.end());
 
 	for (auto& item : graph)
 	{
@@ -68,10 +68,10 @@ void CDSGraphManager::r_dsgraph_render_graph(RenderQueueArray& queues, u32 _prio
 			continue;
 
 		// 1. Sort by generated sort key to replicate previous fixed map behaviour
-		if (queue.size() >= 4096)
-			xr_parallel_sort(queue);
+		if (queue.size() < 4096)
+            xr_sort(queue.begin(), queue.end());
 		else
-			xr_sort(queue);
+            xr_parallel_sort(queue.begin(), queue.end());
 
 		// 2. Render
 		vs_type pVS = nullptr;
