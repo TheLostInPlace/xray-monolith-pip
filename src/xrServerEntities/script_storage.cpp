@@ -464,7 +464,7 @@ void CScriptStorage::reinit()
 			LoadKernelScriptToGlobal(lua(), "LuaPanda.lua");
 		}
 	}
- 
+    
 	if (strstr(Core.Params, "-_g"))
 		file_header = file_header_new; //AVO: I get fatal crash at the start if this is used
 	else
