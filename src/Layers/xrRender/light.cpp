@@ -443,7 +443,7 @@ void light::xform_calc()
 		break;
 	}
 
-	if(flags.bShadow && (flags.type == IRender_Light::SPOT || flags.type == IRender_Light::OMNIPART))
+	if(flags.type == IRender_Light::SPOT || flags.type == IRender_Light::OMNIPART)
 	{
 		// make N pixel border
 		X.S.view.build_camera_dir	(position,L_dir,L_up);
