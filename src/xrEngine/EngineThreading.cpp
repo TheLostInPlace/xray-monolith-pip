@@ -38,10 +38,10 @@ void XRay::Engine::PreRenderThread()
 struct SpatialSnapshot
 {
 	ISpatialShared ptr;
-	Fvector P;
-	float R;
-	u32 type;
-	IRenderable* renderable;
+    IKinematics* pKin;
+    float distSq;
+
+    SpatialSnapshot(ISpatialShared _ptr, IKinematics* _pKin, float _distSq) : ptr(_ptr), pKin(_pKin), distSq(_distSq) {};
 };
 void XRay::Engine::CalculateBonesThread()
 {
@@ -75,36 +75,42 @@ void XRay::Engine::CalculateBonesThread()
 			if (!spatial)
 				continue;
 
+            float distSq = Device.vCameraPosition_saved.distance_to_sqr(spatial->spatial.sphere.P);
 			if (!ViewBase.testSphere_dirty(spatial->spatial.sphere.P, spatial->spatial.sphere.R))
 			{
-				if (Device.vCameraPosition_saved.distance_to_sqr(spatial->spatial.sphere.P) > 62500.f)//250 m
+				if (distSq > 62500.f)//250 m
 					continue;
 			}
 				
 			spatial->spatial_updatesector();
 
-            if ((spatial->spatial.type & STYPE_PARTICLE) || (spatial->spatial.type & STYPE_LIGHTSOURCE))
+            if
+            (
+                (spatial->spatial.type & (STYPE_PARTICLE | STYPE_LIGHTSOURCE)) ||
+                !(spatial->spatial.type & (STYPE_RENDERABLE | STYPE_RENDERABLESHADOW))
+            )
                 continue;
 
-			spatialsSnapshot.push_back({ spatial, spatial->spatial.sphere.P, spatial->spatial.sphere.R, spatial->spatial.type, spatial->dcast_Renderable() });
+            auto renderable = spatial->dcast_Renderable();
+            if (!(renderable && renderable->renderable.visual))
+                continue;
+
+            IKinematics* pKin = renderable->renderable.visual->dcast_PKinematics();
+            if (!pKin)
+                continue;
+
+			spatialsSnapshot.emplace_back(spatial, pKin, distSq);
 		}
 	}
 
 	static auto sortFunc = [](const SpatialSnapshot& _1, const SpatialSnapshot& _2) noexcept
 	{
-		return _1.P.distance_to_sqr(Device.vCameraPosition_saved) < _2.P.distance_to_sqr(Device.vCameraPosition_saved);
+		return _1.distSq < _2.distSq;
 	};
 	xr_sort(spatialsSnapshot.begin(), spatialsSnapshot.end(), sortFunc);
 
-	for (const auto& spatial : spatialsSnapshot)
-	{
-		if (spatial.renderable && spatial.renderable->renderable.visual && (spatial.type & (STYPE_RENDERABLE | STYPE_RENDERABLESHADOW)))
-		{
-			IKinematics* pKin = spatial.renderable->renderable.visual->dcast_PKinematics();
-			if (pKin)
-				pKin->CalculateBones(TRUE);
-		}
-	}
+    for (const auto& snapshot : spatialsSnapshot)
+        snapshot.pKin->CalculateBones(TRUE);
 }
 
 extern BOOL psLua_ParallelGC;
