@@ -155,7 +155,19 @@ Fvector ISpatial::SectorPoint()
 
 Fvector ISpatial::OwnerSectorPoint()
 {
-	return RawOwner ? RawOwner->spatial_sector_point() : spatial.sphere.P;
+	Fvector result = RawOwner ? RawOwner->spatial_sector_point() : spatial.sphere.P;
+
+	// Validate that position contains no NaN or infinity values
+	if (!_finite(result.x) || !_finite(result.y) || !_finite(result.z))
+	{
+#ifdef DEBUG
+		VERIFY(!"Invalid spatial position detected - NaN or infinity in sector point");
+#endif
+		// Fallback to last valid position
+		return spatial.last_sector_point;
+	}
+
+	return result;
 }
 
 void ISpatial::spatial_updatesector()
@@ -165,7 +177,7 @@ void ISpatial::spatial_updatesector()
 	if ((FALSE == curr_sector_point.similar(spatial.last_sector_point) || spatial.sector == nullptr))
 	{
 		PROF_EVENT("spatial_updatesector");
-		if (IRender_Sector* S = ::Render->detectSector(OwnerSectorPoint()))
+		if (IRender_Sector* S = ::Render->detectSector(curr_sector_point))
 			spatial.sector = S;
 	}
 
