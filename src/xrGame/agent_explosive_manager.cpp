@@ -102,6 +102,7 @@ void CAgentExplosiveManager::react_on_explosives()
 	for (;;)
 	{
 		bool changed = false;
+        xrCriticalSectionGuard guard(object().member().m_combat_members_cs);
 		CAgentMemberManager::iterator I = object().member().combat_members().begin();
 		CAgentMemberManager::iterator E = object().member().combat_members().end();
 		for (; I != E; ++I)

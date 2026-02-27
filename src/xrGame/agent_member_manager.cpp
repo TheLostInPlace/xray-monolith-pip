@@ -126,6 +126,7 @@ void CAgentMemberManager::register_in_combat(const CAI_Stalker* object)
 	);
 #endif // DEBUG
 
+    xrCriticalSectionGuard guard(m_combat_members_cs);
 	squad_mask_type m = mask(object);
 	m_actuality = m_actuality && ((m_combat_mask | m) == m_combat_mask);
 	m_combat_mask |= m;
@@ -148,6 +149,7 @@ void CAgentMemberManager::unregister_in_combat(const CAI_Stalker* object)
 	);
 #endif // DEBUG
 
+    xrCriticalSectionGuard guard(m_combat_members_cs);
 	squad_mask_type m = mask(object);
 	m_actuality = m_actuality && ((m_combat_mask & (squad_mask_type(-1) ^ m)) == m_combat_mask);
 	m_combat_mask &= squad_mask_type(-1) ^ m;
@@ -160,6 +162,7 @@ bool CAgentMemberManager::registered_in_combat(const CAI_Stalker* object) const
 
 CAgentMemberManager::MEMBER_STORAGE& CAgentMemberManager::combat_members()
 {
+    xrCriticalSectionGuard guard(m_combat_members_cs);
 	if (m_actuality)
 		return (m_combat_members);
 

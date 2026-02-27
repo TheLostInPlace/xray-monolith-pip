@@ -98,6 +98,7 @@ void CAgentEnemyManager::fill_enemies()
 	m_enemies.clear();
 
 	{
+        xrCriticalSectionGuard guard(object().member().m_combat_members_cs);
 		CAgentMemberManager::iterator I = object().member().combat_members().begin();
 		CAgentMemberManager::iterator E = object().member().combat_members().end();
 		for (; I != E; ++I)
@@ -198,21 +199,24 @@ void CAgentEnemyManager::exchange_enemies(CMemberOrder& member0, CMemberOrder& m
 
 void CAgentEnemyManager::compute_enemy_danger()
 {
-	ENEMIES::iterator I = m_enemies.begin();
-	ENEMIES::iterator E = m_enemies.end();
-	for (; I != E; ++I)
-	{
-		float best = -1.f;
-		CAgentMemberManager::const_iterator i = object().member().combat_members().begin();
-		CAgentMemberManager::const_iterator e = object().member().combat_members().end();
-		for (; i != e; ++i)
-		{
-			float value = evaluate((*I).m_object, &(*i)->object());
-			if (value > best)
-				best = value;
-		}
-		(*I).m_probability = best;
-	}
+    {
+        xrCriticalSectionGuard guard(object().member().m_combat_members_cs);
+        ENEMIES::iterator I = m_enemies.begin();
+        ENEMIES::iterator E = m_enemies.end();
+        for (; I != E; ++I)
+        {
+            float best = -1.f;
+            CAgentMemberManager::const_iterator i = object().member().combat_members().begin();
+            CAgentMemberManager::const_iterator e = object().member().combat_members().end();
+            for (; i != e; ++i)
+            {
+                float value = evaluate((*I).m_object, &(*i)->object());
+                if (value > best)
+                    best = value;
+            }
+            (*I).m_probability = best;
+        }
+    }
 
 	xr_sort(m_enemies.begin(), m_enemies.end());
 }
@@ -268,45 +272,49 @@ void CAgentEnemyManager::assign_enemies()
 void CAgentEnemyManager::permutate_enemies()
 {
 	// filling member enemies
-	CAgentMemberManager::iterator I = object().member().combat_members().begin();
-	CAgentMemberManager::iterator E = object().member().combat_members().end();
-	for (; I != E; ++I)
-	{
-		// clear enemies
-		(*I)->enemies().clear();
-		// setup procesed flag
-		(*I)->processed(false);
-		// get member squad mask
-		squad_mask_type member_mask = object().member().mask(&(*I)->object());
-		// setup if player has enemy
-		bool enemy_selected = false;
-		// iterate on enemies
-		ENEMIES::const_iterator i = m_enemies.begin(), b = i;
-		ENEMIES::const_iterator e = m_enemies.end();
-		for (; i != e; ++i)
-		{
-			if ((*i).m_mask.is(member_mask))
-				(*I)->enemies().push_back(u32(i - b));
+    {
+        xrCriticalSectionGuard guard(object().member().m_combat_members_cs);
+        CAgentMemberManager::iterator I = object().member().combat_members().begin();
+        CAgentMemberManager::iterator E = object().member().combat_members().end();
+        for (; I != E; ++I)
+        {
+            // clear enemies
+            (*I)->enemies().clear();
+            // setup procesed flag
+            (*I)->processed(false);
+            // get member squad mask
+            squad_mask_type member_mask = object().member().mask(&(*I)->object());
+            // setup if player has enemy
+            bool enemy_selected = false;
+            // iterate on enemies
+            ENEMIES::const_iterator i = m_enemies.begin(), b = i;
+            ENEMIES::const_iterator e = m_enemies.end();
+            for (; i != e; ++i)
+            {
+                if ((*i).m_mask.is(member_mask))
+                    (*I)->enemies().push_back(u32(i - b));
 
-			if ((*i).m_distribute_mask.is(member_mask))
-			{
-				(*I)->selected_enemy(u32(i - b));
-				enemy_selected = true;
-			}
-		}
-		// if there is enemy - all is ok
-		if (enemy_selected)
-			continue;
+                if ((*i).m_distribute_mask.is(member_mask))
+                {
+                    (*I)->selected_enemy(u32(i - b));
+                    enemy_selected = true;
+                }
+            }
+            // if there is enemy - all is ok
+            if (enemy_selected)
+                continue;
 
-		// otherwise temporary make the member processed
-		(*I)->processed(true);
-	}
+            // otherwise temporary make the member processed
+            (*I)->processed(true);
+        }
+    }
 
 	// perform permutations
 	bool changed;
 	do
 	{
 		changed = false;
+        xrCriticalSectionGuard guard(object().member().m_combat_members_cs);
 		CAgentMemberManager::iterator I = object().member().combat_members().begin();
 		CAgentMemberManager::iterator E = object().member().combat_members().end();
 		for (; I != E; ++I)
@@ -377,6 +385,7 @@ void CAgentEnemyManager::permutate_enemies()
 	VERIFY(!m_enemies.empty());
 	if (!m_only_wounded_left)
 	{
+        xrCriticalSectionGuard guard(object().member().m_combat_members_cs);
 		CAgentMemberManager::iterator I = object().member().combat_members().begin();
 		CAgentMemberManager::iterator E = object().member().combat_members().end();
 		for (; I != E; ++I)
@@ -429,6 +438,7 @@ void CAgentEnemyManager::assign_enemy_masks()
 	{
 		ENEMIES::iterator I = m_enemies.begin();
 		ENEMIES::iterator E = m_enemies.end();
+        xrCriticalSectionGuard guard(object().member().m_combat_members_cs);
 		for (; I != E; ++I)
 		{
 			CAgentMemberManager::MEMBER_STORAGE::const_iterator i = object().member().combat_members().begin();
@@ -511,7 +521,10 @@ void CAgentEnemyManager::assign_wounded()
 	}
 
 	u32 combat_member_count = population(object().member().combat_mask());
-	VERIFY(combat_member_count == object().member().combat_members().size());
+    {
+        xrCriticalSectionGuard guard(object().member().m_combat_members_cs);
+        VERIFY(combat_member_count == object().member().combat_members().size());
+    } 
 
 	u32 population_level = 0;
 	while (population(assigned) < combat_member_count)
@@ -570,9 +583,11 @@ void CAgentEnemyManager::assign_wounded()
 						(*I).m_probability
 					);
 			}
+            xrCriticalSectionGuard guard(object().member().m_combat_members_cs);
 			Msg						("combat members(%d):",object().member().combat_members().size());
 			{
 				typedef CAgentMemberManager::MEMBER_STORAGE::const_iterator	const_iterator;
+                xrCriticalSectionGuard guard(object().member().m_combat_members_cs);
 				const_iterator		I = object().member().combat_members().begin();
 				const_iterator		E = object().member().combat_members().end();
 				for ( ; I != E; ++I)
