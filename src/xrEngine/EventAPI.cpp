@@ -73,7 +73,7 @@ IC bool ev_sort(CEvent* E1, CEvent* E2)
 
 void CEventAPI::Dump()
 {
-	std::sort(Events.begin(), Events.end(), ev_sort);
+	xr_sort(Events.begin(), Events.end(), ev_sort);
 	for (u32 i = 0; i < Events.size(); i++)
 		Msg("* [%d] %s", Events[i]->RefCount(), Events[i]->GetFull());
 }

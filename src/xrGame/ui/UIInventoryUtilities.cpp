@@ -133,7 +133,7 @@ bool InventoryUtilities::FreeRoom_inBelt(TIItemContainer& item_list, PIItem _ite
 			ruck_room[i * width + j] = false;
 
 	item_list.push_back(_item);
-	std::sort(item_list.begin(), item_list.end(), GreaterRoomInRuck);
+	xr_sort(item_list.begin(), item_list.end(), GreaterRoomInRuck);
 
 	found_place = true;
 

@@ -144,7 +144,7 @@ void CInifile::InsertIntoDATA(xr_unordered_flat_map<shared_str, Items>& FinalDat
 		s->Data = SectPair.second;
 		DATA.push_back(s);
 	}
-	std::sort(DATA.begin(), DATA.end(), [](const Sect* a, const Sect* b)
+	xr_sort(DATA.begin(), DATA.end(), [](const Sect* a, const Sect* b)
 	{
 		return xr_strcmp(a->Name, b->Name) < 0;
 	});
@@ -425,7 +425,7 @@ void CInifile::SortAndFilterSection(Sect& Data)
 	static shared_str DLTX_DELETE = "DLTX_DELETE";
 
 	// 1. Sort by Key, then by Depth (Ascending), then by insertionOrder (Descending).
-	std::sort(Data.Data.begin(), Data.Data.end(), [](const Item& a, const Item& b)
+	xr_sort(Data.Data.begin(), Data.Data.end(), [](const Item& a, const Item& b)
 	{
 		// Compare keys alpphabetically
 		int res = xr_strcmp(a.first, b.first);
@@ -1176,7 +1176,7 @@ CInifile::Items CInifile::EvaluateSection(
 		auto& overrideData = OverrideModifyListData[SectionName];
 		if (!overrideData.empty())
 		{
-			std::sort(overrideData.begin(), overrideData.end(), [](const Item& a, const Item& b)
+			xr_sort(overrideData.begin(), overrideData.end(), [](const Item& a, const Item& b)
 			{
 				int res = xr_strcmp((*a.first) + 1, (*b.first) + 1);
 				if (res != 0) return res < 0;

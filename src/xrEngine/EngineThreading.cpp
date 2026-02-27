@@ -94,7 +94,7 @@ void XRay::Engine::CalculateBonesThread()
 	{
 		return _1.P.distance_to_sqr(Device.vCameraPosition_saved) < _2.P.distance_to_sqr(Device.vCameraPosition_saved);
 	};
-	std::sort(spatialsSnapshot.begin(), spatialsSnapshot.end(), sortFunc);
+	xr_sort(spatialsSnapshot.begin(), spatialsSnapshot.end(), sortFunc);
 
 	for (const auto& spatial : spatialsSnapshot)
 	{

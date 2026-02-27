@@ -57,7 +57,7 @@ void IBlender::CreatePalette(xr_vector<IBlender*>& palette)
 	}
 
 	// Sort by desc and return
-	std::sort(palette.begin(), palette.end(), p_sort);
+	xr_sort(palette.begin(), palette.end(), p_sort);
 }
 
 #ifndef _EDITOR

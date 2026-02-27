@@ -355,7 +355,7 @@ bool CDetailPathManager::build_trajectory(
 		}
 	}
 
-	std::sort(dist, dist + tangent_count);
+	xr_sort(dist, dist + tangent_count);
 
 	{
 		for (u32 i = 0, j = path ? path->size() : 0; i < tangent_count; ++i)

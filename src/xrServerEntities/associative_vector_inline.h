@@ -43,7 +43,7 @@ IC _associative_vector::associative_vector(
 	const allocator_type& allocator)
 	: inherited(first, last), value_compare(predicate)
 {
-	std::sort(begin(), end(), (value_compare&)(*this));
+	xr_sort(begin(), end(), (value_compare&)(*this));
 }
 
 TEMPLATE_SPECIALIZATION
@@ -271,7 +271,7 @@ IC void _associative_vector::insert(_iterator_type first, _iterator_type last)
 	}
 
 	inherited::insert(end(), first, last);
-	std::sort(begin(), end(), (value_compare&)(*this));
+	xr_sort(begin(), end(), (value_compare&)(*this));
 }
 
 TEMPLATE_SPECIALIZATION

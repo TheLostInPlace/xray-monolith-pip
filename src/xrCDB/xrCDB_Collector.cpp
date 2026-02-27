@@ -157,7 +157,7 @@ namespace CDB
 			++i;
 		}
 
-		std::sort(edges, edges + edge_count, sort_predicate());
+		xr_sort(edges, edges + edge_count, sort_predicate());
 
 		dest.assign(edge_count, u32(-1));
 

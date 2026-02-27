@@ -244,7 +244,7 @@ public:
 
 void CCoverManager::actualize_smart_covers() const
 {
-	std::sort(
+	xr_sort(
 		m_smart_covers.begin(),
 		m_smart_covers.end(),
 		id_predicate_less()

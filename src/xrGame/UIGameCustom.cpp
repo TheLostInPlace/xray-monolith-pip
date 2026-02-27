@@ -66,7 +66,7 @@ void CUIGameCustom::OnFrame()
 	{
 		return s1->IsActual() > s2->IsActual();
 	};
-	std::sort(CustomStatics.begin(), CustomStatics.end(), comparer);
+	xr_sort(CustomStatics.begin(), CustomStatics.end(), comparer);
 	while (!CustomStatics.empty() && !CustomStatics.back()->IsActual())
 	{
 		delete_data(CustomStatics.back());

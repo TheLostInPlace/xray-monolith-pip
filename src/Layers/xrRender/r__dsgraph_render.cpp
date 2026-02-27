@@ -328,7 +328,7 @@ void CDSGraphManager::r_dsgraph_render_water_ssr()
 {
 #ifdef USE_DX11
 	PROF_EVENT("r_dsgraph_render_water_ssr");
-	std::sort(RGraph.mapWater.begin(), RGraph.mapWater.end());
+	xr_sort(RGraph.mapWater.begin(), RGraph.mapWater.end());
 	for (auto& N : RGraph.mapWater)
 	{
 		dxRender_Visual* V = N.pVisual;
@@ -354,7 +354,7 @@ void CDSGraphManager::r_dsgraph_render_water_ssr()
 void CDSGraphManager::r_dsgraph_render_water()
 {
 	PROF_EVENT("r_dsgraph_render_water_ssr");
-    std::sort(RGraph.mapWater.begin(), RGraph.mapWater.end());
+    xr_sort(RGraph.mapWater.begin(), RGraph.mapWater.end());
     for (auto& N : RGraph.mapWater)
 	{
 		dxRender_Visual* V = N.pVisual;
@@ -446,7 +446,7 @@ void CDSGraphManager::r_dsgraph_capture_lights()
 	);
 
 #if	RENDER==R_R1
-	std::sort(lstLights.begin(), lstLights.end(), [](const ISpatialShared& _1, const ISpatialShared& _2) noexcept
+	xr_sort(lstLights.begin(), lstLights.end(), [](const ISpatialShared& _1, const ISpatialShared& _2) noexcept
 	{
 		if (!_1.get() || !_2.get()) return false;
 
@@ -499,7 +499,7 @@ void CDSGraphManager::r_dsgraph_capture_dynamic(CObject* O)
 #if	RENDER==R_R1
 			if (i_mask[CDSGraphManager::fl_normal])//normal phase
 			{
-				std::sort(lstRenderables.begin(), lstRenderables.end(), [](const ISpatialShared& _1, const ISpatialShared& _2) noexcept
+				xr_sort(lstRenderables.begin(), lstRenderables.end(), [](const ISpatialShared& _1, const ISpatialShared& _2) noexcept
 				{
 					if (!_1.get() || !_2.get()) return false;
 

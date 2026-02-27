@@ -295,7 +295,7 @@ void CBinocularsVision::Update()
 	}
 
 	/*
-	std::sort(m_active_objects.begin(), m_active_objects.end());
+	xr_sort(m_active_objects.begin(), m_active_objects.end());
 
 	while (m_active_objects.size() && m_active_objects.back()->m_flags.test(flVisObjNotValid))
 	{

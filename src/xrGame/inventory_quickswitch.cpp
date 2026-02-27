@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 #include "inventory.h"
 #include "weapon.h"
 #include "actor.h"
@@ -316,7 +316,7 @@ PIItem CInventory::GetNextActiveGrenade()
 	if (count_types > 1)
 	{
 		int curr_num = 0; // íîìåð òèïà òåêóùåé ãðàíàòû
-		std::sort(types_sect_grn.begin(), types_sect_grn.end());
+		xr_sort(types_sect_grn.begin(), types_sect_grn.end());
 		xr_vector<shared_str>::const_iterator I = types_sect_grn.begin();
 		xr_vector<shared_str>::const_iterator E = types_sect_grn.end();
 		for (; I != E; ++I)

@@ -145,7 +145,7 @@ void Vision::feel_vision_query(Fmatrix& mFull, Fvector& P)
 	}
 	if (seen.size() > 1)
 	{
-		std::sort(seen.begin(), seen.end());
+		xr_sort(seen.begin(), seen.end());
 		xr_vector<CObject*>::iterator end = std::unique(seen.begin(), seen.end());
 		if (end != seen.end()) seen.erase(end, seen.end());
 	}

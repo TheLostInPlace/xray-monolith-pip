@@ -265,7 +265,7 @@ void CLevel::Load_GameSpecific_CFORM(CDB::TRI* tris, u32 count)
 		return;
 	}
 
-	std::sort(translator.begin(), translator.end());
+	xr_sort(translator.begin(), translator.end());
 	{
 		CDB::TRI* I = tris;
 		CDB::TRI* E = tris + count;

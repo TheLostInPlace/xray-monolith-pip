@@ -214,7 +214,7 @@ void CAgentEnemyManager::compute_enemy_danger()
 		(*I).m_probability = best;
 	}
 
-	std::sort(m_enemies.begin(), m_enemies.end());
+	xr_sort(m_enemies.begin(), m_enemies.end());
 }
 
 void CAgentEnemyManager::assign_enemies()
