@@ -1180,6 +1180,7 @@ void CLevel::script_gc()
 bool CLevel::Load(u32 dwNum)
 {
     inherited::Load(dwNum);
+    Msg("Device.LuaGC bind");
     Device.LuaGC.bind(&CLevel::LuaGC);
     Device.LuaGCDebug.bind(&CLevel::LuaGCDebug);
     return true;
