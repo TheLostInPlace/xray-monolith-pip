@@ -403,7 +403,7 @@ void CScriptEngine::init()
 #endif
 	m_stack_level = lua_gettop(lua());
 
-    if (strstr(Core.Params, "-ldbg")) {
+    if (strstr(Core.Params, "-dbg")) {
         CScriptStorage::DebuggerAttach();
     }
 }
