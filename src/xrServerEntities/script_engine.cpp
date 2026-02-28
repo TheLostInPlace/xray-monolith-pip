@@ -422,6 +422,10 @@ void CScriptEngine::init()
 #ifdef USE_LUA_FUNCTOR_CACHE
 	m_cache_valid = true;
 #endif
+
+	if (strstr(Core.Params, "-ldbg")) {
+        CScriptStorage::DebuggerAttach();
+    }
 }
 
 void CScriptEngine::remove_script_process(const EScriptProcessors& process_id)
