@@ -442,7 +442,10 @@ CObject* CObjectList::Create(LPCSTR name)
 {
 	CObject* O = g_pGamePersistent->ObjectPool.create(name);
 	// Msg("CObjectList::Create [%x]%s", O, name);
-	objects_sleeping.push_back(O);
+
+    if (O)
+	    objects_sleeping.push_back(O);
+
 	return O;
 }
 
