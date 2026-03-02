@@ -150,6 +150,8 @@ CUIWindow::~CUIWindow()
 	if (GetPPMode())
 		MainMenu()->UnregisterPPDraw(this);
 
+    CollectGarbage();
+
 #ifdef LOG_ALL_WNDS
 	xr_vector<DBGList>::iterator _it = dbg_list_wnds.begin();
 	bool bOK = false;
@@ -221,21 +223,30 @@ void CUIWindow::Update()
 		}
 	}
 
-	xrCriticalSectionGuard guard(csUi);
-	for (WINDOW_LIST_it it = m_ChildWndList.begin(); m_ChildWndList.end() != it; ++it)
-	{
-		if (!(*it)->IsShown()) continue;
-		(*it)->Update();
-	}
+    {
+        xrCriticalSectionGuard guard(csUi);
+        for (WINDOW_LIST_it it = m_ChildWndList.begin(); m_ChildWndList.end() != it; ++it)
+        {
+            if (!(*it)->IsShown()) continue;
+            (*it)->Update();
+        }
+    }
 
-	/*
-	if (m_pHint && bShowHint)
-	{
-		if (Device.dwTimeGlobal < (m_dwFocusReceiveTime + dwHintDelay))
-			return;
-		m_pHint->set_text(m_sHint);
-	}
-	*/
+    CollectGarbage();
+}
+
+void CUIWindow::CollectGarbage()
+{
+    if (m_ChildWndToDelete.empty())
+        return;
+
+    WINDOW_LIST temp;
+    temp.swap(m_ChildWndToDelete);
+    for (CUIWindow* pChild : temp)
+    {
+        if (pChild)
+            xr_delete(pChild);
+    }
 }
 
 void CUIWindow::AttachChild(CUIWindow* pChild)
@@ -275,8 +286,9 @@ void CUIWindow::DetachChild(CUIWindow* pChild)
 
 	pChild->SetParent(NULL);
 
-	if (pChild->IsAutoDelete())
-		xr_delete(pChild);
+    if (pChild->IsAutoDelete())
+        if (std::find(m_ChildWndToDelete.begin(), m_ChildWndToDelete.end(), pChild) == m_ChildWndToDelete.end())
+            m_ChildWndToDelete.push_back(pChild);
 }
 
 void CUIWindow::DetachAll()

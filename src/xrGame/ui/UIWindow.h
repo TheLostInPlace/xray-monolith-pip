@@ -293,6 +293,9 @@ protected:
 	//список дочерних окон
 	WINDOW_LIST m_ChildWndList;
 
+    WINDOW_LIST m_ChildWndToDelete;
+    void CollectGarbage();
+
 	//указатель на родительское окно
 	CUIWindow* m_pParentWnd;
 
