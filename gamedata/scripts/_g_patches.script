@@ -711,3 +711,37 @@ _G.log = function(str)
         LuaPanda.printToVSCode(str,1,2)
     end
 end
+
+-- Always return a copy of these global variables to prevent modification in scripts
+local constTable = {
+	VEC_ZERO = function() return vector():set(0,0,0) end,
+	VEC_X = function() return vector():set(1,0,0) end,
+	VEC_Y = function() return vector():set(0,1,0) end,
+	VEC_Z = function() return vector():set(0,0,1) end,
+}
+_G.VEC_ZERO = nil
+_G.VEC_X = nil
+_G.VEC_Y = nil
+_G.VEC_Z = nil
+
+local old_mt_g = getmetatable(_G) or {}
+local old_index_g = old_mt_g.__index
+
+setmetatable(_G, {
+    __index = function(t, key)
+    	if constTable[key] then
+    		return constTable[key]()
+    	end
+
+        -- Fallback to old metatable
+        if type(old_index_g) == "function" then
+            return old_index_g(t, key)
+        elseif type(old_index_g) == "table" then
+            return old_index_g[key]
+        end
+
+        return rawget(t, key)
+    end,
+
+    __newindex = old_mt_g.__newindex or rawset
+})
