@@ -640,19 +640,19 @@ _G.alife_clone_weapon = function(se_obj, section, parent_id)
             copy_table(m_data_se[se_obj_new.id], m_data_se[se_obj.id])
             m_data_se[se_obj_new.id].name = se_obj_new:name() -- alife_storage_manager uses name as validation incase se_unregister is missed. which can happen. 
         end
-        
+                 
+        -- Register the new weapon.
+        alife_record(se_obj_new,true) 
+        se_obj_new = alife():register(se_obj_new) -- register deletes and respawns the object
+
         -- Clone parts states
         if item_parts then
             item_parts.copy_parts_con(se_obj.id, se_obj_new.id)
             item_parts.clear_parts_con(se_obj.id)
         end
-        
+
         -- Release the old weapon.
-        alife_record(se_obj_new,true)
         alife_release(se_obj)
-        
-        -- Register the new weapon.
-        se_obj_new = alife():register(se_obj_new) -- register deletes and respawns the object
     end
     
     return se_obj_new
