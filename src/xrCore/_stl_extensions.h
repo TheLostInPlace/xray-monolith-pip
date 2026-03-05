@@ -719,6 +719,230 @@ public:
     }
 };
 
+template <typename Key, typename T, size_t MaxKeys = 65536>
+class xr_sparse_map {
+    // 1. Ensure Key is an unsigned integer
+    static_assert(std::is_integral<Key>::value, "Key must be an integral type.");
+    static_assert(std::is_unsigned<Key>::value, "Key must be an unsigned type (to avoid negative indexing).");
+
+    // Ensure Key fits within MaxKeys (if MaxKeys is small)
+    static_assert(std::numeric_limits<Key>::max() >= MaxKeys - 1, "Key type is too small for MaxKeys.");
+
+public:
+    using key_type = Key;
+    using mapped_type = T;
+    using value_type = std::pair<Key, T>;
+    using reference = value_type&;
+    using const_reference = const value_type&;
+    using size_type = size_t;
+
+    // Iterators directly wrap the contiguous dense array
+    using iterator = typename xr_vector<value_type>::iterator;
+    using const_iterator = typename xr_vector<value_type>::const_iterator;
+    using reverse_iterator = typename xr_vector<value_type>::reverse_iterator;
+    using const_reverse_iterator = typename xr_vector<value_type>::const_reverse_iterator;
+
+private:
+    static constexpr size_type INVALID_INDEX = std::numeric_limits<size_type>::max();
+
+    // sparse[ID] returns the index in the dense array
+    xr_vector<size_type> m_sparse;
+    // dense contains the actual contiguous data for fast iteration
+    xr_vector<value_type> m_dense;
+
+    inline void check_bounds(Key key) const
+    {
+        if (key >= MaxKeys) throw std::out_of_range("ID out of bounds");
+    }
+
+public:
+    xr_sparse_map() : m_sparse(MaxKeys, INVALID_INDEX) {}
+
+    // --- Iterators ---
+    iterator               begin()        noexcept { return m_dense.begin(); }
+    const_iterator         begin()  const noexcept { return m_dense.begin(); }
+    const_iterator         cbegin() const noexcept { return m_dense.cbegin(); }
+
+    iterator               end()          noexcept { return m_dense.end(); }
+    const_iterator         end()    const noexcept { return m_dense.end(); }
+    const_iterator         cend()   const noexcept { return m_dense.cend(); }
+
+    reverse_iterator       rbegin()       noexcept { return m_dense.rbegin(); }
+    const_reverse_iterator rbegin() const noexcept { return m_dense.rbegin(); }
+    reverse_iterator       rend()         noexcept { return m_dense.rend(); }
+    const_reverse_iterator rend()   const noexcept { return m_dense.rend(); }
+
+    // --- Capacity ---
+    bool empty() const { return m_dense.empty(); }
+    size_type size() const { return m_dense.size(); }
+
+    void clear()
+    {
+        std::fill(m_sparse.begin(), m_sparse.end(), INVALID_INDEX);
+        m_dense.clear();
+    }
+
+    // --- Lookup ---
+    iterator find(const Key& key)
+    {
+        if (key >= MaxKeys || m_sparse[key] == INVALID_INDEX)
+            return end();
+        return m_dense.begin() + m_sparse[key];
+    }
+
+    const_iterator find(const Key& key) const
+    {
+        if (key >= MaxKeys || m_sparse[key] == INVALID_INDEX)
+            return end();
+        return m_dense.begin() + m_sparse[key];
+    }
+
+    T& operator[](const Key& key)
+    {
+        // Automatically insert if it doesn't exist (std::map behavior)
+        check_bounds(key);
+
+        size_type idx = m_sparse[key];
+        if (idx == INVALID_INDEX)
+        {
+            idx = m_dense.size();
+            m_sparse[key] = idx;
+            m_dense.push_back({ key, T{} });
+        }
+        return m_dense[idx].second;
+    }
+
+    // --- Modifiers ---
+    std::pair<iterator, bool> insert(const value_type& val)
+    {
+        check_bounds(val.first);
+
+        size_type idx = m_sparse[val.first];
+        if (idx != INVALID_INDEX)
+        {
+            return { m_dense.begin() + idx, false }; // Already exists
+        }
+
+        idx = m_dense.size();
+        m_sparse[val.first] = idx;
+        m_dense.push_back(val);
+        return { m_dense.begin() + idx, true };
+    }
+
+    template <typename... Args>
+    std::pair<iterator, bool> emplace(Key key, Args&&... args)
+    {
+        check_bounds(key);
+
+        size_t& idx = m_sparse[key];
+        if (idx != INVALID_INDEX)
+        {
+            return { m_dense.begin() + idx, false }; // Already exists
+        }
+
+        idx = m_dense.size();
+        m_dense.emplace_back(
+            std::piecewise_construct,
+            std::forward_as_tuple(key),
+            std::forward_as_tuple(std::forward<Args>(args)...)
+        );
+
+        return { m_dense.begin() + idx, true };
+    }
+
+    template <typename... Args>
+    iterator emplace_hint(iterator hint, Key key, Args&&... args)
+    {
+        return emplace(key, std::forward<Args>(args)...).first;
+    }
+
+    // Erase by Key
+    size_type erase(const Key& key)
+    {
+        if (key >= MaxKeys || m_sparse[key] == INVALID_INDEX) return 0;
+
+        size_type idx_to_remove = m_sparse[key];
+        size_type last_idx = m_dense.size() - 1;
+
+        // Swap and Pop mechanic: Move the last element into the deleted spot
+        if (idx_to_remove != last_idx)
+        {
+            m_dense[idx_to_remove] = m_dense[last_idx];
+            m_sparse[m_dense[idx_to_remove].first] = idx_to_remove; // Update the moved element's sparse link
+        }
+
+        m_sparse[key] = INVALID_INDEX;
+        m_dense.pop_back();
+        return 1;
+    }
+
+    // Erase by Iterator
+    iterator erase(iterator pos)
+    {
+        if (pos == end()) return end();
+
+        Key key = pos->first;
+        size_type idx_to_remove = m_sparse[key];
+        size_type last_idx = m_dense.size() - 1;
+
+        if (idx_to_remove != last_idx)
+        {
+            m_dense[idx_to_remove] = m_dense[last_idx];
+            m_sparse[m_dense[idx_to_remove].first] = idx_to_remove;
+        }
+
+        m_sparse[key] = INVALID_INDEX;
+        m_dense.pop_back();
+
+        return m_dense.begin() + idx_to_remove;
+    }
+
+    bool contains(Key key) const
+    {
+        if (key >= MaxKeys) return false;
+        return m_sparse[key] != INVALID_INDEX;
+    }
+
+    size_t count(Key key) const
+    {
+        return contains(key) ? 1 : 0;
+    }
+
+    T& at(Key key)
+    {
+        check_bounds(key);
+        size_t idx = m_sparse[key];
+        if (idx == INVALID_INDEX) throw std::out_of_range("Key not found");
+        return m_dense[idx].second;
+    }
+
+    // Re-aligns the dense array by ID. Useful if you need sorted iteration.
+    // Complexity: O(N log N) for the sort + O(N) for the index rebuild.
+    void sort()
+    {
+        if (m_dense.empty()) return;
+
+        // 1. Sort the dense array by Key (first member of the pair)
+        std::sort(m_dense.begin(), m_dense.end());
+
+        // 2. The indices are now wrong, so we must rebuild the sparse array
+        rebuild_sparse();
+    }
+
+private:
+    void rebuild_sparse()
+    {
+        // Reset only the slots we are using for performance
+        // (Better than zeroing all 65536 slots if the map is sparse)
+        std::fill(m_sparse.begin(), m_sparse.end(), INVALID_INDEX);
+
+        for (size_t i = 0; i < m_dense.size(); ++i)
+        {
+            m_sparse[m_dense[i].first] = i;
+        }
+    }
+};
+
 #ifdef STLPORT
 template <typename V, class _HashFcn = std::hash<V>, class _EqualKey = std::equal_to<V>, typename allocator = xalloc<V> > class xr_hash_set : public std::hash_set < V, _HashFcn, _EqualKey, allocator > { public: u32 size() const { return (u32)__super::size(); } };
 template <typename V, class _HashFcn = std::hash<V>, class _EqualKey = std::equal_to<V>, typename allocator = xalloc<V> > class xr_hash_multiset : public std::hash_multiset < V, _HashFcn, _EqualKey, allocator > { public: u32 size() const { return (u32)__super::size(); } };
