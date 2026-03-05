@@ -794,7 +794,7 @@ public:
     iterator find(const Key& key)
     {
         check_bounds(key);
-        if (key == INVALID_INDEX || m_sparse[key] == INVALID_INDEX)
+        if (m_sparse[key] == INVALID_INDEX)
             return end();
         return m_dense.begin() + m_sparse[key];
     }
@@ -802,7 +802,7 @@ public:
     const_iterator find(const Key& key) const
     {
         check_bounds(key);
-        if (key == INVALID_INDEX || m_sparse[key] == INVALID_INDEX)
+        if (m_sparse[key] == INVALID_INDEX)
             return end();
         return m_dense.begin() + m_sparse[key];
     }
@@ -810,7 +810,7 @@ public:
     bool contains(Key key) const
     {
         check_bounds(key);
-        return !(key == INVALID_INDEX || m_sparse[key] == INVALID_INDEX)    ;
+        return m_sparse[key] != INVALID_INDEX;
     }
 
     T& operator[](const Key& key)
@@ -923,7 +923,7 @@ public:
     {
         check_bounds(key);
         sparse_index_t idx = m_sparse[key];
-        R_ASSERT3(idx != INVALID_INDEX, "Item not found by ID ", key);
+        R_ASSERT3(idx != INVALID_INDEX, "xr_sparse_map: Item not found by ID ", key);
         return m_dense[idx].second;
     }
 
