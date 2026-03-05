@@ -721,7 +721,7 @@ public:
 
 template <typename Key, typename T, size_t MaxKeys = 65536>
 class xr_sparse_map {
-    // 1. Ensure Key is an unsigned integer
+    // Ensure Key is an unsigned integer
     static_assert(std::is_integral<Key>::value, "Key must be an integral type.");
     static_assert(std::is_unsigned<Key>::value, "Key must be an unsigned type (to avoid negative indexing).");
 
@@ -916,6 +916,12 @@ public:
         return m_dense[idx].second;
     }
 
+    void swap(xr_sparse_map& other) noexcept
+    {
+        std::swap(m_sparse, other.m_sparse);
+        std::swap(m_dense, other.m_dense);
+    }
+
     // Re-aligns the dense array by ID. Useful if you need sorted iteration.
     // Complexity: O(N log N) for the sort + O(N) for the index rebuild.
     void sort()
@@ -932,8 +938,6 @@ public:
 private:
     void rebuild_sparse()
     {
-        // Reset only the slots we are using for performance
-        // (Better than zeroing all 65536 slots if the map is sparse)
         std::fill(m_sparse.begin(), m_sparse.end(), INVALID_INDEX);
 
         for (size_t i = 0; i < m_dense.size(); ++i)
