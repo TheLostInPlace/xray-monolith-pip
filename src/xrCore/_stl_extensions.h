@@ -13,6 +13,8 @@ using std::swap;
 #include <utility>
 #include <stdexcept>
 #include <initializer_list>
+#include <vector>
+#include <limits>
 #include "_type_traits.h"
 
 #ifdef __BORLANDC__
@@ -532,7 +534,8 @@ public:
 
 // Insertion order map
 template <typename Key, typename T>
-class xr_ordered_map {
+class xr_ordered_map
+{
 public:
     // --- Standard std::map Typedefs ---
     using key_type = Key;
@@ -559,32 +562,39 @@ public:
     xr_ordered_map() = default;
     ~xr_ordered_map() = default;
 
-    xr_ordered_map(const xr_ordered_map& other) {
-        for (const auto& pair : other.m_sequence) {
+    xr_ordered_map(const xr_ordered_map& other)
+    {
+        for (const auto& pair : other.m_sequence)
+        {
             insert(pair);
         }
     }
 
     xr_ordered_map(xr_ordered_map&& other) noexcept
-        : m_sequence(std::move(other.m_sequence)), m_lookup(std::move(other.m_lookup)) {
-    }
+        : m_sequence(std::move(other.m_sequence)), m_lookup(std::move(other.m_lookup)) {}
 
-    xr_ordered_map(std::initializer_list<value_type> init) {
-        for (const auto& val : init) {
+    xr_ordered_map(std::initializer_list<value_type> init)
+    {
+        for (const auto& val : init)
+        {
             insert(val);
         }
     }
 
-    xr_ordered_map& operator=(const xr_ordered_map& other) {
-        if (this != &other) {
+    xr_ordered_map& operator=(const xr_ordered_map& other)
+    {
+        if (this != &other)
+        {
             clear();
             for (const auto& pair : other.m_sequence) insert(pair);
         }
         return *this;
     }
 
-    xr_ordered_map& operator=(xr_ordered_map&& other) noexcept {
-        if (this != &other) {
+    xr_ordered_map& operator=(xr_ordered_map&& other) noexcept
+    {
+        if (this != &other)
+        {
             m_sequence = std::move(other.m_sequence);
             m_lookup = std::move(other.m_lookup);
         }
@@ -610,14 +620,17 @@ public:
     size_type size()  const noexcept { return m_sequence.size(); }
 
     // --- Modifiers ---
-    void clear() noexcept {
+    void clear() noexcept
+    {
         m_lookup.clear();
         m_sequence.clear();
     }
 
-    std::pair<iterator, bool> insert(const value_type& value) {
+    std::pair<iterator, bool> insert(const value_type& value)
+    {
         auto map_it = m_lookup.find(value.first);
-        if (map_it != m_lookup.end()) {
+        if (map_it != m_lookup.end())
+        {
             return { map_it->second, false };
         }
         m_sequence.push_back(value);
@@ -627,14 +640,16 @@ public:
     }
 
     template <typename... Args>
-    std::pair<iterator, bool> emplace(Args&&... args) {
+    std::pair<iterator, bool> emplace(Args&&... args)
+    {
         // Construct element temporarily to check key
         value_type val(std::forward<Args>(args)...);
         return insert(std::move(val));
     }
 
     // Erase by key: O(log N) lookup + O(1) unlinking
-    size_type erase(const key_type& key) {
+    size_type erase(const key_type& key)
+    {
         auto map_it = m_lookup.find(key);
         if (map_it == m_lookup.end()) return 0;
 
@@ -644,7 +659,8 @@ public:
     }
 
     // Erase by iterator: O(log N) map lookup + O(1) unlinking
-    iterator erase(const_iterator pos) {
+    iterator erase(const_iterator pos)
+    {
         if (pos == m_sequence.end()) return m_sequence.end();
 
         auto next_it = std::next(pos);
@@ -653,41 +669,49 @@ public:
         return next_it;
     }
 
-    void swap(xr_ordered_map& other) noexcept {
+    void swap(xr_ordered_map& other) noexcept
+    {
         m_sequence.swap(other.m_sequence);
         m_lookup.swap(other.m_lookup);
     }
 
     // --- Lookup ---
-    iterator find(const key_type& key) {
+    iterator find(const key_type& key)
+    {
         auto map_it = m_lookup.find(key);
         return (map_it != m_lookup.end()) ? map_it->second : m_sequence.end();
     }
 
-    const_iterator find(const key_type& key) const {
+    const_iterator find(const key_type& key) const
+    {
         auto map_it = m_lookup.find(key);
         return (map_it != m_lookup.end()) ? map_it->second : m_sequence.end();
     }
 
-    size_type count(const key_type& key) const {
+    size_type count(const key_type& key) const
+    {
         return m_lookup.find(key) != m_lookup.end() ? 1 : 0;
     }
 
-    mapped_type& at(const key_type& key) {
+    mapped_type& at(const key_type& key)
+    {
         auto map_it = m_lookup.find(key);
         if (map_it == m_lookup.end()) throw std::out_of_range("xr_ordered_map::at: key not found");
         return map_it->second->second;
     }
 
-    const mapped_type& at(const key_type& key) const {
+    const mapped_type& at(const key_type& key) const
+    {
         auto map_it = m_lookup.find(key);
         if (map_it == m_lookup.end()) throw std::out_of_range("xr_ordered_map::at: key not found");
         return map_it->second->second;
     }
 
-    mapped_type& operator[](const key_type& key) {
+    mapped_type& operator[](const key_type& key)
+    {
         auto map_it = m_lookup.find(key);
-        if (map_it == m_lookup.end()) {
+        if (map_it == m_lookup.end())
+        {
             auto res = insert(value_type(key, mapped_type()));
             return res.first->second;
         }
