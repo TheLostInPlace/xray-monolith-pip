@@ -696,14 +696,14 @@ public:
     mapped_type& at(const key_type& key)
     {
         auto map_it = m_lookup.find(key);
-        if (map_it == m_lookup.end()) throw std::out_of_range("xr_ordered_map::at: key not found");
+        R_ASSERT3(map_it != m_lookup.end(), "xr_ordered_map, key not found ", key);
         return map_it->second->second;
     }
 
     const mapped_type& at(const key_type& key) const
     {
         auto map_it = m_lookup.find(key);
-        if (map_it == m_lookup.end()) throw std::out_of_range("xr_ordered_map::at: key not found");
+        R_ASSERT3(map_it != m_lookup.end(), "xr_ordered_map, key not found ", key);
         return map_it->second->second;
     }
 
