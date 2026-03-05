@@ -15,6 +15,7 @@ str_container::str_container(str_container_constructor_key)
 	if (!p)
 		Debug.fatal(DEBUG_INFO, "str_container, failed to allocate block size %zu", block_size);
 	storage.emplace_back((char*)p, block_size);
+    buffer.resize(buffer_size);
 }
 
 str_container* str_container::create()
