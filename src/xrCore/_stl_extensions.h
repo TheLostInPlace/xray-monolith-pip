@@ -719,7 +719,7 @@ public:
     }
 };
 
-template <typename Key, typename T, size_t MaxKeys = 65536>
+template <typename Key, typename T, size_t MaxKeys = 65536, size_t INVALID_INDEX = Key(-1)>
 class xr_sparse_map {
     // Ensure Key is an unsigned integer
     static_assert(std::is_integral<Key>::value, "Key must be an integral type.");
@@ -735,6 +735,7 @@ public:
     using reference = value_type&;
     using const_reference = const value_type&;
     using size_type = size_t;
+    using sparse_index_t = Key;
 
     // Iterators directly wrap the contiguous dense array
     using iterator = typename xr_vector<value_type>::iterator;
@@ -743,16 +744,15 @@ public:
     using const_reverse_iterator = typename xr_vector<value_type>::const_reverse_iterator;
 
 private:
-    static constexpr size_type INVALID_INDEX = std::numeric_limits<size_type>::max();
 
     // sparse[ID] returns the index in the dense array
-    xr_vector<size_type> m_sparse;
+    xr_vector<sparse_index_t> m_sparse;
     // dense contains the actual contiguous data for fast iteration
     xr_vector<value_type> m_dense;
 
     inline void check_bounds(Key key) const
     {
-        if (key >= MaxKeys) throw std::out_of_range("ID out of bounds");
+        VERIFY2(key < MaxKeys, "ID out of bounds");
     }
 
 public:
@@ -776,25 +776,41 @@ public:
     bool empty() const { return m_dense.empty(); }
     size_type size() const { return m_dense.size(); }
 
+private:
+    // Correctly typed size for own logic
+    sparse_index_t dense_size() const { return static_cast<sparse_index_t>(m_dense.size()); }
+
+public:
     void clear()
     {
-        std::fill(m_sparse.begin(), m_sparse.end(), INVALID_INDEX);
+        for (const auto& pair : m_dense)
+        {
+            m_sparse[pair.first] = INVALID_INDEX;
+        }
         m_dense.clear();
     }
 
     // --- Lookup ---
     iterator find(const Key& key)
     {
-        if (key >= MaxKeys || m_sparse[key] == INVALID_INDEX)
+        check_bounds(key);
+        if (key == INVALID_INDEX || m_sparse[key] == INVALID_INDEX)
             return end();
         return m_dense.begin() + m_sparse[key];
     }
 
     const_iterator find(const Key& key) const
     {
-        if (key >= MaxKeys || m_sparse[key] == INVALID_INDEX)
+        check_bounds(key);
+        if (key == INVALID_INDEX || m_sparse[key] == INVALID_INDEX)
             return end();
         return m_dense.begin() + m_sparse[key];
+    }
+
+    bool contains(Key key) const
+    {
+        check_bounds(key);
+        return !(key == INVALID_INDEX || m_sparse[key] == INVALID_INDEX)    ;
     }
 
     T& operator[](const Key& key)
@@ -802,10 +818,10 @@ public:
         // Automatically insert if it doesn't exist (std::map behavior)
         check_bounds(key);
 
-        size_type idx = m_sparse[key];
+        sparse_index_t idx = m_sparse[key];
         if (idx == INVALID_INDEX)
         {
-            idx = m_dense.size();
+            idx = dense_size();
             m_sparse[key] = idx;
             m_dense.push_back({ key, T{} });
         }
@@ -817,13 +833,13 @@ public:
     {
         check_bounds(val.first);
 
-        size_type idx = m_sparse[val.first];
+        sparse_index_t idx = m_sparse[val.first];
         if (idx != INVALID_INDEX)
         {
             return { m_dense.begin() + idx, false }; // Already exists
         }
 
-        idx = m_dense.size();
+        idx = dense_size();
         m_sparse[val.first] = idx;
         m_dense.push_back(val);
         return { m_dense.begin() + idx, true };
@@ -834,13 +850,13 @@ public:
     {
         check_bounds(key);
 
-        size_t& idx = m_sparse[key];
+        sparse_index_t& idx = m_sparse[key];
         if (idx != INVALID_INDEX)
         {
             return { m_dense.begin() + idx, false }; // Already exists
         }
 
-        idx = m_dense.size();
+        idx = dense_size();
         m_dense.emplace_back(
             std::piecewise_construct,
             std::forward_as_tuple(key),
@@ -859,10 +875,11 @@ public:
     // Erase by Key
     size_type erase(const Key& key)
     {
-        if (key >= MaxKeys || m_sparse[key] == INVALID_INDEX) return 0;
+        check_bounds(key);
+        if (m_sparse[key] == INVALID_INDEX) return 0;
 
-        size_type idx_to_remove = m_sparse[key];
-        size_type last_idx = m_dense.size() - 1;
+        sparse_index_t idx_to_remove = m_sparse[key];
+        sparse_index_t last_idx = dense_size() - 1;
 
         // Swap and Pop mechanic: Move the last element into the deleted spot
         if (idx_to_remove != last_idx)
@@ -882,8 +899,8 @@ public:
         if (pos == end()) return end();
 
         Key key = pos->first;
-        size_type idx_to_remove = m_sparse[key];
-        size_type last_idx = m_dense.size() - 1;
+        sparse_index_t idx_to_remove = m_sparse[key];
+        sparse_index_t last_idx = dense_size() - 1;
 
         if (idx_to_remove != last_idx)
         {
@@ -897,12 +914,6 @@ public:
         return m_dense.begin() + idx_to_remove;
     }
 
-    bool contains(Key key) const
-    {
-        if (key >= MaxKeys) return false;
-        return m_sparse[key] != INVALID_INDEX;
-    }
-
     size_t count(Key key) const
     {
         return contains(key) ? 1 : 0;
@@ -911,8 +922,8 @@ public:
     T& at(Key key)
     {
         check_bounds(key);
-        size_t idx = m_sparse[key];
-        if (idx == INVALID_INDEX) throw std::out_of_range("Key not found");
+        sparse_index_t idx = m_sparse[key];
+        R_ASSERT3(idx != INVALID_INDEX, "Item not found by ID ", key);
         return m_dense[idx].second;
     }
 
@@ -929,7 +940,10 @@ public:
         if (m_dense.empty()) return;
 
         // 1. Sort the dense array by Key (first member of the pair)
-        std::sort(m_dense.begin(), m_dense.end());
+        std::sort(m_dense.begin(), m_dense.end(), [](const value_type& a, const value_type& b)
+        {
+            return a.first < b.first;
+         });
 
         // 2. The indices are now wrong, so we must rebuild the sparse array
         rebuild_sparse();
@@ -940,7 +954,7 @@ private:
     {
         std::fill(m_sparse.begin(), m_sparse.end(), INVALID_INDEX);
 
-        for (size_t i = 0; i < m_dense.size(); ++i)
+        for (sparse_index_t i = 0; i < dense_size(); ++i)
         {
             m_sparse[m_dense[i].first] = i;
         }
