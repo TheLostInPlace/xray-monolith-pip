@@ -9,7 +9,7 @@ class player_legs_controller
 {
 public:
     void    update(CActor* actor);
-    void    render(IDSGraphManager* DM);
+    void    render();
     void    destroy();
 
     bool    is_active() const { return m_model != nullptr; }

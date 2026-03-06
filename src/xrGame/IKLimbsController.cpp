@@ -16,6 +16,7 @@
 #	include "PHDebug.h"
 #endif // DEBUG
 
+#include "Actor.h"
 
 CIKLimbsController::CIKLimbsController(): m_object(0), m_legs_blend(0)
 {

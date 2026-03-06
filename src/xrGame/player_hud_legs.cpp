@@ -232,7 +232,7 @@ void player_legs_controller::update(CActor* actor)
     copy_bones_from_actor(actor);
 }
 
-void player_legs_controller::render(IDSGraphManager* DM)
+void player_legs_controller::render()
 {
     if (!g_legs_enabled || !m_model)
         return;
@@ -257,7 +257,8 @@ void player_legs_controller::render(IDSGraphManager* DM)
     fwd.normalize_safe();
     m_legs_transform.c.mad(fwd, m_fwd_offset);
 
-    DM->add_Dynamic(visual, &m_legs_transform);
+    ::Render->set_Transform(&m_legs_transform);
+    ::Render->add_Visual(visual);
 }
 
 void player_hud::update_legs(const Fmatrix& cam_trans)
@@ -265,9 +266,9 @@ void player_hud::update_legs(const Fmatrix& cam_trans)
     m_legs_controller.update(g_actor);
 }
 
-void player_hud::render_legs(IDSGraphManager* DM)
+void player_hud::render_legs()
 {
-    m_legs_controller.render(DM);
+    m_legs_controller.render();
 }
 
 void player_hud::delete_legs_model()
