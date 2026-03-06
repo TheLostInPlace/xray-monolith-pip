@@ -1,4 +1,4 @@
-﻿#include "pch_script.h"
+#include "pch_script.h"
 #include "Actor_Flags.h"
 #include "hudmanager.h"
 #ifdef DEBUG
@@ -110,6 +110,8 @@ static Fbox bbStandBox;
 static Fbox bbCrouchBox;
 static Fvector vFootCenter;
 static Fvector vFootExt;
+
+BOOL showActorBody = FALSE;
 
 Flags32 psActorFlags = {AF_GODMODE_RT | AF_AUTOPICKUP | AF_RUN_BACKWARD | AF_IMPORTANT_SAVE | AF_USE_TRACERS};
 int psActorSleepTime = 1;
@@ -2136,10 +2138,16 @@ void CActor::renderable_Render()
 	{
 		if (::Render->active_phase() == 0) // can render first person body here
 		{
-			if (g_player_hud && pDemoRecords.empty() && !m_holder)
+			if (g_player_hud && pDemoRecords.empty() && !m_holder && !showActorBody)
 			{
 				g_player_hud->render_legs();
 			}
+
+            if (showActorBody)
+            {
+                inherited::renderable_Render();
+                CInventoryOwner::renderable_Render();
+            }
 
 			//if (fpBody) 
 			//	inherited::renderable_Render();
