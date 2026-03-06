@@ -32,10 +32,8 @@ private:
     bool is_spine_bone(LPCSTR bone_name) const;
     void remove_camera_pitch(Fmatrix& bone_transform);
 
-    bool    resolve_config(CActor* actor, shared_str& out_section);
-    bool    resolve_outfit_config(const shared_str& outfit_sect, shared_str& out_section);
-    bool    resolve_default_config(shared_str& out_section);
-    bool    ensure_model(const shared_str& legs_section);
+    bool    resolve_config(CActor* actor, shared_str& sect, shared_str& model);
+    bool    ensure_model(const shared_str& sect, const shared_str& model);
     void    copy_bones_from_actor(CActor* actor);
     void    warn_once(const char* fmt, ...);
     bool is_keep_bind_bone(LPCSTR bone_name) const;

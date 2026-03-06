@@ -22,7 +22,7 @@ void player_legs_controller::destroy()
     m_visual_name = "";
 }
 
-bool player_legs_controller::resolve_config(CActor* actor, shared_str& out_section)
+bool player_legs_controller::resolve_config(CActor* actor, shared_str& sect, shared_str& model)
 {
     PIItem outfit = actor->inventory().ItemFromSlot(OUTFIT_SLOT);
     shared_str current_outfit = outfit
@@ -34,66 +34,42 @@ bool player_legs_controller::resolve_config(CActor* actor, shared_str& out_secti
         m_last_outfit_sect = current_outfit;
     }
 
-    bool result = false;
-    if (pSettings->line_exist("actor", "visual"))
-    {
-        out_section = "actor";
-        result = true;
-    }
-
     if (outfit)
     {
-        if (pSettings->line_exist(current_outfit, "actor_visual"))
+        if (pSettings->line_exist(current_outfit, "legs_visual"))
         {
-            out_section = current_outfit;
-            result = true;
-        }
-    }
-    return result;       
-}
-
-bool player_legs_controller::resolve_outfit_config(const shared_str& outfit_sect,
-    shared_str& out_section)
-{
-    if (pSettings->line_exist(outfit_sect, "legs_visual_sect"))
-    {
-        shared_str candidate = pSettings->r_string(outfit_sect, "legs_visual_sect");
-        if (pSettings->section_exist(candidate))
-        {
-            out_section = candidate;
+            sect = current_outfit;
+            model = pSettings->r_string(current_outfit, "legs_visual");
             return true;
         }
-        warn_once("legs_visual_sect [%s] referenced by outfit [%s] does not exist",
-            candidate.c_str(), outfit_sect.c_str());
-        return false;
+
+        if (pSettings->line_exist(current_outfit, "actor_visual"))
+        {
+            sect = current_outfit;
+            model = pSettings->r_string(current_outfit, "actor_visual");
+            return true;
+        }
+
+        warn_once("outfit [%s] has no legs_visual or actor_visual, fallback to default", current_outfit.c_str());
     }
 
-    string256 auto_sect;
-    xr_sprintf(auto_sect, "%s_legs", outfit_sect.c_str());
-    if (pSettings->section_exist(auto_sect))
+    // default
+    if (pSettings->line_exist("actor", "legs_visual"))
     {
-        out_section = auto_sect;
+        sect = "actor";
+        model = pSettings->r_string("actor", "legs_visual");
         return true;
     }
 
-    if (pSettings->line_exist(outfit_sect, "legs_visual"))
+    if (pSettings->line_exist("actor", "visual"))
     {
-        out_section = outfit_sect;
+        sect = "actor";
+        model = pSettings->r_string("actor", "visual");
         return true;
     }
 
-    warn_once("no legs config for outfit [%s]", outfit_sect.c_str());
-    return false;
-}
+    warn_once("actor has no legs_visual or visual");
 
-bool player_legs_controller::resolve_default_config(shared_str& out_section)
-{
-    if (pSettings->section_exist("actor_legs_default"))
-    {
-        out_section = "actor_legs_default";
-        return true;
-    }
-    warn_once("section [actor_legs_default] not found, legs disabled");
     return false;
 }
 
@@ -114,33 +90,17 @@ void player_legs_controller::warn_once(const char* fmt, ...)
     }
 }
 
-bool player_legs_controller::ensure_model(const shared_str& legs_section)
+bool player_legs_controller::ensure_model(const shared_str& sect, const shared_str& model)
 {
-    LPCSTR key = nullptr;
-
-    if (pSettings->line_exist(legs_section, "actor_visual"))
-        key = "actor_visual";
-    else if (pSettings->line_exist(legs_section, "visual"))
-        key = "visual";
-
-    if (!key)
-    {
-        warn_once("section [%s] has no 'actor_visual' or 'visual' field", legs_section.c_str());
-        destroy();
-        return false;
-    }
-
-    shared_str new_visual = pSettings->r_string(legs_section, key);
-
-    if (m_model && m_visual_name == new_visual)
+    if (m_model && m_visual_name == model)
         return true;
 
     destroy();
 
-    IRenderVisual* raw = ::Render->model_Create(new_visual.c_str());
+    IRenderVisual* raw = ::Render->model_Create(model.c_str());
     if (!raw)
     {
-        warn_once("failed to create model [%s]", new_visual.c_str());
+        warn_once("failed to create model [%s]", model.c_str());
         return false;
     }
 
@@ -148,15 +108,17 @@ bool player_legs_controller::ensure_model(const shared_str& legs_section)
     if (!K)
     {
         ::Render->model_Delete(raw);
-        warn_once("model [%s] is not a skeleton", new_visual.c_str());
+        warn_once("model [%s] is not a skeleton", model.c_str());
         return false;
     }
 
     m_model = K;
-    m_visual_name = new_visual;
+    m_visual_name = model;
 
-    if (pSettings->line_exist(legs_section, "legs_fwd_offset"))
-        m_fwd_offset = pSettings->r_float(legs_section, "legs_fwd_offset");
+    if (pSettings->line_exist(sect, "legs_fwd_offset"))
+        m_fwd_offset = pSettings->r_float(sect, "legs_fwd_offset");
+    else
+        m_fwd_offset = std::nullopt;
 
     return true;
 }
@@ -253,14 +215,15 @@ void player_legs_controller::update(CActor* actor)
         return;
     }
 
-    shared_str legs_section;
-    if (!resolve_config(actor, legs_section))
+    shared_str sect;
+    shared_str model;
+    if (!resolve_config(actor, sect, model))
     {
         destroy();
         return;
     }
 
-    if (!ensure_model(legs_section))
+    if (!ensure_model(sect, model))
         return;
 
     copy_bones_from_actor(actor);
