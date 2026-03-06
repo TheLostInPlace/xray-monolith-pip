@@ -2129,11 +2129,16 @@ bool CActor::AllowActorShadow()
 void CActor::renderable_Render()
 {
 	VERIFY(_valid(XFORM()));
-	
+
 	if (cam_active == eacFirstEye)
 	{
 		if (::Render->active_phase() == 0) // can render first person body here
 		{
+			if (g_player_hud && psHUD_Flags.test(HUD_DRAW) && !m_holder)
+			{
+				g_player_hud->render_legs();
+			}
+
 			//if (fpBody) 
 			//	inherited::renderable_Render();
 		}
@@ -2146,7 +2151,7 @@ void CActor::renderable_Render()
 		}
 	}
 
-// Third Person Body and Weapon/Item
+	// Third Person Body and Weapon/Item
 	else
 	{
 		inherited::renderable_Render();
