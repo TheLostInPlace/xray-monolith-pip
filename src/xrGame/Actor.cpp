@@ -2126,6 +2126,8 @@ bool CActor::AllowActorShadow()
 }
 
 #include "debug_renderer.h"
+#include "../xrEngine/FDemoRecord.h"
+extern xr_unordered_set<CDemoRecord*> pDemoRecords;
 void CActor::renderable_Render()
 {
 	VERIFY(_valid(XFORM()));
@@ -2134,7 +2136,7 @@ void CActor::renderable_Render()
 	{
 		if (::Render->active_phase() == 0) // can render first person body here
 		{
-			if (g_player_hud && psHUD_Flags.test(HUD_DRAW) && !m_holder)
+			if (g_player_hud && pDemoRecords.empty() && !m_holder)
 			{
 				g_player_hud->render_legs();
 			}
