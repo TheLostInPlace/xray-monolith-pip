@@ -962,12 +962,6 @@ void player_hud::render_hud(IDSGraphManager* DM)
 	}
 	*/
 
-	/*
-	if (m_legs_model) {
-		DM->add_Dynamic(m_legs_model->dcast_RenderVisual(), &m_legs_transform);
-	}
-	*/
-
 	if (m_attached_items[0])
 		m_attached_items[0]->render(DM);
 
