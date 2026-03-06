@@ -956,12 +956,6 @@ void player_hud::render_hud()
 	::Render->set_Transform(&m_transform_2);
 	::Render->add_Visual(m_model_2->dcast_RenderVisual());
 
-	/*
-	if (m_legs_model) {
-		DM->add_Dynamic(m_legs_model->dcast_RenderVisual(), &m_legs_transform);
-	}
-	*/
-
 	if (m_attached_items[0])
 		m_attached_items[0]->render();
 
