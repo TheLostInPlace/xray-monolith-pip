@@ -43,6 +43,7 @@ CSE_ALifeDynamicObject* alife_object(const CALifeSimulator* self, ALife::_OBJECT
 	if (object_id == 0xffff)
 	{
 		Msg("alife():object(id) ! invalid id specified");
+        ai().script_engine().print_stack();
 		return (0);
 	}
 	return (self->objects().object(object_id, true));
