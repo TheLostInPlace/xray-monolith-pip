@@ -253,6 +253,7 @@ void CWeaponStatMgun::Load(LPCSTR section)
 		LPCSTR str = pSettings->r_string(cNameSect_str(), "barrels");
 		string128 sec;
 		int n = _GetItemCount(str);
+        m_barrels.reserve(n);
 		for (int i = 0; i < n; ++i)
 		{
 			_GetItem(str, i, sec);

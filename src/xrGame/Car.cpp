@@ -2144,6 +2144,7 @@ IC void CCar::fill_exhaust_vector(LPCSTR S, xr_vector<SExhaust>& exhausts)
 	IKinematics* pKinematics = smart_cast<IKinematics*>(Visual());
 	string64 S1;
 	int count = _GetItemCount(S);
+    exhausts.reserve(count);
 	for (int i = 0; i < count; ++i)
 	{
 		_GetItem(S, i, S1);
