@@ -738,17 +738,17 @@ public:
     using sparse_index_t = Key;
 
     // Iterators directly wrap the contiguous dense array
-    using iterator = typename xr_vector<xr_unique_ptr<value_type>>::iterator;
-    using const_iterator = typename xr_vector<xr_unique_ptr<value_type>>::const_iterator;
-    using reverse_iterator = typename xr_vector<xr_unique_ptr<value_type>>::reverse_iterator;
-    using const_reverse_iterator = typename xr_vector<xr_unique_ptr<value_type>>::const_reverse_iterator;
+    using iterator = typename xr_vector<value_type>::iterator;
+    using const_iterator = typename xr_vector<value_type>::const_iterator;
+    using reverse_iterator = typename xr_vector<value_type>::reverse_iterator;
+    using const_reverse_iterator = typename xr_vector<value_type>::const_reverse_iterator;
 
 private:
 
     // sparse[ID] returns the index in the dense array
     xr_vector<sparse_index_t> m_sparse;
     // dense contains the actual contiguous data for fast iteration
-    xr_vector<xr_unique_ptr<value_type>> m_dense;
+    xr_vector<value_type> m_dense;
 
     inline void check_bounds(Key key) const
     {
@@ -820,7 +820,7 @@ public:
         {
             idx = dense_size();
             m_sparse[key] = idx;
-            m_dense.push_back(xr_make_unique<value_type>({ key, T{} }));
+            m_dense.push_back({ key, T{} });
         }
         return m_dense[idx].second;
     }
@@ -838,7 +838,7 @@ public:
 
         idx = dense_size();
         m_sparse[val.first] = idx;
-        m_dense.push_back(xr_make_unique<value_type>(val));
+        m_dense.push_back(val);
         return { m_dense.begin() + idx, true };
     }
 
@@ -854,11 +854,11 @@ public:
         }
 
         idx = dense_size();
-        m_dense.emplace_back(xr_make_unique<value_type>(
+        m_dense.emplace_back(
             std::piecewise_construct,
             std::forward_as_tuple(key),
             std::forward_as_tuple(std::forward<Args>(args)...)
-        ));
+        );
 
         return { m_dense.begin() + idx, true };
     }
@@ -882,7 +882,7 @@ public:
         if (idx_to_remove != last_idx)
         {
             m_dense[idx_to_remove] = m_dense[last_idx];
-            m_sparse[m_dense[idx_to_remove]->first] = idx_to_remove; // Update the moved element's sparse link
+            m_sparse[m_dense[idx_to_remove].first] = idx_to_remove; // Update the moved element's sparse link
         }
 
         m_sparse[key] = INVALID_INDEX;
@@ -902,7 +902,7 @@ public:
         if (idx_to_remove != last_idx)
         {
             m_dense[idx_to_remove] = m_dense[last_idx];
-            m_sparse[m_dense[idx_to_remove]->first] = idx_to_remove;
+            m_sparse[m_dense[idx_to_remove].first] = idx_to_remove;
         }
 
         m_sparse[key] = INVALID_INDEX;
@@ -921,7 +921,7 @@ public:
         check_bounds(key);
         sparse_index_t idx = m_sparse[key];
         R_ASSERT3(idx != INVALID_INDEX, "xr_sparse_map: Item not found by ID ", key);
-        return m_dense[idx]->second;
+        return m_dense[idx].second;
     }
 
     void swap(xr_sparse_map& other) noexcept
@@ -939,7 +939,7 @@ public:
         // 1. Sort the dense array by Key (first member of the pair)
         std::sort(m_dense.begin(), m_dense.end(), [](const value_type& a, const value_type& b)
         {
-            return a->first < b->first;
+            return a.first < b.first;
          });
 
         // 2. The indices are now wrong, so we must rebuild the sparse array
@@ -953,7 +953,7 @@ private:
 
         for (sparse_index_t i = 0; i < dense_size(); ++i)
         {
-            m_sparse[m_dense[i]->first] = i;
+            m_sparse[m_dense[i].first] = i;
         }
     }
 };
