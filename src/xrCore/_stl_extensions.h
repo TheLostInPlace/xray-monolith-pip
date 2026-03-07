@@ -783,10 +783,7 @@ private:
 public:
     void clear()
     {
-        for (const auto& pair : m_dense)
-        {
-            m_sparse[pair.first] = INVALID_INDEX;
-        }
+        std::fill(m_sparse.begin(), m_sparse.end(), INVALID_INDEX);
         m_dense.clear();
     }
 
