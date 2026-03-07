@@ -132,6 +132,8 @@ extern BOOL g_apply_pdm_to_ads;
 extern BOOL g_smooth_ads_transition;
 extern BOOL g_allow_silencer_hide_tracer;
 
+extern BOOL showActorBody; //leer
+
 //demonized: new console vars
 extern BOOL firstPersonDeath;
 extern BOOL g_legs_enabled;
@@ -3050,4 +3052,6 @@ void CCC_RegisterCommands()
 	// Wallmark distances
 	CMD4(CCC_Float, "g_wallmark_range_static", &wallmark_range_static, 0.f, 1000.f);
 	CMD4(CCC_Float, "g_wallmark_range_skeleton", &wallmark_range_skeleton, 0.f, 1000.f);
+
+    CMD4(CCC_Integer, "show_actor_body", &showActorBody, 0, 1);
 }
