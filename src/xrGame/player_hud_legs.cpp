@@ -229,7 +229,7 @@ void player_legs_controller::update(CActor* actor)
     copy_bones_from_actor(actor);
 }
 
-float legs_fwd_offset = -0.64f;
+float legs_fwd_offset = -0.6f;
 void player_legs_controller::render()
 {
     if (!g_legs_enabled || !m_model)
