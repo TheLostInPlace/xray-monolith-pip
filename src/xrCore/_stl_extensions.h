@@ -756,7 +756,10 @@ private:
     }
 
 public:
-    xr_sparse_map() : m_sparse(MaxKeys, INVALID_INDEX) {}
+    xr_sparse_map() : m_sparse(MaxKeys, INVALID_INDEX)
+    {
+        m_dense.reserve(std::min(static_cast<size_type>(MaxKeys), static_cast<size_type>(16384)));
+    }
 
     // --- Iterators ---
     iterator               begin()        noexcept { return m_dense.begin(); }
@@ -810,38 +813,8 @@ public:
         return m_sparse[key] != INVALID_INDEX;
     }
 
-    T& operator[](const Key& key)
-    {
-        // Automatically insert if it doesn't exist (std::map behavior)
-        check_bounds(key);
-
-        sparse_index_t idx = m_sparse[key];
-        if (idx == INVALID_INDEX)
-        {
-            idx = dense_size();
-            m_sparse[key] = idx;
-            m_dense.push_back({ key, T{} });
-        }
-        return m_dense[idx].second;
-    }
-
     // --- Modifiers ---
-    std::pair<iterator, bool> insert(const value_type& val)
-    {
-        check_bounds(val.first);
-
-        sparse_index_t idx = m_sparse[val.first];
-        if (idx != INVALID_INDEX)
-        {
-            return { m_dense.begin() + idx, false }; // Already exists
-        }
-
-        idx = dense_size();
-        m_sparse[val.first] = idx;
-        m_dense.push_back(val);
-        return { m_dense.begin() + idx, true };
-    }
-
+    // Key 0 will always be first in m_dense
     template <typename... Args>
     std::pair<iterator, bool> emplace(Key key, Args&&... args)
     {
@@ -853,12 +826,26 @@ public:
             return { m_dense.begin() + idx, false }; // Already exists
         }
 
-        idx = dense_size();
-        m_dense.emplace_back(
-            std::piecewise_construct,
-            std::forward_as_tuple(key),
-            std::forward_as_tuple(std::forward<Args>(args)...)
-        );
+        if (key == 0 && !m_dense.empty())
+        {
+            Key old_first_key = m_dense[0].first;
+            m_dense.push_back(std::move(m_dense[0]));
+
+            Key new_back_idx = dense_size() - 1;
+            m_sparse[old_first_key] = new_back_idx;
+
+            m_dense[0] = value_type(key, T(std::forward<Args>(args)...));
+            idx = 0;
+        }
+        else
+        {
+            idx = dense_size();
+            m_dense.emplace_back(
+                std::piecewise_construct,
+                std::forward_as_tuple(key),
+                std::forward_as_tuple(std::forward<Args>(args)...)
+            );
+        }
 
         return { m_dense.begin() + idx, true };
     }
@@ -869,24 +856,49 @@ public:
         return emplace(key, std::forward<Args>(args)...).first;
     }
 
+    std::pair<iterator, bool> insert(const value_type& val)
+    {
+        return emplace(val.first, val.second);
+    }
+
+    T& operator[](const Key& key)
+    {
+        // Calling emplace with no extra arguments perfectly forwards an empty list, 
+        // resulting in T() being constructed (which acts identically to T{}).
+        // It returns a pair; .first gets the iterator, ->second gets the value reference.
+        return emplace(key).first->second;
+    }
+
+private:
+    void erase_at_index(sparse_index_t idx)
+    {
+        Key key_to_remove = m_dense[idx].first;
+        sparse_index_t last_idx = dense_size() - 1;
+
+        if (idx != last_idx)
+        {
+            // Move the last element into the deleted spot
+            m_dense[idx] = std::move(m_dense[last_idx]);
+
+            // Update the moved element's sparse link to the new position
+            m_sparse[m_dense[idx].first] = idx;
+        }
+
+        // Clean up
+        m_sparse[key_to_remove] = INVALID_INDEX;
+        m_dense.pop_back();
+    }
+
+public:
     // Erase by Key
     size_type erase(const Key& key)
     {
         check_bounds(key);
-        if (m_sparse[key] == INVALID_INDEX) return 0;
 
-        sparse_index_t idx_to_remove = m_sparse[key];
-        sparse_index_t last_idx = dense_size() - 1;
+        sparse_index_t idx = m_sparse[key];
+        if (idx == INVALID_INDEX) return 0;
 
-        // Swap and Pop mechanic: Move the last element into the deleted spot
-        if (idx_to_remove != last_idx)
-        {
-            m_dense[idx_to_remove] = m_dense[last_idx];
-            m_sparse[m_dense[idx_to_remove].first] = idx_to_remove; // Update the moved element's sparse link
-        }
-
-        m_sparse[key] = INVALID_INDEX;
-        m_dense.pop_back();
+        erase_at_index(idx);
         return 1;
     }
 
@@ -895,20 +907,13 @@ public:
     {
         if (pos == end()) return end();
 
-        Key key = pos->first;
-        sparse_index_t idx_to_remove = m_sparse[key];
-        sparse_index_t last_idx = dense_size() - 1;
+        // Get the index by calculating the distance from the start
+        sparse_index_t idx = static_cast<sparse_index_t>(std::distance(m_dense.begin(), pos));
+        erase_at_index(idx);
 
-        if (idx_to_remove != last_idx)
-        {
-            m_dense[idx_to_remove] = m_dense[last_idx];
-            m_sparse[m_dense[idx_to_remove].first] = idx_to_remove;
-        }
-
-        m_sparse[key] = INVALID_INDEX;
-        m_dense.pop_back();
-
-        return m_dense.begin() + idx_to_remove;
+        // Return the iterator pointing to the same slot 
+        // (which now contains the swapped-in element or is end())
+        return m_dense.begin() + idx;
     }
 
     size_t count(Key key) const
