@@ -130,6 +130,8 @@ public:
 	u32 dwFrame_UpdateCL;
 	u32 dwFrame_AsCrow;
 
+    xr_atomic_u32 m_p_tasks_count{ 0 };
+
 	// Crow-MODE
 	// if (object_is_visible)
 	// if (object_is_near)

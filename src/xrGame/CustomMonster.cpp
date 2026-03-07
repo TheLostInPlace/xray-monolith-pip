@@ -685,6 +685,8 @@ void CCustomMonster::eye_pp_s2()
 	xrSRWLockGuard guard(&lock_visible, true);
 	for (auto& item : visible_items)
 	{
+        item.O->m_p_tasks_count.fetch_add(1, std::memory_order_relaxed);
+
 		VisionSnapshotItem snap;
 		snap.Object = item.O;
 		snap.HasCFORM = item.O->CFORM() != 0;
@@ -722,6 +724,9 @@ void CCustomMonster::eye_pp_s2()
 	{
 		if (this_thread_id != GetCurrentThreadId()) { PROF_THREAD("X-Ray PPL Thread") }
 		feel_vision_update						(this,eye_matrix.c,float(dwDT)/1000.f,memory().visual().transparency_threshold(), snapshots);
+
+        for (const auto& s : snapshots)
+            s.Object->m_p_tasks_count.fetch_sub(1, std::memory_order_release);
 	});
 	Device.Statistic->AI_Vis_RayTests.End();
 }
