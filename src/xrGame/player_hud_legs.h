@@ -19,7 +19,7 @@ private:
     IKinematics* m_model = nullptr;
     shared_str              m_visual_name;
     shared_str              m_last_outfit_sect;
-    float                   m_fwd_offset = -0.55f;
+    std::optional<float> m_fwd_offset = std::nullopt;
     float                   m_y_offset = 0.f;
     Fmatrix                 m_legs_transform;
     bool                    m_first_frame = true;
@@ -32,10 +32,8 @@ private:
     bool is_spine_bone(LPCSTR bone_name) const;
     void remove_camera_pitch(Fmatrix& bone_transform);
 
-    bool    resolve_config(CActor* actor, shared_str& out_section);
-    bool    resolve_outfit_config(const shared_str& outfit_sect, shared_str& out_section);
-    bool    resolve_default_config(shared_str& out_section);
-    bool    ensure_model(const shared_str& legs_section);
+    bool    resolve_config(CActor* actor, shared_str& sect, shared_str& model);
+    bool    ensure_model(const shared_str& sect, const shared_str& model);
     void    copy_bones_from_actor(CActor* actor);
     void    warn_once(const char* fmt, ...);
     bool is_keep_bind_bone(LPCSTR bone_name) const;

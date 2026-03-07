@@ -1,4 +1,4 @@
-#include "pch_script.h"
+﻿#include "pch_script.h"
 #include "Actor_Flags.h"
 #include "hudmanager.h"
 #ifdef DEBUG
@@ -110,6 +110,8 @@ static Fbox bbStandBox;
 static Fbox bbCrouchBox;
 static Fvector vFootCenter;
 static Fvector vFootExt;
+
+BOOL showActorBody = FALSE;
 
 Flags32 psActorFlags = {AF_GODMODE_RT | AF_AUTOPICKUP | AF_RUN_BACKWARD | AF_IMPORTANT_SAVE | AF_USE_TRACERS};
 int psActorSleepTime = 1;
@@ -2126,6 +2128,7 @@ bool CActor::AllowActorShadow()
 #include "debug_renderer.h"
 #include "../xrEngine/FDemoRecord.h"
 extern xr_unordered_set<CDemoRecord*> pDemoRecords;
+BOOL legs_in_demo_record = FALSE;
 void CActor::renderable_Render(IDSGraphManager* DM)
 {
 	VERIFY(_valid(XFORM()));
@@ -2134,10 +2137,16 @@ void CActor::renderable_Render(IDSGraphManager* DM)
 	{
 		if (::Render->active_phase() == 0) // can render first person body here
 		{
-			if (g_player_hud && pDemoRecords.empty() && !m_holder)
+			if (g_player_hud && !m_holder && (legs_in_demo_record || pDemoRecords.empty()) && !showActorBody)
 			{
 				g_player_hud->render_legs(DM);
 			}
+
+            if (showActorBody)
+            {
+                inherited::renderable_Render(DM);
+                CInventoryOwner::renderable_Render(DM);
+            }
 
 			//if (fpBody) 
 			//	inherited::renderable_Render(DM);
