@@ -261,6 +261,7 @@ Main and MT:
       2. Optionally add `legs_fwd_offset` field to adjust position of the legs (`legs_fwd_offset = -0.55`)
       
 MT:
+  * Fixed possible crash when using `GT - Emplacement` mod
   * `g_sv_Spawn` safety features
   * `CUIWindow` postponed deletion of `AutoDelete` items
   * `CWeapon::GetFireDispersion` added `pOwner` check for safety
