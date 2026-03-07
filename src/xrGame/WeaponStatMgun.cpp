@@ -1186,8 +1186,7 @@ void CWeaponStatMgun::UpdateSound()
 void CWeaponStatMgun::SetFeelVisionIgnore(bool enable)
 {
 #ifdef SPATIAL_CHANGE
-	ISpatial *IS = smart_cast<ISpatial *>(this);
-	R_ASSERT(IS);
+    ISpatialShared& IS = SpatialComponent;
 	if (enable)
 		IS->spatial.type |= STYPE_FEELVISIONIGNORE;
 	else
