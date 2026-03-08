@@ -532,7 +532,7 @@ void CActor::g_cl_Orientate(u32 mstate_rl, float dt)
 		r_torso.pitch = unaffected_r_torso.pitch + dangle.x;
 	}
 
-    if (disableActorBodyRotationDelay)
+    if (disableActorBodyRotationDelay || Device.time_factor() < 1)
     {
         r_model_yaw = angle_normalize(r_torso.yaw);
         r_model_yaw_dest = r_model_yaw;
