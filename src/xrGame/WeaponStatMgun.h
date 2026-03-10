@@ -384,7 +384,6 @@ public:
 		void DetachMagazine(u16 id);
 #endif
 	} m_anim_weapon;
-
 	virtual void OnEvent(NET_Packet &P, u16 type);
 
 	/*----------------------------------------------------------------------------------------------------

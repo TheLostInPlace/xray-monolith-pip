@@ -338,7 +338,7 @@ void CWeaponStatMgun::AddShotEffector()
 	if (OwnerActor())
 	{
 #ifdef STATIONARYMGUN_NEW
-		if (Camera() && (Camera()->tag == eCamFirst) && m_shot_effector.size())
+        if (Camera() && (Camera()->tag == eCamFirst) && m_shot_effector.size() && xr_strcmp(m_shot_effector, "nil"))
 		{
 			CAnimatorCamEffector *E = xr_new<CAnimatorCamEffector>();
 			E->SetType((ECamEffectorType)STM_SHOT_EFFECTOR);
