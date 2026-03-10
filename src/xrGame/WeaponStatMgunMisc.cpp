@@ -223,6 +223,7 @@ void CWeaponStatMgun::SStmAnimWeapon::HandCreate()
 		return;
 	att = xr_new<script_attachment>(m_hand_atm, m_hand_vis.c_str());
 	R_ASSERT(att);
+	att->SetType(script_attachment_type::eSA_World);
 	att->SetParent(m_stm->cast_game_object());
 	att->SetParentBone(m_hand_bid);
 	att->SetPosition(m_hand_pos);
