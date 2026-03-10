@@ -82,6 +82,10 @@ extern float psSqueezeVelocity;
 
 // Lua
 extern int psLUA_GCSTEP;
+extern int psLua_ParallelGCStep;
+extern int psLua_ParallelGC_CallAmount;
+extern BOOL psLua_ParallelGC_debug;
+extern BOOL psLua_ParallelGC;
 extern BOOL lua_debug;
 
 float g_end_modif = 0.f;
@@ -128,8 +132,11 @@ extern BOOL g_apply_pdm_to_ads;
 extern BOOL g_smooth_ads_transition;
 extern BOOL g_allow_silencer_hide_tracer;
 
+extern BOOL showActorBody; //leer
+
 //demonized: new console vars
 extern BOOL firstPersonDeath;
+extern BOOL g_legs_enabled;
 extern BOOL pseudogiantCanDamageObjects;
 extern BOOL use_english_text_for_missing_translations;
 namespace crash_saving {
@@ -174,6 +181,9 @@ extern float IK_CALC_DIST;
 extern float IK_CALC_SSA;
 extern float IK_ALWAYS_CALC_DIST;
 extern BOOL r_optimize_calculate_bones;
+
+extern float legs_fwd_offset;
+extern BOOL legs_in_demo_record;
 
 extern CrosshairSettings g_crosshair_camera_near;
 extern CrosshairSettings g_crosshair_camera_far;
@@ -2472,6 +2482,13 @@ void CCC_RegisterCommands()
 
     // Moved lua_gcstep outside of DEBUG to allow for easier experimentation.
 	CMD4(CCC_Integer, "lua_gcstep", &psLUA_GCSTEP, 1, 1000);
+
+	// demonized: GC step that is used for repeated calls on second thread while frame is rendering, limit to small values
+	CMD4(CCC_Integer, "lua_parallel_gcstep", &psLua_ParallelGCStep, 1, 100);
+	CMD4(CCC_Integer, "lua_parallel_gc_call_amount", &psLua_ParallelGC_CallAmount, 1, 50);
+	CMD4(CCC_Integer, "lua_parallel_gc_debug", &psLua_ParallelGC_debug, 0, 1);
+	CMD4(CCC_Integer, "lua_parallel_gc", &psLua_ParallelGC, 0, 1);
+
 	CMD4(CCC_Integer, "lua_debug", &lua_debug, 0, 1);
 
 #ifdef DEBUG
@@ -2603,6 +2620,9 @@ void CCC_RegisterCommands()
 
 	CMD1(CCC_TimeFactor, "time_factor");
 	CMD1(CCC_FreezeTime, "freeze_time");
+
+    CMD4(CCC_Float, "g_legs_fwd_offset", &legs_fwd_offset, -2.0f, 2.0f);
+    CMD4(CCC_Integer, "g_legs_in_demo_record", &legs_in_demo_record, 0, 1);
 
 	CMD3(CCC_Mask, "g_firepos", &psActorFlags, AF_FIREPOS);
 	CMD3(CCC_Mask, "g_firepos_zoom", &psActorFlags, AF_FIREPOS_ZOOM);
@@ -2958,6 +2978,10 @@ void CCC_RegisterCommands()
 	CMD4(CCC_Integer, "first_person_death_direction_smoothing", &firstPersonDeathDirectionSmoothing, 1, 60);
 	CMD4(CCC_Float, "first_person_death_near_plane_offset", &viewportNearOffset, -.1f, .5f);
 
+	//legs 
+
+	CMD4(CCC_Integer, "g_legs", &g_legs_enabled, 0, 1);
+
 	// PDA commands
 	CMD4(CCC_Integer, "pda_map_zoom_in_to_mouse", &pda_map_zoom_in_to_mouse, 0, 1);
 	CMD4(CCC_Integer, "pda_map_zoom_out_to_mouse", &pda_map_zoom_out_to_mouse, 0, 1);
@@ -3034,4 +3058,6 @@ void CCC_RegisterCommands()
 	// Wallmark distances
 	CMD4(CCC_Float, "g_wallmark_range_static", &wallmark_range_static, 0.f, 1000.f);
 	CMD4(CCC_Float, "g_wallmark_range_skeleton", &wallmark_range_skeleton, 0.f, 1000.f);
+
+    CMD4(CCC_Integer, "show_actor_body", &showActorBody, 0, 1);
 }

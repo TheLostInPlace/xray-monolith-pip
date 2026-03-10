@@ -237,6 +237,107 @@ How to compile exes:
 13. A short video demonstration of the entire process: https://youtu.be/MmZwyM2QO38
 
 ## Changelog
+**2026.03.07**
+
+Main and MT:
+  * Spawn Antifreeze: If the object has server counterpart, check if server object is still in alife after prefetching
+  * Fixed issue with Interaction Dot Marks mod due to `game_tutorials` cache
+  * Fixed potential crash in `CMovementManager::process_game_path` if dest_level_vertex_id is invalid
+  * Always return a copy of `VEC_ZERO`, `VEC_X`, `VEC_Y`, `VEC_Z` in scripts to prevent unwanted changes to original objects, potentially fixes a plethora of vanilla bugs related to these variables. Thanks to PrivatePirate97 for addressing the issue
+  * Possible fix to `aaaa_script_fixes_mp.script:652: 'for' initial value must be a number`
+  * `server_object_on_(un)register` callbacks for all server objects
+  * Removal of stale data in `bind_item` and `item_parts` when brand new server object is created, fixes bugs with having weapon or outfit parts on unrelated objects or having wrong item uses and condition on freshly crafted items
+  * Moved callback based script fixes from `callbacks_gameobject` to `aaaa_script_fixes_mp`
+  * Kutez: Spatial Audio Rework - The ability to overwrite EFX's reverb, allowing for controllable reverb (https://github.com/themrdemonized/xray-monolith/pull/451)
+  * leer-h: Added "show_actor_body" (https://github.com/themrdemonized/xray-monolith/pull/454)
+  * tabudz: Potential Vulnerability in Cloned Code (https://github.com/themrdemonized/xray-monolith/pull/453)
+  * knallpsi: Engine-side First Person Body implementation (https://github.com/themrdemonized/xray-monolith/pull/437)
+    * Type `g_legs 1` in console to enable legs
+    * `g_legs_fwd_offset` to adjust position for legs if it isn't specified in the config, see below
+    * `g_legs_in_demo_record` to enable rendering legs while `demo_record` is active
+    * By default, the existing player model based on current outfit will be used with hiding head and arm bones
+    * Possibility to specify custom model for legs. In an outfit section where `actor_visual` is defined, or `[actor]` section for the default legs, either use DLTX or adjust LTX directly:
+      1. Add `legs_visual` field with the path to the model to use (`legs_visual = sm\actor_legs\jacket_loner.ogf`)
+      2. Optionally add `legs_fwd_offset` field to adjust position of the legs (`legs_fwd_offset = -0.55`)
+      
+MT:
+  * Fixed possible crash when using `GT - Emplacement` mod
+  * `g_sv_Spawn` safety features
+  * `CUIWindow` postponed deletion of `AutoDelete` items
+  * `CWeapon::GetFireDispersion` added `pOwner` check for safety
+  * `CObject::net_Destroy()` will wait until the object is finished being processed in feel vision routine
+
+**2026.03.01**
+
+Main and MT:
+  * DLTX: hide Malformed Line and Invalid Section Parent warnings behind `print_dltx_warnings`
+  * Fixed stuttering when prompt to ignite or extinguish campfire appears, or any other prompt that uses `game.start_tutotial` function
+  * Parallel GC will work only when level is fully loaded to prevent some bugs on loading
+  * Added `_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR` macro to `openal` and `optick`, fixes crashes with certain PC configurations
+  * damoldavskiy: HUD state switch callback (https://github.com/themrdemonized/xray-monolith/pull/448)
+  * LVutner: Faster CBuffer updates (https://github.com/themrdemonized/xray-monolith/pull/449)
+  * SaloEater:
+    * Fix trade manager resupply sync (https://github.com/themrdemonized/xray-monolith/pull/442)
+    * Imgui luadebug button (https://github.com/themrdemonized/xray-monolith/pull/443)
+
+MT:
+  * Fixes from IXRay repo, fixes possible stack overflow in Pripyat Outskirts (https://github.com/ixray-team/ixray-1.6-stcop/commit/d9f32e486a27f61ec3cc88a7a0cb87863def2284)
+  * Fixed absent explosion particles with Molotov mod when `mt_level_call` is 0
+  * Fixed absent spot light cone when light doesn't allow shadow casting
+  * Thread safety for `combat_members()` access
+  * Fixed possible freezes in Zaton due to NaN coordinates in spatial components 
+
+**2026.02.22**
+
+Main and MT:
+  * Spawn Antifreeze more safety features
+  * Remove stutter when raising PDA by iterating actual se_stalker and se_monster objects instead of whole alife in function `pda.calculate_rankings()`
+  * damoldavskiy: Easing and correct scaling for .anms, custom pivot points (https://github.com/themrdemonized/xray-monolith/pull/436)
+
+MT:
+  * Fixed buggy lighting on objects in DX8
+  * More safety features for visual memory manager
+  * Light refactor of building and rendering `dsgraph` items
+  * `mt_task_manager` console command to toggle Task Manager between main and second thread, default is 0, main thread
+  * More safety in `phase_ssfx_sss_ext`, should be less crashy
+  * Parallel GC runs in parallel to Physics and Sound Processing instead of after them, gives GC more time to work for more effectiveness
+  * knallpsi: support for .peak volumetric lights by LVutner (https://github.com/themrdemonized/xray-monolith/pull/430)
+    * How to enable .peak?
+      0. Recommended to install SSS before this
+      1. Download and install shaders from www.moddb.com/mods/stalker-anomaly/addons/peak-volumetrics-1-1
+      2. Type `pfx_volumetric_mode 1` in console or enable .peak volumetrics in Modded Exes options -> Visual -> Graphics
+      3. Optionally tune volumetric lights intensity in SSS MCM options
+
+**2026.02.15**
+
+MT:
+  * Fixed bug with swapping textures
+
+**2026.02.14**
+
+Main:
+  * Ported new GC procedure from MT branch
+  * Ported critical section locking on resources creation and deletion from MT branch
+
+Main and MT:
+  * Spawn Antifreeze: Fixed possible `stack overflow` crash
+  * Removed all dynamic thread affinity and process priority changes inside the engine, the game launches with normal priority
+  * Removed 1 second pause on splash screen
+  * `_mm_pause` spin count is `4096`
+  * Simplified code when using separate key for underbarrel grenade launcher, should be less buggy
+  * Minor performance increase by optimizing getting `R_constant` pointers
+  * erepb:
+    * various window related fixes, consistent window creation, center splash, multimonitor support, correct cursor limits (https://github.com/themrdemonized/xray-monolith/pull/418)
+    * fix race in refcount (https://github.com/themrdemonized/xray-monolith/pull/426) (https://github.com/themrdemonized/xray-monolith/pull/429)
+  * Tosox: Installation based instance mutex, Allow multiple game instances (https://github.com/themrdemonized/xray-monolith/pull/424)
+
+MT:
+  * Fixed volumetric lights rendering
+  * Fixed flickering shadows from omni lights when using SSS
+  * Fixed possible crash related to visual manager when entity is destroyed
+  * Rain and Particle Manager uses less strict atomics
+  * knallpsi: Console commands history, scroll console with mouse wheel, fixed browsing commands history with arrows (https://github.com/themrdemonized/xray-monolith/pull/423)
+
 **2026.02.08**
 
 Main and MT:

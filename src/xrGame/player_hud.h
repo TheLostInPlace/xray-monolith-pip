@@ -4,6 +4,7 @@
 #include "../Include/xrRender/Kinematics.h"
 #include "../Include/xrRender/KinematicsAnimated.h"
 #include "actor_defs.h"
+#include "player_hud_legs.h"
 
 #define SCOPE_ATTACH_IDX 2
 
@@ -87,7 +88,7 @@ struct movement_layer
 			active = true;
 			return;
 		}
-		
+
 		anm->Play(bLoop);
 		active = true;
 	}
@@ -112,12 +113,31 @@ struct movement_layer
 
 	const Fmatrix& XFORM(u8 part)
 	{
-		blend.set(anm->XFORM());
-		blend.mul(blend_amount[part] * m_power);
-		blend.m[0][0] = 1.f;
-		blend.m[1][1] = 1.f;
-		blend.m[2][2] = 1.f;
+		auto min_jerk_interp = [](float t) {
+			return 10*t*t*t - 15*t*t*t*t + 6*t*t*t*t*t;
+		};
 
+		float eased = min_jerk_interp(blend_amount[part]);
+
+		// Rotation interpolation
+		Fquaternion qA; qA.identity();
+		Fquaternion qB; qB.set(anm->XFORM());
+		{
+			// Take m_power into account
+			Fvector axis;
+			float angle;
+			if (qB.get_axis_angle(axis, angle)) {
+				angle *= m_power;
+				qB.rotation(axis, angle);
+			}
+		}
+		Fquaternion q; q.slerp(qA, qB, eased);
+
+		// Translation interpolation
+		Fvector t = anm->XFORM().c;
+		t.mul(m_power * eased);
+
+		blend.mk_xform(q, t);
 		return blend;
 	}
 };
@@ -131,12 +151,14 @@ struct script_layer
 	bool active;
 	Fmatrix blend;
 	u8 m_part;
+    shared_str m_pivot_bone;
 
-	script_layer(LPCSTR name, u8 part, float speed = 1.f, float power = 1.f, bool looped = true)
+	script_layer(LPCSTR name, u8 part, float speed = 1.f, float power = 1.f, bool looped = true, LPCSTR pivot_bone = nullptr)
 	{
 		m_name = name;
 		m_part = part;
 		m_power = power;
+		m_pivot_bone = pivot_bone;
 		blend.identity();
 		anm = xr_new<CObjectAnimator>();
 		anm->Load(name);
@@ -165,12 +187,31 @@ struct script_layer
 
 	const Fmatrix& XFORM()
 	{
-		blend.set(anm->XFORM());
-		blend.mul(blend_amount * m_power);
-		blend.m[0][0] = 1.f;
-		blend.m[1][1] = 1.f;
-		blend.m[2][2] = 1.f;
+		auto min_jerk_interp = [](float t) {
+			return 10*t*t*t - 15*t*t*t*t + 6*t*t*t*t*t;
+		};
 
+		float eased = min_jerk_interp(blend_amount);
+
+		// Rotation interpolation
+		Fquaternion qA; qA.identity();
+		Fquaternion qB; qB.set(anm->XFORM());
+		{
+			// Take m_power into account
+			Fvector axis;
+			float angle;
+			if (qB.get_axis_angle(axis, angle)) {
+				angle *= m_power;
+				qB.rotation(axis, angle);
+			}
+		}
+		Fquaternion q; q.slerp(qA, qB, eased);
+
+		// Translation interpolation
+		Fvector t = anm->XFORM().c;
+		t.mul(m_power * eased);
+
+		blend.mk_xform(q, t);
 		return blend;
 	}
 };
@@ -199,7 +240,7 @@ enum EBoneCallbackParam
 
 struct hud_item_measures
 {
-	enum { e_fire_point=(1 << 0), e_fire_point2=(1 << 1), e_shell_point=(1 << 2), e_16x9_mode_now=(1 << 3), e_fire_point_silencer=(1 << 4) };
+	enum { e_fire_point = (1 << 0), e_fire_point2 = (1 << 1), e_shell_point = (1 << 2), e_16x9_mode_now = (1 << 3), e_fire_point_silencer = (1 << 4) };
 
 	Flags8 m_prop_flags;
 
@@ -235,7 +276,7 @@ struct hud_item_measures
 		Fvector4 m_offset_LRUD_aim;
 	};
 
-	inertion_params m_inertion_params; //--#SM+#--
+	inertion_params m_inertion_params;
 
 	struct shooting_params
 	{
@@ -248,7 +289,7 @@ struct hud_item_measures
 		float m_min_LRUD_power;
 	};
 
-	shooting_params m_shooting_params; //--#SM+#--
+	shooting_params m_shooting_params;
 
 	float m_fFreelookZOffset;
 	bool m_bLeadGunLeftHand;
@@ -270,8 +311,9 @@ struct attachable_hud_item
 
 	player_hud_motion_container* m_hand_motions;
 
-	attachable_hud_item(player_hud* pparent): m_parent(pparent), m_upd_firedeps_frame(u32(-1)), m_parent_hud_item(nullptr),
-	                                          m_model(nullptr), m_attach_place_idx(0) {}
+	attachable_hud_item(player_hud* pparent) : m_parent(pparent), m_upd_firedeps_frame(u32(-1)), m_parent_hud_item(nullptr),
+		m_model(nullptr), m_attach_place_idx(0) {
+	}
 	~attachable_hud_item();
 	void load(const shared_str& sect_name);
 	void update(bool bForce);
@@ -321,11 +363,12 @@ public:
 	void update(const Fmatrix& trans);
 	void updateMovementLayerState();
 	void StopScriptAnim();
-	void PlayBlendAnm(LPCSTR name, u8 part = 0, float speed = 1.f, float power = 1.f, bool bLooped = true, bool no_restart = false);
+	void PlayBlendAnm(LPCSTR name, u8 part = 0, float speed = 1.f, float power = 1.f, bool bLooped = true, bool no_restart = false, LPCSTR pivot_bone = nullptr);
 	void StopBlendAnm(LPCSTR name, bool bForce = false);
 	void StopAllBlendAnms(bool bForce);
 	float SetBlendAnmTime(LPCSTR name, float time);
 	void render_hud();
+	void render_legs();
 	void render_item_ui();
 	bool render_item_ui_query();
 	u32 anim_play(u16 part, const MotionID& M, BOOL bMixIn, const CMotionDef*& md, float speed, u16 override_part = u16(-1));
@@ -387,6 +430,7 @@ public:
 	u32 motion_length(const shared_str& anim_name, const shared_str& hud_name, const CMotionDef*& md);
 	void OnMovementChanged(ACTOR_DEFS::EMoveCommand cmd);
 	bool inertion_allowed();
+
 private:
 	const Fvector attach_rot(u8 part) const;
 	const Fvector attach_pos(u8 part) const;
@@ -394,12 +438,19 @@ private:
 	xr_vector<u16> m_ancors;
 	attachable_hud_item* m_attached_items[3];
 	static void _BCL FingerCallback(CBoneInstance* B);
+
 public:
 	IKinematicsAnimated* m_model;
 	IKinematicsAnimated* m_model_2;
 	Fvector m_adjust_offset[2][10]; // pos,rot/ normal,aim,GL,aim_alt,safemode, normal2, attach_base, attach_mount, aim for attach, alt aim for attach
 	Fvector m_adjust_obj[2]; // pos,rot; used for the item/weapon itself
 	Fvector m_adjust_ui_offset[2]; // pos,rot; used for custom device ui
+
+	player_legs_controller m_legs_controller;
+
+	void update_legs(const Fmatrix& cam_trans);
+	void delete_legs_model();
+
 	Fvector m_adjust_firepoint_shell[2][2];
 	xr_map<EBoneCallbackParam, BoneCallbackParams*> m_bone_callback_params; // bonename,params
 	int m_edit_attachment;
@@ -440,3 +491,4 @@ public:
 };
 
 extern player_hud* g_player_hud;
+extern BOOL g_legs_enabled;

@@ -51,6 +51,8 @@ class ENGINE_API CRenderDeviceData
 public:
 	u32 dwWidth;
 	u32 dwHeight;
+	u32 clientWidth;
+	u32 clientHeight;
 
 	u32 dwPrecacheFrame;
 	BOOL b_is_Ready;
@@ -217,6 +219,14 @@ public:
 	CRegistrator<pureFrame> seqFrameMT;
 	CRegistrator<pureDeviceReset> seqDeviceReset;
 	xr_vector<fastdelegate::FastDelegate0<>> seqParallel;
+
+	bool isRendering;
+
+	// LuaGC
+	int LuaGCCount;
+	bool LuaGCDone;
+	fastdelegate::FastDelegate0<int> LuaGC;
+	fastdelegate::FastDelegate0<void> LuaGCDebug;
 
 	// Dependent classes
 	//CResourceManager* Resources;

@@ -67,6 +67,13 @@
 		<text>Не линейная инерция анимации при движении (g_use_non_linear_inertia)</text>
 	</string>
 
+	<string id="ui_mm_modded_exes_visual_graphics_pfx_volumetric_mode">
+		<text>.PEAK объемный свет (pfx_volumetric_mode)</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_pfx_volumetric_mode_desc">
+		<text>Необходим .peak шейдер мод, ссылка: https://www.moddb.com/mods/stalker-anomaly/addons/peak-volumetrics-1-1</text>
+	</string>
+
 	<!-- UI/HUD -->
 
 	<string id="ui_mm_menu_ui_hud">
@@ -633,6 +640,26 @@
 		<text>Выносливость будет уменьшаться линейно в зависимости от текущего веса, а не по пороговому значению</text>
 	</string>
 
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_first_person_death">
+		<text>Камера смерти от первого лица (first_person_death)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_first_person_death_position_smoothing">
+		<text>Гладкость смены позиции камеры (first_person_death_position_smoothing)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_first_person_death_direction_smoothing">
+		<text>Гладкость смены направления камеры (first_person_death_direction_smoothing)</text>
+	</string>
+
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_g_legs">
+		<text>Ноги от первого лица (g_legs)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_g_legs_in_demo_record">
+		<text>Показывать в demo_record (g_legs_in_demo_record)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_g_legs_fwd_offset">
+		<text>Смещение вперед/назад (g_legs_fwd_offset)</text>
+	</string>
+
 	<!-- Aim -->
 	<string id="ui_mm_menu_aim">
 		<text>Прицеливание</text>
@@ -744,24 +771,6 @@
 	</string>
 	<string id="ui_mm_modded_exes_gameplay_weapons_g_launcher_dynamic_range_max">
 		<text>Максимальное расстояние для рассчета (g_launcher_dynamic_range_max)</text>
-	</string>
-
-	<!-- First Person Death -->
-	<string id="ui_mm_menu_first_person_death">
-		<text>Смерть от первого лица</text>
-	</string>
-	<string id="ui_mm_first_person_death_modded_exes">
-		<text>Смерть от первого лица</text>
-	</string>
-
-	<string id="ui_mm_modded_exes_gameplay_first_person_death_first_person_death">
-		<text>Камера смерти от первого лица (first_person_death)</text>
-	</string>
-	<string id="ui_mm_modded_exes_gameplay_first_person_death_first_person_death_position_smoothing">
-		<text>Гладкость смены позиции камеры (first_person_death_position_smoothing)</text>
-	</string>
-	<string id="ui_mm_modded_exes_gameplay_first_person_death_first_person_death_direction_smoothing">
-		<text>Гладкость смены направления камеры (first_person_death_direction_smoothing)</text>
 	</string>
 
 	<!-- Stalkers -->
@@ -887,6 +896,9 @@
 	</string>
 	<string id="ui_mm_modded_exes_optimizations_mt_calc_bones">
 		<text>Многопоточные вычисления костей (mt_calc_bones)</text>
+	</string>
+	<string id="ui_mm_modded_exes_optimizations_mt_task_manager">
+		<text>Многопоточный Task Manager (mt_task_manager)</text>
 	</string>
 	<string id="ui_mm_modded_exes_optimizations_mt_update_weapon_sounds">
 		<text>Многопоточное обновление звуков оружия (mt_update_weapon_sounds)</text>

@@ -526,6 +526,7 @@ public:
 };
 
 extern void GetMonitorResolution(u32& horizontal, u32& vertical);
+extern void GetMonitorPosition(int& x, int& y);
 
 class CCC_Screenmode : public CCC_Token
 {
@@ -536,6 +537,9 @@ public:
 	{
 		u32 prev_mode = g_screenmode;
 		CCC_Token::Execute(args);
+
+		if (!Device.b_is_Ready)
+			return;
 
 		if ((prev_mode != g_screenmode))
 		{
@@ -562,27 +566,15 @@ public:
 			// but the fixes make no sense and contradicts MSDN, and this isn't a major priority since ResizeBuffers is called
 			// immediately after (before our Present call) so it works, just so stupid
 
-			bool windowed_to_fullscreen = ((prev_mode == 0) || (prev_mode == 1)) && (g_screenmode == 2);
-			bool fullscreen_to_windowed = (prev_mode == 2) && ((g_screenmode == 0) || (g_screenmode == 1));
-			bool reset_required		    = windowed_to_fullscreen || fullscreen_to_windowed;
-			if (Device.b_is_Ready && reset_required) {
+			if (Device.b_is_Ready) {
 				Device.Reset();
-			}
-
-			if (g_screenmode == 0 || g_screenmode == 1)
-			{
-				u32 w, h;
-				GetMonitorResolution(w, h);
-				SetWindowLongPtr(Device.m_hWnd, GWL_STYLE, WS_VISIBLE | WS_POPUP);
-				SetWindowPos(Device.m_hWnd, HWND_TOP, 0, 0, w, h, SWP_FRAMECHANGED);
-
-				if (g_screenmode == 0)
-					SetWindowLongPtr(Device.m_hWnd, GWL_STYLE, WS_VISIBLE | WS_OVERLAPPEDWINDOW);
 			}
 		}
 
 		RECT winRect;
 		GetClientRect(Device.m_hWnd, &winRect);
+		Device.clientWidth = winRect.right;
+		Device.clientHeight = winRect.bottom;
 		MapWindowPoints(Device.m_hWnd, nullptr, reinterpret_cast<LPPOINT>(&winRect), 2);
 		ClipCursor(&winRect);
 	}
@@ -1066,6 +1058,31 @@ void CCC_Register()
 	// Doppler effect power
 	CMD4(CCC_Float, "snd_doppler_power", &soundSmoothingParams::power, 0.f, 5.f);
 	CMD4(CCC_SoundParamsSmoothing, "snd_doppler_smoothing", &soundSmoothingParams::steps, 1, 100);
+
+    // EFX Reverb overwrite
+    CMD4(CCC_Integer, "snd_efx_reverb_overwrite", &reverb_overwrite, FALSE, TRUE);
+
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_density", &psReverbDensity, 0.f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_diffusion", &psReverbDiffusion, 0.f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_gain", &psReverbGain, 0.f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_gain_hf", &psReverbGainHF, 0.f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_gain_lf", &psReverbGainLF, 0.f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_decay_time", &psReverbDecayTime, 0.1f, 20.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_decay_hf_ratio", &psReverbDecayHFRatio, 0.1f, 20.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_decay_lf_ratio", &psReverbDecayLFRatio, 0.1f, 20.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_reflections_gain", &psReverbReflectionsGain, 0.f, 3.16f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_reflections_delay", &psReverbReflectionsDelay, 0.f, 0.3f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_late_reverb_gain", &psReverbLateReverbGain, 0.f, 10.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_late_reverb_delay", &psReverbLateReverbDelay, 0.f, 0.1f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_echo_time", &psReverbEchoTime, 0.075f, 0.25f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_echo_depth", &psReverbEchoDepth, 0.f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_modulation_time", &psReverbModulationTime, 0.04f, 4.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_modulation_depth", &psReverbModulationDepth, 0.f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_air_absorption_gain_hf", &psReverbAirAbsorptionGainHF, 0.892f, 1.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_hf_reference", &psReverbHFReference, 1000.f, 20000.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_lf_reference", &psReverbLFReference, 20.f, 1000.f);
+    CMD4(CCC_Float, "snd_efx_reverb_overwrite_room_rolloff_factor", &psReverbRoomRolloffFactor, 0.f, 10.f);
+    CMD4(CCC_Integer, "snd_efx_reverb_overwrite_decay_hf_limit", &psReverbDecayHFLimit, FALSE, TRUE);
 
 #ifdef DEBUG
     CMD3(CCC_Mask, "snd_stats", &g_stats_flags, st_sound);
