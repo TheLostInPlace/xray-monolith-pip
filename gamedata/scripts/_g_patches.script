@@ -767,8 +767,8 @@ local function safe_order(order)
 	return function(t, a, b)
 		local va = t[a]
 	    local vb = t[b]
-	    if not va then return false end -- 'a' is nil, so 'b' is "better"
-	    if not vb then return true end  -- 'b' is nil, so 'a' is "better"
+	    if va == nil then return false end -- 'a' is nil, so 'b' is "better"
+	    if vb == nil then return true end  -- 'b' is nil, so 'a' is "better"
 	    return order(t, a, b)
 	end
 end
