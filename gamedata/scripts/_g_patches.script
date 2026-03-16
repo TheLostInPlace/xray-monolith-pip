@@ -854,22 +854,18 @@ _G.VEC_Z = nil
 
 local old_mt_g = getmetatable(_G) or {}
 local old_index_g = old_mt_g.__index
+old_mt_g.__index = function(t, key)
+	if constTable[key] then
+		return constTable[key]()
+	end
 
-setmetatable(_G, {
-    __index = function(t, key)
-    	if constTable[key] then
-    		return constTable[key]()
-    	end
+    -- Fallback to old metatable
+    if type(old_index_g) == "function" then
+        return old_index_g(t, key)
+    elseif type(old_index_g) == "table" then
+        return old_index_g[key]
+    end
 
-        -- Fallback to old metatable
-        if type(old_index_g) == "function" then
-            return old_index_g(t, key)
-        elseif type(old_index_g) == "table" then
-            return old_index_g[key]
-        end
-
-        return rawget(t, key)
-    end,
-
-    __newindex = old_mt_g.__newindex or rawset
-})
+    return rawget(t, key)
+end
+setmetatable(_G, old_mt_g)
