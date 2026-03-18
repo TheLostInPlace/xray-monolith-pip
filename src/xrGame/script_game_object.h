@@ -1230,6 +1230,7 @@ struct SafeWrap<Ret(CScriptGameObject::*)(Args...) const, MemFunc>
 };
 
 #define SAFE_WRAP(func) static_cast<SafeWrap<decltype(func), func>::type>(SafeWrap<decltype(func), func>::call)
+#define SAFE_WRAP_CAST(sig, func) static_cast<SafeWrap<sig, (sig)func>::type>(SafeWrap<sig, (sig)func>::call)
 
 extern void sell_condition(CScriptIniFile* ini_file, LPCSTR section);
 extern void sell_condition(float friend_factor, float enemy_factor);
