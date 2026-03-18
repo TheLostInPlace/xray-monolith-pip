@@ -1206,7 +1206,17 @@ struct SafeWrap<Ret(CScriptGameObject::*)(Args...), MemFunc>
         {
             ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "ERROR: Accessing destroyed object.");
             ai().script_engine().lua_error(ai().script_engine().lua());
-            return Ret();
+
+            // This part is never reached because we crash the game,
+            // but we need to satisfy the compiler.
+            if constexpr (std::is_reference_v<Ret>)
+            {
+                return *static_cast<std::remove_reference_t<Ret>*>(nullptr);
+            }
+            else
+            {
+                return Ret();
+            }
         }
         return (instance->*MemFunc)(std::forward<Args>(args)...);
     }
@@ -1223,7 +1233,17 @@ struct SafeWrap<Ret(CScriptGameObject::*)(Args...) const, MemFunc>
         if (!instance || !instance->is_valid()) {
             ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "ERROR: Accessing destroyed object.");
             ai().script_engine().lua_error(ai().script_engine().lua());
-            return Ret();
+
+            // This part is never reached because we crash the game,
+            // but we need to satisfy the compiler.
+            if constexpr (std::is_reference_v<Ret>)
+            {
+                return *static_cast<std::remove_reference_t<Ret>*>(nullptr);
+            }
+            else
+            {
+                return Ret();
+            }
         }
         return (instance->*MemFunc)(std::forward<Args>(args)...);
     }
