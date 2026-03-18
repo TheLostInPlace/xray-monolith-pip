@@ -183,6 +183,21 @@ public:
 	virtual ~CScriptGameObject();
 	operator CObject*();
 
+    IC bool is_valid() const
+    {
+        // If the pointer was never set, it's obviously invalid.
+        if (!m_game_object) return false;
+
+        // Check lua game object pointer back-reference. If it doesn't point to this, then the object was likely deleted and the pointer is now dangling.
+        if (m_game_object->lua_game_object() != this) return false;
+
+        // Ask the engine's object registry if this ID is still linked to this exact pointer.
+        // This catches objects that were deleted by the engine (e.g., NPC death/cleanup).
+        if (Level().Objects.net_Find(m_game_object->ID()) != m_game_object) return false;
+
+        return true;
+    }
+
 	CGameObject& object() const;
 	CScriptGameObject* Parent() const;
 	void Hit(CScriptHit* tLuaHit);
@@ -1171,6 +1186,50 @@ public:
 
 DECLARE_SCRIPT_REGISTER_FUNCTION
 };
+
+// Wrap every getter/setter with a validity check
+// If the object is not valid, instead of "busy hands" issue, crash the game with error log
+template <typename FuncSignature, FuncSignature MemFunc>
+struct SafeWrap;
+
+// Specialization for NON-CONST methods
+template <typename Ret, typename... Args, Ret(CScriptGameObject::* MemFunc)(Args...)>
+struct SafeWrap<Ret(CScriptGameObject::*)(Args...), MemFunc>
+{
+    using type = Ret(*)(CScriptGameObject*, Args...);
+
+    // We use Args... directly. C++ reference-collapsing rules will 
+    // keep & as & and const& as const&.
+    static Ret call(CScriptGameObject* instance, Args... args)
+    {
+        if (!instance || !instance->is_valid())
+        {
+            ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "ERROR: Accessing destroyed object.");
+            ai().script_engine().lua_error(ai().script_engine().lua());
+            return Ret();
+        }
+        return (instance->*MemFunc)(std::forward<Args>(args)...);
+    }
+};
+
+// Specialization for CONST methods
+template <typename Ret, typename... Args, Ret(CScriptGameObject::* MemFunc)(Args...) const>
+struct SafeWrap<Ret(CScriptGameObject::*)(Args...) const, MemFunc>
+{
+    using type = Ret(*)(const CScriptGameObject*, Args...);
+
+    static Ret call(const CScriptGameObject* instance, Args... args)
+    {
+        if (!instance || !instance->is_valid()) {
+            ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "ERROR: Accessing destroyed object.");
+            ai().script_engine().lua_error(ai().script_engine().lua());
+            return Ret();
+        }
+        return (instance->*MemFunc)(std::forward<Args>(args)...);
+    }
+};
+
+#define SAFE_WRAP(func) static_cast<SafeWrap<decltype(func), func>::type>(SafeWrap<decltype(func), func>::call)
 
 extern void sell_condition(CScriptIniFile* ini_file, LPCSTR section);
 extern void sell_condition(float friend_factor, float enemy_factor);

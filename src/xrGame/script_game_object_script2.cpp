@@ -71,7 +71,7 @@ class_<CScriptGameObject> script_register_game_object1(class_<CScriptGameObject>
 		//		.property("enabled",				&CScriptGameObject::getEnabled,			&CScriptGameObject::setEnabled)
 
 		//		.def_readonly("health",				&CScriptGameObject::GetHealth,			&CScriptGameObject::SetHealth)
-		.property("health", &CScriptGameObject::GetHealth, &CScriptGameObject::SetHealth)
+		.property("health", SAFE_WRAP(&CScriptGameObject::GetHealth), SAFE_WRAP(&CScriptGameObject::SetHealth))
 		.property("psy_health", &CScriptGameObject::GetPsyHealth, &CScriptGameObject::SetPsyHealth)
 		.property("power", &CScriptGameObject::GetPower, &CScriptGameObject::SetPower)
 		.property("satiety", &CScriptGameObject::GetSatiety, &CScriptGameObject::SetSatiety)
@@ -339,7 +339,7 @@ class_<CScriptGameObject> script_register_game_object1(class_<CScriptGameObject>
 		.def("disable_hit_marks", (void (CScriptGameObject::*)(bool))&CScriptGameObject::DisableHitMarks)
 		.def("disable_hit_marks", (bool (CScriptGameObject::*)() const)&CScriptGameObject::DisableHitMarks)
 		.def("get_movement_speed", &CScriptGameObject::GetMovementSpeed)
-		.def("set_movement_speed", &CScriptGameObject::SetMovementSpeed)	// momopate: db.actor:set_momvement_speed(vector vel)
+		.def("set_movement_speed", SAFE_WRAP(&CScriptGameObject::SetMovementSpeed))	// momopate: db.actor:set_momvement_speed(vector vel)
 
 		.def("set_npc_position", &CScriptGameObject::SetNpcPosition)
 
