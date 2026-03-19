@@ -22,6 +22,7 @@ local tostring 		= tostring
 local tonumber 		= tonumber
 local unpack 		= unpack
 local select 		= select
+local time_global	= time_global
 
 _G.printf_me = function(s, ...)
 	printf("[Modded Exes] " .. s, ...)
@@ -718,6 +719,7 @@ _G.log = function(str)
 end
 
 _G.nil_func = function() return nil end
+_G.less_func = function(a, b) return a < b end
 
 -- Custom order via order parameter (t, a, b) as default spairs
 local sift_down_order = function(keys, idx, end_idx, t, order)
@@ -727,9 +729,10 @@ local sift_down_order = function(keys, idx, end_idx, t, order)
     
     while hole_idx <= half_idx do
         local child = hole_idx * 2
+        local right = child + 1
         
-        if child < end_idx and order(t, keys[child + 1], keys[child]) then
-            child = child + 1
+        if child < end_idx and order(t, keys[right], keys[child]) then
+            child = right
         end
         
         if order(t, keys[child], sifting_key) then
@@ -750,9 +753,10 @@ local sift_down_default = function(keys, idx, end_idx)
     
     while hole_idx <= half_idx do
         local child = hole_idx * 2
+        local right = child + 1
         
-        if child < end_idx and keys[child + 1] < keys[child] then
-            child = child + 1
+        if child < end_idx and keys[right] < keys[child] then
+            child = right
         end
         
         if keys[child] < sifting_key then
