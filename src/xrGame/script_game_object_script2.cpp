@@ -97,7 +97,7 @@ class_<CScriptGameObject> script_register_game_object1(class_<CScriptGameObject>
 		.def("position", SAFE_WRAP(&CScriptGameObject::Position))
 		.def("direction", SAFE_WRAP(&CScriptGameObject::Direction))
 		.def("clsid", SAFE_WRAP(&CScriptGameObject::clsid))
-		.def("id", SAFE_WRAP(&CScriptGameObject::ID))
+		.def("id", &CScriptGameObject::ID)
 		.def("story_id", SAFE_WRAP(&CScriptGameObject::story_id))
 		.def("section", SAFE_WRAP(&CScriptGameObject::Section))
 		.def("name", SAFE_WRAP(&CScriptGameObject::Name))
