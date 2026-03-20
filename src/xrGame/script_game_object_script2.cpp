@@ -90,8 +90,8 @@ class_<CScriptGameObject> script_register_game_object1(class_<CScriptGameObject>
 		//		.def("get_bleeding",				&CScriptGameObject::GetBleeding)
 		
 		// demonized: exports
-		.def("xform", &CScriptGameObject::Xform)
-		.def("bounding_box", &CScriptGameObject::bounding_box)
+		.def("xform", SAFE_WRAP(&CScriptGameObject::Xform))
+		.def("bounding_box", SAFE_WRAP(&CScriptGameObject::bounding_box))
 
 		.def("center", SAFE_WRAP(&CScriptGameObject::Center))
 		.def("position", SAFE_WRAP(&CScriptGameObject::Position))
