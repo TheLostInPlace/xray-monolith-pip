@@ -142,10 +142,12 @@ void player_legs_controller::copy_bones_from_actor(CActor* actor, bool isShadowP
     if (!actor_K)
         return;
 
-    actor_K->CalculateBones(TRUE);
-
-    m_model->CalculateBones_Invalidate();
-    m_model->CalculateBones(TRUE);
+    if (!isShadowPass)
+    {
+        actor_K->CalculateBones(TRUE);
+        m_model->CalculateBones_Invalidate();
+        m_model->CalculateBones(TRUE);
+    }
 
     u16 legs_root = m_model->LL_GetBoneRoot();
     CBoneInstance& root_bi = m_model->LL_GetBoneInstance(legs_root);
