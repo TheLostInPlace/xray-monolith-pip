@@ -26,8 +26,8 @@ IC T* xr_new(Args&&... args)
     constexpr bool bZero = !handles_own_init<T>::value;
     if constexpr (bZero)
     {
-        if (size > 1024)
-            Msg("~ [MEM] allocating object of %s, %zu", typeid(T).name(), size);
+        /*if (size > 1024)
+            Msg("~ [MEM] allocating object of %s, %zu", typeid(T).name(), size);*/
     }
     T* ptr = (T*)Memory.mem_alloc(size, bZero);
     return new(ptr) T(std::forward<Args>(args)...);
