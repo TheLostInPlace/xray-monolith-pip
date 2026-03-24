@@ -72,7 +72,7 @@ namespace Feel
 		void feel_vision_get(xr_vector<CObject*>& R)
 		{
 			R.clear();
-			R.reserve(feel_visible.size());
+			R.reserve(_min(64, feel_visible.size()));
 			xrSRWLockGuard guard(&lock_visible, true);
 			for (const feel_visible_Item& item : feel_visible)
 			{
