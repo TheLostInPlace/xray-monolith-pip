@@ -10,10 +10,26 @@ IC T* xr_new(Args&&... args)
 }
 
 #else // DEBUG_MEMORY_NAME
+
+// Update xr_new to look for this marker
+template <typename T, typename = void>
+struct handles_own_init : std::false_type {};
+
+template <typename T>
+struct handles_own_init<T, std::void_t<typename T::NoZeroMemoryNew>> : T::NoZeroMemoryNew {};
+
+// 3. Update xr_new to check the registry
 template <class T, typename... Args>
 IC T* xr_new(Args&&... args)
 {
-    T* ptr = (T*)Memory.mem_alloc(sizeof(T));
+    size_t size = sizeof(T);
+    constexpr bool bZero = !handles_own_init<T>::value;
+    if constexpr (bZero)
+    {
+        /*if (size > 1024)
+            Msg("~ [MEM] allocating object of %s, %zu", typeid(T).name(), size);*/
+    }
+    T* ptr = (T*)Memory.mem_alloc(size, bZero);
     return new(ptr) T(std::forward<Args>(args)...);
 }
 
