@@ -191,6 +191,8 @@ extern BOOL legs_in_low_crouch;
 extern BOOL legs_attach_to_camera;
 extern BOOL legs_render_attachments_shadow;
 
+extern int enemy_manager_useful_cache_time;
+
 extern CrosshairSettings g_crosshair_camera_near;
 extern CrosshairSettings g_crosshair_camera_far;
 extern CrosshairSettings g_crosshair_weapon_near;
@@ -2634,6 +2636,8 @@ void CCC_RegisterCommands()
     CMD4(CCC_Integer, "g_legs_in_low_crouch", &legs_in_low_crouch, 0, 1);
     CMD4(CCC_Integer, "g_legs_attach_to_camera", &legs_attach_to_camera, 0, 1);
     CMD4(CCC_Integer, "g_legs_render_attachments_shadow", &legs_render_attachments_shadow, 0, 1);
+
+    CMD4(CCC_Integer, "g_enemy_manager_useful_cache_time", &enemy_manager_useful_cache_time, -1, 500);
 
 	CMD3(CCC_Mask, "g_firepos", &psActorFlags, AF_FIREPOS);
 	CMD3(CCC_Mask, "g_firepos_zoom", &psActorFlags, AF_FIREPOS_ZOOM);
