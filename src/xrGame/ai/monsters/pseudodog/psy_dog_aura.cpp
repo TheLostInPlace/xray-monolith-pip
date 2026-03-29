@@ -68,8 +68,8 @@ void CPsyDogAura::update_schedule()
 	m_time_phantom_saw_actor = 0;
 
 	// check memory of actor and check memory of phantoms
-	auto I = m_actor->memory().visual().objects()->begin();
-	auto E = m_actor->memory().visual().objects()->end();
+	CVisualMemoryManager::VISIBLES::const_iterator I = m_actor->memory().visual().objects().begin();
+	CVisualMemoryManager::VISIBLES::const_iterator E = m_actor->memory().visual().objects().end();
 	for (; I != E; ++I)
 	{
 		const CGameObject* obj = (*I).m_object;
