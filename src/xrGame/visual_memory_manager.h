@@ -44,7 +44,7 @@ private:
 
 private:
 	RAW_VISIBLES m_visible_objects;
-	xr_shared_ptr<VISIBLES> m_objectsShared;
+	VISIBLES* m_objects;
 	NOT_YET_VISIBLES m_not_yet_visible_objects;
 
 private:
