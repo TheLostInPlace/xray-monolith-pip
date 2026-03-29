@@ -213,9 +213,9 @@ CMemoryInfo CMemoryManager::memory(const CObject* object) const
 	squad_mask_type mask = m_stalker ? m_stalker->agent_manager().member().mask(m_stalker) : squad_mask_type(-1);
 
 	{
-        auto objects = visual().objects();
-		auto I = std::find(objects->begin(), objects->end(), object_id(object));
-        if (objects->end() != I)
+		xr_vector<CVisibleObject>::const_iterator I = std::find(visual().objects()->begin(), visual().objects()->end(),
+		                                                        object_id(object));
+		if (visual().objects()->end() != I)
 		{
 			(CMemoryObject<CGameObject>&)result = (CMemoryObject<CGameObject>&)(*I);
 			result.visible((*I).visible(mask));
@@ -262,9 +262,9 @@ u32 CMemoryManager::memory_time(const CObject* object) const
 	VERIFY(game_object);
 
 	{
-        auto objects = visual().objects();
-		auto I = std::find(objects->begin(), objects->end(), object_id(object));
-        if (objects->end() != I)
+		xr_vector<CVisibleObject>::const_iterator I = std::find(visual().objects()->begin(), visual().objects()->end(),
+		                                                        object_id(object));
+		if (visual().objects()->end() != I)
 			result = (*I).m_level_time;
 	}
 
@@ -296,9 +296,9 @@ Fvector CMemoryManager::memory_position(const CObject* object) const
 	VERIFY(game_object);
 
 	{
-        auto objects = visual().objects();
-		auto I = std::find(objects->begin(), objects->end(), object_id(object));
-        if (objects->end() != I)
+		xr_vector<CVisibleObject>::const_iterator I = std::find(visual().objects()->begin(), visual().objects()->end(),
+		                                                        object_id(object));
+		if (visual().objects()->end() != I)
 		{
 			time = (*I).m_level_time;
 			result = (*I).m_object_params.m_position;
