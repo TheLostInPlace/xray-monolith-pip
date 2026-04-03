@@ -33,16 +33,16 @@ namespace WallmarksEngine
 
 // #include "xr_effsun.h"
 
-const float W_DIST_FADE = 15.f;
-const float W_DIST_FADE_SQR = W_DIST_FADE * W_DIST_FADE;
-const float I_DIST_FADE_SQR = 1.f / W_DIST_FADE_SQR;
-const int MAX_TRIS = 1024 * 16;
+constexpr const float W_DIST_FADE = 15.f;
+constexpr const float W_DIST_FADE_SQR = W_DIST_FADE * W_DIST_FADE;
+constexpr const float I_DIST_FADE_SQR = 1.f / W_DIST_FADE_SQR;
+constexpr const int MAX_TRIS = 1024 * 16;
 
 IC bool operator ==(const CWallmarksEngine::wm_slot* slot, const ref_shader& shader) { return slot->shader == shader; }
 
 CWallmarksEngine::wm_slot* CWallmarksEngine::FindSlot(ref_shader shader)
 {
-    WMSlotVecIt it = std::find(marks.begin(), marks.end(), shader);
+    auto it = std::find(marks.begin(), marks.end(), shader);
     return (it != marks.end()) ? *it : 0;
 }
 
@@ -73,11 +73,11 @@ CWallmarksEngine::~CWallmarksEngine()
 void CWallmarksEngine::clear()
 {
     {
-        for (WMSlotVecIt p_it = marks.begin(); p_it != marks.end(); p_it++)
+        for (auto p_it = marks.begin(); p_it != marks.end(); p_it++)
         {
             for (auto& [sector, static_vec] : (*p_it)->static_items)
             {
-                for (StaticWMVecIt m_it = static_vec.begin(); m_it != static_vec.end(); m_it++)
+                for (auto m_it = static_vec.begin(); m_it != static_vec.end(); m_it++)
                     static_wm_destroy(*m_it);
             }
 			
@@ -280,8 +280,8 @@ void CWallmarksEngine::AddWallmark_internal(CDB::TRI* pTri, const Fvector* pVert
 		if (slot)
 		{
             StaticWMVec& sector_items = slot->static_items[S];
-			StaticWMVecIt it = sector_items.begin();
-            StaticWMVecIt end = sector_items.end();
+			auto it = sector_items.begin();
+            auto end = sector_items.end();
 			for (; it != end; it++)
 			{
 				static_wallmark* wm = *it;
@@ -389,20 +389,11 @@ ICF void FlushStream(ref_geom hGeom, ref_shader shader, u32& w_offset, FVF::LIT*
 	}
 }
 
-struct timeout_wm_pred
-{
-	bool operator()(const intrusive_ptr<CSkeletonWallmark>& wm) { 
-		float w = wm->TimeEnd() == -1.f ? 0.f : (RDEVICE.fTimeGlobal - wm->TimeStart()) / wm->TimeEnd();
-		return w > 1.f;
-	}
-};
-
 void CWallmarksEngine::RemoveSkeletonWallmarksFromObject(CKinematics* obj)
 {
     xrCriticalSectionGuard g(lock);
-    for (WMSlotVecIt slot_it = marks.begin(); slot_it != marks.end(); slot_it++)
+    for (wm_slot* slot : marks)
     {
-        wm_slot* slot = *slot_it;
         slot->skeleton_items.erase(std::remove_if
         (
             slot->skeleton_items.begin(),
@@ -410,6 +401,57 @@ void CWallmarksEngine::RemoveSkeletonWallmarksFromObject(CKinematics* obj)
             [obj](const intrusive_ptr<CSkeletonWallmark>& wm) { return wm && wm->Parent() == obj; }
         ),
         slot->skeleton_items.end()
+        );
+    }
+}
+
+// demonized: Remove expired wallmarks before rendering
+void CWallmarksEngine::UpdateWallmarks()
+{
+    if (marks.empty())
+        return;
+
+    // Toggle the lock if update is going to be in a separate thread
+    // xrCriticalSectionGuard g(lock);
+    for (wm_slot* slot : marks)
+    {
+        // static wallmarks
+        for (auto it_sect = slot->static_items.begin(); it_sect != slot->static_items.end();)
+        {
+            auto& [sector, static_vec] = *it_sect;
+
+            for (u32 i = 0; i < static_vec.size();)
+            {
+                static_wallmark* W = static_vec[i];
+
+                if (W->TimeEnd() != -1.f && RDEVICE.fTimeGlobal > (W->TimeStart() + W->TimeEnd()))
+                {
+                    static_wm_destroy(W);
+                    static_vec[i] = static_vec.back();
+                    static_vec.pop_back();
+                    continue;
+                }
+
+                i++;
+            }
+
+            if (static_vec.empty())
+            {
+                it_sect = slot->static_items.erase(it_sect);
+                continue;
+            }
+
+            ++it_sect;
+        }
+
+        // dynamic wallmarks
+        slot->skeleton_items.erase(
+            std::remove_if(
+                slot->skeleton_items.begin(),
+                slot->skeleton_items.end(),
+                [](const intrusive_ptr<CSkeletonWallmark>& wm) { return wm->TimeEnd() != -1.f && RDEVICE.fTimeGlobal > (wm->TimeStart() + wm->TimeEnd()); }
+            ),
+            slot->skeleton_items.end()
         );
     }
 }
@@ -434,57 +476,37 @@ void CWallmarksEngine::Render()
 	Device.Statistic->RenderDUMP_WMD_Count = 0;
 	Device.Statistic->RenderDUMP_WMT_Count = 0;
 
-	float ssaCLIP = r_ssaDISCARD / 4;
+	const float ssaCLIP = r_ssaDISCARD / 4;
+    constexpr const u32 max_verts = MAX_TRIS * 3;
 
-	lock.Enter(); // Physics may add wallmarks in parallel with rendering
+    if (!marks.empty())
+    {
+        xrCriticalSectionGuard g(lock); // Physics may add wallmarks in parallel with rendering
+        for (wm_slot* slot : marks)
+        {
+            bool static_empty = slot->static_items.empty();
+            bool skeleton_empty = slot->skeleton_items.empty();
+            if (static_empty && skeleton_empty)
+                continue;
 
-	for (WMSlotVecIt slot_it = marks.begin(); slot_it != marks.end(); slot_it++)
-	{
-        wm_slot* slot = *slot_it;
-        bool static_empty = slot->static_items.empty();
-        bool skeleton_empty = slot->skeleton_items.empty();
-        if (static_empty && skeleton_empty)
-            continue;
+            u32 w_offset;
+            FVF::LIT* w_verts, * w_start;
+            BeginStream(hGeom, w_offset, w_verts, w_start);
 
-        const u32 max_verts = MAX_TRIS * 3;
-
-		u32 w_offset;
-		FVF::LIT *w_verts, *w_start;
-		BeginStream(hGeom, w_offset, w_verts, w_start);
-		
-		// static wallmarks
-        if (!static_empty)
-		{
-			PROF_EVENT("STATIC_WALLMARKS");
-            for (auto it_sect = slot->static_items.begin(); it_sect != slot->static_items.end(); )
+            // static wallmarks
+            if (!static_empty)
             {
-                auto& [sector, static_vec] = *it_sect;
-
-                if (static_vec.empty())
+                PROF_EVENT("STATIC_WALLMARKS");
+                for (auto& [sector, static_vec] : slot->static_items)
                 {
-                    it_sect = slot->static_items.erase(it_sect);
-                    continue;
-                }
-
-                if (!RImplementation.GMBase.is_sector_visible(static_cast<CSector*>(sector)))
-                {
-                    it_sect++;
-                    continue;
-                }
-
-                for (StaticWMVecIt w_it = static_vec.begin(); w_it != static_vec.end();)
-                {
-                    static_wallmark* W = *w_it;
-                    if (W->TimeEnd() != -1.f && RDEVICE.fTimeGlobal >= (W->TimeStart() + W->TimeEnd()))
-                    {
-                        static_wm_destroy(W);
-                        *w_it = static_vec.back();
-                        static_vec.pop_back();
+                    if (!RImplementation.GMBase.is_sector_visible(static_cast<CSector*>(sector)))
                         continue;
-                    }
 
-                    if (RImplementation.ViewBase.testSphere_dirty(W->bounds.P, W->bounds.R))
+                    for (static_wallmark* W : static_vec)
                     {
+                        if (!RImplementation.ViewBase.testSphere_dirty(W->bounds.P, W->bounds.R))
+                            continue;
+
                         Device.Statistic->RenderDUMP_WMS_Count++;
                         float dst = Device.vCameraPosition.distance_to_sqr(W->bounds.P);
                         float ssa = W->bounds.R * W->bounds.R / dst;
@@ -499,62 +521,54 @@ void CWallmarksEngine::Render()
                             static_wm_render(W, w_verts);
                         }
                     }
-
-                    w_it++;
                 }
 
-                it_sect++;
-            }
-
-            if (!skeleton_empty)
-            {
-                // Flush stream
-                FlushStream(hGeom, slot->shader, w_offset, w_verts, w_start, FALSE); //. remove line if !(suppress cull needed)
-                BeginStream(hGeom, w_offset, w_verts, w_start);
-            }
-        }
-
-        // dynamic wallmarks
-        if (!skeleton_empty)
-        {
-            PROF_EVENT("DYNAMIC_WALLMARKS");
-            for (intrusive_ptr<CSkeletonWallmark> W : slot->skeleton_items)
-            {
-                if (!W) continue;
-
-#ifdef DEBUG
-                if (W->used_in_render != Device.dwFrame)
+                if (!skeleton_empty)
                 {
-                    Log("W->used_in_render", W->used_in_render);
-                    Log("Device.dwFrame", Device.dwFrame);
-                    VERIFY(W->used_in_render == Device.dwFrame);
-                }
-#endif
-
-                Device.Statistic->RenderDUMP_WMD_Count++;
-                u32 w_count = u32(w_verts - w_start);
-                if ((w_count + W->VCount()) >= max_verts)
-                {
-                    FlushStream(hGeom, slot->shader, w_offset, w_verts, w_start, TRUE);
+                    // Flush stream
+                    FlushStream(hGeom, slot->shader, w_offset, w_verts, w_start, FALSE); //. remove line if !(suppress cull needed)
                     BeginStream(hGeom, w_offset, w_verts, w_start);
                 }
+            }
 
-                W->Parent()->RenderWallmark(W, w_verts);
+            // dynamic wallmarks
+            if (!skeleton_empty)
+            {
+                PROF_EVENT("DYNAMIC_WALLMARKS");
+                for (intrusive_ptr<CSkeletonWallmark> W : slot->skeleton_items)
+                {
+                    if (!W) continue;
+
+#ifdef DEBUG
+                    if (W->used_in_render != Device.dwFrame)
+                    {
+                        Log("W->used_in_render", W->used_in_render);
+                        Log("Device.dwFrame", Device.dwFrame);
+                        VERIFY(W->used_in_render == Device.dwFrame);
+                    }
+#endif
+
+                    Device.Statistic->RenderDUMP_WMD_Count++;
+                    u32 w_count = u32(w_verts - w_start);
+                    if ((w_count + W->VCount()) >= max_verts)
+                    {
+                        FlushStream(hGeom, slot->shader, w_offset, w_verts, w_start, TRUE);
+                        BeginStream(hGeom, w_offset, w_verts, w_start);
+                    }
+
+                    W->Parent()->RenderWallmark(W, w_verts);
 
 #ifdef	DEBUG
-                W->used_in_render = u32(-1);
+                    W->used_in_render = u32(-1);
 #endif
+                }
             }
-            auto it = std::remove_if(slot->skeleton_items.begin(), slot->skeleton_items.end(), timeout_wm_pred());
-            slot->skeleton_items.erase(it, slot->skeleton_items.end());
+
+            // Flush stream
+            FlushStream(hGeom, slot->shader, w_offset, w_verts, w_start, !skeleton_empty);
         }
-
-        // Flush stream
-		FlushStream(hGeom, slot->shader, w_offset, w_verts, w_start, !skeleton_empty);
-	}
-
-	lock.Leave(); // Physics may add wallmarks in parallel with rendering
-
+    }
+	
 	// Level-wmarks
 	RImplementation.GMBase.r_dsgraph_render_wmarks();
 	Device.Statistic->RenderDUMP_WM.End();
