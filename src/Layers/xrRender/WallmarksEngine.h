@@ -30,6 +30,7 @@ public:
 	};
 
     typedef xr_deque< static_wallmark* > StaticWMVec; typedef StaticWMVec::iterator StaticWMVecIt;
+    typedef xr_unordered_map<IRender_Sector*, StaticWMVec> StaticWMSectorMap;
     typedef xr_deque< wm_slot* > WMSlotVec; typedef WMSlotVec::iterator WMSlotVecIt;
 private:
 	StaticWMVec static_pool;
