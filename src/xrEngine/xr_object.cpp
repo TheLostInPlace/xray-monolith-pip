@@ -73,11 +73,6 @@ void CObject::cNameVisual_set(shared_str N)
 	if (*N && *NameVisual)
 		if (N == NameVisual) return;
 
-    while (m_p_tasks_count.load(std::memory_order_acquire) > 0)
-    {
-        std::this_thread::yield();
-    }
-
 	// replace model
 	if (*N && N[0])
 	{
@@ -287,11 +282,6 @@ BOOL CObject::net_Spawn(CSE_Abstract* data)
 
 void CObject::net_Destroy()
 {
-    while (m_p_tasks_count.load(std::memory_order_acquire) > 0)
-    {
-        std::this_thread::yield();
-    }
-
 	VERIFY(getDestroy());
 	xr_delete(collidable.model);
 	if (register_schedule())
