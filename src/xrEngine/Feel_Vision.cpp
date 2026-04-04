@@ -189,7 +189,7 @@ void Vision::feel_vision_update(CObject* parent, Fvector& P, float dt, float vis
 void Vision::o_trace(Fvector& P, float dt, float vis_threshold)
 {
 	RQR.r_clear();
-	xrSRWLockGuard guard(&lock_visible, false);
+	xrSRWLockGuard guard(&lock_visible, true);
 	xr_vector<feel_visible_Item>::iterator I = feel_visible.begin(), E = feel_visible.end();
 	for (; I != E; I++)
 	{
