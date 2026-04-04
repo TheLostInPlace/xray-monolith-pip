@@ -100,22 +100,14 @@ void Vision::feel_vision_relcase(CObject* object)
 {
 	{
 		xrSRWLockGuard guard(&lock_query, false);
-		xr_vector<CObject*>::iterator Io;
-		Io = std::find(seen.begin(), seen.end(), object);
-		if (Io != seen.end())seen.erase_fast(Io);
-		Io = std::find(query.begin(), query.end(), object);
-		if (Io != query.end())query.erase_fast(Io);
-		Io = std::find(diff.begin(), diff.end(), object);
-		if (Io != diff.end()) diff.erase_fast(Io);
+        seen.erase(std::remove(seen.begin(), seen.end(), object), seen.end());
+        query.erase(std::remove(query.begin(), query.end(), object), query.end());
+        diff.erase(std::remove(diff.begin(), diff.end(), object), diff.end());
 	}
 	{
 		xrSRWLockGuard guard(&lock_visible, false);
-		auto it = std::find_if(feel_visible.begin(), feel_visible.end(),
-			[object](const feel_visible_Item& item) { return item.O == object; });
-
-		if (it != feel_visible.end()) {
-			feel_visible.erase(it);
-		}
+        feel_visible.erase(
+            std::remove_if(feel_visible.begin(), feel_visible.end(), [object](const feel_visible_Item& item) { return item.O == object; }), feel_visible.end());
 	}
 }
 
@@ -196,7 +188,7 @@ void Vision::feel_vision_update(CObject* parent, Fvector& P, float dt, float vis
 void Vision::o_trace(Fvector& P, float dt, float vis_threshold)
 {
 	RQR.r_clear();
-	xrSRWLockGuard guard(&lock_visible, true);
+	xrSRWLockGuard guard(&lock_visible, false);
 	xr_vector<feel_visible_Item>::iterator I = feel_visible.begin(), E = feel_visible.end();
 	for (; I != E; I++)
 	{
