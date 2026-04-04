@@ -16,7 +16,8 @@ namespace Feel
 	const float lr_granularity = 0.1f; // assume similar positions
 
 	class ENGINE_API Vision:
-		private pure_relcase
+		private pure_relcase,
+        private pure_relcase_visual
 	{
 	private:
 		xr_vector<CObject*> seen;

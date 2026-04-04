@@ -9,15 +9,14 @@ using Feel::Vision;
 
 Vision::Vision(CObject const* owner) :
 	pure_relcase(&Vision::feel_vision_relcase),
+    pure_relcase_visual(&Vision::feel_vision_relcase),
 	m_owner(owner)
 {
-    m_owner->m_on_change_visual_feel_vision = xr_make_delegate(this, &Vision::feel_vision_relcase);
     feel_visible.clear();
 }
 
 Vision::~Vision()
 {
-    m_owner->m_on_change_visual_feel_vision.clear();
 }
 
 struct SFeelParam

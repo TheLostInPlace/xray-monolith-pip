@@ -538,3 +538,8 @@ Fvector CObject::get_last_local_point_on_mesh(Fvector const& local_point, u16 co
 
 	return result;
 }
+
+void CObject::OnChangeVisual()
+{
+    g_pGameLevel->Objects.relcase_visual_invoke(this);   
+}
