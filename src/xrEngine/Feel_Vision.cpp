@@ -11,11 +11,20 @@ Vision::Vision(CObject const* owner) :
 	pure_relcase(&Vision::feel_vision_relcase),
 	m_owner(owner)
 {
+    m_owner->m_on_change_visual_callbacks.push_back(xr_make_delegate(this, &Vision::feel_vision_relcase));
     feel_visible.clear();
 }
 
 Vision::~Vision()
 {
+    m_owner->m_on_change_visual_callbacks.erase(
+        std::remove(
+            m_owner->m_on_change_visual_callbacks.begin(),
+            m_owner->m_on_change_visual_callbacks.end(),
+            xr_make_delegate(this, &Vision::feel_vision_relcase)
+        ),
+        m_owner->m_on_change_visual_callbacks.end()
+    );
 }
 
 struct SFeelParam

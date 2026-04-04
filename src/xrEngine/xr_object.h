@@ -196,8 +196,11 @@ public:
 	virtual IRenderable* dcast_Renderable() override { return this; }
 	virtual Feel::Sound* dcast_FeelSound() override { return nullptr; }
 
+    mutable xr_vector<xr_delegate<void(CObject*)>> m_on_change_visual_callbacks;
 	virtual void OnChangeVisual()
 	{
+        for (auto& callback : m_on_change_visual_callbacks)
+            callback(this);
 	}
 
 	virtual IPhysicsShell* physics_shell() { return 0; }
