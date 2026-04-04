@@ -105,6 +105,7 @@ void CObject::cNameVisual_set(shared_str N)
 			new_k->SetUpdateCallbackParam(old_k->GetUpdateCallbackParam());
 		}
 
+        OnChangeVisual();
 		::Render->model_Delete(old_v);
 	}
 	else
@@ -119,10 +120,12 @@ void CObject::cNameVisual_set(shared_str N)
 		}
 #endif
 
-		::Render->model_Delete(renderable.visual);
+        IRenderVisual* old_v = renderable.visual;
+        renderable.visual = nullptr;
+        OnChangeVisual();
+		::Render->model_Delete(old_v);
 		NameVisual = 0;
 	}
-	OnChangeVisual();
 }
 
 // flagging
