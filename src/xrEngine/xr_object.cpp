@@ -120,11 +120,12 @@ void CObject::cNameVisual_set(shared_str N)
 		}
 #endif
 
+        // The children classes will see that renderable.visual is gone, but actual deletion will happen after the callback to prevent nasty stuff
         IRenderVisual* old_v = renderable.visual;
         renderable.visual = nullptr;
+        NameVisual = 0;
         OnChangeVisual();
 		::Render->model_Delete(old_v);
-		NameVisual = 0;
 	}
 }
 
@@ -541,5 +542,6 @@ Fvector CObject::get_last_local_point_on_mesh(Fvector const& local_point, u16 co
 
 void CObject::OnChangeVisual()
 {
-    g_pGameLevel->Objects.relcase_visual_invoke(this);   
+    if (g_pGameLevel)
+        g_pGameLevel->Objects.relcase_visual_invoke(this);   
 }
