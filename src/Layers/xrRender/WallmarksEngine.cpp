@@ -556,7 +556,16 @@ void CWallmarksEngine::Render()
                         BeginStream(hGeom, w_offset, w_verts, w_start);
                     }
 
-                    W->Parent()->RenderWallmark(W, w_verts);
+                    FVF::LIT* w_save = w_verts;
+                    try
+                    {
+                        W->Parent()->RenderWallmark(W, w_verts);
+                    }
+                    catch (...)
+                    {
+                        Msg("! Failed to render dynamic wallmark");
+                        w_verts = w_save;
+                    }
 
 #ifdef	DEBUG
                     W->used_in_render = u32(-1);
