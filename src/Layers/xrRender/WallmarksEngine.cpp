@@ -446,7 +446,7 @@ void CWallmarksEngine::UpdateWallmarks()
     }
 }
 
-int r_wallmarks_ssa_k = 30;
+int r_wallmarks_ssa_k = 40;
 void CWallmarksEngine::Render()
 {
 	//	if (marks.empty())			return;
