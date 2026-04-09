@@ -176,9 +176,8 @@ void CGameTaskManager::UpdateTasks()
 
 	const vGameTasks& vTasks = GetGameTasks();
 
-	for (u32 i = 0; vTasks.size(); i++)
+	for (const SGameTaskKey& task : vTasks)
 	{
-        const SGameTaskKey& task = vTasks[i];
 		CGameTask* const pGameTask = task.getGameTask();
 		if (pGameTask)
 		{
