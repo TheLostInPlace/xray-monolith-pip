@@ -80,7 +80,7 @@ void CAgentMemberManager::remove(CEntity* member)
 	iterator I = std::find_if(m_members.begin(), m_members.end(), CMemberPredicate(stalker));
 	VERIFY(I != m_members.end());
 	xr_delete(*I);
-	m_members.erase_fast(I);
+	m_members.erase(I);
 }
 
 void CAgentMemberManager::update()
