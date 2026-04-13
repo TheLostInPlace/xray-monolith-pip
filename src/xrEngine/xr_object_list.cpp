@@ -34,6 +34,8 @@ CObjectList::~CObjectList()
 {
 	R_ASSERT(objects_active.empty());
 	R_ASSERT(objects_sleeping.empty());
+    ProcessDestroyQueueImpl(force_destroy_queue);
+    ProcessDestroyQueueImpl(destroy_queue);
     R_ASSERT(destroy_queue.empty());
     R_ASSERT(force_destroy_queue.empty());
 	//. R_ASSERT ( map_NETID.empty() );
