@@ -257,6 +257,9 @@ extern float recon_maxspeed;
 extern float wallmark_range_static;
 extern float wallmark_range_skeleton;
 
+extern float movement_manager_move_along_path_query_pos_threshold;
+extern float movement_manager_move_along_path_query_pos_threshold_sqr;
+
 ENGINE_API extern float g_console_sensitive;
 
 extern BOOL g_auto_reload;
@@ -2385,6 +2388,23 @@ public:
 	}
 };
 
+class CCC_MovePathQueryPosThreshold : public CCC_Float
+{
+public:
+    CCC_MovePathQueryPosThreshold(LPCSTR N) :
+        CCC_Float(N, &movement_manager_move_along_path_query_pos_threshold, 0.f, 2.f)
+    {
+    };
+
+    virtual void Execute(LPCSTR args)
+    {
+        CCC_Float::Execute(args);
+
+        movement_manager_move_along_path_query_pos_threshold = std::atof(args);
+        movement_manager_move_along_path_query_pos_threshold_sqr = movement_manager_move_along_path_query_pos_threshold * movement_manager_move_along_path_query_pos_threshold;
+    }
+};
+
 void CCC_RegisterCommands()
 {
 	//Not needed for a singleplayer-only mod
@@ -3080,6 +3100,7 @@ void CCC_RegisterCommands()
 	CMD4(CCC_Float, "g_wallmark_range_static", &wallmark_range_static, 0.f, 1000.f);
 	CMD4(CCC_Float, "g_wallmark_range_skeleton", &wallmark_range_skeleton, 0.f, 1000.f);
 
+	CMD1(CCC_MovePathQueryPosThreshold, "movement_manager_move_along_path_query_pos_threshold");
     CMD4(CCC_Integer, "show_actor_body", &showActorBody, 0, 2);
     CMD4(CCC_Integer, "disable_actor_body_rotation_delay", &disableActorBodyRotationDelay, 0, 1);
 }
