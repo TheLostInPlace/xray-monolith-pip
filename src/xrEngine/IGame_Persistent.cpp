@@ -296,7 +296,7 @@ void IGame_Persistent::UpdateParticles()
 		pInstance->Play(false);
 	}
 
-	for (intrusive_ptr<CPS_Instance>& Part : ps_active_deffer)
+	for (intrusive_ptr<CPS_Instance> Part : ps_active_deffer)
 	{
 		ps_active.push_back(Part);
 	}
