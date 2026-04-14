@@ -310,7 +310,7 @@ void CTorch::SwitchLightOnly()
 
 void CTorch::Update()
 {
-
+    PROF_EVENT("CTorch::Update")
 	if (!m_switched_on) return;
 
 	if (isFlickering)
