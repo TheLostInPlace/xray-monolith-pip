@@ -249,6 +249,7 @@ How to compile exes:
     * `xr_vector<Sect>` for data storage instead of `xr_vector<Sect*>`,
     * Cache actually stores prepared data, faster cache retrieval and reduced size of cache slightly
   * QoL: on the end of a reload animation, if weapon fire button is held, the weapon will start shooting automatically
+  * GhenTuong: CRayPick: implement get_normal (https://github.com/themrdemonized/xray-monolith/pull/508)
 
 * MT:
   * Disable costly `stat_memory` calls on accessing main menu and saving, fixes big freezes
@@ -2008,3 +2009,4 @@ override = true
 
 * Exported distance_to_xz_sqr() function of Fvector
 * Redesigned duplicate section error, it will additionally print what file adds the section in the first place in addition to the file that has the duplicate
+
