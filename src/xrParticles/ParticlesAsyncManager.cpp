@@ -22,11 +22,13 @@ void CParticlesAsync::Start()
 {
 	Instance.IsStarted = true;
 
+    static xr_vector<intrusive_ptr<CPS_Instance>> ps_active;
+    ps_active = g_pGamePersistent->ps_active;
+
 	{
 		PROF_EVENT("Particle Update");
-        for (u32 i = 0; i < g_pGamePersistent->ps_active.size(); i++)
+        for (intrusive_ptr<CPS_Instance>& particle: ps_active)
 		{
-            intrusive_ptr<CPS_Instance> particle = g_pGamePersistent->ps_active[i];
 			if (particle->m_bDead)
 				continue;
 
@@ -35,9 +37,8 @@ void CParticlesAsync::Start()
 	}
 
 	PROF_EVENT("Particle Shedule");
-    for (u32 i = 0; i < g_pGamePersistent->ps_active.size(); i++)
+    for (intrusive_ptr<CPS_Instance>& particle : ps_active)
 	{
-        intrusive_ptr<CPS_Instance> particle = g_pGamePersistent->ps_active[i];
 		particle->Update(Device.dwTimeDelta);
 	}
 
