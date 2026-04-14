@@ -14,26 +14,26 @@ BOOL mt_Scheduler = TRUE;
 
 void XRay::Engine::PreRenderThread()
 {
-	PROF_THREAD("Secondary Task 1");
+	//PROF_THREAD("Secondary Task 1");
 
 	if (g_pGamePersistent && g_pGamePersistent->pEnvironment && g_pGamePersistent->pEnvironment->eff_Rain)
 	{
-		PROF_EVENT("CEffect_Rain::UpdateItems");
+		//PROF_EVENT("CEffect_Rain::UpdateItems");
 		g_pGamePersistent->pEnvironment->eff_Rain->UpdateItems();
 	}
 
 	if (g_pGamePersistent && Device.ParticleWorkerCallback)
 	{
-		PROF_EVENT("Process Particles");
+		//PROF_EVENT("Process Particles");
 		Device.ParticleWorkerCallback();
 	}
 }
 
 void XRay::Engine::PreRenderPostTransformsThread()
 {
-    PROF_THREAD("Secondary Task 1.1");
+    //PROF_THREAD("Secondary Task 1.1");
     {
-        PROF_EVENT("seqParallelRender");
+        //PROF_EVENT("seqParallelRender");
         for (auto& it : Device.seqParallelRender)
             it();
     }
@@ -49,9 +49,9 @@ struct SpatialSnapshot
 };
 void XRay::Engine::CalculateBonesThread()
 {
-	PROF_THREAD("Secondary Task 3");
+	//PROF_THREAD("Secondary Task 3");
 
-	PROF_EVENT("CalculateBones");
+	//PROF_EVENT("CalculateBones");
 
 	if (!g_SpatialSpace) return;
 	if (Device.Paused()) return;
@@ -121,18 +121,18 @@ extern BOOL psLua_ParallelGC;
 int psLua_ParallelGC_CallAmount = 25;
 void XRay::Engine::GameThread()
 {
-	PROF_THREAD("Secondary Task 2")
+	//PROF_THREAD("Secondary Task 2")
 		
 	// we has granted permission to execute
 	if (g_hud)
 	{
-		PROF_EVENT("g_hud OnFrameMT");
+		//PROF_EVENT("g_hud OnFrameMT");
 		g_hud->OnFrameMT();
 	}
 
 	if (g_pGameLevel && g_pGameLevel->bReady)
 	{
-		PROF_EVENT("SoundEvent_Dispatch");
+		//PROF_EVENT("SoundEvent_Dispatch");
 		g_pGameLevel->SoundEvent_Dispatch();
 	}
 
@@ -140,14 +140,14 @@ void XRay::Engine::GameThread()
 	{
 		if (mt_Scheduler)
 		{
-			PROF_EVENT("Sheduler Deferred");
+			//PROF_EVENT("Sheduler Deferred");
 			::Engine.Sheduler.UpdateDeferred();
 			::Engine.Sheduler.UpdateFinalize();
 		}
 	}
 
 	{
-		PROF_EVENT("seqParallel");
+		//PROF_EVENT("seqParallel");
 		for (u32 pit = 0; pit < Device.seqParallel.size(); pit++)
 			Device.seqParallel[pit]();
 		Device.seqParallel.clear();
@@ -157,7 +157,7 @@ void XRay::Engine::GameThread()
     // Reduces stutters since less work will be done in main GC step or no work at all
     static auto LuaGC = []()
     {
-        PROF_EVENT("seqLuaGC");
+        //PROF_EVENT("seqLuaGC");
         // Do at least once
         do
         {
@@ -174,7 +174,7 @@ void XRay::Engine::GameThread()
         Device.secondary_tasks.run(LuaGC);
 
 	{
-		PROF_EVENT("seqFrameMT");
+		//PROF_EVENT("seqFrameMT");
 		Device.seqFrameMT.Process(rp_Frame);
 	}
 }
