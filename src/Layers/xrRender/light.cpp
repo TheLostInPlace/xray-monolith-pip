@@ -164,9 +164,9 @@ void light::set_active(bool a)
 	}
 }
 
-void light::set_position(const Fvector& P)
+void light::set_position(const Fvector& P, const float eps)
 {
-	if (position.similar(P, EPS))
+	if (position.similar(P, eps))
 		return;
 
 	position.set(P);
@@ -194,13 +194,13 @@ void light::set_cone(float angle)
 	spatial_move();
 }
 
-void light::set_rotation(const Fvector& D, const Fvector& R)
+void light::set_rotation(const Fvector& D, const Fvector& R, const float eps)
 {
 	Fvector old_D = direction;
 	direction.normalize(D);
 	right.normalize(R);
 
-	if (!fsimilar(1.f, old_D.dotproduct(D))) 
+	if (!fsimilar(1.f, old_D.dotproduct(D), eps)) 
 		spatial_move();
 }
 
