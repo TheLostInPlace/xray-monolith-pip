@@ -22,7 +22,7 @@ void XRay::Engine::PreRenderThread()
 		g_pGamePersistent->pEnvironment->eff_Rain->UpdateItems();
 	}
 
-	if (Device.ParticleWorkerCallback)
+	if (g_pGamePersistent && Device.ParticleWorkerCallback)
 	{
 		PROF_EVENT("Process Particles");
 		Device.ParticleWorkerCallback();
