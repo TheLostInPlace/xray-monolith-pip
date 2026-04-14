@@ -16,6 +16,10 @@ dlgItem::dlgItem(CUIWindow* pWnd)
 
 bool dlgItem::operator <(const dlgItem& itm) const
 {
+    if (!wnd)
+        return false;
+    if (!itm.wnd)
+        return true;
 	return (int)enabled > (int)itm.enabled;
 }
 
@@ -140,26 +144,33 @@ void CDialogHolder::RemoveDialogToRender(CUIWindow* pDialog)
 	if (TopInputReceiver() == pDialog)
 		SetMainInputReceiver(NULL, false);
 
-	dlgItem itm(pDialog);
-	itm.enabled = true;
-	xr_vector<dlgItem>::iterator it = std::find(m_dialogsToRender.begin(), m_dialogsToRender.end(), itm);
+    auto remove_from_list = [&](xr_vector<dlgItem>& list)
+    {
+        dlgItem itm(pDialog);
+        auto it = std::find(list.begin(), list.end(), itm);
 
-	if (it != m_dialogsToRender.end())
-	{
-		(*it).wnd->Show(false);
-		(*it).wnd->Enable(false);
-		(*it).enabled = false;
-		return;
-	}
-	
-	it = std::find(m_dialogsToRender_new.begin(), m_dialogsToRender_new.end(), itm);
+        if (it != list.end())
+        {
+            (*it).wnd->Show(false);
+            (*it).wnd->Enable(false);
+            (*it).enabled = false;
 
-	if (it != m_dialogsToRender_new.end())
-	{
-		(*it).wnd->Show(false);
-		(*it).wnd->Enable(false);
-		(*it).enabled = false;
-	}
+            // NEW: If we aren't currently updating, we can safely erase it now.
+            // Otherwise, we MUST nullify the pointer to prevent dangling access.
+            if (!m_b_in_update)
+                list.erase(it);
+            else
+                (*it).wnd = nullptr; // Crucial: stop OnFrame from touching this memory
+
+            return true;
+        }
+        return false;
+    };
+
+    if (!remove_from_list(m_dialogsToRender))
+    {
+        remove_from_list(m_dialogsToRender_new);
+    }
 }
 
 
