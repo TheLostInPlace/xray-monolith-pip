@@ -10,7 +10,7 @@ static CParticlesAsync Instance;
 void CParticlesAsync::Play()
 {
 	if (DevicePtr && !Device.ParticleWorkerCallback)
-		Device.ParticleWorkerCallback = Start;
+		Device.ParticleWorkerCallback.bind(&CParticlesAsync::Start);
 
 	if (!psDeviceFlags.test(mtParticles))
 	{
@@ -75,7 +75,7 @@ CParticlesAsync::CParticlesAsync()
 	if (g_dedicated_server)
 		return;
 
-	Device.ParticleWorkerCallback = Start;
+    Device.ParticleWorkerCallback.bind(&CParticlesAsync::Start);
 }
 
 void CParticlesAsync::UpdateParticle(intrusive_ptr<CPS_Instance> particle) const

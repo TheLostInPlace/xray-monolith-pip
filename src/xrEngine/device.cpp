@@ -612,7 +612,7 @@ void CRenderDevice::Run()
 	seqAppEnd.Process(rp_AppEnd);
 
 	secondary_tasks.wait();
-	ParticleWorkerCallback = nullptr;
+	ParticleWorkerCallback.clear();
 }
 
 u32 app_inactive_time = 0;
