@@ -24,8 +24,9 @@ void CParticlesAsync::Start()
 
 	{
 		PROF_EVENT("Particle Update");
-		for (intrusive_ptr<CPS_Instance> particle : g_pGamePersistent->ps_active)
+        for (u32 i = 0; i < g_pGamePersistent->ps_active.size(); i++)
 		{
+            intrusive_ptr<CPS_Instance> particle = g_pGamePersistent->ps_active[i];
 			if (particle->m_bDead)
 				continue;
 
@@ -34,8 +35,9 @@ void CParticlesAsync::Start()
 	}
 
 	PROF_EVENT("Particle Shedule");
-	for (intrusive_ptr<CPS_Instance> particle : g_pGamePersistent->ps_active)
+    for (u32 i = 0; i < g_pGamePersistent->ps_active.size(); i++)
 	{
+        intrusive_ptr<CPS_Instance> particle = g_pGamePersistent->ps_active[i];
 		particle->Update(Device.dwTimeDelta);
 	}
 
