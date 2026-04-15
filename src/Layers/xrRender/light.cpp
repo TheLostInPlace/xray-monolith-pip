@@ -450,7 +450,23 @@ void light::xform_calc()
 
 		// _min(L->cone + deg2rad(4.5f), PI*0.98f) - Here, it is needed to enlarge the shadow map frustum to include also 
 		// displaced pixels and the pixels neighbor to the examining one.
-		X.S.project.build_projection		(_min(cone + deg2rad(5.f), PI*0.98f), 1.f,virtual_size,range+EPS_S);
+        /* Ray Twitty */
+		float tan_shift;
+#if RENDER == R_R4
+		if (flags.type == IRender_Light::OMNIPART) // [ SSS ] 0.3f fix almost all frustum problems... 0.5f was the old value ( SSS 19 ) but was causing issues?
+			tan_shift = 0.3f;
+		else if (flags.type == IRender_Light::POINT)
+			tan_shift = 0.2007129f; // deg2rad(11.5f);
+		else
+			tan_shift = 0.0610865f; //deg2rad(3.5f);
+#else
+		if (flags.type == IRender_Light::POINT)
+            tan_shift = 0.2007129f; // deg2rad(11.5f);
+		else
+            tan_shift = 0.0610865f; //deg2rad(3.5f);
+#endif
+        /* Ray Twitty end */
+		X.S.project.build_projection(cone + tan_shift, 1.f, virtual_size, range + EPS_S);
 
 		X.S.combine.mul(X.S.project,X.S.view);
 
