@@ -275,9 +275,18 @@ void CDialogHolder::OnFrame()
 		m_dialogsToRender_new.clear();
 	}
 
-	xr_sort(m_dialogsToRender.begin(), m_dialogsToRender.end());
-	while (!m_dialogsToRender.empty() && (!m_dialogsToRender[m_dialogsToRender.size() - 1].enabled))
-		m_dialogsToRender.pop_back();
+    static auto eraseFunc = [](const dlgItem& item)
+    {
+        return !item.enabled || !item.wnd;
+    };
+    m_dialogsToRender.erase(
+        std::remove_if(
+            m_dialogsToRender.begin(),
+            m_dialogsToRender.end(),
+            eraseFunc
+        ),
+        m_dialogsToRender.end()
+    );
 }
 
 void CDialogHolder::CleanInternals()
