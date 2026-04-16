@@ -1575,6 +1575,8 @@ void xrRender_initconsole()
 
 	CMD4(CCC_Integer, "pfx_volumetric_mode", &ps_pfx_volumetric_mode, 0, 1);
 
+    CMD4(CCC_Float, "r__ssa_discard", &ps_r__ssaDISCARD, 0, 100);
+
 	//	CMD3(CCC_Mask,		"r2_sun_ignore_portals",		&ps_r2_ls_flags,			R2FLAG_SUN_IGNORE_PORTALS);
     CMD4(CCC_Integer, "r_particles_real_dt", &ps_r2_particle_dt, 0, 1);
 }
