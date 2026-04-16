@@ -290,7 +290,8 @@ void CObjectList::ProcessDestroyQueueImpl(Objects& queue)
             for (const auto oit : objects_sleeping)
                 oit->net_Relcase(obj);
 
-            Sound->object_relcase(obj);
+            if (Sound)
+                Sound->object_relcase(obj);
 
             auto It = m_relcase_callbacks.begin();
             auto Ite = m_relcase_callbacks.end();
@@ -300,7 +301,8 @@ void CObjectList::ProcessDestroyQueueImpl(Objects& queue)
                 (*It).m_Callback(obj);
             }     
 
-            g_hud->net_Relcase(obj);
+            if (g_hud)
+                g_hud->net_Relcase(obj);
 
 #ifdef DEBUG
             if (debug_destroy)
