@@ -335,6 +335,7 @@ extern		u32 game_lua_memory_usage();
 
 typedef void (*full_memory_stats_callback_type)();
 extern XRCORE_API full_memory_stats_callback_type g_full_memory_stats_callback;
+static xr_atomic_bool g_mem_stats_async_in_progress = false;
 
 static void full_memory_stats()
 {
@@ -404,6 +405,36 @@ public:
 	virtual void Execute(LPCSTR args)
 	{
 		full_memory_stats();
+	}
+};
+
+static void mem_stats_async_thread(void*)
+{
+	PROF_EVENT("mem_stats_async_thread");
+
+	full_memory_stats();
+
+	g_mem_stats_async_in_progress.store(false, std::memory_order_release);
+}
+
+class CCC_MemStatsAsync : public IConsole_Command
+{
+public:
+	CCC_MemStatsAsync(LPCSTR N) : IConsole_Command(N)
+	{
+		bEmptyArgsHandled = TRUE;
+	};
+
+	virtual void Execute(LPCSTR args)
+	{
+		if (g_mem_stats_async_in_progress.exchange(true, std::memory_order_acq_rel))
+		{
+			Msg("* [x-ray]: stat_memory_async is already running");
+			return;
+		}
+
+		thread_spawn(&mem_stats_async_thread, "stat_memory_async", 0, nullptr);
+		Msg("* [x-ray]: stat_memory_async started");
 	}
 };
 
@@ -2497,6 +2528,7 @@ void CCC_RegisterCommands()
 	//g_OptConCom.Init();
 
 	CMD1(CCC_MemStats, "stat_memory");
+	CMD1(CCC_MemStatsAsync, "stat_memory_async");
 	CMD1(CCC_SharedStringDump, "stat_shared_string_dump");
 #ifdef DEBUG
 	CMD1(CCC_MemCheckpoint, "stat_memory_checkpoint");
