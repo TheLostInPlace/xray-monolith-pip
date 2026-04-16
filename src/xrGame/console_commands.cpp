@@ -404,6 +404,12 @@ public:
 
 	virtual void Execute(LPCSTR args)
 	{
+        if (g_mem_stats_async_in_progress.load(std::memory_order_acquire))
+        {
+            Msg("* [x-ray]: stat_memory_async is already running");
+            return;
+        }
+
 		full_memory_stats();
 	}
 };
