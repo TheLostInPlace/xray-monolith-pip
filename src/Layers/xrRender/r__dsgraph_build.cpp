@@ -38,7 +38,7 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 
 	float distSQ;
 	float SSA = CalcSSA(distSQ, Center, pVisual);
-	if (SSA <= r_ssaDISCARD) return;
+	if (SSA < r_ssaDISCARD * 0.5f) return;
 
 	// Distortive geometry should be marked and R2 special-cases it
 	// a) Allow to optimize RT order
@@ -207,11 +207,42 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 	}
 }
 
+ICF u32 GetObjectHash(const Fvector& pos)
+{
+    // 1. Read bits directly (bypasses slow float-to-int CPU conversions)
+    u32 x = *(const u32*)&pos.x;
+    u32 y = *(const u32*)&pos.y;
+    u32 z = *(const u32*)&pos.z;
+
+    // 2. Mix axes using large, distinct prime numbers
+    // This separates the axes so X, Y, and Z don't cancel each other out
+    u32 h = (x * 73856093u) ^ (y * 19349663u) ^ (z * 83492791u);
+
+    // 3. Murmur3 Avalanche step
+    // Forces a single bit change in the input to cascade across all 32 bits of the output,
+    // completely shattering the IEEE 754 float memory layout.
+    h ^= h >> 16;
+    h *= 0x85ebca6bu;
+    h ^= h >> 13;
+    h *= 0xc2b2ae35u;
+    h ^= h >> 16;
+
+    return h;
+}
+
 void CDSGraphManager::r_dsgraph_insert_static(dxRender_Visual *pVisual)
 {
 	float distSQ;
 	float SSA = CalcSSA(distSQ, pVisual->vis.sphere.P, pVisual);
-	if (SSA <= r_ssaDISCARD) return;
+    if (SSA < r_ssaDISCARD * 0.25f)
+        return;
+
+    u32 hash = GetObjectHash(pVisual->vis.sphere.P);
+    if ((SSA < r_ssaDISCARD * 0.5f) && (hash % 4 != 0))
+        return;
+
+    if ((SSA < r_ssaDISCARD) && (hash % 2 == 0))
+        return;
 
 	// Distortive geometry should be marked and R2 special-cases it
 	// a) Allow to optimize RT order
