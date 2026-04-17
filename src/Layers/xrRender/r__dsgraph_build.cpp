@@ -212,8 +212,7 @@ void CDSGraphManager::r_dsgraph_insert_static(dxRender_Visual *pVisual)
 {
 	float distSQ;
 	float SSA = CalcSSA(distSQ, pVisual->vis.sphere.P, pVisual);
-    float r_ssaDISCARDHalf = r_ssaDISCARD * 0.5f;
-    if (SSA < r_ssaDISCARDHalf)
+    if (SSA < r_ssaDISCARD)
         return;
 
     // demonized: Replace hard cutoff with gradient cutoff
@@ -222,13 +221,13 @@ void CDSGraphManager::r_dsgraph_insert_static(dxRender_Visual *pVisual)
     // Allows to increase the discard limit for better performance without making pop-in much worse
     // Define where the "thinning" begins. 
     // E.g., objects 4x the size of the discard limit start fading.
-    float fade_start = r_ssaDISCARDHalf * 4.0f;
+    float fade_start = r_ssaDISCARD * 4.0f;
 
     // The Gradient Zone
     if (SSA < fade_start)
     {
         // Calculate a linear survival probability between 0.0 and 1.0
-        float survival_chance = (SSA - r_ssaDISCARDHalf) / (fade_start - r_ssaDISCARDHalf);
+        float survival_chance = (SSA - r_ssaDISCARD) / (fade_start - r_ssaDISCARD);
 
         // Convert the 32-bit hash to a float between 0.0 and 1.0
         // Multiplying by 1.0 / 2^32 is faster than float division
