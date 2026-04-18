@@ -217,6 +217,7 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 }
 
 extern float ps_r__ssaDISCARD_exp;
+extern float ps_r__ssaDISCARD_fade_k;
 void CDSGraphManager::r_dsgraph_insert_static(dxRender_Visual *pVisual)
 {
 	float distSQ;
@@ -233,7 +234,7 @@ void CDSGraphManager::r_dsgraph_insert_static(dxRender_Visual *pVisual)
         // Allows to increase the discard limit for better performance without making pop-in much worse
         // Define where the "thinning" begins. 
         // E.g., objects 4x the size of the discard limit start fading.
-        float fade_start = r_ssaDISCARD * 4.0f;
+        float fade_start = r_ssaDISCARD * ps_r__ssaDISCARD_fade_k;
 
         // The Gradient Zone
         if (SSA < fade_start)

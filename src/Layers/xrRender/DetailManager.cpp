@@ -274,6 +274,7 @@ void CDetailManager::Unload()
 
 extern ECORE_API float r_ssaDISCARD;
 extern float ps_r__ssaDISCARD_exp;
+extern float ps_r__ssaDISCARD_fade_k;
 void CDetailManager::UpdateVisibleM()
 {
 	Fvector EYE = RDEVICE.vCameraPosition_saved;
@@ -291,7 +292,7 @@ void CDetailManager::UpdateVisibleM()
 	fade_start = fade_start * fade_start;
 	float fade_range = fade_limit - fade_start;
 	float r_ssaCHEAP = 16 * r_ssaDISCARD;
-    float fade_start_ssa = r_ssaDISCARD * 4.0f;
+    float fade_start_ssa = r_ssaDISCARD * ps_r__ssaDISCARD_fade_k;
 
 	// Initialize 'vis' and 'cache'
 	// Collect objects for rendering
