@@ -333,16 +333,16 @@ CUIOptConCom g_OptConCom;
 extern		u32 game_lua_memory_usage();
 #endif // SEVERAL_ALLOCATORS
 
-typedef void (*full_memory_stats_callback_type)();
+typedef void (*full_memory_stats_callback_type)(bool);
 extern XRCORE_API full_memory_stats_callback_type g_full_memory_stats_callback;
 static xr_atomic_bool g_mem_stats_async_in_progress = false;
 
-static void full_memory_stats()
+static void full_memory_stats(bool assert = true)
 {
 	PROF_EVENT("full_memory_stats");
 	Msg("* [x-ray]: Full Memory Stats");
 	Memory.mem_compact();
-	size_t _process_heap = ::Memory.mem_usage();
+	size_t _process_heap = ::Memory.mem_usage(assert);
 #ifdef SEVERAL_ALLOCATORS
 	u32		_game_lua = game_lua_memory_usage();
 	u32		_render = ::Render->memory_usage();
@@ -418,7 +418,7 @@ static void mem_stats_async_thread(void*)
 {
 	PROF_EVENT("mem_stats_async_thread");
 
-	full_memory_stats();
+	full_memory_stats(false);
 
 	g_mem_stats_async_in_progress.store(false, std::memory_order_release);
 }
