@@ -418,10 +418,15 @@ public:
 
 static void mem_stats_async_thread(void*)
 {
-	PROF_EVENT("mem_stats_async_thread");
-
-	full_memory_stats(false);
-
+    try
+    {
+        PROF_EVENT("mem_stats_async_thread");
+        full_memory_stats(false);
+    }
+    catch (...)
+    {
+        // do nothing
+    }
 	g_mem_stats_async_in_progress.store(false, std::memory_order_release);
 }
 
