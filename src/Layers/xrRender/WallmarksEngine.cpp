@@ -316,6 +316,8 @@ void CWallmarksEngine::AddWallmark_internal(CDB::TRI* pTri, const Fvector* pVert
 	AddWallmark_internal(pTri, pVerts, contact_point, hShader, sz, ttl, random_rotation ? ::Random.randF(-20.f, 20.f) : 0.f);
 }
 
+BOOL r_wallmarks_static = TRUE;
+BOOL r_wallmarks_dynamic = TRUE;
 void CWallmarksEngine::AddStaticWallmark(CDB::TRI* pTri, const Fvector* pVerts, const Fvector& contact_point,
                                          ref_shader hShader, float sz, float ttl, bool ignore_opt, bool random_rotation)
 {
@@ -325,6 +327,9 @@ void CWallmarksEngine::AddStaticWallmark(CDB::TRI* pTri, const Fvector* pVerts, 
 void CWallmarksEngine::AddStaticWallmark(CDB::TRI* pTri, const Fvector* pVerts, const Fvector& contact_point,
 	ref_shader hShader, float sz, float ttl, bool ignore_opt, float rotation)
 {
+    if (!r_wallmarks_static)
+        return;
+
 	// Physics may add wallmarks in parallel with rendering
 	lock.Enter();
 	AddWallmark_internal(pTri, pVerts, contact_point, hShader, sz, ttl, rotation);
@@ -334,6 +339,9 @@ void CWallmarksEngine::AddStaticWallmark(CDB::TRI* pTri, const Fvector* pVerts, 
 void CWallmarksEngine::AddSkeletonWallmark(const Fmatrix* xf, CKinematics* obj, ref_shader& sh, const Fvector& start,
                                            const Fvector& dir, float size, float ttl, bool ignore_opt)
 {
+    if (!r_wallmarks_dynamic)
+        return;
+
 	VERIFY(obj&&xf&&(size>EPS_L));
 	lock.Enter();
 	obj->AddWallmark(xf, start, dir, sh, size, ttl);
@@ -342,6 +350,9 @@ void CWallmarksEngine::AddSkeletonWallmark(const Fmatrix* xf, CKinematics* obj, 
 
 void CWallmarksEngine::AddSkeletonWallmark(intrusive_ptr<CSkeletonWallmark> wm)
 {
+    if (!r_wallmarks_dynamic)
+        return;
+
 	lock.Enter			();
 	// search if similar wallmark exists
 	wm_slot* slot		= FindSlot	(wm->Shader());
@@ -448,8 +459,6 @@ void CWallmarksEngine::UpdateWallmarks()
 }
 
 float r_wallmarks_ssa_k = 0.5f;
-BOOL r_wallmarks_static = TRUE;
-BOOL r_wallmarks_dynamic = TRUE;
 void CWallmarksEngine::Render()
 {
 	//	if (marks.empty())			return;
