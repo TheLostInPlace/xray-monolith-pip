@@ -448,6 +448,8 @@ void CWallmarksEngine::UpdateWallmarks()
 }
 
 float r_wallmarks_ssa_k = 0.5f;
+BOOL r_wallmarks_static = TRUE;
+BOOL r_wallmarks_dynamic = TRUE;
 void CWallmarksEngine::Render()
 {
 	//	if (marks.empty())			return;
@@ -470,7 +472,7 @@ void CWallmarksEngine::Render()
 
     constexpr const u32 max_verts = MAX_TRIS * 3;
 
-    if (!marks.empty())
+    if ((r_wallmarks_static || r_wallmarks_dynamic) && !marks.empty())
     {
         const float ssaCLIP = r_ssaDISCARD * r_wallmarks_ssa_k;
         xrCriticalSectionGuard g(lock); // Physics may add wallmarks in parallel with rendering
@@ -478,8 +480,8 @@ void CWallmarksEngine::Render()
         for (int i = 0; i < marks.size(); i++)
         {
             wm_slot* slot = marks[i];
-            bool static_empty = slot->static_items.empty();
-            bool skeleton_empty = slot->skeleton_items.empty();
+            bool static_empty = !r_wallmarks_static || slot->static_items.empty();
+            bool skeleton_empty = !r_wallmarks_dynamic || slot->skeleton_items.empty();
             if (static_empty && skeleton_empty)
                 continue;
 
