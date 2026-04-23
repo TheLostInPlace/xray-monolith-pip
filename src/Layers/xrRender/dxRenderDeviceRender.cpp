@@ -282,8 +282,10 @@ void dxRenderDeviceRender::ResourcesPrefetchCreateTexture(LPCSTR name)
 	Resources->_CreateTexture(name);
 }
 
+xrCriticalSection resources_lock;
 void dxRenderDeviceRender::ResourcesGetMemoryUsage(u32& m_base, u32& c_base, u32& m_lmaps, u32& c_lmaps)
 {
+    xrCriticalSectionGuard g(resources_lock);
 	if (Resources)
 		Resources->_GetMemoryUsage(m_base, c_base, m_lmaps, c_lmaps);
 }
