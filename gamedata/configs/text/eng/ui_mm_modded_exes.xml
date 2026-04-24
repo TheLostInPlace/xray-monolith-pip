@@ -8,6 +8,10 @@
 		<text>Modded Exes</text>
 	</string>
 
+	<string id="ui_mm_video_basic_monitor">
+		<text>Monitor</text>
+	</string>
+
 	<string id="ui_mm_lst_ON">
 		<text>ON</text>
 	</string>
@@ -59,8 +63,20 @@
 	<string id="ui_mm_modded_exes_visual_graphics_g_wallmark_range_skeleton">
 		<text>Skeletal wallmark range (g_wallmark_range_skeleton)</text>
 	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r_wallmarks_ssa_k">
+		<text>Wallmarks screen area limit (r_wallmarks_ssa_k)</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r_wallmarks_ssa_k_desc">
+		<text>MORE value means LESS draw distance</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r_wallmarks_static">
+		<text>Decals on static objects (r_wallmarks_static)</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r_wallmarks_dynamic">
+		<text>Decals on dynamic objects (r_wallmarks_dynamic)</text>
+	</string>
 	<string id="ui_mm_modded_exes_visual_graphics_r__blood_decals_on_objects">
-		<text>Blood decals on living objects (r__blood_decals_on_objects)</text>
+		<text>Additional Blood decals on living objects (r__blood_decals_on_objects)</text>
 	</string>
 
 	<string id="ui_mm_modded_exes_visual_graphics_r__ssa_discard">
@@ -73,7 +89,17 @@
 		<text>Objects screen area limit exponent (r__ssa_discard_exp)</text>
 	</string>
 	<string id="ui_mm_modded_exes_visual_graphics_r__ssa_discard_exp_desc">
-		<text>Finetunes draw distance cutoff, less value will increase density of closer objects, more value decrease it</text>
+		<text>Finetunes draw distance cutoff, less value will increase density of closer objects, more value decrease it. Does NOT affect overall draw distance</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r__ssa_discard_fade_k">
+		<text>Objects screen area limit fade coeff (r__ssa_discard_fade_k)</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r__ssa_discard_fade_k_desc">
+		<text>Finetunes draw distance cutoff, more value will increase the "fadeout" of objects, making bigger objects stop rendering sooner. DOES affect overall draw distance</text>
+	</string>
+
+	<string id="ui_mm_modded_exes_visual_graphics_r__actor_shadow_in_demo_record">
+		<text>Enable actor shadow in demo record (r__actor_shadow_in_demo_record)</text>
 	</string>
 
 	<string id="ui_mm_modded_exes_visual_graphics_g_use_non_linear_inertia">
