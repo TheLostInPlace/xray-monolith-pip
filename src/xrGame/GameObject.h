@@ -46,6 +46,7 @@ class CFlashlight;
 class IKinematics;
 class script_attachment;
 class CMissile;
+class CCar;
 
 template <typename _return_type>
 class CScriptCallbackEx;
@@ -93,6 +94,7 @@ public:
 	virtual CAttachableItem* cast_attachable_item() { return NULL; }
 	virtual CHolderCustom* cast_holder_custom() { return NULL; }
 	virtual CBaseMonster* cast_base_monster() { return NULL; }
+	virtual CCar* cast_car() { return NULL; }
 
 public:
 	virtual bool feel_touch_on_contact(CObject*) { return TRUE; }

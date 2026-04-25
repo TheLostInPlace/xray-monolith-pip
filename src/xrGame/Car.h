@@ -20,6 +20,11 @@
 #include "Explosive.h"
 #include "PHDestroyable.h"
 #include "DelayedActionFuse.h"
+
+#ifdef CAR_NEW
+#include "CarCrew.h"
+#endif
+
 // refs
 class ENGINE_API CBoneInstance;
 class CActor;
@@ -78,10 +83,12 @@ private:
 		ascLast = 1 << cAsCallsnum
 	};
 
+    
 	void ASCUpdate();
 	void ASCUpdate(EAsyncCalls c);
 	void AscCall(EAsyncCalls c);
 	////////////////////////////////////////////////////////////////////////////////////////
+    virtual CCar* cast_car() { return this; }
 	virtual bool CanRemoveObject();
 	////////////////////////////////////////////////////////////////////////
 	static BONE_P_MAP bone_map; //interface for PhysicsShell
@@ -407,6 +414,12 @@ public:
 		u32 engine_start_delay; //snd_engine starts after engine_start_delay ms by snd_engine_start
 		u32 time_state_start;
 		CCar* pcar;
+
+#ifdef CAR_NEW
+        bool enhanced;
+        ref_sound snd_engine_run_0;
+        ref_sound snd_engine_run_1;
+#endif
 	} * m_car_sound;
 
 private:
@@ -850,6 +863,23 @@ public:
 	bool IsRemoteControl() { return m_remote_control; };
 	float GetFlyWeightAdd() { return m_fly_weight_add; };
 	void SetFlyWeightAdd(float val);
+
+private:
+    xr_vector<CCrew> m_crews;
+
+public:
+    shared_str m_actor_use_crew;
+    CCrew* CrewActor();
+    CCrew* CrewBySec(LPCSTR sec);
+    CCrew* CrewByObj(CGameObject* obj);
+    CCrew* CrewByRay();
+    void CrewSwitch(LPCSTR src, LPCSTR dst);
+
+    bool AttachCrew(CGameObject* obj, LPCSTR sec);
+    void DetachCrew(CGameObject* obj);
+    bool AttachStalker(CGameObject* obj, LPCSTR sec);
+    void DetachStalker(CGameObject* obj);
+    static void CrewObstacleCallback(bool& do_colide, bool bo1, dContact& c, SGameMtl* material_1, SGameMtl* material_2);
 #endif
 
 public:

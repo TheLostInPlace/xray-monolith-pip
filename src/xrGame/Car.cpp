@@ -39,6 +39,8 @@ BONE_P_MAP CCar::bone_map = BONE_P_MAP();
 #ifdef CAR_NEW
 #include "script_game_object.h"
 #include "script_hit.h"
+#include "ai/stalker/ai_stalker.h"
+#include "CarCrew.h"
 #endif
 
 CCar::CCar()
@@ -165,6 +167,7 @@ CCar::~CCar(void)
 #ifdef CAR_NEW
 	m_rotor_bones.clear();
 	m_drive_bones.clear();
+    m_crews.clear();
 #endif
 }
 
@@ -314,17 +317,17 @@ BOOL CCar::net_Spawn(CSE_Abstract* DC)
 	m_zoom_factor_def = READ_IF_EXISTS(ini, r_float, cfg, "zoom_factor_def", 1.0F);
 	m_zoom_factor_aim = READ_IF_EXISTS(ini, r_float, cfg, "zoom_factor_aim", 1.0F);
 
-	if (ini->line_exist(cfg, "camera_first"))
+	if (ini->line_exist("camera", "cam_first"))
 	{
-		camera[ectFirst]->Load(ini->r_string(cfg, "camera_first"));
+		camera[ectFirst]->Load(ini->r_string("camera", "cam_first"));
 	}
-	if (ini->line_exist(cfg, "camera_chase"))
+	if (ini->line_exist("camera", "cam_chase"))
 	{
-		camera[ectChase]->Load(ini->r_string(cfg, "camera_chase"));
+		camera[ectChase]->Load(ini->r_string("camera", "cam_chase"));
 	}
-	if (ini->line_exist(cfg, "camera_free"))
+	if (ini->line_exist("camera", "cam_free"))
 	{
-		camera[ectFree]->Load(ini->r_string(cfg, "camera_free"));
+		camera[ectFree]->Load(ini->r_string("camera", "cam_free"));
 	}
 
 	m_remote_control = !!READ_IF_EXISTS(ini, r_bool, cfg, "remote_control", FALSE);
@@ -333,6 +336,22 @@ BOOL CCar::net_Spawn(CSE_Abstract* DC)
 	{
 		Fly_net_Spawn(DC);
 	}
+
+    m_crews.clear();
+    if (ini->line_exist("crews", "section"))
+    {
+        LPCSTR str = ini->r_string("crews", "section");
+        string128 sec;
+        int n = _GetItemCount(str);
+        for (int i = 0; i < n; ++i)
+        {
+            _GetItem(str, i, sec);
+            m_crews.emplace_back(this, sec);
+        }
+        PPhysicsShell()->add_ObjectContactCallback(CrewObstacleCallback);
+    }
+
+    PPhysicsShell()->Enable();
 #endif
 
 	return (CScriptEntity::net_Spawn(DC));
@@ -377,6 +396,16 @@ void CCar::net_Destroy()
 	{
 		OwnerActor()->use_HolderEx(nullptr, true);
 	}
+
+    for (auto& I : m_crews)
+    {
+        if (I.Owner() && I.Owner()->cast_stalker())
+        {
+            I.Owner()->cast_stalker()->detach_Holder();
+        }
+    }
+
+	PPhysicsShell()->remove_ObjectContactCallback(CrewObstacleCallback);
 #endif
 
 	IKinematics* pKinematics = smart_cast<IKinematics*>(Visual());
@@ -622,6 +651,17 @@ void CCar::VisualUpdate(float fov)
 	}
 
 	m_car_sound->Update();
+
+#ifdef CAR_NEW
+    if (m_crews.size())
+    {
+        for (auto& I : m_crews)
+        {
+            I.UpdateXform();
+        }
+    }
+    else
+#endif
 	if (Owner())
 	{
 		if (m_pPhysicsShell->isEnabled())
@@ -790,6 +830,14 @@ void CCar::detach_Actor()
 {
 	if (!Owner()) return;
 	Owner()->setVisible(1);
+
+#ifdef CAR_NEW
+    if (m_crews.size())
+    {
+        DetachCrew(Owner());
+    }
+#endif
+
 	CHolderCustom::detach_Actor();
 	PPhysicsShell()->remove_ObjectContactCallback(ActorObstacleCallback);
 	NeutralDrive();
@@ -812,10 +860,25 @@ void CCar::detach_Actor()
 bool CCar::attach_Actor(CGameObject* actor)
 {
 	if (Owner() || CPHDestroyable::Destroyed()) return false;
+
+    if (m_crews.size())
+    {
+        CCrew* cw = (m_actor_use_crew.size()) ? CrewBySec(m_actor_use_crew.c_str()) : CrewByObj(nullptr);
+        Msg("%s:%d %s", __FUNCTION__, __LINE__, m_actor_use_crew.c_str());
+        if (cw == nullptr || AttachCrew(actor, cw->Section()) == false)
+            return false;
+        m_actor_use_crew._set("");
+        CrewActor()->PlayAnimationIdle();
+    }
+
 	CHolderCustom::attach_Actor(actor);
 
 #ifdef CAR_NEW
-	if (m_type == eCarTypeDef)
+    if (m_type == eCarTypeFly)
+    {
+        Fly_attach_Actor(actor);
+    }
+    else
 	{
 #endif
 	IKinematics* K = smart_cast<IKinematics*>(Visual());
@@ -849,10 +912,6 @@ bool CCar::attach_Actor(CGameObject* actor)
 	//driver_pos_tranform.c.set(bone_data.bind_translate);
 	//m_sits_transforms.push_back(driver_pos_tranform);
 	//H_SetParent(actor);
-
-#ifdef CAR_NEW
-	Fly_attach_Actor(actor);
-#endif
 	return true;
 }
 
@@ -1692,6 +1751,15 @@ bool CCar::Use(const Fvector& pos, const Fvector& dir, const Fvector& foot_pos)
 
 	if (m_type == eCarTypeFly)
 		return true;
+
+    if (m_crews.size())
+    {
+        m_actor_use_crew._set("");
+        CCrew* cw = CrewByRay();
+        if (cw == nullptr)
+            return false;
+        m_actor_use_crew._set(cw->Section());
+    }
 #endif
 
 	xr_map<u16, SDoor>::iterator i;
@@ -2053,12 +2121,20 @@ void CCar::CarExplode()
 		if (A->g_Alive() <= 0.f)A->character_physics_support()->movement()->DestroyCharacter();
 	}
 
+#ifdef CAR_NEW
+    for (auto& I : m_crews)
+    {
+        if (I.Owner() && I.Owner()->cast_stalker())
+        {
+            I.Owner()->cast_stalker()->detach_Holder();
+        }
+    }
+
+    StopEngine();
+#endif
+
 	if (CPHDestroyable::CanDestroy())
 		CPHDestroyable::Destroy(ID(), "physic_destroyable_object");
-
-#ifdef CAR_NEW
-	StopEngine();
-#endif
 }
 
 //void CCar::object_contactCallbackFun(bool& do_colide,dContact& c,SGameMtl * ,SGameMtl * )

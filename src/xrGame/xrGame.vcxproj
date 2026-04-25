@@ -2658,6 +2658,7 @@
     <ClCompile Include="CarDoors.cpp" />
     <ClCompile Include="CarExhaust.cpp" />
     <ClCompile Include="CarNew.cpp" />
+    <ClCompile Include="CarCrew.cpp" />
     <ClCompile Include="CarInput.cpp" />
     <ClCompile Include="CarLights.cpp" />
     <ClCompile Include="CarScript.cpp">
