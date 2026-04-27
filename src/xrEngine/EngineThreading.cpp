@@ -158,7 +158,9 @@ void XRay::Engine::GameThread()
     static auto LuaGC = []()
     {
         PROF_EVENT("seqLuaGC");
-        // Do at least once
+        // Do at least twice
+        Device.LuaGC();
+        Device.LuaGCCount++;
         do
         {
             Device.LuaGCCount++;
