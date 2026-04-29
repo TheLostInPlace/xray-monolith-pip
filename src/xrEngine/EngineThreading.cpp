@@ -63,6 +63,7 @@ void XRay::Engine::CalculateBonesThread()
 	ViewBase.CreateFromMatrix(Device.mFullTransform_saved, FRUSTUM_P_LRTB | FRUSTUM_P_FAR);
 
 	static xr_vector<ISpatialShared> spatials = {};
+    spatials.clear();
 	g_SpatialSpace->q_sphere(
 		spatials,
 		ISpatial_DB::O_ORDERED,
