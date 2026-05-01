@@ -63,6 +63,7 @@ void CDSGraphManager::traverse(CSector* start, CFrustum& F, Fvector& vBase, Fmat
 			pair.val.second.clear();
 		}
 	}
+	m_static_seen.clear();
 	i_start->traverse(std::move(F),*this);
 }
 

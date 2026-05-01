@@ -220,6 +220,32 @@ extern float ps_r__ssaDISCARD_exp;
 extern float ps_r__ssaDISCARD_fade_k;
 void CDSGraphManager::r_dsgraph_insert_static(dxRender_Visual *pVisual)
 {
+	if (m_static_seen.find(pVisual))
+	{
+		if (PortalTraverseDbg_Enabled())
+		{
+			PortalTraverseDebugStats& dbg = PortalTraverseDbg_Get();
+			const bool opt_bucket = PortalTraverseDbg_IsOptions(i_options);
+			++dbg.static_dedup_skipped;
+			if (opt_bucket)
+				++dbg.static_dedup_skipped_opt;
+			else
+				++dbg.static_dedup_skipped_noopt;
+		}
+		return;
+	}
+	m_static_seen.insert(pVisual);
+	if (PortalTraverseDbg_Enabled())
+	{
+		PortalTraverseDebugStats& dbg = PortalTraverseDbg_Get();
+		const bool opt_bucket = PortalTraverseDbg_IsOptions(i_options);
+		++dbg.static_dedup_seen;
+		if (opt_bucket)
+			++dbg.static_dedup_seen_opt;
+		else
+			++dbg.static_dedup_seen_noopt;
+	}
+
 	float distSQ;
 	float SSA = CalcSSA(distSQ, pVisual->vis.sphere.P, pVisual);
     Flags16& flags = pVisual->flags;
