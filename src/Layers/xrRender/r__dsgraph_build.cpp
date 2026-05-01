@@ -317,6 +317,29 @@ void CDSGraphManager::r_dsgraph_insert_static(dxRender_Visual *pVisual)
 
 void CDSGraphManager::AddToRenderQueue(R_dsgraph::RenderQueue& queue, const R_dsgraph::DSGraphItem<u32, false>& item, const SPass& pass)
 {
+	if (PortalTraverseDbg_Enabled())
+	{
+		PortalTraverseDebugStats& dbg = PortalTraverseDbg_Get();
+		const bool opt_bucket = PortalTraverseDbg_IsOptions(i_options);
+		// Static items use nullptr matrix/object in current pipeline.
+		if (item.pMatrix == nullptr && item.pObject == nullptr)
+		{
+			++dbg.queue_static_packets;
+			if (opt_bucket)
+				++dbg.queue_static_packets_opt;
+			else
+				++dbg.queue_static_packets_noopt;
+		}
+		else
+		{
+			++dbg.queue_dynamic_packets;
+			if (opt_bucket)
+				++dbg.queue_dynamic_packets_opt;
+			else
+				++dbg.queue_dynamic_packets_noopt;
+		}
+	}
+
 	queue.emplace_back(item, pass);
 }
 
