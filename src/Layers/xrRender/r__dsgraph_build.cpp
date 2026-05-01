@@ -220,7 +220,7 @@ extern float ps_r__ssaDISCARD_exp;
 extern float ps_r__ssaDISCARD_fade_k;
 void CDSGraphManager::r_dsgraph_insert_static(dxRender_Visual *pVisual)
 {
-	if (m_static_seen.find(pVisual))
+	if (m_static_seen.find(pVisual) != m_static_seen.end())
 	{
 		if (PortalTraverseDbg_Enabled())
 		{

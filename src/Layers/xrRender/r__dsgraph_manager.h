@@ -25,7 +25,7 @@ public:
 	xrSRWLock								S_LC;
 
 	FixedMAP<CSector*, std::pair<xr_vector<CFrustum>, FixedSet<CPortal*>>>		m_sector_frustums;
-	FixedSet<dxRender_Visual*>				m_static_seen;
+	xr_unordered_flat_set<dxRender_Visual*>				m_static_seen;
 	xr_vector<ISpatialShared>				lstRenderables, lstLights;
 	FixedMAP<CPortal*, float>				f_portals;
 	sPoly S, D;
