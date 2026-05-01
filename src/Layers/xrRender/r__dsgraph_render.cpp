@@ -441,7 +441,11 @@ void CDSGraphManager::r_dsgraph_capture_static()
 			// Determine visibility for static geometry hierrarhy
 			for (auto& pair : m_sector_frustums)
 			{
-				for (auto& frustum_node : pair.val.first)
+				xr_vector<CFrustum>& frustums = pair.val.first;
+				if (frustums.empty())
+					continue;
+
+				if (frustums.size() == 1)
 				{
 					if (dbg)
 					{
@@ -458,8 +462,32 @@ void CDSGraphManager::r_dsgraph_capture_static()
 							++dbg->static_add_root_calls_noopt;
 						}
 					}
-					add_Static((IRenderVisual*)pair.key->root(), frustum_node, frustum_node.getMask());
+					add_Static((IRenderVisual*)pair.key->root(), frustums.front(), frustums.front().getMask());
+					continue;
 				}
+
+				xr_vector<u32> masks;
+				masks.reserve(frustums.size());
+				for (CFrustum& frustum_node : frustums)
+					masks.push_back(frustum_node.getMask());
+
+				if (dbg)
+				{
+					dbg->static_frustum_nodes += u32(frustums.size());
+					++dbg->static_add_root_calls;
+					if (opt_bucket)
+					{
+						dbg->static_frustum_nodes_opt += u32(frustums.size());
+						++dbg->static_add_root_calls_opt;
+					}
+					else
+					{
+						dbg->static_frustum_nodes_noopt += u32(frustums.size());
+						++dbg->static_add_root_calls_noopt;
+					}
+				}
+
+				add_Static_MultiFrustum((IRenderVisual*)pair.key->root(), frustums, masks);
 			}
 		}
 	}
