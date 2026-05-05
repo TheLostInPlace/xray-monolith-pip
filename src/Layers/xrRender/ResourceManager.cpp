@@ -407,7 +407,7 @@ void CResourceManager::DeferredUnload()
 
 	xr_parallel_foreach(m_textures.begin(), m_textures.end(), [](auto& pair)
 	{
-		pair.second->Load();
+		pair.second->Unload();
 	});
 }
 
