@@ -411,6 +411,36 @@ void CResourceManager::DeferredUnload()
 	});
 }
 
+void CResourceManager::UnloadAllTexturesOnLevelUnload()
+{
+	if (!RDEVICE.b_is_Ready)
+		return;
+
+    xrCriticalSectionGuard guard(creationGuard);
+	xr_vector<CTexture*> textures_to_unload;
+	{
+		textures_to_unload.reserve(m_textures.size());
+
+		for (const auto& pair : m_textures)
+		{
+			CTexture* texture = pair.second;
+			if (!texture)
+				continue;
+
+			// Keep $ textures alive since they are bound to runtime render targets or other important parts
+			if (strstr(*texture->cName, "$"))
+				continue;
+
+			textures_to_unload.push_back(texture);
+		}
+	}
+
+	for (CTexture* texture : textures_to_unload)
+	{
+		texture->Unload();
+	}
+}
+
 #ifdef _EDITOR
 void	CResourceManager::ED_UpdateTextures(AStringVec* names)
 {
