@@ -85,6 +85,8 @@ BOOL CCar::Fly_net_Spawn(CSE_Abstract *DC)
 						}
 					}
 				}
+
+				I.E->set_DynamicLimits(default_l_limit, default_w_limit * 1000.F);
 			}
 		}
 		R_ASSERT3(m_rotor_bones.size(), "fly_definition no rotors", cNameSect_str());
@@ -246,7 +248,7 @@ void CCar::Fly_RotorUpdate()
 			if (I.spinning != true)
 			{
 				I.spinning = true;
-				I.J->SetForceAndVelocity(m_rotor_force_max, m_rotor_speed_max * ((I.clockwise) ? 1 : -1), 1);
+                I.J->SetForceAndVelocity(m_rotor_force_max, (I.clockwise) ? m_rotor_speed_max : -m_rotor_speed_max, 1);
 			}
 		}
 	}
@@ -525,4 +527,129 @@ CCar::SCarFlyBone::SCarFlyBone()
 	axis = 0;
 	spinning = false;
 }
+
+/*----------------------------------------------------------------------------------------------------
+	Crew
+----------------------------------------------------------------------------------------------------*/
+CCrew* CCar::CrewActor()
+{
+    for (auto& I : m_crews)
+    {
+        if (I.OwnerActor())
+        {
+            return &I;
+        }
+    }
+    return nullptr;
+}
+
+CCrew* CCar::CrewBySec(LPCSTR sec)
+{
+    for (auto& I : m_crews)
+    {
+        if (strcmp(I.Section(), sec) == 0)
+        {
+            return &I;
+        }
+    }
+    return nullptr;
+}
+
+CCrew* CCar::CrewByObj(CGameObject* obj)
+{
+    for (auto& I : m_crews)
+    {
+        if (I.Owner() == obj)
+        {
+            return &I;
+        }
+    }
+    return nullptr;
+}
+
+CCrew* CCar::CrewByRay()
+{
+    collide::rq_result& R = HUD().GetRQ();
+    if (R.O == this)
+    {
+        for (auto& I : m_crews)
+        {
+            if (I.IsDoor(R.element))
+            {
+                return &I;
+            }
+        }
+    }
+    return nullptr;
+}
+
+void CCar::CrewSwitch(LPCSTR src, LPCSTR dst)
+{
+    CCrew *cw1 = CrewBySec(src);
+    CCrew *cw2 = CrewBySec(dst);
+    if (cw1 == nullptr || cw2 == nullptr)
+        return;
+    CGameObject* go1 = cw1->Owner();
+    CGameObject* go2 = cw2->Owner();
+    if (go1)
+        cw1->Detach();
+    if (go2)
+        cw2->Detach();
+    if (go1)
+        cw2->Attach(go1);
+    if (go2)
+        cw1->Attach(go1);
+}
+
+bool CCar::AttachCrew(CGameObject* obj, LPCSTR sec)
+{
+    if (CrewByObj(obj))
+        return false;
+    CCrew* cw = (sec) ? CrewBySec(sec) : CrewByObj(nullptr);
+    if (cw == nullptr)
+        return false;
+    return cw->Attach(obj);
+}
+
+void CCar::DetachCrew(CGameObject* obj)
+{
+    CCrew* cw = CrewByObj(obj);
+    if (cw)
+        cw->Detach();
+}
+
+bool CCar::AttachStalker(CGameObject* obj, LPCSTR sec)
+{
+    if (AttachCrew(obj, sec) == false)
+        return false;
+    CrewByObj(obj)->PlayAnimationIdle();
+    return true;
+}
+
+void CCar::DetachStalker(CGameObject* obj)
+{
+    DetachCrew(obj);
+}
+
+void CCar::CrewObstacleCallback(bool& do_colide, bool bo1, dContact& c, SGameMtl* material_1, SGameMtl* material_2)
+{
+    if (do_colide == false)
+        return;
+
+    dxGeomUserData* gd1 = bo1 ? PHRetrieveGeomUserData(c.geom.g1) : PHRetrieveGeomUserData(c.geom.g2);
+    dxGeomUserData* gd2 = bo1 ? PHRetrieveGeomUserData(c.geom.g2) : PHRetrieveGeomUserData(c.geom.g1);
+    CGameObject* obj = (gd1) ? smart_cast<CGameObject*>(gd1->ph_ref_object) : nullptr;
+    CGameObject* who = (gd2) ? smart_cast<CGameObject*>(gd2->ph_ref_object) : nullptr;
+    if (obj == nullptr || who == nullptr)
+    {
+        return;
+    }
+
+    CCar* car = obj->cast_car();
+    if (car && car->m_crews.size() && car->CrewByObj(who))
+    {
+        do_colide = false;
+    }
+}
+
 #endif
