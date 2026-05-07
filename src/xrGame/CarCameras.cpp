@@ -34,39 +34,6 @@ void CCar::cam_Update(float dt, float fov)
 	//bool							owner = !!Owner();
 
 #ifdef CAR_NEW
-    if (m_crews.size())
-    {
-        CCrew* cw = CrewActor();
-        u16 bone_id = (IsCameraZoom() && (cw->m_camera_bone_aim < BI_NONE)) ? cw->m_camera_bone_aim : cw->m_camera_bone_def;
-        CCameraBase* cam = Camera();
-        switch (cam->tag)
-        {
-        case ectFirst:
-        {
-            XFORM().transform_tiny(P, Visual()->dcast_PKinematics()->LL_GetTransform(bone_id).c);
-            if (m_remote_control == false)
-            {
-                if (OwnerActor())
-                    OwnerActor()->Orientation().yaw = -cam->yaw;
-                if (OwnerActor())
-                    OwnerActor()->Orientation().pitch = -cam->pitch;
-            }
-        }
-        break;
-        case ectChase:
-        case ectFree:
-        {
-            XFORM().transform_tiny(P, m_camera_position);
-        }
-        break;
-        }
-
-        cam->f_fov = fov / (IsCameraZoom() ? cw->m_zoom_factor_aim : cw->m_zoom_factor_def);
-        cam->Update(P, Fvector().set(0, 0, 0));
-        Level().Cameras().UpdateFromCamera(cam);
-        return;
-    }
-
 	u16 bone_id = (IsCameraZoom() && (m_camera_bone_aim != BI_NONE)) ? m_camera_bone_aim : m_camera_bone_def;
 	if (bone_id != BI_NONE)
 	{

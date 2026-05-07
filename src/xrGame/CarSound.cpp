@@ -19,10 +19,6 @@ CCar::SCarSound::SCarSound(CCar* car)
 	volume = 1.f;
 	pcar = car;
 	relative_pos.set(0.f, 0.5f, -1.f);
-
-#ifdef CAR_NEW
-    enhanced = false;
-#endif
 }
 
 CCar::SCarSound::~SCarSound()
@@ -54,15 +50,6 @@ void CCar::SCarSound::Init()
 		{
 			snd_transmission.create(ini->r_string("car_sound", "transmission_switch"), st_Effect, sg_SourceType);
 		}
-
-#ifdef CAR_NEW
-        if (READ_IF_EXISTS(ini, r_bool, "car_sound", "enhanced", FALSE))
-        {
-            enhanced = true;
-            snd_engine_run_0.create(ini->r_string("car_sound", "engine_run_0"), st_Effect, sg_SourceType);
-            snd_engine_run_1.create(ini->r_string("car_sound", "engine_run_1"), st_Effect, sg_SourceType);
-        }
-#endif
 	}
 	else
 	{
@@ -119,7 +106,6 @@ void CCar::SCarSound::UpdateStalling()
 void CCar::SCarSound::UpdateDrive()
 {
 	VERIFY(!physics_world()->Processing());
-
 #ifdef CAR_NEW
 	if (pcar->GetType() == CCar::eCarTypeFly)
 	{
@@ -127,25 +113,7 @@ void CCar::SCarSound::UpdateDrive()
 		SetSoundPosition(snd_engine);
 		return;
 	}
-
-    if (enhanced)
-    {
-        if (pcar->e_state_drive == drive && pcar->b_breaks == false)
-        {
-            snd_engine_run_0.set_volume(0.0F);
-            snd_engine_run_1.set_volume(1.0F);
-        }
-        else
-        {
-            snd_engine_run_0.set_volume(1.0F);
-            snd_engine_run_1.set_volume(0.0F);
-        }
-        SetSoundPosition(snd_engine_run_0);
-        SetSoundPosition(snd_engine_run_1);
-        return;
-    }
 #endif
-
 	float scale = 0.5f + 0.5f * pcar->m_current_rpm / pcar->m_torque_rpm;
 	clamp(scale, 0.5f, 1.25f);
 	snd_engine.set_frequency(scale);
@@ -188,11 +156,6 @@ void CCar::SCarSound::Destroy()
 	snd_transmission.destroy();
 	snd_engine_stop.destroy();
 	snd_engine_start.destroy();
-
-#ifdef CAR_NEW
-    snd_engine_run_0.destroy();
-    snd_engine_run_1.destroy();
-#endif
 }
 
 void CCar::SCarSound::SwitchOff()
@@ -218,11 +181,6 @@ void CCar::SCarSound::Stall()
 	snd_engine.stop_deffered();
 	snd_engine_stop.play(pcar);
 	SetSoundPosition(snd_engine_stop);
-
-#ifdef CAR_NEW
-    snd_engine_run_0.stop_deffered();
-    snd_engine_run_1.stop_deffered();
-#endif
 }
 
 void CCar::SCarSound::Stop()
@@ -233,14 +191,6 @@ void CCar::SCarSound::Stop()
 	snd_engine.stop_deffered();
 	snd_engine_stop.play(pcar);
 	SetSoundPosition(snd_engine_stop);
-
-#ifdef CAR_NEW
-    if (enhanced)
-    {
-        snd_engine_run_0.stop_deffered();
-        snd_engine_run_1.stop_deffered();
-    }
-#endif
 }
 
 void CCar::SCarSound::Drive()
@@ -248,20 +198,6 @@ void CCar::SCarSound::Drive()
 	VERIFY(!physics_world()->Processing());
 	if (eCarSound == sndOff) SwitchOn();
 	SwitchState(sndDrive);
-
-#ifdef CAR_NEW
-    if (enhanced)
-    {
-        if (snd_engine_run_0._feedback() == nullptr)
-            snd_engine_run_0.play(pcar, sm_Looped);
-        if (snd_engine_run_1._feedback() == nullptr)
-            snd_engine_run_1.play(pcar, sm_Looped);
-        SetSoundPosition(snd_engine_run_0);
-        SetSoundPosition(snd_engine_run_1);
-        return;
-    }
-#endif
-
 	if (!snd_engine._feedback())snd_engine.play(pcar, sm_Looped);
 	SetSoundPosition(snd_engine);
 }
