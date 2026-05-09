@@ -532,6 +532,8 @@ void __stdcall CDetailManager::MT_CALC()
 
 void CDetailManager::details_clear()
 {
+    PROF_EVENT("details_clear");
+
 	// Disable fade, next render will be scene
 	fade_distance = 99999;
 

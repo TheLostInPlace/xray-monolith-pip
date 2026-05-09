@@ -261,6 +261,7 @@ void CRender::render_lights(light_Package& LP)
 #if defined(USE_DX10) || defined(USE_DX11)
 		PIX_EVENT(UNSHADOWED_LIGHTS);
 #endif
+        PROF_EVENT("UNSHADOWED_LIGHTS");
 		{
 #if defined(USE_DX10) || defined(USE_DX11)
 			PIX_EVENT(POINT_LIGHTS_ACCUM_UNSH);
@@ -302,9 +303,13 @@ void CRender::render_lights(light_Package& LP)
 	}
 
 	// restore world projection if necessary
-	hud_light_restore(saved_pos, LP.v_shadowed);
-	hud_light_restore(saved_pos, LP.v_point);
-	hud_light_restore(saved_pos, LP.v_spot);
+    {
+        PROF_EVENT("hud_light_restore");
+        hud_light_restore(saved_pos, LP.v_shadowed);
+        hud_light_restore(saved_pos, LP.v_point);
+        hud_light_restore(saved_pos, LP.v_spot);
+    }
+	
 }
 
 void CRender::render_indirect(light* L)

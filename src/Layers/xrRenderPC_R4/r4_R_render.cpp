@@ -337,6 +337,7 @@ void CRender::Render()
 
 	if (g_hud)
 	{
+        PROF_EVENT("render_hud");
 		if (g_hud->RenderActiveItemUIQuery())
 			GMBase.r_dsgraph_render_hud_ui();
 		if (g_hud->RenderCamAttachedUIQuery())
