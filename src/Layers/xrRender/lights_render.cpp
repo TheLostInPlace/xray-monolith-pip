@@ -50,6 +50,10 @@ IC void hud_light_restore(xr_map<light*, std::pair<Fvector, Fvector>>& saved_pos
 void CRender::render_lights(light_Package& LP)
 {
 	xr_map<light*, std::pair<Fvector, Fvector>> saved_pos;
+	stats.ls_shadowed_in += (u32)LP.v_shadowed.size();
+	stats.ls_unshadowed_point_in += (u32)LP.v_point.size();
+	stats.ls_unshadowed_spot_in += (u32)LP.v_spot.size();
+	stats.ls_shadowed_peak_in = _max(stats.ls_shadowed_peak_in, (u32)LP.v_shadowed.size());
 	//////////////////////////////////////////////////////////////////////////
 	// 0. apply hud_mode projection if necessary
 	hud_light_apply(saved_pos, LP.v_shadowed);
@@ -81,13 +85,23 @@ void CRender::render_lights(light_Package& LP)
 				}
 				else
 					L->vis_update();
-				if (!L->vis.visible)
+				if (L->vis.pending)
+				{
+					RImplementation.stats.ls_shadowed_pending_skipped++;
 					return true;
+				}
+				if (!L->vis.visible)
+				{
+					RImplementation.stats.ls_shadowed_invisible_skipped++;
+					return true;
+				}
 
 				L->optimize_smap_size();
 
 				return false;
 			}), source.end());
+			stats.ls_shadowed_after_vis += (u32)source.size();
+			stats.ls_shadowed_peak_after_vis = _max(stats.ls_shadowed_peak_after_vis, (u32)source.size());
 		}
 
 		{
@@ -225,6 +239,7 @@ void CRender::render_lights(light_Package& LP)
 			if (!L_spot_s.empty())
 			{
 				PROF_EVENT("ACCUM_SPOT");
+				stats.ls_shadowed_rendered += (u32)L_spot_s.size();
 				for (light* L : L_spot_s)
 				{
 					Target->accum_spot(L);
@@ -276,6 +291,7 @@ void CRender::render_lights(light_Package& LP)
 						continue;
 
 					Target->accum_point(L);
+					++stats.ls_unshadowed_point_rendered;
 					render_indirect(L);
 				}
 				LP.v_point.clear();
@@ -295,6 +311,7 @@ void CRender::render_lights(light_Package& LP)
 						continue;
 
 					Target->accum_spot(L);
+					++stats.ls_unshadowed_spot_rendered;
 					render_indirect(L);
 				}
 				LP.v_spot.clear();
