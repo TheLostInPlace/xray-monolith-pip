@@ -256,6 +256,7 @@ int ps_r2_qsync = 0;
 
 float ps_r2_lt_smooth = 1.f; // 1.f
 float ps_r2_slight_fade = 0.5f; // 1.f
+float ps_r2_shadow_lod_min = 0.02f;
 ///////lvutner
 Fvector4 ps_r2_mask_control = {.0f, .0f, .0f, .0f}; // r2-only
 Fvector ps_r2_drops_control = {.0f, 1.15f, .0f}; // r2-only
@@ -1500,7 +1501,8 @@ void xrRender_initconsole()
 	CMD4(CCC_Float, "r2_parallax_h", &ps_r2_df_parallax_h, .0f, .5f);
 	//	CMD4(CCC_Float,		"r2_parallax_range",	&ps_r2_df_parallax_range,	5.0f,	175.0f	);
 
-	CMD4(CCC_Float, "r2_slight_fade", &ps_r2_slight_fade, .2f, 1.f);
+    CMD4(CCC_Float, "r2_slight_fade", &ps_r2_slight_fade, 0.f, 1.f);
+    CMD4(CCC_Float, "r2_shadow_lod_min", &ps_r2_shadow_lod_min, 0.f, 1.f);
 
 	tw_min.set(0, 0, 0);
 	tw_max.set(1, 1, 1);
