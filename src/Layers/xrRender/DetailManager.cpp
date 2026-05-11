@@ -78,7 +78,7 @@ void CDetailManager::SSwingValue::lerp(const SSwingValue& A, const SSwingValue& 
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CDetailManager::CDetailManager()
+CDetailManager::CDetailManager() : m_frame_calc(u32(-1)), m_frame_rendered(u32(-1))
 {
 	dtFS = 0;
 	dtSlots = 0;
@@ -473,11 +473,9 @@ void CDetailManager::Render()
 	if (!psDeviceFlags.is(rsDetails)) return;
 #endif
 
-	while (bWait)
-	{
-		PROF_EVENT("Wait details");
-		Sleep(0);
-	}
+	// Always ensure per-frame detail visibility/cache are prepared before drawing.
+	// In MT mode this acts as a synchronization point with the worker task.
+	MT_CALC();
 
 	RDEVICE.Statistic->RenderDUMP_DT_Render.Begin();
 	g_pGamePersistent->m_pGShaderConstants->m_blender_mode.w = 1.0f; //--#SM+#-- Флaa нaчaлa ?aндa?a o?aвu [begin of grass render]
@@ -498,7 +496,7 @@ void CDetailManager::Render()
 	g_pGamePersistent->m_pGShaderConstants->m_blender_mode.w = 0.0f; //--#SM+#-- Флaa eонцa ?aндa?a o?aвu [end of grass render]	
 	
 	RDEVICE.Statistic->RenderDUMP_DT_Render.End();
-	m_frame_rendered = RDEVICE.dwFrame;
+	m_frame_rendered.store(RDEVICE.dwFrame, std::memory_order_release);
 }
 
 void __stdcall CDetailManager::MT_CALC()
@@ -511,9 +509,12 @@ void __stdcall CDetailManager::MT_CALC()
 	if (!psDeviceFlags.is(rsDetails)) return;
 #endif
 
-	bWait = true;
+	xrCriticalSectionGuard guard(m_mt_calc_guard);
+	const u32 current_frame = RDEVICE.dwFrame;
+	const u32 frame_calc = m_frame_calc.load(std::memory_order_acquire);
+	const u32 frame_rendered = m_frame_rendered.load(std::memory_order_acquire);
 
-	if (m_frame_calc != RDEVICE.dwFrame && (m_frame_rendered + 1) == RDEVICE.dwFrame)
+	if (frame_calc != current_frame && (frame_rendered + 1) == current_frame)
 	{
 		Fvector EYE = RDEVICE.vCameraPosition_saved;
 
@@ -525,9 +526,8 @@ void __stdcall CDetailManager::MT_CALC()
 		RDEVICE.Statistic->RenderDUMP_DT_Cache.End();
 
 		UpdateVisibleM();
-		m_frame_calc = RDEVICE.dwFrame;
+		m_frame_calc.store(current_frame, std::memory_order_release);
 	}
-	bWait = false;
 }
 
 void CDetailManager::details_clear()
