@@ -3,6 +3,8 @@
 #include "FBasicVisual.h"
 #include "SkeletonCustom.h"
 
+extern int ps_r2_shadow_omnipart_vischeck;
+
 bool check_grass_shadow(light* L, CFrustum VB)
 {
 	// Grass shadows are allowed?
@@ -73,7 +75,11 @@ void CRender::render_lights(light_Package& LP)
 			{
 				if(L->m_parent)
 				{
-					if(L->m_parent->omnipart[0] == L)
+					if (ps_r2_shadow_omnipart_vischeck)
+					{
+						L->vis_update();
+					}
+					else if(L->m_parent->omnipart[0] == L)
 					{
 						L->m_parent->vis_update();
 						for (int f = 0; f < 6; f++)

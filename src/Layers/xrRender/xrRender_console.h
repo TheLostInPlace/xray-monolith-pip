@@ -176,6 +176,7 @@ extern ECORE_API float ps_r2_dhemi_sky_scale; // 1.5f
 extern ECORE_API float ps_r2_dhemi_light_scale; // 1.f
 extern ECORE_API float ps_r2_dhemi_light_flow; // .1f
 extern ECORE_API int ps_r2_dhemi_count; // 5
+extern ECORE_API int ps_r2_shadow_omnipart_vischeck;
 extern ECORE_API float ps_r2_slight_fade; // 1.f
 extern ECORE_API float ps_r2_shadow_lod_min; // 1.f
 extern ECORE_API int ps_r2_wait_sleep;
