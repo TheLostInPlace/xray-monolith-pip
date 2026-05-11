@@ -78,7 +78,7 @@ void CDetailManager::SSwingValue::lerp(const SSwingValue& A, const SSwingValue& 
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CDetailManager::CDetailManager() : m_frame_calc(u32(-1)), m_frame_rendered(u32(-1))
+CDetailManager::CDetailManager()
 {
 	dtFS = 0;
 	dtSlots = 0;
@@ -91,6 +91,9 @@ CDetailManager::CDetailManager() : m_frame_calc(u32(-1)), m_frame_rendered(u32(-
 	m_time_rot_2 = 0;
 	m_time_pos = 0;
 	m_global_time_old = 0;
+
+    m_frame_calc = 0;
+    m_frame_rendered.store(0, std::memory_order_relaxed);
 
 #ifdef DETAIL_RADIUS
 	// KD: variable detail radius
@@ -511,7 +514,7 @@ void __stdcall CDetailManager::MT_CALC()
 
 	xrCriticalSectionGuard guard(m_mt_calc_guard);
 	const u32 current_frame = RDEVICE.dwFrame;
-	const u32 frame_calc = m_frame_calc.load(std::memory_order_acquire);
+    const u32 frame_calc = m_frame_calc;
 	const u32 frame_rendered = m_frame_rendered.load(std::memory_order_acquire);
 
 	if (frame_calc != current_frame && (frame_rendered + 1) == current_frame)
@@ -526,7 +529,7 @@ void __stdcall CDetailManager::MT_CALC()
 		RDEVICE.Statistic->RenderDUMP_DT_Cache.End();
 
 		UpdateVisibleM();
-		m_frame_calc.store(current_frame, std::memory_order_release);
+		m_frame_calc = current_frame;
 	}
 }
 

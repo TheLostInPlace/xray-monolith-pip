@@ -268,7 +268,7 @@ public:
 	void Render();
 
 	/// MT stuff
-	xr_atomic_u32 m_frame_calc;
+	u32 m_frame_calc;
 	xr_atomic_u32 m_frame_rendered;
 	xrCriticalSection m_mt_calc_guard;
 	void __stdcall MT_CALC();
