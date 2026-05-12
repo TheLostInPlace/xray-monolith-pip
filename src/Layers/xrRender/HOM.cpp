@@ -335,8 +335,6 @@ IC BOOL _visible(Fbox& B, Fmatrix& m_xform_01)
 BOOL CHOM::visible(Fbox3& B)
 {
 	if (!bEnabled) return TRUE;
-	if (MT_frame_rendered.load(std::memory_order_acquire) != Device.dwFrame)
-		MT_RENDER();
 	if (B.contains(Device.vCameraPosition)) return TRUE;
 	return _visible(B, m_xform_01);
 }
@@ -344,8 +342,6 @@ BOOL CHOM::visible(Fbox3& B)
 BOOL CHOM::visible(Fbox2& B, float depth)
 {
 	if (!bEnabled) return TRUE;
-	if (MT_frame_rendered.load(std::memory_order_acquire) != Device.dwFrame)
-		MT_RENDER();
 	return Raster.test(B.min.x, B.min.y, B.max.x, B.max.y, depth);
 }
 
@@ -360,8 +356,6 @@ BOOL CHOM::visible(vis_data& vis)
 {
 	if (Device.dwFrame < vis.hom_frame) return TRUE; // not at this time :)
 	if (!bEnabled) return TRUE; // return - everything visible
-	if (MT_frame_rendered.load(std::memory_order_acquire) != Device.dwFrame)
-		MT_RENDER();
 
 	// Now, the test time comes
 	// 0. The object was hidden, and we must prove that each frame	- test		| frame-old, tested-new, hom_res = false;
@@ -396,8 +390,6 @@ BOOL CHOM::visible(vis_data& vis)
 BOOL CHOM::visible(sPoly& P)
 {
 	if (!bEnabled) return TRUE;
-	if (MT_frame_rendered.load(std::memory_order_acquire) != Device.dwFrame)
-		MT_RENDER();
 
 	// Find min/max points of xformed-box
 	Fvector2 min, max;
