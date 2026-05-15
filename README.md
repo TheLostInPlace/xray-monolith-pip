@@ -250,7 +250,6 @@ How to compile exes:
 
 * MT:
   * Lights:
-    * Increase lower limit of `r2_slight_fade` cvar to increase lights' fadeout with distance
     * `r2_shadow_lod_min` cvar to hard limit lights' rendering distance independently of `r2_slight_fade`, more value will limit rendering distance sooner, default 0.02
     * `r2_shadow_omnipart_vischeck` to enable visibility checks for additional 6 lights that are created for each point light, increases performance by not rendering invisible lights, default enabled
     * Removed while loop in light visibility tests, the visibility result will be retrieved next frame. Pending results are treated as visible.
