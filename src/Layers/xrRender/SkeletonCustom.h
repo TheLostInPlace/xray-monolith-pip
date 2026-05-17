@@ -135,6 +135,7 @@ protected:
 	vecBones* bones; // all bones	(shared)
 	u16 bones_size;
 	u16 iRoot; // Root bone index
+    xr_vector<u16> m_bones_topo;
 
 	// Fast search
 	accel* bone_map_N; // bones  associations	(shared)	- sorted by name
@@ -156,6 +157,7 @@ protected:
 	virtual void IBoneInstances_Destroy();
 	void Visibility_Invalidate() { Update_Visibility = TRUE; };
 	void Visibility_Update();
+    void BuildTopologicalOrder();
 
 	//--DSR-- SilencerOverheat_start
 	virtual IRenderVisual* GetVisualByBone(u16 bone_id);
