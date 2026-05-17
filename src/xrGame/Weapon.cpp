@@ -912,8 +912,6 @@ void CWeapon::Load(LPCSTR section)
 
 	m_firepos = READ_IF_EXISTS(pSettings, r_bool, section, "firepos", true);
 	m_aimpos = READ_IF_EXISTS(pSettings, r_bool, section, "aimpos", true);
-
-    fAiOneShotTime = READ_IF_EXISTS(pSettings, r_float, section, "ai_rpm", READ_IF_EXISTS(pSettings, r_float, section, "rpm", 600.f));
 }
 
 // demonized: World model on stalkers adjustments

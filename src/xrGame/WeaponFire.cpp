@@ -57,12 +57,8 @@ float CWeapon::GetWeaponDeterioration()
 
 void CWeapon::FireStart()
 {
-
 	if (ParentIsActor())
 		Actor()->StopSprint();
-
-    if (!ParentIsActor())
-        fOneShotTime = 60.f / fAiOneShotTime;
 
 	CShootingObject::FireStart();
 }
