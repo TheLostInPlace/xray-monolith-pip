@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "../xrphysics/PhysicsShell.h"
 #include "weaponammo.h"
@@ -174,6 +174,8 @@ protected:
 	u8 last_idx;
 
 	CAnonHudItem* m_scopeItem = NULL;
+    // ver
+    float fAiOneShotTime;
 public:
 	void signal_HideComplete();
 	virtual bool Action(u16 cmd, u32 flags);
