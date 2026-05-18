@@ -329,9 +329,9 @@ void CKinematics::Load(const char* N, IReader* data, u32 dwFlags)
 	// reset update frame
 	wm_frame = u32(-1);
 
-	LL_Validate();
-
     BuildTopologicalOrder();
+
+	LL_Validate();
 
 	bones_size = bones->size();
 }
