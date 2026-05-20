@@ -93,7 +93,6 @@ CDetailManager::CDetailManager()
 	m_global_time_old = 0;
 
     m_frame_calc = 0;
-    m_frame_rendered.store(0, std::memory_order_relaxed);
 
 #ifdef DETAIL_RADIUS
 	// KD: variable detail radius
@@ -499,7 +498,6 @@ void CDetailManager::Render()
 	g_pGamePersistent->m_pGShaderConstants->m_blender_mode.w = 0.0f; //--#SM+#-- Флaa eонцa ?aндa?a o?aвu [end of grass render]	
 	
 	RDEVICE.Statistic->RenderDUMP_DT_Render.End();
-	m_frame_rendered.store(RDEVICE.dwFrame, std::memory_order_release);
 }
 
 void __stdcall CDetailManager::MT_CALC()
@@ -514,10 +512,8 @@ void __stdcall CDetailManager::MT_CALC()
 
 	xrCriticalSectionGuard guard(m_mt_calc_guard);
 	const u32 current_frame = RDEVICE.dwFrame;
-    const u32 frame_calc = m_frame_calc;
-	const u32 frame_rendered = m_frame_rendered.load(std::memory_order_acquire);
 
-	if (frame_calc != current_frame && (frame_rendered + 1) == current_frame)
+	if (m_frame_calc != current_frame)
 	{
 		Fvector EYE = RDEVICE.vCameraPosition_saved;
 
