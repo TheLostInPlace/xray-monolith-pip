@@ -272,12 +272,6 @@ _G.COnRightClickMap = function(property_ui, map_table)
 	SendScriptCallback("on_map_right_click", property_ui, map_table)
 end
 
--- Generic callback for https://github.com/themrdemonized/xray-monolith/pull/535
-AddScriptCallback("on_map_spot_selected")
-function pda.map_spot_selected(id, level_name, spot_type)
-	SendScriptCallback("on_map_spot_selected", id, level_name, spot_type)
-end
-
 -- On receive game news callback
 AddScriptCallback("on_news_received")
 _G.CUIMessagesWindow__AddIconedPdaMessage = function(UIMessageView, UITimeText, UICaptionText, UIMsgText, UIIconStatic, UIMessagesScrollView)
