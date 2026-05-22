@@ -183,7 +183,7 @@ void CSightAction::execute_object()
 			VERIFY(kinematics);
 
 			u16 bone_id = kinematics->LL_BoneID("bip01_head");
-			VERIFY2(bone_id != BI_NONE, make_string<const char*>("Cannot find bone %s", bone_id));
+			VERIFY2(bone_id != BI_NONE, make_string("Cannot find bone %s", bone_id));
 			Fvector pos;
 			kinematics->LL_GetBoneWorldPosition(bone_id, pActor->XFORM(), pos);
 			look_pos = pos;
