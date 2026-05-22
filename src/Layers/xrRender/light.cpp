@@ -49,7 +49,6 @@ light::light()
 	CHK_DX(CreateQuery(&vis.Q, D3DQUERYTYPE_OCCLUSION));
 	vis.visible = true;
 	vis.pending = false;
-	vis.query_active = false;
 	m_sectors = {};
 	X.S.posX = 0;
 	X.S.posY = 0;
