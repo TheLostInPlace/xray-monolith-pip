@@ -83,10 +83,20 @@ void CTexture::PostLoad()
 
 void CTexture::apply_load(u32 dwStage)
 {
-	if (!flags.bLoaded) Load();
-	else PostLoad();
-	bind(dwStage);
+    if (!flags.bLoaded) Load();
+    else PostLoad();
+    if (bind == xr_make_delegate(this, &CTexture::apply_load))
+    {
+        // This should not happen - if bind is still apply_load, fall back to apply_normal
+        // which will just apply the (potentially unloaded) surface
+        apply_normal(dwStage);
+    }
+    else
+    {
+        bind(dwStage);
+    }
 };
+
 
 void CTexture::apply_theora(u32 dwStage)
 {
