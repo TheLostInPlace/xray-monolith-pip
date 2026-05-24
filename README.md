@@ -235,6 +235,14 @@ How to compile exes:
 13. A short video demonstration of the entire process: https://youtu.be/MmZwyM2QO38
 
 ## Changelog
+**2026.05.24**
+
+* Main and MT:
+  * Revert label scaling behaviour changes introduced in https://github.com/themrdemonized/xray-monolith/pull/535 due to bugs in GAMMA
+
+* MT:
+   * Revert `Topological sort bones, 33% perf increase (https://github.com/OpenXRay/xray-16/commit/797ba9236bb4b2e6f4f914f71bf684f0888a9479)`
+
 **2026.05.23**
 
 * Main and MT:
