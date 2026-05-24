@@ -130,31 +130,23 @@ BOOL xrSRWLock::TryAcquireShared()
     return TryAcquireSRWLockShared(&smutex);
 }
 
-std::multimap<xrSRWLock*, LockInfo> xrSRWLockGuard::active_locks;
-xrSRWLockGuard::xrSRWLockGuard(xrSRWLock* lock, bool shared, LPCSTR log)
+
+xrSRWLockGuard::xrSRWLockGuard(xrSRWLock* lock, bool shared)
     : lock(lock), shared(shared)
 {
     if (shared)
         lock->AcquireShared();
     else
         lock->AcquireExclusive();
-
-    if (log)
-    {
-        xrSRWLockGuard::active_locks.insert({ lock, {log, std::chrono::high_resolution_clock::now()} });
-    }
-        
 }
 
-xrSRWLockGuard::xrSRWLockGuard(xrSRWLock& lock, bool shared, LPCSTR log)
+xrSRWLockGuard::xrSRWLockGuard(xrSRWLock& lock, bool shared)
     : lock(&lock), shared(shared)
 {
     if (shared)
         lock.AcquireShared();
     else
         lock.AcquireExclusive();
-    if (log)
-        xrSRWLockGuard::active_locks.insert({ &lock, {log, std::chrono::high_resolution_clock::now()} });
 }
 
 xrSRWLockGuard::~xrSRWLockGuard()
@@ -163,8 +155,4 @@ xrSRWLockGuard::~xrSRWLockGuard()
         lock->ReleaseShared();
     else
         lock->ReleaseExclusive();
-
-    auto it = xrSRWLockGuard::active_locks.find(lock);
-    if (it != xrSRWLockGuard::active_locks.end())
-        xrSRWLockGuard::active_locks.erase(it);
 }

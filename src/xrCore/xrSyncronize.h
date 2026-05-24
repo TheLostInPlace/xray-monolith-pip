@@ -1,6 +1,5 @@
 #pragma once
 
-#include <chrono>
 #include <mutex>
 #include <shared_mutex>
 #include <memory>
@@ -100,20 +99,13 @@ public:
 //Write functions guard: lock.AcquireExclusive(); ... lock.ReleaseExclusive();
 //Read functions guard: lock.AcquireShared(); ... lock.ReleaseShared();
 
-struct LockInfo
-{
-    std::string log;
-    std::chrono::high_resolution_clock::time_point time;
-};
-
 class XRCORE_API xrSRWLockGuard
 {
 public:
-    xrSRWLockGuard(xrSRWLock& lock, bool shared = false, LPCSTR log = nullptr);
-    xrSRWLockGuard(xrSRWLock* lock, bool shared = false, LPCSTR log = nullptr);
+    xrSRWLockGuard(xrSRWLock& lock, bool shared = false);
+    xrSRWLockGuard(xrSRWLock* lock, bool shared = false);
     ~xrSRWLockGuard();
 
-    static std::multimap<xrSRWLock*, LockInfo> active_locks;
 private:
     xrSRWLock* lock;
     bool shared;
