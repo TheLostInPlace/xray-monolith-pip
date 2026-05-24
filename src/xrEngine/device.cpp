@@ -328,6 +328,17 @@ void mt_FreezeThread(void *ptr) {
 		if (FreezeTimer.GetElapsed_sec()*1000.f > freezetime)
 		{
 			xrLogger::FlushLog();
+
+            // Print possible SRW deadlocks
+            auto& mm = xrSRWLockGuard::active_locks;
+            auto now = std::chrono::high_resolution_clock::now();
+            for (auto it = mm.begin(); it != mm.end(); it++)
+            {
+                auto span = std::chrono::duration_cast<std::chrono::duration<float>>(now - it->second.time).count();
+                if (span > 1.f)
+                    Msg("! Possible SRW deadlock detected: %s, held for %.2f seconds", it->second.log.c_str(), span);
+            }
+
 			repeatcheck = 5000.f;
 		}
 		STOP_PROFILE;
