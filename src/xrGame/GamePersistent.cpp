@@ -41,6 +41,7 @@
 #include "gametype_chooser.h"
 
 extern BOOL mt_Scheduler;
+extern BOOL mt_SchedulerRT;
 
 //#ifdef DEBUG_MEMORY_MANAGER
 //	static	void *	ode_alloc	(size_t size)								{ return Memory.mem_alloc(size,"ODE");			}
@@ -730,9 +731,12 @@ void CGamePersistent::OnFrame()
 		}
 		else
 		{
-			PROF_EVENT("Sheduler RT");
-			::Engine.Sheduler.UpdateInit();
-			::Engine.Sheduler.UpdateRT();
+            if (!mt_SchedulerRT)
+            {
+                PROF_EVENT("Sheduler RT");
+                ::Engine.Sheduler.UpdateInit();
+                ::Engine.Sheduler.UpdateRT();
+            }
 		}
 
 		// update weathers ambient
