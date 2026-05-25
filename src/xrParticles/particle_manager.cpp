@@ -328,6 +328,7 @@ u32 CParticleManager::LoadActions(int alist_id, IReader& R)
 	if (R.length())
 	{
 		u32 cnt = R.r_u32();
+        pa->reserve(cnt);
 		for (u32 k = 0; k < cnt; ++k)
 		{
 			ParticleAction* act = CreateAction((PActionEnum)R.r_u32());
