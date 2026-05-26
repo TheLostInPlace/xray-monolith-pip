@@ -25,7 +25,7 @@ namespace Feel
 		xr_vector<CObject*> diff;
 		collide::rq_results RQR;
 		xr_vector<ISpatialShared> r_spatial;
-		CObject* m_owner;
+		CObject const* m_owner;
 		CFrustum Frustum;
 		xrSRWLock lock_query, lock_visible;
 
@@ -33,7 +33,7 @@ namespace Feel
 		void o_delete(CObject* E);
 		void o_trace(Fvector& P, float dt, float vis_threshold);
 	public:
-		Vision(CObject* owner);
+		Vision(CObject const* owner);
 		virtual ~Vision();
 
 		struct feel_visible_Item
@@ -52,8 +52,8 @@ namespace Feel
 		xr_vector<feel_visible_Item> feel_visible;
 	public:
 		void feel_vision_clear();
-		void feel_vision_query(Fmatrix& mFull);
-		void feel_vision_update(Fvector& P, float dt, float vis_threshold);
+		void feel_vision_query(Fmatrix& mFull, Fvector& P);
+		void feel_vision_update(CObject* parent, Fvector& P, float dt, float vis_threshold);
 		void __stdcall feel_vision_relcase(CObject* object);
 
 		void feel_vision_get(xr_vector<CObject*>& R)
