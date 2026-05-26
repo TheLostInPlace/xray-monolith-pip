@@ -80,17 +80,34 @@ namespace luabind { namespace detail {
 
     void scope::register_(lua_State* L) const
     {
-		if (::luabind::get_pregister_callback()) ::luabind::get_pregister_callback()(L, true);
-
         for (detail::registration* r = m_chain; r != nullptr; r = r->m_next)
+        {
             r->register_(L);
-
-        if (::luabind::get_pregister_callback()) ::luabind::get_pregister_callback()(L, false);
+        }
     }
 
 } // namespace luabind
 
 namespace luabind {
+
+    namespace {
+
+        struct lua_pop_stack
+        {
+            lua_pop_stack(lua_State* L)
+                : m_state(L)
+            {
+            }
+
+            ~lua_pop_stack()
+            {
+                lua_pop(m_state, 1);
+            }
+
+            lua_State* m_state;
+        };
+
+    } // namespace unnamed
     
     module_::module_(lua_State* L, char const* name = 0)
         : m_state(L)
@@ -98,7 +115,7 @@ namespace luabind {
     {
     }
 
-    void module_::push_global_table()
+    void module_::operator[](scope&& s)
     {
         if (m_name)
         {
@@ -115,7 +132,20 @@ namespace luabind {
                 lua_settable(m_state, LUA_GLOBALSINDEX);
             }
         }
-		else { lua_pushvalue(m_state, LUA_GLOBALSINDEX); }
+        else
+        {
+            lua_pushvalue(m_state, LUA_GLOBALSINDEX);
+        }
+
+        lua_pop_stack guard(m_state);
+
+		if (::luabind::get_pregister_callback())
+			::luabind::get_pregister_callback()	(m_state,true);
+
+		s.register_(m_state);
+
+		if (::luabind::get_pregister_callback())
+			::luabind::get_pregister_callback()	(m_state,false);
 	}
 
     struct namespace_::registration_ : detail::registration

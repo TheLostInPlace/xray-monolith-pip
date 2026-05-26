@@ -49,5 +49,3 @@ namespace luabind { namespace detail
 	}
 
 }}
-luabind::memory_allocation_function_pointer		luabind::allocator = 0;
-luabind::memory_allocation_function_parameter	luabind::allocator_parameter = 0;

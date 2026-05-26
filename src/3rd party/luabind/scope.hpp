@@ -32,20 +32,23 @@ namespace luabind {
 
 } // namespace luabind
 
-namespace luabind::detail
- {
+namespace luabind { namespace detail {
+
     struct LUABIND_API registration
     {
         registration();
         registration(const registration&) = delete;
         virtual ~registration();
 
+    protected:
+        virtual void register_(lua_State*) const = 0;
+
+    private:
         friend struct scope;
         registration* m_next;
-
-        virtual void register_(lua_State*) const = 0;
     };
-}
+
+}} // namespace luabind::detail
 
 namespace luabind {
 
@@ -110,27 +113,11 @@ namespace luabind {
         registration_* m_registration;
     };
 
-	namespace
-	{
-		struct lua_pop_stack
-		{
-			lua_pop_stack(lua_State* L) : m_state(L) {}
-			~lua_pop_stack() { lua_pop(m_state, 1); }
-			lua_State* m_state;
-		};
-	} // namespace
-
-	class LUABIND_API module_
+    class LUABIND_API module_
     {
     public:
         module_(lua_State* L_, char const* name);
-
-		template <typename... Args> void operator[](Args&&... args)
-		{
-			push_global_table();
-			lua_pop_stack guard(m_state);
-			(std::forward<Args>(args).register_(m_state), ...);
-		}
+        void operator[](scope&& s);
 
         module_(const module_&) = delete;
 
@@ -156,8 +143,7 @@ namespace luabind {
     private:
         lua_State* m_state;
         char const* m_name;
-		void push_global_table();
-	};
+    };
 
     inline module_ module(lua_State* L, char const* name = 0)
     {
