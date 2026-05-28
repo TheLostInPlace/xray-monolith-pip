@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "xrSheduler.h"
 #include "xr_object.h"
+#include "IGame_Level.h"
 
 #include "../xrCore/profiler.h"
 
@@ -337,6 +338,7 @@ void CSheduler::Pop()
 
 int SchedulerBatchSize = 128;
 BOOL SchedulerLog = FALSE;
+extern ENGINE_API IGame_Level* g_pGameLevel;
 void CSheduler::ProcessStep()
 {
 	// Normal priority
@@ -346,9 +348,11 @@ void CSheduler::ProcessStep()
 	u32 ItemsCount = Items.size();
 	float target = psShedulerTarget;
 
+    u32 batchSize = g_pGameLevel && g_pGameLevel->schedulerFlush ? 65536 : SchedulerBatchSize;
+
 	{
 		xrSRWLockGuard g(ItemsLock);
-		while (!Items.empty() && Top().dwTimeForExecute < dwTime && ItemsBatch.size() < SchedulerBatchSize)
+		while (!Items.empty() && Top().dwTimeForExecute < dwTime && ItemsBatch.size() < batchSize)
 		{
 			// Optional: Also stop collecting if we are already out of time
 			// (Prevents grabbing items we won't even touch)

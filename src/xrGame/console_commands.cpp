@@ -3155,7 +3155,7 @@ void CCC_RegisterCommands()
     CMD4(CCC_Integer, "mt_task_manager", &mt_TaskManager, 0, 1);
     CMD4(CCC_Integer, "mt_ui", &mt_ui, 0, 1);
 
-	CMD4(CCC_Integer, "scheduler_batch_size", &SchedulerBatchSize, 32, 256);
+	CMD4(CCC_Integer, "scheduler_batch_size", &SchedulerBatchSize, 32, 65536);
 	CMD4(CCC_Integer, "scheduler_log", &SchedulerLog, 0, 1);
 
 	CMD4(CCC_Integer, "spawn_antifreeze", &spawn_antifreeze, 0, 1);
