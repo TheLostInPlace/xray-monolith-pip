@@ -336,7 +336,7 @@ void CSheduler::Pop()
 	PopImpl();
 }
 
-int SchedulerBatchSize = 128;
+int SchedulerBatchSize = 256;
 BOOL SchedulerLog = FALSE;
 extern ENGINE_API IGame_Level* g_pGameLevel;
 void CSheduler::ProcessStep()
