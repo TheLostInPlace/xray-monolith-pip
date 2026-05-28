@@ -497,11 +497,13 @@ void CRenderDevice::on_idle()
 		else
 			rr = refresh_rate;
 
-		auto target = tlastf + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
-			std::chrono::duration<float>(rr));
-		std::this_thread::sleep_until(target);
-
-		tlastf = target;
+		time_span = std::chrono::duration_cast<std::chrono::duration<float>>(tcurrentf - tlastf);
+		while (time_span.count() < rr)
+		{
+			tcurrentf = std::chrono::high_resolution_clock::now();
+			time_span = std::chrono::duration_cast<std::chrono::duration<float>>(tcurrentf - tlastf);
+		}
+		tlastf = std::chrono::high_resolution_clock::now();
 	}
 #endif // ECO_RENDER END
 
