@@ -67,7 +67,7 @@ CGamePersistent::CGamePersistent(void)
 	ambient_effect_wind_out_time = 0.f;
 	ambient_effect_wind_on = false;
 
-    ambient_sound_next_time.reserve(32);
+    ambient_sound_next_time.assign(32, 0);
 
 	m_pUI_core = NULL;
 	m_pMainMenu = NULL;
@@ -300,11 +300,6 @@ void CGamePersistent::WeathersUpdate()
 			
 			for (size_t idx = 0; I != E; ++I, ++idx)
 			{
-                if (ambient_sound_next_time.empty())
-                {
-                    break;
-                }
-
 				CEnvAmbient::SSndChannel& ch = **I;
 				if (ambient_sound_next_time[idx] == 0)
 				{
