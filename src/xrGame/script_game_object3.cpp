@@ -1052,6 +1052,13 @@ void CScriptGameObject::DisableAnomaly()
 	zone->ZoneDisable();
 }
 
+bool CScriptGameObject::IsEnabledAnomaly()
+{
+    CCustomZone* zone = smart_cast<CCustomZone*>(&object());
+    THROW(zone);
+    return zone->IsEnabled();
+}
+
 void CScriptGameObject::ChangeAnomalyIdlePart(LPCSTR name, bool bIdleLight)
 {
 	CCustomZone* zone = smart_cast<CCustomZone*>(&object());
