@@ -78,10 +78,10 @@ int	CParticleManager::CreateActionList()
 {
 	int actionId = m_action_counter++;
 
+    xrSpinWait w;
 	while (ActionIter.load(std::memory_order_acquire) != 0)
 	{
-		_mm_pause();
-		std::this_thread::yield();
+        w();
 	}
 
 	xrSRWLockGuard guard(m_action_guard);
@@ -104,10 +104,10 @@ void CParticleManager::DestroyActionList(int alist_id)
 		}
 	}
 
+    xrSpinWait w;
 	while (ActionIter.load(std::memory_order_acquire) != 0)
 	{
-		_mm_pause();
-		std::this_thread::yield();
+        w();
 	}
 }
 

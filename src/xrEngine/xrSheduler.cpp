@@ -251,22 +251,11 @@ void CSheduler::Unregister(ISheduled* A)
 	// wait until done with m_current_step_obj
 	if (m_current_step_obj == A)
 	{
-		int spin_count = 0;
-
 		// Loop until the worker releases the object
+        xrSpinWait w;
 		while (m_current_step_obj == A)
 		{
-			// Phase 1: Spin briefly (fast reaction if it finishes instantly)
-			if (spin_count < 16)
-			{
-				_mm_pause();
-				spin_count++;
-			}
-			// Phase 2: Yield CPU (don't burn 100% CPU waiting for a heavy update)
-			else
-			{
-				std::this_thread::yield();
-			}
+            w();
 		}
 	}
 
