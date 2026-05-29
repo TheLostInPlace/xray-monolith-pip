@@ -225,6 +225,7 @@ extern u32 g_ai_aim_inertia_time;
 extern u32 g_ai_aim_queue_inertia_time;
 extern float g_ai_danger_ricochet_score;
 BOOL g_ai_move_to_cover_run = FALSE;
+BOOL g_ai_enhanced_vision = FALSE;
 
 extern CrosshairSettings g_crosshair_camera_near;
 extern CrosshairSettings g_crosshair_camera_far;
@@ -2860,14 +2861,11 @@ void CCC_RegisterCommands()
     CMD4(CCC_Integer, "ai_grenade_throw_delay_base", &g_ai_grenade_throw_delay_base, 0, 10000);
     CMD4(CCC_Integer, "ai_grenade_throw_delay_step", &g_ai_grenade_throw_delay_step, 0, 10000);
 
-    extern u32 g_ai_aim_inertia_time;
-    extern u32 g_ai_aim_queue_inertia_time;
     CMD4(CCC_Integer, "ai_aim_inertia_time", (int*)&g_ai_aim_inertia_time, 0, 10000);
     CMD4(CCC_Integer, "ai_aim_queue_inertia_time", (int*)&g_ai_aim_queue_inertia_time, 0, 10000);
     CMD4(CCC_Float, "ai_danger_ricochet_score", &g_ai_danger_ricochet_score, 0.0f, 10000.0f);
-	
-	extern BOOL g_ai_move_to_cover_run;
-	CMD4(CCC_Integer, "ai_move_to_cover_run", &g_ai_move_to_cover_run, 0, 1);
+    CMD4(CCC_Integer, "ai_move_to_cover_run", &g_ai_move_to_cover_run, 0, 1);
+    CMD4(CCC_Integer, "ai_enhanced_vision", &g_ai_enhanced_vision, 0, 1);
 
     CMD4(CCC_Float, "ai_vision_speed_boost", &g_ai_vision_speed_boost, 0.1f, 10.0f);
     CMD4(CCC_Float, "ai_reload_threshold", &g_ai_reload_threshold, 0.01f, 1.0f);
