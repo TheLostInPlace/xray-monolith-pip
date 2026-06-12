@@ -1006,6 +1006,7 @@ ENGINE_API float hit_modifier = 1.0f;
 
 extern float g_dispersion_base;
 extern float g_dispersion_factor;
+extern int g_ai_unlimited_ammo;
 float g_AimLookFactor = 1.f;
 
 int ps_framelimiter = 0;
@@ -1085,6 +1086,7 @@ void CCC_Register()
 
 	CMD4(CCC_Float, "g_dispersion_base", &g_dispersion_base, 0.0f, 5.0f);
 	CMD4(CCC_Float, "g_dispersion_factor", &g_dispersion_factor, 0.1f, 10.0f);
+	CMD4(CCC_Integer, "g_ai_unlimited_ammo", &g_ai_unlimited_ammo, 0, 1);
 
 	// Render device states
 	CMD4(CCC_Integer, "r__supersample", &ps_r__Supersample, 1, 4);
