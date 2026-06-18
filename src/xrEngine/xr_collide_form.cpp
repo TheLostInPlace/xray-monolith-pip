@@ -126,6 +126,19 @@ CCF_Skeleton::CCF_Skeleton(CObject* O) : ICollisionForm(O, cftObject)
 	vis_mask = 0;
 }
 
+// Non-blocking guard. BuildState runs inside the IK callback from CalculateBones, which
+// already holds the current skeleton's UCalc_Mutex; here it reads a neighbour skeleton,
+// needing that object's lock. A blocking acquire lets two threads cross-lock in opposite
+// order (AB-BA deadlock). So TryEnter: if the neighbour is mid-recalc elsewhere, skip the
+// lock and read its (1-frame-stale) transforms rather than block.
+struct UCalc_TryGuard
+{
+	xrCriticalSection& cs;
+	const bool owned;
+	UCalc_TryGuard(xrCriticalSection& c) : cs(c), owned(c.TryEnter() != FALSE) {}
+	~UCalc_TryGuard() { if (owned) cs.Leave(); }
+};
+
 void CCF_Skeleton::BuildState()
 {
 	IRenderVisual* pVisual = owner->Visual();
@@ -151,7 +164,7 @@ void CCF_Skeleton::BuildState()
 		}
 	}
 
-    xrCriticalSectionGuard g(K->UCalc_Mutex);
+    UCalc_TryGuard g(K->UCalc_Mutex);
 	for (ElementVecIt I = elements.begin(); I != elements.end(); I++)
 	{
 		if (!I->valid()) continue;
