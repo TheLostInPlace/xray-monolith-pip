@@ -417,28 +417,33 @@ void CResourceManager::UnloadAllTexturesOnLevelUnload()
 		return;
 
     xrCriticalSectionGuard guard(creationGuard);
-	xr_vector<CTexture*> textures_to_unload;
-	{
-		textures_to_unload.reserve(m_textures.size());
 
-		for (const auto& pair : m_textures)
-		{
-			CTexture* texture = pair.second;
-			if (!texture)
-				continue;
+    xr_vector<CTexture*> textures_to_unload;
+    textures_to_unload.reserve(m_textures.size());
 
-			// Keep $ textures alive since they are bound to runtime render targets or other important parts
-			if (strstr(*texture->cName, "$"))
-				continue;
+    for (const auto& pair : m_textures)
+    {
+        CTexture* texture = pair.second;
+        if (!texture)
+            continue;
 
-			textures_to_unload.push_back(texture);
-		}
-	}
+        if (texture->flags.bUser)
+            continue;
 
-	for (CTexture* texture : textures_to_unload)
-	{
-		texture->Unload();
-	}
+        // Keep $ textures alive since they are bound to runtime render targets or other important parts
+        if (strstr(*texture->cName, "$"))
+            continue;
+
+        // Keep UI textures
+        LPCSTR name = pair.first;
+        if (strncmp(name, "ui\\", 3) == 0 || strncmp(name, "ui/", 3) == 0)
+            continue;
+
+        textures_to_unload.push_back(texture);
+    }
+
+    for (CTexture* texture : textures_to_unload)
+        texture->Unload();
 }
 
 #ifdef _EDITOR
