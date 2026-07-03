@@ -491,6 +491,7 @@ Flags32 ps_actor_shadow_flags = {0}; //Swartz: actor shadow
 int ps_r__tex_evict_enabled    = 0;
 int ps_r__tex_evict_age_frames = 1800;
 int ps_r__tex_evict_batch_size = 200;
+int ps_r__tex_evict_interval   = 600;
 
 //AVO: detail draw radius
 Flags32 ps_common_flags = {0}; // r1-only
@@ -1578,6 +1579,7 @@ void xrRender_initconsole()
 	CMD4(CCC_Integer, "r__tex_evict_enabled",    &ps_r__tex_evict_enabled,    0,   1    );
 	CMD4(CCC_Integer, "r__tex_evict_age_frames", &ps_r__tex_evict_age_frames, 300, 36000);
 	CMD4(CCC_Integer, "r__tex_evict_batch_size", &ps_r__tex_evict_batch_size, 10,  1000 );
+	CMD4(CCC_Integer, "r__tex_evict_interval",   &ps_r__tex_evict_interval,   60,  3600 );
 	CMD3(CCC_Mask, "r__use_precompiled_shaders", &psDeviceFlags2, rsPrecompiledShaders); //Alundaio
 	CMD3(CCC_Mask, "r__enable_grass_shadow", &psDeviceFlags2, rsGrassShadow); //Alundaio
 	CMD3(CCC_Mask, "r__no_scale_on_fade", &psDeviceFlags2, rsNoScale); //Alundaio

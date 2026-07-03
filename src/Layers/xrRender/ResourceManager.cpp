@@ -1,4 +1,4 @@
-// TextureManager.cpp: implementation of the CResourceManager class.
+
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -541,12 +541,15 @@ void CResourceManager::EvictStalledTextures() {
 #if defined(USE_DX11)
   if (!ps_r__tex_evict_enabled)
     return;
+#ifdef DEBUG
   Msg("* [TexEvict] pass called, frame=%u", RDEVICE.dwFrame);
+#endif // DEBUG
   if (!RDEVICE.b_is_Ready)
     return;
 
-  u32 cur_frame    = RDEVICE.dwFrame;
-  u32 max_age      = (u32)ps_r__tex_evict_age_frames;
+  u32 cur_frame = RDEVICE.dwFrame;
+  u32 max_age   = (u32)ps_r__tex_evict_age_frames;
+#ifdef DEBUG
   u32 evicted      = 0;
   u32 evicted_kb   = 0;
   u32 skip_user    = 0;
@@ -554,6 +557,7 @@ void CResourceManager::EvictStalledTextures() {
   u32 skip_unloaded = 0;
   u32 skip_refs    = 0;
   u32 skip_recent  = 0;
+#endif // DEBUG
 
   static xr_string s_evict_cursor;
   const u32 batch_size = (u32)ps_r__tex_evict_batch_size;
@@ -566,60 +570,79 @@ void CResourceManager::EvictStalledTextures() {
   } else {
     I = m_textures.lower_bound(s_evict_cursor.c_str());
     if (I == m_textures.end())
-      I = m_textures.begin(); // wrap around to start
+      I = m_textures.begin();
   }
 
   u32 scanned = 0;
   for (; I != m_textures.end() && scanned < batch_size; ++I, ++scanned) {
     CTexture *tex = I->second;
     if (tex->flags.bUser) {
+#ifdef DEBUG
       skip_user++;
+#endif // DEBUG
       continue;
     }
     if (tex->cName.size() && strstr(tex->cName.c_str(), "$user$")) {
+#ifdef DEBUG
       skip_user++;
+#endif // DEBUG
       continue;
     }
     if (tex->cName.size() && strstr(tex->cName.c_str(), "$null")) {
+#ifdef DEBUG
       skip_user++;
+#endif // DEBUG
       continue;
     }
     if (!tex->flags.bLoaded) {
+#ifdef DEBUG
       skip_unloaded++;
+#endif // DEBUG
       continue;
     }
     // UI textures — PDA, inventory icons, etc. — must never be evicted
     LPCSTR name = I->first;
     if (strncmp(name, "ui\\", 3) == 0 || strncmp(name, "ui/", 3) == 0) {
+#ifdef DEBUG
       skip_name++;
+#endif // DEBUG
       continue;
     }
     if (tex->dwReference.load(std::memory_order_relaxed) > 1) {
+#ifdef DEBUG
       u32 refs = tex->dwReference.load(std::memory_order_relaxed);
       if (refs > 2)
         Msg("* [TexEvict] stuck: [%4d] %s", refs, tex->cName.c_str());
       skip_refs++;
+#endif // DEBUG
       continue;
     }
     if (cur_frame - tex->dwLastUsedFrame < max_age) {
+#ifdef DEBUG
       skip_recent++;
+#endif // DEBUG
       continue;
     }
 
+#ifdef DEBUG
     evicted_kb += tex->flags.MemoryUsage / 1024;
+#endif // DEBUG
     tex->Unload();
+#ifdef DEBUG
     evicted++;
+#endif // DEBUG
   }
 
-  // Save position for next call; empty string means restart from beginning
   s_evict_cursor = (I != m_textures.end()) ? xr_string(I->first) : xr_string();
 
   creationGuard.Leave();
 
+#ifdef DEBUG
   Msg("* [TexEvict] frame=%u total=%u scanned=%u evicted=%u skip_user=%u "
       "skip_name=%u skip_unloaded=%u skip_refs=%u skip_recent=%u freed_kb=%u",
       cur_frame, (u32)m_textures.size(), scanned, evicted, skip_user, skip_name,
       skip_unloaded, skip_refs, skip_recent, evicted_kb);
+#endif // DEBUG
 #endif
 }
 

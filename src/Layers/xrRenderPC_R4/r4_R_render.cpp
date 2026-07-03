@@ -94,8 +94,7 @@ void CRender::Render()
 		return;
 	}
 
-	// Periodic texture eviction — runs every 600 frames (~10s at 60fps)
-	if ((Device.dwFrame % 600) == 0)
+	if ((Device.dwFrame % (u32)ps_r__tex_evict_interval) == 0)
 		dxRenderDeviceRender::Instance().Resources->EvictStalledTextures();
 
 	//.	VERIFY					(g_pGameLevel && g_pGameLevel->pHUD);
