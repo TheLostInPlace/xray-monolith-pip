@@ -195,9 +195,6 @@ void CRender::level_Unload()
 		//Msg("The Level Unloaded.======================== %d", ++unload_counter);
 	}
 
-	// Force-evict all textures on level unload — covers normal transitions,
-	// fast travel, and main menu exit (all converge through level_Unload())
-
 	b_loaded = FALSE;
 }
 
