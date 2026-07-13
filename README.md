@@ -235,6 +235,13 @@ How to compile exes:
 13. A short video demonstration of the entire process: https://youtu.be/MmZwyM2QO38
 
 ## Changelog
+**2026.07.13**
+* Main and MT:
+  * erepb: fix: replay spot add-properties at click... (https://github.com/themrdemonized/xray-monolith/pull/598)
+  * Verdatim25: Add new Cvar pseudogiant_dodge_stomp_while_falling (https://github.com/themrdemonized/xray-monolith/pull/599)
+  * GhenTuong: CCar development. Drone, Visual camera, Camera Scope (https://github.com/themrdemonized/xray-monolith/pull/600)
+  * damiansirbu: feat(ai): per-NPC fire queue scale setter (https://github.com/themrdemonized/xray-monolith/pull/603)
+
 **2026.07.06**
 * Main and MT:
   * Fix `CPatrolPoint::load_from_config` not working properly
