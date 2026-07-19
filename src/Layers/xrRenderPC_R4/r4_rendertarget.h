@@ -464,6 +464,7 @@ public:
 	void phase_heatvision(); //--DSR-- HeatVision
 	void phase_3DSSReticle(); // Redotix99: for 3D Shader Based Scopes
 	void phase_svp_capture(); // pip copy the SVP combined color into rt_secondVP for the lens to sample
+	bool svp_nearblur_pass(); // pip near-field defocus dispatch, true when it ran else the caller copies
 	void draw_scope(ref_shader se, std::function<void()> bind); // pip render the scope lens meshes forcing se per phase
 	void EvalSVP_DLSS(const SvpDlssInputs& in); // pip DLSS-SR eval, bilinear-passthrough stub for now (Task 7)
 	void draw_reflex(bool svp = false); // pip render reflex-sight lenses (mapReflexHUDSorted), svp draws them through the entrance-pupil camera
