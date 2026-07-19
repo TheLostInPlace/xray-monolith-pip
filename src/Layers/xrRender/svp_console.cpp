@@ -106,6 +106,7 @@ float ps_r__svp_sharpen_inner = 0.0f; // svp sharpen inner crisp-zone radius bef
 float ps_r__svp_nvg_bleach = 0.0f; // svp NVG highlight bleach roll-off, replaces the hard clamp so bright sources compress not clip (0 = off, stock)
 float ps_r__svp_nvg_sensitivity = 1.0f; // svp NVG bleach onset sensitivity, higher rolls off dimmer sources
 int ps_r__svp_hud_full = 2; // svpscope 1 body skip only, mode 2 clips at the pupil camera near plane instead renders (default), 1 = full barrel from the eye + near-blur, 0 = objective clip with the body rendered
+int ps_r__svp_near_pupil = 0; // svp mode 2 push the scope near clip to the pupil front plane so behind-pupil barrel falls behind it (0 = main-view near plane)
 int ps_r__svp_cull = 1; // svp cull the scope geometry to the scope frustum, the SVP re-submits the whole main-frustum world otherwise (1 = on)
 int ps_r__svp_skip_motionblur = 0; // svp skip motion blur on the scope pass, magnified blur is an artifact and a small cost (0 = keep)
 int ps_r__svp_skip_hud_distort = 1; // svp skip hud-layer distortion on the scope pass, the muzzle heat billboard sits on the entrance pupil and warps the image (1 = skip)
@@ -192,6 +193,7 @@ void svp_console_init()
 	CMD4(CCC_Float, "r__svp_nvg_bleach", &ps_r__svp_nvg_bleach, 0.0f, 1.0f); // svp NVG highlight bleach roll-off (0 = off, stock clamp)
 	CMD4(CCC_Float, "r__svp_nvg_sensitivity", &ps_r__svp_nvg_sensitivity, 0.1f, 4.0f); // svp NVG bleach onset sensitivity
 	CMD4(CCC_Integer, "r__svp_hud_full", &ps_r__svp_hud_full, 0, 2); // svp barrel: 2 front-plane clip (default), 1 full barrel from the eye, 0 objective clip + body
+	CMD4(CCC_Integer, "r__svp_near_pupil", &ps_r__svp_near_pupil, 0, 1); // svp mode 2 push the near clip to the pupil front plane (0 = main-view near)
 	CMD4(CCC_Integer, "r__svp_cull", &ps_r__svp_cull, 0, 1); // svp frustum cull the scope geometry (1 = on)
 	CMD4(CCC_Integer, "r__svp_skip_motionblur", &ps_r__svp_skip_motionblur, 0, 1); // svp skip motion blur on the scope
 	CMD4(CCC_Integer, "r__svp_skip_hud_distort", &ps_r__svp_skip_hud_distort, 0, 1); // svp skip hud-layer distortion on the scope

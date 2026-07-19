@@ -514,6 +514,11 @@ void svpCamera()
 				m_W_svpcam.c.mad(ri, off.x * params.eyepiece.radius);
 				m_W_svpcam.c.mad(up, off.y * params.eyepiece.radius);
 			}
+			// mode 2 pushes the scope near clip to the pupil front plane so behind-pupil barrel
+			// falls behind it, world geometry sits far past this
+			extern int ps_r__svp_near_pupil;
+			if (ps_r__svp_near_pupil && front_use > near_plane)
+				near_plane = front_use;
 		}
 		extern int ps_r__svp_cop_diag;
 		static u32 s_frontcam_ms = 0;
