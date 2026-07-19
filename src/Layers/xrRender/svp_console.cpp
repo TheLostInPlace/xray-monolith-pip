@@ -78,6 +78,7 @@ int ps_r__svp_thermal_sim = 1; // svp digital-sensor sim on thermal displays: se
 float ps_r__svp_twilight = 1.0f; // svp exit-pupil twilight dimming: zooming shrinks the exit pupil below the dark-adapted eye and the image dims, day scenes unaffected (0 = off)
 float ps_r__svp_parallax = 0.0f; // svp reticle parallax, 0 = pinned center (default), 1 = the real eye deflection response
 float ps_r__svp_near_blur = 1.0f; // svp near-field defocus strength on the scope image (svpscope 2, 0 = off)
+int ps_r__svp_nearblur_scatter = 0; // svp near-blur composite, 0 = gather default look, 1 = scatter accumulator
 float ps_r__svp_focus_m = 100.0f; // svp parallax focus distance in meters, objects off this plane defocus by the thin lens law
 int ps_r__svp_authored_optics = 1; // svp use the authored per-scope scope_objective_lens_offset for the front plane + defocus aperture (0 = measured geometry only)
 int ps_r__svp_measured_optics = 0; // svp fill the objective offset + mm from mesh detection when authored ltx is absent (0 = authored/live only, byte-identical)
@@ -164,6 +165,7 @@ void svp_console_init()
 	CMD4(CCC_Float, "r__svp_twilight", &ps_r__svp_twilight, 0.0f, 1.0f); // svp exit-pupil twilight dimming strength (0 = off)
 	CMD4(CCC_Float, "r__svp_parallax", &ps_r__svp_parallax, 0.0f, 10.0f); // svp true-scale reticle parallax, 1 = physical sub-pixel (0 = pinned)
 	CMD4(CCC_Float, "r__svp_near_blur", &ps_r__svp_near_blur, 0.0f, 3.0f); // svp near-field defocus strength (0 = off)
+	CMD4(CCC_Integer, "r__svp_nearblur_scatter", &ps_r__svp_nearblur_scatter, 0, 1); // svp near-blur composite (0 = gather default, 1 = scatter)
 	CMD4(CCC_Float, "r__svp_focus_m", &ps_r__svp_focus_m, 10.0f, 1000.0f); // svp parallax focus distance m (fixed-parallax scopes sit at 100)
 	CMD4(CCC_Integer, "r__svp_authored_optics", &ps_r__svp_authored_optics, 0, 1); // svp use authored per-scope objective offset for front plane + aperture (0 = measured only)
 		CMD4(CCC_Integer, "r__svp_measured_optics", &ps_r__svp_measured_optics, 0, 1); // measured lens geometry fills unauthored optics (0 = off, authored/live only)
