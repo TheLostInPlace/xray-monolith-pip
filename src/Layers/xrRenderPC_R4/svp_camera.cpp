@@ -747,7 +747,7 @@ void svpCamera()
 			s_cfg_logged = true;
 			ps_r__svp_report = 0;
 			// build fingerprint header first, testers diff their log against this
-			Msg("[SVP-CFG] build %s mode=%d", __DATE__, scope_svp_enabled);
+			PipMsg("[SVP-CFG] build %s mode=%d", __DATE__, scope_svp_enabled);
 			// generate the cvar list from the console registry so it never drifts from the registered
 			// set, every r__svp_/g_svp_/s3ds_ command with its live value grouped about eight per line
 			if (Console)
@@ -761,9 +761,9 @@ void svpCamera()
 					IConsole_Command::TStatus st; st[0] = 0; c.second->Status(st);
 					char tok[288]; xr_sprintf(tok, "%s%s=%s", grp ? " " : "", nm, st);
 					xr_strcat(line, tok);
-					if (++grp == 8) { Msg("[SVP-CFG] %s", line); line[0] = 0; grp = 0; }
+					if (++grp == 8) { PipMsg("[SVP-CFG] %s", line); line[0] = 0; grp = 0; }
 				}
-				if (line[0]) Msg("[SVP-CFG] %s", line);
+				if (line[0]) PipMsg("[SVP-CFG] %s", line);
 				// aa state read the same registry way, ssfx_taa is the script-driven taa control
 				IConsole_Command::TStatus a_taa, a_aa, a_ker; a_taa[0] = a_aa[0] = a_ker[0] = 0;
 				auto st_of = [](const char* name, IConsole_Command::TStatus& out) {
@@ -771,7 +771,7 @@ void svpCamera()
 					if (it != Console->Commands.end()) it->second->Status(out);
 				};
 				st_of("ssfx_taa", a_taa); st_of("r2_aa", a_aa); st_of("r2_aa_kernel", a_ker);
-				Msg("[SVP-CFG] aa ssfx_taa=%s r2_aa=%s r2_aa_kernel=%s", a_taa, a_aa, a_ker);
+				PipMsg("[SVP-CFG] aa ssfx_taa=%s r2_aa=%s r2_aa_kernel=%s", a_taa, a_aa, a_ker);
 			}
 
 			// pip [SVP-FILES] shader source truth: where each scope file resolves from (loose or which
@@ -801,7 +801,7 @@ void svpCamera()
 					const CLocatorAPI::file* f = FS.exist("$game_shaders$", rel);
 					if (!f)
 					{
-						Msg("[SVP-FILES] %-32s MISSING", fn);
+						PipMsg("[SVP-FILES] %-32s MISSING", fn);
 						continue;
 					}
 					u32 crc = 0;
@@ -829,23 +829,23 @@ void svpCamera()
 					const char* src = "loose";
 					if (f->vfs != 0xffffffff && f->vfs < FS.m_archives.size())
 						src = FS.m_archives[f->vfs].path.c_str();
-					Msg("[SVP-FILES] %-32s %6u bytes crc %08x ver[%s] %s", fn, f->size_real, crc, ver, src);
+					PipMsg("[SVP-FILES] %-32s %6u bytes crc %08x ver[%s] %s", fn, f->size_real, crc, ver, src);
 				}
 				// shipped precompiled blobs load with no source crc and shadow every source edit
 				FS_FileSet blobs;
 				string_path bdir;
 				FS.update_path(bdir, "$game_shaders$", "r3\objects\r4\scope_color_write.ps\\");
 				FS.file_list(blobs, bdir, FS_ListFiles | FS_RootOnly, "*");
-				Msg("[SVP-FILES] dispatcher precompiled blobs %u, rs_precompiled_shaders %d",
+				PipMsg("[SVP-FILES] dispatcher precompiled blobs %u, rs_precompiled_shaders %d",
 					(u32)blobs.size(), psDeviceFlags2.test(rsPrecompiledShaders) ? 1 : 0);
 				u32 n_arch = 0;
 				for (const auto& A : FS.m_archives)
 					if (strstr(A.path.c_str(), "mods"))
 					{
-						Msg("[SVP-FILES] mounted mods archive %s", A.path.c_str());
+						PipMsg("[SVP-FILES] mounted mods archive %s", A.path.c_str());
 						++n_arch;
 					}
-				Msg("[SVP-FILES] mods archives mounted %u", n_arch);
+				PipMsg("[SVP-FILES] mods archives mounted %u", n_arch);
 			}
 		}
 	}
