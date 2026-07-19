@@ -74,11 +74,16 @@ bool CRenderTarget::svp_nearblur_pass()
 				const float A = (omm > 0.01f) ? omm * 0.001f : 0.024f; // typical 24mm when no per-scope data
 				const float vfov = (Device.m_SecondViewport.svp_fov > 0.01f) ? Device.m_SecondViewport.svp_fov : 0.35f;
 				const float k = A * h / vfov * _min(ps_r__svp_near_blur, 3.f);
+				const float focus = _max(ps_r__svp_focus_m, 1.f);
 				// the near field ends at the real muzzle, per weapon, clamped to the old design bound
 				float md = 1.5f;
 				if (Device.m_SecondViewport.muzzle_pos.square_magnitude() > EPS)
 					md = clampr(Device.m_SecondViewport.muzzle_pos.distance_to(Device.vCameraPosition), 0.5f, 3.f);
-				RCache.set_c("svp_nearblur_params", _max(ps_r__svp_focus_m, 1.f), k, h * 0.06f, md);
+				// max radius is the physical coc at the svp near plane capped at the inscribed disc
+				const float z_near = Device.m_SecondViewport.svp_near;
+				const float coc_near = k * _max(1.f / _max(z_near, 0.05f) - 1.f / focus, 0.f);
+				const float maxR = _min(coc_near, 0.5f * _min(w, h));
+				RCache.set_c("svp_nearblur_params", focus, k, maxR, md);
 			}
 			RCache.Render(D3DPT_TRIANGLELIST, Offset, 0, 3, 0, 1);
 			return true;
