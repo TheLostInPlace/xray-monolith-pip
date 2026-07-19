@@ -59,7 +59,8 @@ float4 main(p_screen I, float4 pos2d : SV_POSITION) : SV_Target
 		if (sampleDepth > centerDepth)
 			sampleSize = clamp(sampleSize, 0.0f, centerSize * 2.0f);
 		float m = smoothstep(radius - 0.5f, radius + 0.5f, sampleSize);
-		float3 sampleColor = s_nb_image.SampleLevel(smp_base, tc, 0).rgb;
+		float lod = log2(max(g * radius, 1.0f));
+		float3 sampleColor = s_nb_image.SampleLevel(smp_base, tc, lod).rgb;
 		color += lerp(color / tot, sampleColor, m);
 		tot += 1.0f;
 		radius += g * radius;

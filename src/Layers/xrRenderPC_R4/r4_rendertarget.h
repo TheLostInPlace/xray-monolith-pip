@@ -139,6 +139,8 @@ public:
 	resptr_core<CRT, resptrcode_crt> rt_Generic_temp;
 
 	ref_rt rt_secondVP;	// 32bit		(r,g,b,a) --//#SM+#-- +SecondVP+
+	ID3DTexture2D* m_svp_nb_mip_surf = nullptr; // pip mip-prefiltered svp color for near-blur
+	ref_texture m_svp_nb_mip_tex; // pip holds the all-mip srv for GenerateMips
 
 
 	ref_rt rt_fakescope;	// crookr fakescope
