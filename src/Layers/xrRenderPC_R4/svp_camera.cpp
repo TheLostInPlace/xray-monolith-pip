@@ -353,8 +353,10 @@ void svpCamera()
 	};
 	if (flat_window)
 	{
-		scope_magnification = fov_aim / window_fov(g_pGamePersistent->m_pGShaderConstants->hud_params.y > 1.f
-			? g_pGamePersistent->m_pGShaderConstants->hud_params.y : svp_fov);
+		// authored mag flat optics keep the clean optical mag, only the see-through panel takes the subtense ratio
+		if (!params.svp_authored_mag)
+			scope_magnification = fov_aim / window_fov(g_pGamePersistent->m_pGShaderConstants->hud_params.y > 1.f
+				? g_pGamePersistent->m_pGShaderConstants->hud_params.y : svp_fov);
 		ratio_magnification = 1.f;
 	}
 	else
@@ -448,7 +450,7 @@ void svpCamera()
 		// already derives from the aim fov and passes through
 		const float fscale = rad2deg(fov_aim) / 75.f;
 		const float yscale = (_abs(fovp.y - fovp.x) < 0.01f) ? fscale : 1.f;
-		if (flat_window)
+		if (flat_window && !params.svp_authored_mag)
 		{
 			g_pip_scope_max_mag = (fovp.x > EPS) ? fov_aim / window_fov(fovp.x * fscale) : scope_magnification;
 			g_pip_scope_min_mag = (fovp.y > EPS) ? fov_aim / window_fov(fovp.y * yscale) : scope_magnification;
@@ -464,7 +466,18 @@ void svpCamera()
 	float vFov = 2.0f * atan(tan(fov * 0.5f) / (ratio_use * scope_magnification));
 	// flat window renders exactly the panel subtense (tan-correct, the mag division is not)
 	if (flat_window)
-		vFov = fov / scope_magnification;
+	{
+		if (params.svp_authored_mag)
+		{
+			// authored mag flat optic renders the floor panel subtense then the optical mag crops in
+			const Fvector4& fovp = g_pGamePersistent->m_pGShaderConstants->hud_fov_params;
+			const float fscale = rad2deg(fov_aim) / 75.f;
+			const float yscale = (_abs(fovp.y - fovp.x) < 0.01f) ? fscale : 1.f;
+			vFov = window_fov(fovp.y * yscale) / scope_magnification;
+		}
+		else
+			vFov = fov / scope_magnification;
+	}
 
 	auto near_plane = fNearPlane;
 	auto m_W_svpcam = params.eyepiece.m_W; // svpscope 1 places the camera on the eyepiece

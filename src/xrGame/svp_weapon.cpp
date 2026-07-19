@@ -168,6 +168,8 @@ void CWeapon::UpdateSecondVP()
 		// the main view stays wide at g_fov through a pip scope, publish it as the punch free mag
 		// reference so a recoil fov effector never reaches scope_magnification
 		vp.svp_aim_fov = g_fov;
+		// authored mag flat optics keep the clean optical mag, the panel subtense override stays off
+		vp.svp_authored_mag = m_zoom_params.m_bSvpAuthoredMin;
 	}
 
 	// pip mirror the live ballistic ray + muzzle point for the [3DB] overlay, and range the zero:
