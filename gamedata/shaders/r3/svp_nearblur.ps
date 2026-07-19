@@ -47,13 +47,17 @@ float4 main(p_screen I, float4 pos2d : SV_POSITION) : SV_Target
 	float ign = frac(52.9829189f * frac(dot(pos2d.xy, float2(0.06711056f, 0.00583715f))));
 	float rot = ign * 6.2831853f;
 
+	// constant golden-angle rotation from NB_GOLDEN_ANGLE, one mul per tap replaces cos/sin
+	const float2x2 NB_ROT = float2x2(-0.73736f, -0.67549f, 0.67549f, -0.73736f);
+	float2 dir = float2(cos(rot), sin(rot));
+
 	float3 color = base;
 	float tot = 1.0f;
 	float radius = r0;
 	[loop]
 	for (float ang = 0.0f; radius < maxR && ang < 400.0f; ang += NB_GOLDEN_ANGLE)
 	{
-		float2 tc = uv + float2(cos(ang + rot), sin(ang + rot)) * screen_res.zw * radius;
+		float2 tc = uv + dir * screen_res.zw * radius;
 		float sampleDepth = nb_depth(tc);
 		float sampleSize = nb_size(sampleDepth);
 		if (sampleDepth > centerDepth)
@@ -63,6 +67,7 @@ float4 main(p_screen I, float4 pos2d : SV_POSITION) : SV_Target
 		float3 sampleColor = s_nb_image.SampleLevel(smp_base, tc, lod).rgb;
 		color += lerp(color / tot, sampleColor, m);
 		tot += 1.0f;
+		dir = mul(NB_ROT, dir);
 		radius += g * radius;
 	}
 	color /= tot;
