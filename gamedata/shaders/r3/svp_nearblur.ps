@@ -38,8 +38,10 @@ float4 main(p_screen I, float4 pos2d : SV_POSITION) : SV_Target
 		return float4(base, 1.0f);
 
 	float maxR = svp_nearblur_params.z;
-	// keep the spiral around 150 taps whatever the radius, iterations ~ maxR^2 / (2*rad_scale)
-	float rad_scale = max(0.5f, maxR * maxR / 300.0f);
+	// geometric ring growth holds the tap count near the budget for any radius, so the first
+	// ring stays sub-pixel and catches small coc while the count grows only with log(maxR)
+	float r0 = 1.0f;
+	float g = exp(log(max(maxR, r0) / r0) / 150.0f) - 1.0f;
 
 	// per-pixel interleaved-gradient-noise rotation decorrelates the spiral so the bokeh reads as noise TAA averages
 	float ign = frac(52.9829189f * frac(dot(pos2d.xy, float2(0.06711056f, 0.00583715f))));
@@ -47,7 +49,7 @@ float4 main(p_screen I, float4 pos2d : SV_POSITION) : SV_Target
 
 	float3 color = base;
 	float tot = 1.0f;
-	float radius = rad_scale;
+	float radius = r0;
 	[loop]
 	for (float ang = 0.0f; radius < maxR && ang < 400.0f; ang += NB_GOLDEN_ANGLE)
 	{
@@ -60,7 +62,7 @@ float4 main(p_screen I, float4 pos2d : SV_POSITION) : SV_Target
 		float3 sampleColor = s_nb_image.SampleLevel(smp_base, tc, 0).rgb;
 		color += lerp(color / tot, sampleColor, m);
 		tot += 1.0f;
-		radius += rad_scale / radius;
+		radius += g * radius;
 	}
 	color /= tot;
 	return float4(color, 1.0f);
