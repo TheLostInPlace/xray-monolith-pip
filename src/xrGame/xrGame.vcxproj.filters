@@ -5289,6 +5289,9 @@
     <ClInclude Include="EffectorShot.h">
       <Filter>Core\Client\Effectors\Weapon</Filter>
     </ClInclude>
+    <ClInclude Include="gunsmith_cam.h">
+      <Filter>Core\Client\Effectors\Actor</Filter>
+    </ClInclude>
     <ClInclude Include="EffectorShotX.h">
       <Filter>Core\Client\Effectors\Weapon</Filter>
     </ClInclude>
@@ -8866,6 +8869,9 @@
     </ClCompile>
     <ClCompile Include="EffectorShot.cpp">
       <Filter>Core\Client\Effectors\Weapon</Filter>
+    </ClCompile>
+    <ClCompile Include="gunsmith_cam.cpp">
+      <Filter>Core\Client\Effectors\Actor</Filter>
     </ClCompile>
     <ClCompile Include="EffectorShotX.cpp">
       <Filter>Core\Client\Effectors\Weapon</Filter>

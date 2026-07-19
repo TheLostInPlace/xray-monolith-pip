@@ -1,0 +1,101 @@
+#include "stdafx.h"
+#include "gunsmith_cam.h"
+#include "Actor.h"
+#include "ActorEffector.h"
+#include "CameraEffector.h"
+
+// absolute-positioning cam effector, view pos+dir fed from lua, zero roll, fov untouched
+class CGunsmithCamEffector : public CEffectorCam
+{
+	Fvector m_pos;
+	Fvector m_dir;
+	bool    m_alive;
+public:
+	CGunsmithCamEffector() : CEffectorCam(eCEGunsmithCam, 100000.f)
+	{
+		m_pos.set(0.f, 0.f, 0.f);
+		m_dir.set(0.f, 0.f, 1.f);
+		m_alive = true;
+		// full-view override, don't inject the absolute delta into the hud viewmodel
+		SetHudAffect(false);
+	}
+
+	void set_target(const Fvector& p, const Fvector& d) { m_pos = p; m_dir = d; }
+	void set_alive(bool v) { m_alive = v; }
+
+	virtual BOOL Valid() { return m_alive ? TRUE : FALSE; }
+	virtual bool AbsolutePositioning() { return true; }
+	virtual BOOL ProcessCam(SCamEffectorInfo& info);
+};
+
+BOOL CGunsmithCamEffector::ProcessCam(SCamEffectorInfo& info)
+{
+	if (!m_alive)
+		return FALSE;
+
+	Fvector fwd = m_dir;
+	if (fwd.magnitude() < EPS)
+		fwd.set(0.f, 0.f, 1.f);
+	fwd.normalize();
+
+	// zero-roll basis from world up, world X fallback when dir is near-vertical
+	Fvector world_up;
+	world_up.set(0.f, 1.f, 0.f);
+	Fvector right;
+	right.crossproduct(world_up, fwd);
+	if (right.magnitude() < EPS)
+		right.set(1.f, 0.f, 0.f);
+	right.normalize();
+
+	Fvector up;
+	up.crossproduct(fwd, right);
+	up.normalize();
+
+	info.p = m_pos;
+	info.d = fwd;
+	info.n = up;
+	return TRUE;
+}
+
+// the actor cam manager owns and deletes effectors, so the live handle is whatever
+// it currently holds for our type, a cached ptr would dangle across a level change
+static CGunsmithCamEffector* find_effector(CCameraManager& cm)
+{
+	return smart_cast<CGunsmithCamEffector*>(cm.GetCamEffector(eCEGunsmithCam));
+}
+
+void gunsmith_cam_set(float px, float py, float pz, float dx, float dy, float dz)
+{
+	CActor* a = Actor();
+	if (!a)
+		return;
+
+	CCameraManager& cm = a->Cameras();
+	CGunsmithCamEffector* e = find_effector(cm);
+	if (!e)
+	{
+		e = xr_new<CGunsmithCamEffector>();
+		cm.AddCamEffector(e);
+		Msg("[gunsmith_cam] free-cam activated");
+	}
+
+	Fvector p, d;
+	p.set(px, py, pz);
+	d.set(dx, dy, dz);
+	e->set_target(p, d);
+	e->set_alive(true);
+}
+
+void gunsmith_cam_release()
+{
+	CActor* a = Actor();
+	if (!a)
+		return;
+
+	CGunsmithCamEffector* e = find_effector(a->Cameras());
+	if (e)
+	{
+		e->set_alive(false);
+		Msg("[gunsmith_cam] free-cam released");
+	}
+}
