@@ -90,6 +90,18 @@ bool CRenderTarget::svp_nearblur_pass()
 				const float coc_near = k * _max(1.f / _max(z_near, 0.05f) - 1.f / focus, 0.f);
 				const float maxR = _min(coc_near, 0.5f * _min(w, h));
 				RCache.set_c("svp_nearblur_params", focus, k, maxR, md);
+				// pip one-shot proof that the pass ran, throttled while r__svp_diag is on
+				extern int ps_r__svp_diag;
+				extern int ps_r__svp_nearblur_scatter;
+				static u32 s_nb_ms = 0;
+				if (ps_r__svp_diag && Device.dwTimeGlobal - s_nb_ms > 1000)
+				{
+					s_nb_ms = Device.dwTimeGlobal;
+					const float g_dbg = powf(_max(maxR, 1.f), 1.f / 150.f) - 1.f; // 150 mirrors the shader NB_TAP_BUDGET
+					u32 mips = 0;
+					if (m_svp_nb_mip_surf) { D3D_TEXTURE2D_DESC d; m_svp_nb_mip_surf->GetDesc(&d); mips = d.MipLevels; }
+					PipMsg("[SVP-NB] maxR=%.0fpx g=%.4f lodk=%.4f scatter=%d mips=%u", maxR, g_dbg, g_dbg, ps_r__svp_nearblur_scatter, mips);
+				}
 			}
 			RCache.Render(D3DPT_TRIANGLELIST, Offset, 0, 3, 0, 1);
 			return true;
