@@ -453,21 +453,33 @@ void CRenderTarget::draw_scope(ref_shader se, std::function<void()> bind)
 				Device.m_SecondViewport.svp_panel_vcrop = vcrop; // pip binocular bracket mapping reads it
 				// pip glass3: x = sharpen amount, y = field-stop onset, z = sharpen radial falloff, w = sharpen inner crisp radius
 				extern float ps_r__svp_sharpen, ps_r__svp_sharpen_falloff, ps_r__svp_sharpen_inner;
-				// pip field-stop onset, the stop sits at the field edge and the exit pupil
-				// blurs it by a penumbra whose inner half shows inside the field, 1 = off
+				// pip field-stop onset, a stop at the field edge blurred by the viewing aperture
+				// which is the exit pupil capped by the eye pupil, 1 = off
 				float fs_onset = 1.f;
 				{
+					extern int ps_r__svp_field_stop;
 					extern float g_pip_scope_magnification;
 					extern Fvector4 ps_s3ds_param_1;
 					const float fs_omm = svp_objective_mm();
 					const float fs_fov = Device.m_SecondViewport.svp_fov;
-					if (fs_omm > 0.01f && g_pip_scope_magnification > 0.01f && fs_fov > 0.01f)
+					if (ps_r__svp_field_stop && fs_omm > 0.01f && g_pip_scope_magnification > 0.01f && fs_fov > 0.01f && pupil_mm > EPS)
 					{
 						const float ep_r = fs_omm * 0.0005f / g_pip_scope_magnification;
+						const float ap_r = _min(ep_r, pupil_mm * 0.0005f);
 						const float er = _max(ps_s3ds_param_1.y * 0.01f, 0.05f);
 						const float app_half = g_pip_scope_magnification * fs_fov * 0.5f;
-						const float penumbra = _min(atanf(ep_r / er) / app_half, 1.f);
+						const float penumbra = _min(atanf(ap_r / er) / app_half, 1.f);
 						fs_onset = 1.f - 0.5f * penumbra;
+						extern int ps_r__svp_diag;
+						if (ps_r__svp_diag)
+						{
+							static u32 s_fs_ms = 0;
+							if (Device.dwTimeGlobal - s_fs_ms > 1000)
+							{
+								s_fs_ms = Device.dwTimeGlobal;
+								PipMsg("[SVP-FSTOP] ep %.1fmm pupil %.1fmm onset %.3f", ep_r * 2000.f, pupil_mm, fs_onset);
+							}
+						}
 					}
 				}
 				RCache.set_c("svp_glass3", ps_r__svp_sharpen, fs_onset, ps_r__svp_sharpen_falloff, ps_r__svp_sharpen_inner);

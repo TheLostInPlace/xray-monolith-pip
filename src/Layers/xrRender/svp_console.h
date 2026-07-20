@@ -106,6 +106,7 @@ extern ECORE_API float ps_s3ds_adapt_speed;
 extern ECORE_API int ps_r__svp_chroma;
 extern ECORE_API float ps_r__svp_reticle_washout;
 extern ECORE_API float ps_r__svp_field_curve;
+extern ECORE_API int ps_r__svp_field_stop;
 extern ECORE_API int ps_r__svp_acog_fiber;
 extern ECORE_API float ps_r__svp_veiling_glare;
 extern ECORE_API float ps_r__svp_rain_optic;
