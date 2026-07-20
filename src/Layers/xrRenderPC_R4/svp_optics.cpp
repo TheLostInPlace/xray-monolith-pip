@@ -453,8 +453,8 @@ void CRenderTarget::draw_scope(ref_shader se, std::function<void()> bind)
 				Device.m_SecondViewport.svp_panel_vcrop = vcrop; // pip binocular bracket mapping reads it
 				// pip glass3: x = sharpen amount, y = field-stop onset, z = sharpen radial falloff, w = sharpen inner crisp radius
 				extern float ps_r__svp_sharpen, ps_r__svp_sharpen_falloff, ps_r__svp_sharpen_inner;
-				// pip field-stop onset, rendered radius where the ocular vignette begins
-				// exit-pupil cone over the apparent field, 1 = no vignette
+				// pip field-stop onset, the stop sits at the field edge and the exit pupil
+				// blurs it by a penumbra whose inner half shows inside the field, 1 = off
 				float fs_onset = 1.f;
 				{
 					extern float g_pip_scope_magnification;
@@ -466,7 +466,8 @@ void CRenderTarget::draw_scope(ref_shader se, std::function<void()> bind)
 						const float ep_r = fs_omm * 0.0005f / g_pip_scope_magnification;
 						const float er = _max(ps_s3ds_param_1.y * 0.01f, 0.05f);
 						const float app_half = g_pip_scope_magnification * fs_fov * 0.5f;
-						fs_onset = _min(atanf(ep_r / er) / app_half, 1.f);
+						const float penumbra = _min(atanf(ep_r / er) / app_half, 1.f);
+						fs_onset = 1.f - 0.5f * penumbra;
 					}
 				}
 				RCache.set_c("svp_glass3", ps_r__svp_sharpen, fs_onset, ps_r__svp_sharpen_falloff, ps_r__svp_sharpen_inner);
