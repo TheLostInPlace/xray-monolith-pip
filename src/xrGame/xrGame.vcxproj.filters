@@ -5289,7 +5289,7 @@
     <ClInclude Include="EffectorShot.h">
       <Filter>Core\Client\Effectors\Weapon</Filter>
     </ClInclude>
-    <ClInclude Include="gunsmith_cam.h">
+    <ClInclude Include="freecam.h">
       <Filter>Core\Client\Effectors\Actor</Filter>
     </ClInclude>
     <ClInclude Include="EffectorShotX.h">
@@ -8870,7 +8870,7 @@
     <ClCompile Include="EffectorShot.cpp">
       <Filter>Core\Client\Effectors\Weapon</Filter>
     </ClCompile>
-    <ClCompile Include="gunsmith_cam.cpp">
+    <ClCompile Include="freecam.cpp">
       <Filter>Core\Client\Effectors\Actor</Filter>
     </ClCompile>
     <ClCompile Include="EffectorShotX.cpp">

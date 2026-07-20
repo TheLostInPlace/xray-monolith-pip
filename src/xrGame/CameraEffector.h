@@ -38,4 +38,4 @@
 #define	eCEDOF					((ECamEffectorType)(cefNext+16))
 #define	eCEWeaponAction			((ECamEffectorType)(cefNext+17))
 #define	eCEActorMoving			((ECamEffectorType)(cefNext+18))
-#define	eCEGunsmithCam			((ECamEffectorType)(cefNext+19))
+#define	eCEFreeCam				((ECamEffectorType)(cefNext+19))

@@ -1,17 +1,17 @@
 #include "stdafx.h"
-#include "gunsmith_cam.h"
+#include "freecam.h"
 #include "Actor.h"
 #include "ActorEffector.h"
 #include "CameraEffector.h"
 
 // absolute-positioning cam effector, view pos+dir fed from lua, zero roll, fov untouched
-class CGunsmithCamEffector : public CEffectorCam
+class CFreeCamEffector : public CEffectorCam
 {
 	Fvector m_pos;
 	Fvector m_dir;
 	bool    m_alive;
 public:
-	CGunsmithCamEffector() : CEffectorCam(eCEGunsmithCam, 100000.f)
+	CFreeCamEffector() : CEffectorCam(eCEFreeCam, 100000.f)
 	{
 		m_pos.set(0.f, 0.f, 0.f);
 		m_dir.set(0.f, 0.f, 1.f);
@@ -28,7 +28,7 @@ public:
 	virtual BOOL ProcessCam(SCamEffectorInfo& info);
 };
 
-BOOL CGunsmithCamEffector::ProcessCam(SCamEffectorInfo& info)
+BOOL CFreeCamEffector::ProcessCam(SCamEffectorInfo& info)
 {
 	if (!m_alive)
 		return FALSE;
@@ -59,24 +59,24 @@ BOOL CGunsmithCamEffector::ProcessCam(SCamEffectorInfo& info)
 
 // the actor cam manager owns and deletes effectors, so the live handle is whatever
 // it currently holds for our type, a cached ptr would dangle across a level change
-static CGunsmithCamEffector* find_effector(CCameraManager& cm)
+static CFreeCamEffector* find_effector(CCameraManager& cm)
 {
-	return smart_cast<CGunsmithCamEffector*>(cm.GetCamEffector(eCEGunsmithCam));
+	return smart_cast<CFreeCamEffector*>(cm.GetCamEffector(eCEFreeCam));
 }
 
-void gunsmith_cam_set(float px, float py, float pz, float dx, float dy, float dz)
+void freecam_set(float px, float py, float pz, float dx, float dy, float dz)
 {
 	CActor* a = Actor();
 	if (!a)
 		return;
 
 	CCameraManager& cm = a->Cameras();
-	CGunsmithCamEffector* e = find_effector(cm);
+	CFreeCamEffector* e = find_effector(cm);
 	if (!e)
 	{
-		e = xr_new<CGunsmithCamEffector>();
+		e = xr_new<CFreeCamEffector>();
 		cm.AddCamEffector(e);
-		Msg("[gunsmith_cam] free-cam activated");
+		Msg("[freecam] activated");
 	}
 
 	Fvector p, d;
@@ -86,16 +86,16 @@ void gunsmith_cam_set(float px, float py, float pz, float dx, float dy, float dz
 	e->set_alive(true);
 }
 
-void gunsmith_cam_release()
+void freecam_release()
 {
 	CActor* a = Actor();
 	if (!a)
 		return;
 
-	CGunsmithCamEffector* e = find_effector(a->Cameras());
+	CFreeCamEffector* e = find_effector(a->Cameras());
 	if (e)
 	{
 		e->set_alive(false);
-		Msg("[gunsmith_cam] free-cam released");
+		Msg("[freecam] released");
 	}
 }

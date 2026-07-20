@@ -1156,7 +1156,7 @@
     <ClInclude Include="EffectorFall.h" />
     <ClInclude Include="EffectorShot.h" />
     <ClInclude Include="EffectorShotX.h" />
-    <ClInclude Include="gunsmith_cam.h" />
+    <ClInclude Include="freecam.h" />
     <ClInclude Include="EffectorZoomInertion.h" />
     <ClInclude Include="ef_base.h" />
     <ClInclude Include="ef_pattern.h" />
@@ -2853,7 +2853,7 @@
     <ClCompile Include="EffectorFall.cpp" />
     <ClCompile Include="EffectorShot.cpp" />
     <ClCompile Include="EffectorShotX.cpp" />
-    <ClCompile Include="gunsmith_cam.cpp" />
+    <ClCompile Include="freecam.cpp" />
     <ClCompile Include="EffectorZoomInertion.cpp" />
     <ClCompile Include="ef_pattern.cpp" />
     <ClCompile Include="ef_primary.cpp" />
