@@ -446,10 +446,10 @@ void svpCamera()
 		g_pip_scope_ratio = ratio_use;
 		// derive min/max mag from hud_fov_params for variable reticles (fixed scope: x == y)
 		const Fvector4& fovp = g_pGamePersistent->m_pGShaderConstants->hud_fov_params;
-		// the config bounds ride the 75 base and rescale to the aim fov, the dynamic min
-		// already derives from the aim fov and passes through
+		// the 75-base bounds rescale to the aim fov, authored mins are 75-base too,
+		// only the legacy optical-model min already rides the aim fov and passes through
 		const float fscale = rad2deg(fov_aim) / 75.f;
-		const float yscale = (_abs(fovp.y - fovp.x) < 0.01f) ? fscale : 1.f;
+		const float yscale = (_abs(fovp.y - fovp.x) < 0.01f || params.svp_authored_mag) ? fscale : 1.f;
 		if (flat_window && !params.svp_authored_mag)
 		{
 			g_pip_scope_max_mag = (fovp.x > EPS) ? fov_aim / window_fov(fovp.x * fscale) : scope_magnification;
