@@ -451,9 +451,25 @@ void CRenderTarget::draw_scope(ref_shader se, std::function<void()> bind)
 						/ Device.m_SecondViewport.svp_panel_aspect;
 				RCache.set_c("svp_glass2", ps_r__svp_coating, mirage, 0.f, vcrop);
 				Device.m_SecondViewport.svp_panel_vcrop = vcrop; // pip binocular bracket mapping reads it
-				// pip glass3: x = sharpen amount, y = free, z = sharpen radial falloff, w = sharpen inner crisp radius
+				// pip glass3: x = sharpen amount, y = field-stop onset, z = sharpen radial falloff, w = sharpen inner crisp radius
 				extern float ps_r__svp_sharpen, ps_r__svp_sharpen_falloff, ps_r__svp_sharpen_inner;
-				RCache.set_c("svp_glass3", ps_r__svp_sharpen, 0.f, ps_r__svp_sharpen_falloff, ps_r__svp_sharpen_inner);
+				// pip field-stop onset, rendered radius where the ocular vignette begins
+				// exit-pupil cone over the apparent field, 1 = no vignette
+				float fs_onset = 1.f;
+				{
+					extern float g_pip_scope_magnification;
+					extern Fvector4 ps_s3ds_param_1;
+					const float fs_omm = svp_objective_mm();
+					const float fs_fov = Device.m_SecondViewport.svp_fov;
+					if (fs_omm > 0.01f && g_pip_scope_magnification > 0.01f && fs_fov > 0.01f)
+					{
+						const float ep_r = fs_omm * 0.0005f / g_pip_scope_magnification;
+						const float er = _max(ps_s3ds_param_1.y * 0.01f, 0.05f);
+						const float app_half = g_pip_scope_magnification * fs_fov * 0.5f;
+						fs_onset = _min(atanf(ep_r / er) / app_half, 1.f);
+					}
+				}
+				RCache.set_c("svp_glass3", ps_r__svp_sharpen, fs_onset, ps_r__svp_sharpen_falloff, ps_r__svp_sharpen_inner);
 				// pip glass4: x = nvg bleach roll-off, y = nvg auto-gain, w = shadow swing envelope
 				extern float ps_r__svp_nvg_bleach, ps_r__svp_nvg_sensitivity;
 				RCache.set_c("svp_glass4", ps_r__svp_nvg_bleach, ps_r__svp_nvg_sensitivity, 0.f,
