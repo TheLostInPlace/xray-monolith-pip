@@ -449,7 +449,7 @@ void svpCamera()
 		// the 75-base bounds rescale to the aim fov, authored mins are 75-base too,
 		// only the legacy optical-model min already rides the aim fov and passes through
 		const float fscale = rad2deg(fov_aim) / 75.f;
-		const float yscale = (_abs(fovp.y - fovp.x) < 0.01f || params.svp_authored_mag) ? fscale : 1.f;
+		const float yscale = (_abs(fovp.y - fovp.x) < 0.01f || params.svp_min_75base) ? fscale : 1.f;
 		if (flat_window && !params.svp_authored_mag)
 		{
 			g_pip_scope_max_mag = (fovp.x > EPS) ? fov_aim / window_fov(fovp.x * fscale) : scope_magnification;

@@ -170,6 +170,8 @@ void CWeapon::UpdateSecondVP()
 		vp.svp_aim_fov = g_fov;
 		// authored mag flat optics keep the clean optical mag, the panel subtense override stays off
 		vp.svp_authored_mag = m_zoom_params.m_bSvpAuthoredMin;
+		// authored mins and detent base mins are 75 base, the legacy optical model min rides g_fov
+		vp.svp_min_75base = m_zoom_params.m_bSvpAuthoredMin || SvpDetentBase();
 	}
 
 	// pip mirror the live ballistic ray + muzzle point for the [3DB] overlay, and range the zero:
