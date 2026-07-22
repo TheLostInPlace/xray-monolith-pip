@@ -91,6 +91,33 @@ int ps_r__svp_chroma = 1; // svp keep the authored per-scope chromatic aberratio
 float ps_r__svp_reticle_washout = 0.0f; // svp illuminated reticle wash-out vs a bright background, glow only (0 = off)
 float ps_r__svp_field_curve = 1.0f; // svp field curvature edge softness, outer field blurs like a real non-flat-field scope (0 = flat)
 int ps_r__svp_field_stop = 1; // svp ocular field stop rim vignette from the capped pupil penumbra (0 = off)
+int ps_r__svp_aperture = 1; // stateless physical exit-pupil transmission for true PiP
+float ps_s3ds_tunneling_parallax = 0.035f; // maximum inner-tube shift in lens UV
+float ps_s3ds_tunneling_min = 0.04f; // tube visibility at the optic's minimum magnification
+float ps_s3ds_tunneling_max = 0.06f; // tube visibility at the optic's maximum magnification
+float ps_s3ds_eye_tracking_speed = 5.0f; // target-closing response while the cheek weld is intact
+float ps_s3ds_eye_tracking_accel_mm_s2 = 80.0f; // maximum virtual-eye acceleration in millimeters per second squared
+float ps_s3ds_eye_tracking_limit_mm = 7.0f; // maximum eye travel; larger scope displacement remains visible
+float ps_s3ds_eye_relief_low_mm = 80.0f;
+float ps_s3ds_eye_relief_high_mm = 80.0f;
+float ps_s3ds_exit_pupil_low_mm = 0.0f; // zero derives the endpoint from objective diameter
+float ps_s3ds_exit_pupil_high_mm = 0.0f;
+float ps_s3ds_pupil_field_low = 0.55f;
+float ps_s3ds_pupil_field_high = 0.55f;
+float ps_s3ds_transmission = 1.0f;
+float ps_s3ds_twilight_strength = 0.35f; // per-optic twilight-loss strength
+Fvector4 ps_svp_exit_curve_low = {1.f, 1.f, 1.f, 1.f}; // response at 1x, 2x, 3x, 4x
+Fvector4 ps_svp_exit_curve_high = {1.f, 1.f, 1.f, 1.f}; // response at 6x, 8x, 12x, 20x
+Fvector4 ps_svp_tunnel_curve_low = {1.f, 1.f, 1.f, 1.f};
+Fvector4 ps_svp_tunnel_curve_high = {1.f, 1.f, 1.f, 1.f};
+Fvector4 ps_svp_dim_curve_low = {1.f, 1.f, 1.f, 1.f};
+Fvector4 ps_svp_dim_curve_high = {1.f, 1.f, 1.f, 1.f};
+float ps_svp_exit_scale = 1.f;
+float ps_svp_exit_offset = 0.f;
+float ps_svp_tunnel_scale = 1.f;
+float ps_svp_tunnel_offset = 0.f;
+float ps_svp_dim_scale = 1.f;
+float ps_svp_dim_offset = 0.f;
 int ps_r__svp_acog_fiber = 0; // svp ACOG fiber reticle brightness source, 1 = sun visibility (fiber gathers sunlight), 0 = scene luminance
 float ps_r__svp_veiling_glare = 0.0f; // svp veiling glare strength, off-axis sun scatter washes the image near the sun (0 = off)
 float ps_r__svp_rain_optic = 1.0f; // svp rain droplets on the objective glass, scaled by rain density (0 = off)
@@ -181,6 +208,35 @@ void svp_console_init()
 	CMD4(CCC_Float, "r__svp_reticle_washout", &ps_r__svp_reticle_washout, 0.0f, 2.0f); // svp illuminated reticle wash-out strength (0 = off)
 	CMD4(CCC_Float, "r__svp_field_curve", &ps_r__svp_field_curve, 0.0f, 3.0f); // svp field curvature edge softness (0 = flat field)
 	CMD4(CCC_Integer, "r__svp_field_stop", &ps_r__svp_field_stop, 0, 1); // svp ocular field stop rim vignette (0 = off)
+	CMD4(CCC_Integer, "r__svp_aperture", &ps_r__svp_aperture, 0, 1); // physical exit-pupil transmission
+	CMD4(CCC_Float, "s3ds_tunneling_parallax", &ps_s3ds_tunneling_parallax, 0.0f, 0.15f);
+	CMD4(CCC_Float, "s3ds_tunneling_min", &ps_s3ds_tunneling_min, 0.0f, 1.0f);
+	CMD4(CCC_Float, "s3ds_tunneling_max", &ps_s3ds_tunneling_max, 0.0f, 1.0f);
+	CMD4(CCC_Float, "s3ds_eye_tracking_speed", &ps_s3ds_eye_tracking_speed, 0.1f, 30.0f);
+	CMD4(CCC_Float, "s3ds_eye_tracking_accel_mm_s2", &ps_s3ds_eye_tracking_accel_mm_s2, 1.0f, 500.0f);
+	CMD4(CCC_Float, "s3ds_eye_tracking_limit_mm", &ps_s3ds_eye_tracking_limit_mm, 0.0f, 20.0f);
+	CMD4(CCC_Float, "s3ds_eye_relief_low_mm", &ps_s3ds_eye_relief_low_mm, 20.0f, 150.0f);
+	CMD4(CCC_Float, "s3ds_eye_relief_high_mm", &ps_s3ds_eye_relief_high_mm, 20.0f, 150.0f);
+	CMD4(CCC_Float, "s3ds_exit_pupil_low_mm", &ps_s3ds_exit_pupil_low_mm, 0.0f, 100.0f);
+	CMD4(CCC_Float, "s3ds_exit_pupil_high_mm", &ps_s3ds_exit_pupil_high_mm, 0.0f, 100.0f);
+	CMD4(CCC_Float, "s3ds_pupil_field_low", &ps_s3ds_pupil_field_low, 0.0f, 6.0f);
+	CMD4(CCC_Float, "s3ds_pupil_field_high", &ps_s3ds_pupil_field_high, 0.0f, 6.0f);
+	CMD4(CCC_Float, "s3ds_transmission", &ps_s3ds_transmission, 0.0f, 1.0f);
+	CMD4(CCC_Float, "s3ds_twilight_strength", &ps_s3ds_twilight_strength, 0.0f, 1.0f);
+	const Fvector4 curve_min = {0.f, 0.f, 0.f, 0.f};
+	const Fvector4 curve_max = {3.f, 3.f, 3.f, 3.f};
+	CMD4(CCC_Vector4, "r__svp_exit_curve_1_4", &ps_svp_exit_curve_low, curve_min, curve_max);
+	CMD4(CCC_Vector4, "r__svp_exit_curve_6_20", &ps_svp_exit_curve_high, curve_min, curve_max);
+	CMD4(CCC_Vector4, "r__svp_tunnel_curve_1_4", &ps_svp_tunnel_curve_low, curve_min, curve_max);
+	CMD4(CCC_Vector4, "r__svp_tunnel_curve_6_20", &ps_svp_tunnel_curve_high, curve_min, curve_max);
+	CMD4(CCC_Vector4, "r__svp_dim_curve_1_4", &ps_svp_dim_curve_low, curve_min, curve_max);
+	CMD4(CCC_Vector4, "r__svp_dim_curve_6_20", &ps_svp_dim_curve_high, curve_min, curve_max);
+	CMD4(CCC_Float, "r__svp_exit_scale", &ps_svp_exit_scale, 0.f, 3.f);
+	CMD4(CCC_Float, "r__svp_exit_offset", &ps_svp_exit_offset, -1.f, 1.f);
+	CMD4(CCC_Float, "r__svp_tunnel_scale", &ps_svp_tunnel_scale, 0.f, 3.f);
+	CMD4(CCC_Float, "r__svp_tunnel_offset", &ps_svp_tunnel_offset, -1.f, 1.f);
+	CMD4(CCC_Float, "r__svp_dim_scale", &ps_svp_dim_scale, 0.f, 3.f);
+	CMD4(CCC_Float, "r__svp_dim_offset", &ps_svp_dim_offset, -1.f, 1.f);
 	CMD4(CCC_Integer, "r__svp_acog_fiber", &ps_r__svp_acog_fiber, 0, 1); // svp ACOG fiber brightness source (1 = sun visibility, 0 = scene luminance)
 	CMD4(CCC_Float, "r__svp_veiling_glare", &ps_r__svp_veiling_glare, 0.0f, 3.0f); // svp veiling glare near the sun (0 = off)
 	CMD4(CCC_Float, "r__svp_rain_optic", &ps_r__svp_rain_optic, 0.0f, 3.0f); // svp rain droplets on the objective (0 = off)

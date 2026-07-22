@@ -921,6 +921,14 @@ void CSecondVPParams::SetSVPActive(bool bState) //--#SM+#-- +SecondVP+
 {
 	if (bState && !isActive)
 		dlss_reset_next = true; // pip DLSS history reset on ADS-in (logic thread)
+	if (!bState)
+	{
+		svp_eye_tracking_valid = false;
+		svp_eye_tracking_offset.set(0.f, 0.f);
+		svp_eye_tracking_velocity.set(0.f, 0.f);
+		svp_eye_residual.set(0.f, 0.f);
+		svp_eye_tracking_frame = u32(-1);
+	}
 	isActive = bState;
 	if (g_pGamePersistent != NULL)
 		g_pGamePersistent->m_pGShaderConstants->m_blender_mode.z = (isActive ? 1.0f : 0.0f);

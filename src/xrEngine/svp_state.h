@@ -80,6 +80,16 @@ public:
 	bool svp_authored_mag = false; // pip flat optic carries authored mags, keep the clean optical mag not the panel subtense ratio
 	bool svp_min_75base = false; // pip the min zoom bound was computed in the 75 base so it rescales to the aim fov
 
+	// pip virtual eye for true PiP, logic flags a broken cheek weld, render owns the follower
+	// and advances it once per frame
+	bool svp_eye_tracking_suspended = false;
+	bool svp_eye_tracking_valid = false;
+	Fvector2 svp_eye_tracking_offset = {};
+	Fvector2 svp_eye_tracking_velocity = {};
+	Fvector2 svp_eye_residual = {};
+	u32 svp_eye_tracking_frame = u32(-1);
+	u32 svp_eye_tracking_epoch = 0;
+
 	// pip live ballistic ray of the active weapon (logic thread writes, render diag reads)
 	Fvector fire_ray_pos = {};
 	Fvector fire_ray_dir = {};

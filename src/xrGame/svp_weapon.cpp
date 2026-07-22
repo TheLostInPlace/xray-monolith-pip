@@ -121,6 +121,11 @@ void CWeapon::UpdateSecondVP()
 		}
 	}
 	Device.m_SecondViewport.SetSVPActive(svp_act);
+	// aim transitions keep eye tracking, a reload or other pending action breaks the cheek weld
+	// so the virtual eye must not follow the animated scope
+	const u32 weapon_state = GetState();
+	const bool aim_transition = weapon_state == eAimStart || weapon_state == eAimEnd;
+	Device.m_SecondViewport.svp_eye_tracking_suspended = IsPending() && !aim_transition;
 	// the shadow swing envelope drains steadily, the charge site outruns it on real kicks
 	Device.m_SecondViewport.svp_shadow_gain += (0.f - Device.m_SecondViewport.svp_shadow_gain)
 		* (1.f - expf(-Device.fTimeDelta / 0.7f));

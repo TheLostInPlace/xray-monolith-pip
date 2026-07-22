@@ -402,6 +402,9 @@
     <ClInclude Include="svp_camera.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="svp_physical_optics.h">
+      <Filter>Core_Target</Filter>
+    </ClInclude>
     <ClInclude Include="svp_stats.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -851,6 +854,9 @@
     </ClCompile>
     <ClCompile Include="svp_camera.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="svp_physical_optics.cpp">
+      <Filter>Core_Target</Filter>
     </ClCompile>
     <ClCompile Include="svp_stats.cpp">
       <Filter>Core</Filter>

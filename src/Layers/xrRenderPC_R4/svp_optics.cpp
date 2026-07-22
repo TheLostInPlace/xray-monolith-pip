@@ -5,6 +5,7 @@
 #include "../../xrEngine/environment.h"
 #if defined(USE_DX11)
 #include "../../../gamedata/shaders/r3/scope_defines.h" // SCOPE_PHASE_* (kept in sync with the shader)
+#include "svp_physical_optics.h" // pip physical aperture math (exit pupil, virtual eye follower)
 #endif
 
 #if defined(USE_DX11)	//  Redotix99: for 3D Shader Based Scopes 		(sorry for using the nightvision phase file)
@@ -25,6 +26,254 @@ static bool svp_overlay_active(float param3x, int markswitch)
 static bool svp_thermal_active(float param3x, int markswitch)
 {
 	return (param3x >= 1.5f) && svp_overlay_active(param3x, markswitch);
+}
+
+// pip physical aperture cvars, registered in svp_console.cpp, drive the exit-pupil model at r__svp_aperture 1
+extern int ps_r__svp_aperture;
+extern int ps_r__svp_photo_model;
+extern int ps_r__svp_authored_optics;
+extern int ps_r__svp_diag;
+extern float ps_r__svp_eyebox;
+extern float ps_r__svp_twilight;
+extern float ps_s3ds_objective_mm;
+extern float ps_s3ds_transmission;
+extern float ps_s3ds_twilight_strength;
+extern float ps_s3ds_eye_relief_low_mm, ps_s3ds_eye_relief_high_mm;
+extern float ps_s3ds_exit_pupil_low_mm, ps_s3ds_exit_pupil_high_mm;
+extern float ps_s3ds_pupil_field_low, ps_s3ds_pupil_field_high;
+extern float ps_s3ds_eye_tracking_speed, ps_s3ds_eye_tracking_accel_mm_s2, ps_s3ds_eye_tracking_limit_mm;
+extern float ps_s3ds_tunneling_parallax, ps_s3ds_tunneling_min, ps_s3ds_tunneling_max;
+extern float ps_svp_exit_scale, ps_svp_exit_offset, ps_svp_tunnel_scale, ps_svp_tunnel_offset, ps_svp_dim_scale, ps_svp_dim_offset;
+extern float g_pip_scope_magnification, g_pip_scope_min_mag, g_pip_scope_max_mag;
+extern Fvector4 ps_s3ds_param_1;
+extern Fvector4 ps_svp_exit_curve_low, ps_svp_exit_curve_high;
+extern Fvector4 ps_svp_tunnel_curve_low, ps_svp_tunnel_curve_high;
+extern Fvector4 ps_svp_dim_curve_low, ps_svp_dim_curve_high;
+
+// pip physical optics helpers, re-housed from the aperture model, the math matches the source lib
+static SvpPhysicalOptics::MagnificationResponse svp_make_response(const Fvector4& low, const Fvector4& high)
+{
+	SvpPhysicalOptics::MagnificationResponse response;
+	response.value[0] = low.x;
+	response.value[1] = low.y;
+	response.value[2] = low.z;
+	response.value[3] = low.w;
+	response.value[4] = high.x;
+	response.value[5] = high.y;
+	response.value[6] = high.z;
+	response.value[7] = high.w;
+	return response;
+}
+
+// interpolate a low/high profile endpoint across the optic's zoom range
+static float svp_interp_profile(float low, float high)
+{
+	return SvpPhysicalOptics::InterpolateMagnification(low, high, g_pip_scope_magnification,
+		g_pip_scope_min_mag, g_pip_scope_max_mag);
+}
+
+static float svp_eye_relief_mm()
+{
+	return svp_interp_profile(ps_s3ds_eye_relief_low_mm, ps_s3ds_eye_relief_high_mm);
+}
+
+static float svp_pupil_field_scale()
+{
+	return svp_interp_profile(ps_s3ds_pupil_field_low, ps_s3ds_pupil_field_high);
+}
+
+// exit pupil mm, authored low/high reciprocal-mag interp then objective/mag then the ocular-ratio proxy
+static float svp_calc_exit_pupil_mm(float objective_mm)
+{
+	if (g_pip_scope_magnification <= 0.01f)
+		return 0.f;
+
+	float low = ps_s3ds_exit_pupil_low_mm;
+	float high = ps_s3ds_exit_pupil_high_mm;
+	if (objective_mm > 0.01f)
+	{
+		if (low <= 0.01f && g_pip_scope_min_mag > 0.01f)
+			low = objective_mm / g_pip_scope_min_mag;
+		if (high <= 0.01f && g_pip_scope_max_mag > 0.01f)
+			high = objective_mm / g_pip_scope_max_mag;
+	}
+	if (low > 0.01f || high > 0.01f)
+	{
+		if (low <= 0.01f)
+			low = high;
+		if (high <= 0.01f)
+			high = low;
+		return SvpPhysicalOptics::InterpolateReciprocalMagnification(low, high, g_pip_scope_magnification,
+			g_pip_scope_min_mag, g_pip_scope_max_mag);
+	}
+
+	const float authored_exit = ps_s3ds_param_1.z > 0.01f ? ps_s3ds_param_1.z : 0.5f;
+	const float minimum_mag = g_pip_scope_min_mag > 0.01f ? g_pip_scope_min_mag : g_pip_scope_magnification;
+	return authored_exit * Device.m_SecondViewport.eyepiece.radius * 2000.f *
+		(minimum_mag / g_pip_scope_magnification);
+}
+
+// aperture twilight dimming, exit-pupil transmission scaled by the per-mag dim curve, outer gate assumed
+static float svp_calc_twilight_dim(float pupil_mm, float environment_brightness)
+{
+	const float exit_pupil_mm = svp_calc_exit_pupil_mm(svp_objective_mm());
+	const float pupil_ratio = _min(exit_pupil_mm / pupil_mm, 1.f);
+	const float relative_brightness = ps_r__svp_photo_model ? pupil_ratio * pupil_ratio : pupil_ratio;
+	const float twilight_strength = _min(ps_r__svp_twilight, 1.f) * clampr(ps_s3ds_twilight_strength, 0.f, 1.f);
+	float dimming = clampr(ps_s3ds_transmission, 0.f, 1.f) *
+		(1.f + (_max(relative_brightness, 0.6f) - 1.f) * twilight_strength);
+	const float response = SvpPhysicalOptics::ApplyMagnificationResponse(
+		svp_make_response(ps_svp_dim_curve_low, ps_svp_dim_curve_high), g_pip_scope_magnification,
+		ps_svp_dim_scale, ps_svp_dim_offset);
+	dimming = 1.f - clampr((1.f - dimming) * response, 0.f, 1.f);
+
+	if (ps_r__svp_diag)
+	{
+		static u32 s_twl_ms = 0;
+		if (Device.dwTimeGlobal - s_twl_ms > 1000)
+		{
+			s_twl_ms = Device.dwTimeGlobal;
+			PipMsg("[SVP-TWL] ep %.1fmm pupil %.1fmm env %.2f dim %.2f", exit_pupil_mm,
+				pupil_mm, environment_brightness, dimming);
+		}
+	}
+	return dimming;
+}
+
+// aperture eyebox half angle, exit-pupil radius plus eye pupil over the interpolated eye relief
+static void svp_update_eyebox_limit(float pupil_mm)
+{
+	const float exit_pupil_mm = svp_calc_exit_pupil_mm(svp_objective_mm());
+	if (ps_r__svp_eyebox > 0.f && ps_r__svp_authored_optics && exit_pupil_mm > 0.01f &&
+		g_pip_scope_magnification > 0.01f && pupil_mm > EPS)
+	{
+		const float exit_radius = exit_pupil_mm * 0.0005f;
+		const float pupil_radius = pupil_mm * 0.0005f;
+		const float eye_relief = _max(svp_eye_relief_mm() * 0.001f, 0.05f);
+		Device.m_SecondViewport.svp_eyebox_rad = atanf((exit_radius + pupil_radius) / eye_relief);
+		return;
+	}
+
+	Device.m_SecondViewport.svp_eyebox_rad = 0.f;
+	if (ps_r__svp_eyebox > 0.f && ps_r__svp_diag)
+	{
+		static u32 s_ebg_ms = 0;
+		if (Device.dwTimeGlobal - s_ebg_ms > 1000)
+		{
+			s_ebg_ms = Device.dwTimeGlobal;
+			PipMsg("[SVP-EYEBOX] gated off, authored %d obj_w %.3f obj_mm %.1f mag %.2f pupil %.1f",
+				ps_r__svp_authored_optics, scope_objective_lens_offset.w, ps_s3ds_objective_mm,
+				g_pip_scope_magnification, pupil_mm);
+		}
+	}
+}
+
+// virtual-eye follower, load the published state, advance the follower, store back the residual offset
+static SvpPhysicalOptics::EyeTrackingState svp_load_eye_tracking()
+{
+	const auto& viewport = Device.m_SecondViewport;
+	SvpPhysicalOptics::EyeTrackingState state;
+	state.offset = { viewport.svp_eye_tracking_offset.x, viewport.svp_eye_tracking_offset.y };
+	state.velocity = { viewport.svp_eye_tracking_velocity.x, viewport.svp_eye_tracking_velocity.y };
+	state.epoch = viewport.svp_eye_tracking_epoch;
+	state.frame = viewport.svp_eye_tracking_frame;
+	state.valid = viewport.svp_eye_tracking_valid;
+	return state;
+}
+
+static void svp_store_eye_tracking(const SvpPhysicalOptics::EyeTrackingState& state)
+{
+	auto& viewport = Device.m_SecondViewport;
+	viewport.svp_eye_tracking_offset.set(state.offset.x, state.offset.y);
+	viewport.svp_eye_tracking_velocity.set(state.velocity.x, state.velocity.y);
+	viewport.svp_eye_tracking_epoch = state.epoch;
+	viewport.svp_eye_tracking_frame = state.frame;
+	viewport.svp_eye_tracking_valid = state.valid;
+}
+
+static Fvector2 svp_update_virtual_eye(const Fvector2& raw_offset_mm)
+{
+	auto& viewport = Device.m_SecondViewport;
+	const SvpPhysicalOptics::Vec2 raw = { raw_offset_mm.x, raw_offset_mm.y };
+	const SvpPhysicalOptics::Vec2 target = SvpPhysicalOptics::LimitEyeOffset(raw, ps_s3ds_eye_tracking_limit_mm);
+	SvpPhysicalOptics::EyeTrackingState state = svp_load_eye_tracking();
+
+	SvpPhysicalOptics::UpdateEyeTracking(state, target, viewport.svp_eye_tracking_suspended,
+		viewport.svp_optic_epoch, Device.dwFrame, Device.fTimeDelta, ps_s3ds_eye_tracking_speed,
+		ps_s3ds_eye_tracking_accel_mm_s2);
+
+	svp_store_eye_tracking(state);
+	viewport.svp_eye_residual.sub(raw_offset_mm, viewport.svp_eye_tracking_offset);
+	return viewport.svp_eye_residual;
+}
+
+// physical aperture bind, always binds the aperture constants, x = 0 when the cvar is off
+static void svp_bind_aperture(float pupil_mm)
+{
+	const float minimum_mag = g_pip_scope_min_mag > 0.01f ? g_pip_scope_min_mag : g_pip_scope_magnification;
+	const float maximum_mag = g_pip_scope_max_mag > minimum_mag ? g_pip_scope_max_mag : minimum_mag;
+	const float exit_pupil_mm = svp_calc_exit_pupil_mm(svp_objective_mm());
+	const float eye_relief_mm = svp_eye_relief_mm();
+	auto& viewport = Device.m_SecondViewport;
+	const auto& eyepiece = viewport.eyepiece;
+	const auto& objective = viewport.objective;
+
+	Fvector lens_right = eyepiece.m_W.i;
+	Fvector lens_up = eyepiece.m_W.j;
+	Fvector optical_axis;
+	optical_axis.sub(objective.m_W.c, eyepiece.m_W.c);
+	const bool objective_valid = objective.radius > EPS && optical_axis.square_magnitude() > EPS;
+	if (!objective_valid)
+		optical_axis.set(eyepiece.m_W.k);
+	lens_right.normalize_safe();
+	lens_up.normalize_safe();
+	optical_axis.normalize_safe();
+
+	Fvector lens_center_view, lens_right_view, lens_up_view, axis_view;
+	Device.mView.transform_tiny(lens_center_view, eyepiece.m_W.c);
+	Device.mView.transform_dir(lens_right_view, lens_right);
+	Device.mView.transform_dir(lens_up_view, lens_up);
+	Device.mView.transform_dir(axis_view, optical_axis);
+	lens_right_view.normalize_safe();
+	lens_up_view.normalize_safe();
+	axis_view.normalize_safe();
+
+	Fvector eye_ray = lens_center_view;
+	eye_ray.normalize_safe();
+	const float forward = eye_ray.dotproduct(axis_view);
+	const float inverse_forward = _abs(forward) > 0.001f ? 1.f / forward : 0.f;
+	Fvector2 raw_eye_offset_mm;
+	raw_eye_offset_mm.set(-eye_ray.dotproduct(lens_right_view) * inverse_forward * eye_relief_mm,
+		-eye_ray.dotproduct(lens_up_view) * inverse_forward * eye_relief_mm);
+	const Fvector2 eye_offset_mm = svp_update_virtual_eye(raw_eye_offset_mm);
+	const float inverse_lens_diameter = eyepiece.radius > EPS ? 0.5f / eyepiece.radius : 0.f;
+
+	RCache.set_c("svp_aperture", ps_r__svp_aperture ? 1.f : 0.f, g_pip_scope_magnification, minimum_mag, maximum_mag);
+	RCache.set_c("svp_eyebox", eye_offset_mm.x, eye_offset_mm.y, exit_pupil_mm * 0.5f, pupil_mm * 0.5f);
+	const float exit_response = SvpPhysicalOptics::ApplyMagnificationResponse(
+		svp_make_response(ps_svp_exit_curve_low, ps_svp_exit_curve_high), g_pip_scope_magnification,
+		ps_svp_exit_scale, ps_svp_exit_offset);
+	const float tunnel_response = SvpPhysicalOptics::ApplyMagnificationResponse(
+		svp_make_response(ps_svp_tunnel_curve_low, ps_svp_tunnel_curve_high), g_pip_scope_magnification,
+		ps_svp_tunnel_scale, 0.f);
+	RCache.set_c("svp_optic_profile", ps_s3ds_tunneling_parallax, ps_s3ds_tunneling_min,
+		ps_s3ds_tunneling_max, tunnel_response);
+	RCache.set_c("svp_pupil_model", svp_pupil_field_scale(), exit_response, ps_svp_tunnel_offset, 0.f);
+	RCache.set_c("svp_lens_center", eyepiece.m_W.c.x, eyepiece.m_W.c.y, eyepiece.m_W.c.z, inverse_lens_diameter);
+	RCache.set_c("svp_lens_right", lens_right.x, lens_right.y, lens_right.z, 0.f);
+	RCache.set_c("svp_lens_up", lens_up.x, lens_up.y, lens_up.z, 0.f);
+
+	if (ps_r__svp_diag)
+	{
+		static u32 s_apert_ms = 0;
+		if (Device.dwTimeGlobal - s_apert_ms > 1000)
+		{
+			s_apert_ms = Device.dwTimeGlobal;
+			PipMsg("[SVP-APERT] eye %.2f,%.2fmm residual %.2f,%.2fmm exit_r %.2fmm pupil_r %.2fmm",
+				raw_eye_offset_mm.x, raw_eye_offset_mm.y, eye_offset_mm.x, eye_offset_mm.y,
+				exit_pupil_mm * 0.5f, pupil_mm * 0.5f);
+		}
+	}
 }
 
 void CRenderTarget::EnsureScopeShaders()
@@ -336,6 +585,11 @@ void CRenderTarget::draw_scope(ref_shader se, std::function<void()> bind)
 			const bool overlay_active = svp_overlay_active(ps_s3ds_param_3.x, ps_markswitch_current);
 			if (ps_r__svp_twilight > 0.f && !overlay_active && g_pip_scope_magnification > 0.01f && pupil_mm > EPS)
 			{
+				// aperture uses the exit-pupil transmission + dim curve, else our current twilight
+				if (ps_r__svp_aperture)
+					dim = svp_calc_twilight_dim(pupil_mm, envb);
+				else
+				{
 				const float mn = (g_pip_scope_min_mag > 0.01f) ? g_pip_scope_min_mag : g_pip_scope_magnification;
 				// exit pupil = objective diameter / magnification, real per-scope objective when
 				// known, else the ocular-ratio proxy
@@ -362,9 +616,15 @@ void CRenderTarget::draw_scope(ref_shader se, std::function<void()> bind)
 						PipMsg("[SVP-TWL] ep %.1fmm pupil %.1fmm env %.2f dim %.2f", ep_mm, pupil_mm, envb, dim);
 					}
 				}
+				}
 			}
 			// pip eyebox half angle from the real exit pupil, the sight anchor bound reads it
 			{
+				// aperture uses the exit-pupil radius + interpolated eye relief, else our current eyebox
+				if (ps_r__svp_aperture)
+					svp_update_eyebox_limit(pupil_mm);
+				else
+				{
 				extern float ps_r__svp_eyebox;
 				extern int ps_r__svp_authored_optics;
 				extern float g_pip_scope_magnification;
@@ -395,6 +655,7 @@ void CRenderTarget::draw_scope(ref_shader se, std::function<void()> bind)
 						}
 					}
 				}
+				}
 			}
 			// crescent drive, exposure zw carries the latched swing side, the tangent offset is
 			// scaled by pupil over eye relief so the bite depth reads the same on every scope
@@ -418,6 +679,8 @@ void CRenderTarget::draw_scope(ref_shader se, std::function<void()> bind)
 				nvg_on ? 0.f : dim,
 				Device.m_SecondViewport.svp_swing_x * shadow_g * sw_k,
 				Device.m_SecondViewport.svp_swing_y * shadow_g * sw_k);
+			// pip physical aperture, exit-pupil transmission + virtual-eye eyebox, x = 0 when disabled
+			svp_bind_aperture(pupil_mm);
 			// pip glass2: x = lens coating strength, y = heat mirage (sun elevation + magnification)
 			{
 				extern float ps_r__svp_coating;
