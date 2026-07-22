@@ -97,7 +97,10 @@ float svp_exit_pupil_transmission(float2 lens_tc)
 		length(field_pupil_offset), exit_radius, eye_radius);
 	const float displaced_overlap = svp_pupil_overlap(
 		length(field_pupil_offset - eye_offset), exit_radius, eye_radius);
-	return saturate(displaced_overlap / max(aligned_overlap, 0.001));
+	// the ratio only means anything while the aligned baseline holds, past the
+	// design field it blends to the absolute overlap so the edge falls dark
+	const float normalized = saturate(displaced_overlap / max(aligned_overlap, 0.001));
+	return lerp(displaced_overlap, normalized, smoothstep(0.0, 0.25, aligned_overlap));
 }
 
 // the swing side slides the pupil center so the shadow enters from the side of the motion
