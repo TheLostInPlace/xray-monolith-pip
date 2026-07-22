@@ -7,7 +7,6 @@
 #include "script_engine.h"
 #include "../xrSound/Sound.h"
 #include "player_hud.h"
-#include "freecam.h"
 
 using namespace luabind;
 
@@ -136,11 +135,6 @@ void console_registrator::script_register(lua_State* L)
 	module(L)
 	[
 		def("get_console", &console),
-		def("freecam_set", &freecam_set),
-		def("freecam_release", &freecam_release),
-		def("freecam_active", &freecam_active),
-		def("freecam_set_fov", &freecam_set_fov),
-		def("freecam_set_roll", &freecam_set_roll),
 		def("is_svp_active", &is_svp_active),
 		def("svp_detected_offset", &svp_detected_offset),
 		def("svp_detected_obj_mm", &svp_detected_obj_mm),
