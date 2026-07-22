@@ -144,7 +144,7 @@ end
 
 local function profile_value(profile_section, key)
     return (profile_section and profiles:r_float_ex(profile_section, key))
-        or profiles:r_float("default", key)
+        or profiles:r_float_ex("default", key)
 end
 
 function apply(scope_section, weapon_section)
@@ -152,7 +152,11 @@ function apply(scope_section, weapon_section)
     local spec, model = physical_spec(scope_section, weapon_section)
     local physical_values = physical_runtime_values(spec, model)
     for _, key in ipairs(keys) do
-        exec_console_cmd(key .. " " .. (physical_values[key] or profile_value(profile_section, key)))
+        -- a key absent from every profile keeps its engine default
+        local value = physical_values[key] or profile_value(profile_section, key)
+        if value then
+            exec_console_cmd(key .. " " .. value)
+        end
     end
 end
 
