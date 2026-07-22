@@ -9,6 +9,30 @@ Texture2D s_svp_rain; // objective-glass rain droplet atlas, x=Fade y=NormalY z=
 #define SVP_EXPOSURE_DECLARED
 uniform float4 svp_exposure; // x = 0 off else 2^bias, y = twilight dim, zw = crescent swing side offset
 #endif
+#ifndef SVP_APERTURE_DECLARED
+#define SVP_APERTURE_DECLARED
+uniform float4 svp_aperture; // x enabled, y current magnification, z min, w max
+#endif
+#ifndef SVP_EYEBOX_DECLARED
+#define SVP_EYEBOX_DECLARED
+uniform float4 svp_eyebox; // xy live eye offset at the virtual pupil, zw exit/eye pupil radii mm
+#endif
+#ifndef SVP_OPTIC_PROFILE_DECLARED
+#define SVP_OPTIC_PROFILE_DECLARED
+uniform float4 svp_optic_profile; // x parallax, yz profile tunnel min/max, w global curve multiplier
+uniform float4 svp_pupil_model; // x field decenter, y pupil sensitivity, z tunnel offset, w reserved
+#endif
+
+bool svp_physical_optics_active()
+{
+	return shader_scope_params.w < -1.5 && svp_aperture.x > 0.5;
+}
+#ifndef SVP_LENS_GEOMETRY_DECLARED
+#define SVP_LENS_GEOMETRY_DECLARED
+uniform float4 svp_lens_center; // xyz eyepiece center, w inverse lens diameter
+uniform float4 svp_lens_right;
+uniform float4 svp_lens_up;
+#endif
 #ifndef SVP_OPTICS_DECLARED
 #define SVP_OPTICS_DECLARED
 uniform float4 svp_optics; // x = 2*ocular_radius/eye_distance, y = true-scale parallax, z = dead lane

@@ -146,7 +146,7 @@ void svp_image_glass_fx(inout float3 back, float2 scope_tc, Scope s)
 		}
 		// true PiP field curvature, the outer field softens like a real non-flat-field scope
 		// flat screens have no eyepiece field, the UV radius would draw an ellipse on the wide panel
-		if (shader_scope_params.w < -1.5 && svp_glass.y > 0.001 && RETICLE_TYPE != RT_FLAT_SCREEN)
+		if (shader_scope_params.w < -1.5 && !svp_physical_optics_active() && svp_glass.y > 0.001 && RETICLE_TYPE != RT_FLAT_SCREEN)
 		{
 			float soft = smoothstep(0.65, 1.0, length((s.tc0.xy - 0.5) * 2.0)) * svp_glass.y;
 			// skip the blur sample when the field curvature has no visible contribution
