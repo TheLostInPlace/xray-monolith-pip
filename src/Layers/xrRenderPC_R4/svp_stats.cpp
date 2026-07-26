@@ -41,6 +41,12 @@ extern Fvector4 ps_ssfx_ssr;
 extern int ps_ssfx_ao_quality;
 extern int ps_ssfx_il_quality;
 extern int ps_ssfx_ssr_quality;
+// sss weapon dof drive plus the nvg flag that forces the beefs dof variant
+extern Fvector4 ps_ssfx_wpn_dof_1;
+extern float ps_ssfx_wpn_dof_2;
+extern Fvector4 ps_dev_param_8;
+extern int ps_r__svp_wpn_dof;
+extern int ps_r__svp_diag;
 // adaptive-res grow gate, defined in svp_console.cpp
 extern int ps_r__svp_adaptive_grow;
 // lean post gate, defined in svp_console.cpp
@@ -137,6 +143,45 @@ namespace
 
 	CGameFont* s_font = nullptr;
 	FactoryPtr<IUIShader>* s_shader = nullptr;
+
+	// effective sss weapon dof lanes, the binder feeds zeros while a scope suppresses weapon dof
+	struct dof_state { float x, y, z, w, p; bool nvg, heavy; };
+
+	dof_state dof_now()
+	{
+		dof_state d;
+		const bool off = (ps_r__svp_wpn_dof == 0) && Device.true_pip_on
+			&& Device.m_SecondViewport.IsSVPActive();
+		d.x = off ? 0.f : ps_ssfx_wpn_dof_1.x;
+		d.y = off ? 0.f : ps_ssfx_wpn_dof_1.y;
+		d.z = off ? 0.f : ps_ssfx_wpn_dof_1.z;
+		d.w = off ? 0.f : ps_ssfx_wpn_dof_1.w;
+		d.p = off ? 0.f : ps_ssfx_wpn_dof_2;
+		d.nvg = (ps_dev_param_8.x >= 1.f);
+		// the 16 tap loop runs where blur_w exceeds zero and every path into it scales by w
+		d.heavy = (d.w > 0.f) || d.nvg;
+		return d;
+	}
+
+	// one line per cheap to expensive crossing, values that never cross the boundary stay silent
+	void dof_state_check()
+	{
+		if (ps_r__svp_stats == 0 && ps_r__svp_diag == 0)
+			return;
+		const dof_state d = dof_now();
+		const int now = d.heavy ? 1 : 0;
+		static int s_last = -1;
+		static u32 s_last_ms = 0;
+		if (now == s_last)
+			return;
+		// rate cap only, the next frame retries so a real crossing is never swallowed
+		if (s_last >= 0 && Device.dwTimeGlobal - s_last_ms < 500)
+			return;
+		s_last = now;
+		s_last_ms = Device.dwTimeGlobal;
+		PipMsg("[SVP-DOF] %s w=%.3f z=%.3f x=%.3f y=%.3f p=%.3f nvg=%d frame=%u",
+			d.heavy ? "EXPENSIVE" : "cheap", d.w, d.z, d.x, d.y, d.p, d.nvg ? 1 : 0, Device.dwFrame);
+	}
 
 	// hook body for the shared copy sites, maps their category onto our accumulating sections
 	void copy_timer(u32 cat, bool begin)
@@ -254,6 +299,7 @@ namespace svp_stats
 {
 	void frame_begin()
 	{
+		dof_state_check(); // runs before the stats gate so r__svp_diag alone still catches the crossing
 		if (ps_r__svp_stats == 0)
 		{
 			if (s_created)
@@ -718,12 +764,16 @@ namespace svp_stats
 			const double untracked = d.sec[SEC_FRAME].gpu_ms - tracked;
 			const double untracked_avg = s_sec_avg[SEC_FRAME] - tracked_avg;
 
-			char ptail[2][96];
+			char ptail[3][96];
 			u32 pt = 0;
 			xr_sprintf(ptail[pt++], "smap %u", d.smap);
 			xr_sprintf(ptail[pt++], "ao %.1f q%d  il %.1f q%d  ssr %.1f q%d",
 				ps_ssfx_ao.x, ps_ssfx_ao_quality, ps_ssfx_il.x, ps_ssfx_il_quality,
 				ps_ssfx_ssr.x, ps_ssfx_ssr_quality);
+			// w gates the 16 tap loop, p widens it over the periphery, nvg forces the beefs spiral
+			const dof_state dn = dof_now();
+			xr_sprintf(ptail[pt++], "dof w %.2f z %.2f p %.2f nvg %d %s",
+				dn.w, dn.z, dn.p, dn.nvg ? 1 : 0, dn.heavy ? "HEAVY" : "cheap");
 
 			// the per-category megabytes ride in the label so the row keeps the two data columns
 			char cplab[3][32];
