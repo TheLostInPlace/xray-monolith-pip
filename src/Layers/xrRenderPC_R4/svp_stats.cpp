@@ -28,6 +28,17 @@ extern u32 svp_stats_disc_latch;
 extern u32 svp_stats_fwd_keep;
 extern u32 svp_stats_optic_resolve;
 extern u32 svp_stats_lean_flags;
+extern u32 svp_stats_copies;
+extern u32 svp_stats_copy_kb;
+extern u32 svp_stats_tiny;
+extern u32 svp_stats_shadow;
+// live screen-space pass configuration, defined in xrRender_console.cpp
+extern Fvector4 ps_ssfx_ao;
+extern Fvector4 ps_ssfx_il;
+extern Fvector4 ps_ssfx_ssr;
+extern int ps_ssfx_ao_quality;
+extern int ps_ssfx_il_quality;
+extern int ps_ssfx_ssr_quality;
 // adaptive-res grow gate, defined in svp_console.cpp
 extern int ps_r__svp_adaptive_grow;
 // lean post gate, defined in svp_console.cpp
@@ -73,7 +84,11 @@ namespace
 		float sun_shafts; // weather sunshafts intensity, the phase_sunshafts early-out reads the same value
 		u32 lean_flags;
 		bool lean_on;
+		u32 copies, copy_kb, rtsw, shadow, tiny, smap;
 	};
+
+	// pipe-panel quantities that carry a rolling average, order matches the rows
+	enum { PIPE_COPIES = 0, PIPE_COPY_KB, PIPE_RTSW, PIPE_SHADOW, PIPE_TINY, PIPE_COUNT };
 
 	struct frame_slot
 	{
@@ -104,6 +119,7 @@ namespace
 
 	// per-section rolling gpu average, advanced only on frames that resolved valid timestamps
 	double s_sec_avg[SEC_COUNT];
+	double s_pipe_avg[PIPE_COUNT];
 	bool s_avg_seeded = false;
 
 	CTimer s_frame_timer;
@@ -150,6 +166,7 @@ namespace
 		s_ft_head = 0;
 		s_avg_seeded = false;
 		ZeroMemory(s_sec_avg, sizeof(s_sec_avg)); // no stale averages from a prior session
+		ZeroMemory(s_pipe_avg, sizeof(s_pipe_avg));
 		ZeroMemory(s_ft_time, sizeof(s_ft_time)); // drop any stale window samples from a prior session
 		return true;
 	}
@@ -180,11 +197,17 @@ namespace
 		s_snap_valid = true;
 
 		// alpha from the frame delta so the ~1s constant holds at any frame rate, first frame seeds outright
+		const double pipe_raw[PIPE_COUNT] = {
+			double(s.data.copies), double(s.data.copy_kb), double(s.data.rtsw),
+			double(s.data.shadow), double(s.data.tiny)
+		};
 		const float dt = Device.fTimeDelta;
 		if (!s_avg_seeded)
 		{
 			for (u32 i = 0; i < SEC_COUNT; ++i)
 				s_sec_avg[i] = s.data.sec[i].gpu_ms;
+			for (u32 i = 0; i < PIPE_COUNT; ++i)
+				s_pipe_avg[i] = pipe_raw[i];
 			s_avg_seeded = true;
 		}
 		else if (dt > 0.f)
@@ -192,6 +215,8 @@ namespace
 			const double a = 1.0 - exp(-double(dt) / AVG_TAU_SEC);
 			for (u32 i = 0; i < SEC_COUNT; ++i)
 				s_sec_avg[i] += a * (s.data.sec[i].gpu_ms - s_sec_avg[i]);
+			for (u32 i = 0; i < PIPE_COUNT; ++i)
+				s_pipe_avg[i] += a * (pipe_raw[i] - s_pipe_avg[i]);
 		}
 	}
 
@@ -265,6 +290,10 @@ namespace svp_stats
 		svp_stats_fwd_keep = 0;
 		svp_stats_optic_resolve = 0;
 		svp_stats_lean_flags = 0;
+		svp_stats_copies = 0;
+		svp_stats_copy_kb = 0;
+		svp_stats_tiny = 0;
+		svp_stats_shadow = 0;
 		// feed the rolling ~1s window for the spike readout, skip the first frame's null delta
 		if (fms > 0.0)
 		{
@@ -370,6 +399,13 @@ namespace svp_stats
 			d.sun_shafts = g_pGamePersistent->Environment().CurrentEnv->m_fSunShaftsIntensity;
 		d.lean_flags = svp_stats_lean_flags;
 		d.lean_on = (ps_r__pp_lean != 0);
+		d.copies = svp_stats_copies;
+		d.copy_kb = svp_stats_copy_kb;
+		d.tiny = svp_stats_tiny;
+		d.shadow = svp_stats_shadow;
+		// the backend zeroes stat once per frame in OnFrameBegin so this is already a per-frame count
+		d.rtsw = RCache.stat.target_rt;
+		d.smap = RImplementation.o.smapsize;
 		HW.pContext->End(s_cur->disjoint);
 		s_cur->in_flight = true;
 	}
@@ -538,6 +574,9 @@ namespace svp_stats
 			y += step;
 		}
 
+		// combine box geometry, the pipe box below anchors off it
+		float brk_l = 0.f, brk_top = 0.f, brk_w = 0.f, brk_h = 0.f;
+
 		// second box under the main panel, splits the main combine bucket into its post passes
 		{
 			struct brk_row { LPCSTR name; section_e s; bool always; };
@@ -601,6 +640,7 @@ namespace svp_stats
 			const float blabel_l = bpanel_l + pad;
 			const float bval_r = blabel_l + blabel_w + cell;
 			const float bavg_r = bval_r + gap + cell;
+			brk_l = bpanel_l; brk_top = btop; brk_w = bpanel_w; brk_h = bpanel_h;
 
 			UIRender->SetShader(**s_shader);
 			UIRender->StartPrimitive(6, IUIRender::ptTriList, IUIRender::pttTL);
@@ -643,6 +683,87 @@ namespace svp_stats
 			{
 				F.Out(blabel_l, by, "%s", btail[i]);
 				by += step;
+			}
+		}
+
+		// third box, pipeline waste, sits left of the combine box and stacks under it when width runs out
+		{
+			// untracked is the frame window minus every bucket we time, the honesty row
+			double tracked = d.sec[SEC_MAIN_GBUFFER].gpu_ms + d.sec[SEC_MAIN_LIGHTS].gpu_ms
+				+ d.sec[SEC_MAIN_EMISSIVE].gpu_ms + d.sec[SEC_MAIN_COMBINE].gpu_ms
+				+ d.sec[SEC_SVP_GBUFFER].gpu_ms + d.sec[SEC_SVP_LIGHTS].gpu_ms
+				+ d.sec[SEC_SVP_EMISSIVE].gpu_ms + d.sec[SEC_SVP_COMBINE].gpu_ms;
+			double tracked_avg = s_sec_avg[SEC_MAIN_GBUFFER] + s_sec_avg[SEC_MAIN_LIGHTS]
+				+ s_sec_avg[SEC_MAIN_EMISSIVE] + s_sec_avg[SEC_MAIN_COMBINE]
+				+ s_sec_avg[SEC_SVP_GBUFFER] + s_sec_avg[SEC_SVP_LIGHTS]
+				+ s_sec_avg[SEC_SVP_EMISSIVE] + s_sec_avg[SEC_SVP_COMBINE];
+			const double untracked = d.sec[SEC_FRAME].gpu_ms - tracked;
+			const double untracked_avg = s_sec_avg[SEC_FRAME] - tracked_avg;
+
+			char ptail[2][96];
+			u32 pt = 0;
+			xr_sprintf(ptail[pt++], "smap %u", d.smap);
+			xr_sprintf(ptail[pt++], "ao %.1f q%d  il %.1f q%d  ssr %.1f q%d",
+				ps_ssfx_ao.x, ps_ssfx_ao_quality, ps_ssfx_il.x, ps_ssfx_il_quality,
+				ps_ssfx_ssr.x, ps_ssfx_ssr_quality);
+
+			const u32 prows = 6;
+			const float plabel_w = F.SizeOf_("untracked") + digit;
+			float pcontent_w = plabel_w + cell + gap + cell;
+			for (u32 i = 0; i < pt; ++i)
+				pcontent_w = _max(pcontent_w, F.SizeOf_(ptail[i]));
+			const float ppanel_w = pcontent_w + 2.f * pad;
+			const float ppanel_h = (1u + prows + pt) * step + 2.f * pad;
+			const float side_gap = step * 0.4f;
+			const float left_edge = W * 0.012f;
+			// beside the combine box when it fits, otherwise stacked under it on the same right edge
+			const bool beside = (brk_l - side_gap - ppanel_w) >= left_edge;
+			const float ppanel_l = beside ? (brk_l - side_gap - ppanel_w) : (right - ppanel_w);
+			const float ptop = beside ? brk_top : (brk_top + brk_h + side_gap);
+			const float plabel_l = ppanel_l + pad;
+			const float pval_r = plabel_l + plabel_w + cell;
+			const float pavg_r = pval_r + gap + cell;
+
+			UIRender->SetShader(**s_shader);
+			UIRender->StartPrimitive(6, IUIRender::ptTriList, IUIRender::pttTL);
+			UIRender->PushPoint(ppanel_l, ptop, 0.f, back, 0.f, 0.f);
+			UIRender->PushPoint(ppanel_l + ppanel_w, ptop, 0.f, back, 1.f, 0.f);
+			UIRender->PushPoint(ppanel_l + ppanel_w, ptop + ppanel_h, 0.f, back, 1.f, 1.f);
+			UIRender->PushPoint(ppanel_l, ptop, 0.f, back, 0.f, 0.f);
+			UIRender->PushPoint(ppanel_l + ppanel_w, ptop + ppanel_h, 0.f, back, 1.f, 1.f);
+			UIRender->PushPoint(ppanel_l, ptop + ppanel_h, 0.f, back, 0.f, 1.f);
+			UIRender->FlushPrimitive();
+
+			float py = ptop + pad;
+			auto prow = [&](u32 lc, LPCSTR label, u32 vc, LPCSTR val, u32 ac, LPCSTR avg)
+			{
+				F.SetAligment(CGameFont::alLeft); F.SetColor(lc); F.Out(plabel_l, py, "%s", label);
+				F.SetAligment(CGameFont::alRight); F.SetColor(vc); F.Out(pval_r, py, "%s", val);
+				F.SetColor(ac); F.Out(pavg_r, py, "%s", avg);
+				py += step;
+			};
+
+			char pb[24], pa[24];
+			prow(c_hdr, "pipe", c_hdr, "NOW", c_hdr, "AVG");
+			xr_sprintf(pb, "%.2f", untracked); xr_sprintf(pa, "%.2f", untracked_avg);
+			prow(c_txt, "untracked", gpu_color(untracked), pb, gpu_color(untracked_avg), pa);
+			xr_sprintf(pb, "%u", d.copies); xr_sprintf(pa, "%.1f", s_pipe_avg[PIPE_COPIES]);
+			prow(c_txt, "copies", c_txt, pb, c_txt, pa);
+			xr_sprintf(pb, "%.1f", d.copy_kb / 1024.0); xr_sprintf(pa, "%.1f", s_pipe_avg[PIPE_COPY_KB] / 1024.0);
+			prow(c_dim, "copy mb", c_txt, pb, c_txt, pa);
+			xr_sprintf(pb, "%u", d.rtsw); xr_sprintf(pa, "%.0f", s_pipe_avg[PIPE_RTSW]);
+			prow(c_txt, "rtsw", c_txt, pb, c_txt, pa);
+			xr_sprintf(pb, "%u", d.shadow); xr_sprintf(pa, "%.1f", s_pipe_avg[PIPE_SHADOW]);
+			prow(c_txt, "shadow", c_txt, pb, c_txt, pa);
+			fmt_count(pb, sizeof(pb), d.tiny); xr_sprintf(pa, "%.0f", s_pipe_avg[PIPE_TINY]);
+			prow(c_txt, "tiny", c_txt, pb, c_txt, pa);
+
+			F.SetAligment(CGameFont::alLeft);
+			F.SetColor(c_dim);
+			for (u32 i = 0; i < pt; ++i)
+			{
+				F.Out(plabel_l, py, "%s", ptail[i]);
+				py += step;
 			}
 		}
 

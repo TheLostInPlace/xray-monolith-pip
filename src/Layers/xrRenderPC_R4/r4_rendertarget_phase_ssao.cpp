@@ -210,6 +210,7 @@ void CRenderTarget::phase_ssfx_ao()
 	RCache.Render(D3DPT_TRIANGLELIST, Offset, 0, 4, 0, 2);
 
 	// Save AO frame
+	svp_note_copy(rt_copy_bytes(rt_ssfx_ao));
 	HW.pContext->CopyResource(rt_ssfx_ao->pTexture->surface_get(), rt_ssfx_temp->pTexture->surface_get());
 
 	//scale_X = w / (ScaleFactor * 2.0f);
@@ -351,6 +352,7 @@ void CRenderTarget::phase_ssfx_il()
 
 
 	// Save AO frame
+	svp_note_copy(rt_copy_bytes(rt_ssfx_il));
 	HW.pContext->CopyResource(rt_ssfx_il->pTexture->surface_get(), rt_ssfx_temp2->pTexture->surface_get());
 
 	//scale_X = w / ScaleFactor;

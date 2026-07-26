@@ -200,6 +200,7 @@ void CRenderTarget::phase_sunshafts()
 
 	RCache.set_Stencil(FALSE);
 #if defined(USE_DX10) || defined(USE_DX11)
+	svp_note_copy(rt_copy_bytes(rt_Generic_0));
 	HW.pContext->CopyResource(rt_Generic_0->pTexture->surface_get(), rt_Generic->pTexture->surface_get());
 #endif
 };

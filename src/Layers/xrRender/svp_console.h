@@ -67,6 +67,14 @@ extern ECORE_API int ps_r__pp_lean;
 extern ECORE_API int ps_r__ssfx_ssr_enable;
 extern ECORE_API u32 svp_stats_lean_flags; // bit per lean skip that fired this frame, decoded by the breakdown panel
 
+// pipeline-waste tallies for the third overlay box, all reset per frame like the counters above
+extern ECORE_API u32 svp_stats_copies;
+extern ECORE_API u32 svp_stats_copy_kb;
+extern ECORE_API u32 svp_stats_tiny;
+extern ECORE_API u32 svp_stats_shadow;
+// tallies one tracked full-frame copy, self-gated so it costs an int compare when the overlay is off
+extern ECORE_API void svp_note_copy(u32 bytes);
+
 // optics derivation
 extern ECORE_API float ps_r__svp_obj_dist;
 extern ECORE_API float ps_r__svp_obj_size;

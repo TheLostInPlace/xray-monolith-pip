@@ -96,6 +96,7 @@ void CRenderTarget::phase_smaa()
 	RCache.Render(D3DPT_TRIANGLELIST, Offset, 0, 4, 0, 2);
 
 #if defined(USE_DX10) || defined(USE_DX11)
+	svp_note_copy(rt_copy_bytes(rt_Generic_0));
 	HW.pContext->CopyResource(rt_Generic_0->pTexture->surface_get(), dest_rt->pTexture->surface_get());
 #endif
 }
@@ -109,6 +110,7 @@ void CRenderTarget::phase_ssfx_taa()
 	if (m_taa_seed_history)
 	{
 		m_taa_seed_history = false;
+		svp_note_copy(rt_copy_bytes(rt_ssfx_prev_frame));
 		HW.pContext->CopyResource(rt_ssfx_prev_frame->pTexture->surface_get(), rt_Generic_0->pTexture->surface_get());
 	}
 
@@ -142,6 +144,7 @@ void CRenderTarget::phase_ssfx_taa()
 	RCache.set_Geometry(g_combine);
 	RCache.Render(D3DPT_TRIANGLELIST, Offset, 0, 4, 0, 2);
 	
+	svp_note_copy(rt_copy_bytes(rt_ssfx_taa));
 	HW.pContext->CopyResource(rt_ssfx_taa->pTexture->surface_get(), rt_ssfx_accum->pTexture->surface_get());
 
 	// stamp the raw TAA skip mask over the lens after prepare
@@ -201,6 +204,7 @@ void CRenderTarget::phase_ssfx_taa()
 	RCache.Render(D3DPT_TRIANGLELIST, Offset, 0, 4, 0, 2);
 
 	// Accumulate
+	svp_note_copy(rt_copy_bytes(rt_ssfx_prev_frame));
 	HW.pContext->CopyResource(rt_ssfx_prev_frame->pTexture->surface_get(), dest_rt->pTexture->surface_get());
 
 	// Sharpening phase

@@ -159,6 +159,18 @@ int ps_r__svp_corner_mask = 1; // svp stencil the dead corners outside the eyepi
 int ps_r__pp_lean = 0; // master gate for the idle post-pass skips in phase_combine (0 = stock, every pass runs)
 int ps_r__ssfx_ssr_enable = 1; // ssfx screen space reflections master switch, the shader-presence flag has no off (1 = on)
 u32 svp_stats_lean_flags = 0; // bit per lean skip that fired this frame, decoded by the breakdown panel
+u32 svp_stats_copies = 0; // tracked full-frame CopyResource calls this frame, tallied by svp_note_copy
+u32 svp_stats_copy_kb = 0; // destination kilobytes those tracked copies moved
+u32 svp_stats_tiny = 0; // main-view sorted draws below the lod-out ssa, counted in r__dsgraph_render
+u32 svp_stats_shadow = 0; // sun cascade shadow-map renders this frame, counted in render_sun_cascade
+
+void svp_note_copy(u32 bytes)
+{
+	if (ps_r__svp_stats == 0)
+		return;
+	++svp_stats_copies;
+	svp_stats_copy_kb += bytes >> 10;
+}
 int scope_debug = 0;
 
 class CCC_SvpScopeMode final : public CCC_Integer

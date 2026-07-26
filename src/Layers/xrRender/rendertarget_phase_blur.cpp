@@ -255,6 +255,7 @@ void CRenderTarget::phase_ssfx_ssr()
 	RCache.Render(D3DPT_TRIANGLELIST, Offset, 0, 4, 0, 2);
 
 	// COPY SSR RESULT ( ACC ) ////////////////////////////////////////////
+	svp_note_copy(rt_copy_bytes(rt_ssfx_ssr));
 	HW.pContext->CopyResource(rt_ssfx_ssr->pTexture->surface_get(), rt_ssfx->pTexture->surface_get());
 
 	// Disable/Enable Blur if the value is <= 0
@@ -979,6 +980,7 @@ void CRenderTarget::phase_ssfx_fog_scattering()
 
 	RCache.Render(D3DPT_TRIANGLELIST, Offset, 0, 4, 0, 2);
 
+	svp_note_copy(rt_copy_bytes(rt_Generic_0));
 	HW.pContext->CopyResource(rt_Generic_0->pTexture->surface_get(), dest_rt->pTexture->surface_get());
 
 }
@@ -1018,6 +1020,7 @@ void CRenderTarget::phase_ssfx_motion_blur()
 	RCache.set_Geometry(g_combine);
 	RCache.Render(D3DPT_TRIANGLELIST, Offset, 0, 4, 0, 2);
 
+	svp_note_copy(rt_copy_bytes(rt_Generic_0));
 	HW.pContext->CopyResource(rt_Generic_0->pTexture->surface_get(), dest_rt->pTexture->surface_get());
 }
 

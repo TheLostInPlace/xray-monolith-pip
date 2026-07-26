@@ -399,6 +399,7 @@ void CRenderTarget::phase_combine()
 	tm_end(svp_stats::SEC_C_COMBINE1);
 
 	//Copy previous rt
+	svp_note_copy(rt_copy_bytes(rt_Generic_temp));
 	if (!RImplementation.o.dx10_msaa)
 		HW.pContext->CopyResource(rt_Generic_temp->pTexture->surface_get(), rt_Generic_0->pTexture->surface_get());
 	else
@@ -464,6 +465,7 @@ void CRenderTarget::phase_combine()
 		set_viewport_size(HW.pContext, w, h);
 
 		// Save Frame
+		svp_note_copy(rt_copy_bytes(rt_ssfx_water));
 		HW.pContext->CopyResource(rt_ssfx_water->pTexture->surface_get(), rt_ssfx_temp->pTexture->surface_get());
 
 		// Water SSR Blur
@@ -521,6 +523,7 @@ void CRenderTarget::phase_combine()
 		svp_stats_lean_flags |= svp_stats::LEAN_GLASS;
 	if (RImplementation.o.ssfx_glass && !lean_glass)
 	{
+		svp_note_copy(rt_copy_bytes(rt_Generic_temp));
 		if (!RImplementation.o.dx10_msaa)
 			HW.pContext->CopyResource(rt_Generic_temp->pTexture->surface_get(), rt_Generic_0->pTexture->surface_get());
 		else
@@ -801,7 +804,10 @@ void CRenderTarget::phase_combine()
 	}
 
 	if (ssfx_PrevPos_Requiered)
+	{
+		svp_note_copy(rt_copy_bytes(rt_ssfx_prevPos));
 		HW.pContext->CopyResource(rt_ssfx_prevPos->pTexture->surface_get(), rt_Position->pTexture->surface_get());
+	}
 
 	// PP enabled ?
 	//	Render to RT texture to be able to copy RT even in windowed mode.
