@@ -63,7 +63,12 @@ public:
 	ECameraDomain svp_camera_domain = camera_eyepiece;
 	u32 svp_camera_frame = u32(-1); // render frame that published matrices[1]
 	u32 svp_camera_session = 0; // SVP session that published matrices[1]
+	const void* svp_lens_root = nullptr;
+	const void* svp_lens_visual = nullptr;
+	const void* svp_lens_owner = nullptr;
+	u32 svp_lens_frame = u32(-1);
 	Fvector2 svp_jitter_px = {}; // raw sub-pixel jitter baked into matrices[1].mProject, {0,0} at gate 0
+	Fvector2 svp_principal_ndc = {}; // physical off axis shift before temporal jitter
 	bool m_lens_prev_valid = false; // render-thread edge state for the lens-appears reset trigger
 
 	float svp_disc_px = 0.f; // pip on-screen eyepiece disc diameter (px), learned in the lens composite

@@ -88,6 +88,17 @@ bool CSkeletonX::SVP_BoneSnapshotReady() const
 #endif
 }
 
+bool CSkeletonX::SVP_RigidBoneSnapshotXform(Fmatrix& out)
+{
+#if RENDER == R_R4
+	if (RenderMode != RM_SINGLE)
+		return false;
+	return SVP_BoneSnapshotXform((u16)RMS_boneid, out);
+#else
+	return false;
+#endif
+}
+
 bool CSkeletonX::SVP_BoneSnapshotXform(Fmatrix& out)
 {
 #if RENDER == R_R4

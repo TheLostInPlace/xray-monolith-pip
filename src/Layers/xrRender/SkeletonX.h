@@ -108,10 +108,12 @@ public:
 	bool SVP_GetLensDetection(SLensDetection& out); // pip forward the owning kinematics measured lens fit for the render-side diag
 	bool SVP_CaptureBoneSnapshot();
 	bool SVP_BoneSnapshotReady() const; // pip exact main hud bone palette shared by both viewports
+	bool SVP_RigidBoneSnapshotXform(Fmatrix& out);
 	bool SVP_BoneSnapshotXform(Fmatrix& out);
 	bool SVP_BoneSnapshotXform(u16 bone, Fmatrix& out);
 	bool SVP_BoneSnapshotXform(const IKinematics* owner, u16 bone, Fmatrix& out);
 	bool SVP_BoneSnapshotVisible(BOOL& visible);
+	const void* SVP_SkeletonOwner() const { return Parent; }
 	// pip append each dedup bind-pose vertex, model space, with its global dominant bone id
 	void SVP_GatherVerts(xr_vector<Fvector>& positions, xr_vector<u16>& bones);
 

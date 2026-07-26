@@ -165,12 +165,15 @@ void CDSGraphManager::r_dsgraph_render_graph_sorted(R_dsgraph::mapDSGraphItems<T
 			{
 				s_admission_diag_ms = Device.dwTimeGlobal;
 				auto texture = V->GetTexture();
-				PipMsg("[SVP-ADMIT] %s queue=%s role=%u t=%.2f rad=%.1fcm R=%.1fcm reason=%s %s",
+				PipMsg("[SVP-ADMIT] %s queue=%s role=%u t=%.2f rad=%.1fcm R=%.1fcm reason=%s visual=%p root=%p lensVisual=%p lensRoot=%p %s",
 					admission.reject ? "SUPPRESS" : "retain",
 					s_svp_objective_hud_bucket ? s_svp_objective_hud_bucket : "sorted",
 					item.hud_role,
 					admission.objective > EPS ? admission.axial / admission.objective : 0.f,
 					admission.radial * 100.f, admission.radius * 100.f, admission.reason,
+					(void*)V, (void*)item.pMatrix,
+					Device.m_SecondViewport.svp_lens_visual,
+					Device.m_SecondViewport.svp_lens_root,
 					texture ? texture->cName.c_str() : "?");
 			}
 			if (admission.reject)

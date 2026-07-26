@@ -200,8 +200,10 @@ void svp_image_glass_fx(inout float3 back, float2 scope_tc, Scope s)
 			float ct = saturate(svp_glass2.x);
 			back *= lerp(float3(1.0, 1.0, 1.0), float3(0.93, 0.915, 0.888), ct);
 		}
-		// lens UV debug: green top / red bottom of the SVP sample coord, a flipped gradient = flipped lens V
-		if (shader_scope_params.w < -1.5 && svp_env.z > 0.5)
+		// mode 2 paints final U green to red and marks a negative local X derivative in blue
+		if (shader_scope_params.w < -1.5 && svp_env.z > 1.5)
+			back = float3(scope_tc.x, 1.0 - scope_tc.x, ddx(scope_tc.x) < 0.0 ? 1.0 : 0.0);
+		else if (shader_scope_params.w < -1.5 && svp_env.z > 0.5)
 			back = float3(scope_tc.y, 1.0 - scope_tc.y, 0.2);
 }
 

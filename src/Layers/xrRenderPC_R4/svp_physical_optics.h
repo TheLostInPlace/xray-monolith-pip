@@ -10,6 +10,13 @@ struct Vec2
 	float y = 0.f;
 };
 
+struct Vec3
+{
+	float x = 0.f;
+	float y = 0.f;
+	float z = 0.f;
+};
+
 struct MagnificationResponse
 {
 	float value[8] = {};
@@ -24,13 +31,12 @@ struct EyeTrackingState
 	bool valid = false;
 };
 
-struct PupilRayTransfer
+struct ObjectiveRegistration
 {
-	Vec2 exit_position_mm;
-	Vec2 entrance_position_mm;
-	Vec2 exit_slope;
-	Vec2 entrance_slope;
-	bool clipped = false;
+	Vec2 hit;
+	Vec2 principal;
+	float fraction = 0.f;
+	bool inside_aperture = false;
 	bool valid = false;
 };
 
@@ -40,8 +46,8 @@ float MagnificationFraction(float magnification, float minimum, float maximum);
 float InterpolateMagnification(float low, float high, float magnification, float minimum, float maximum);
 float InterpolateReciprocalMagnification(float low, float high, float magnification, float minimum, float maximum);
 Vec2 LimitEyeOffset(const Vec2& offset, float limit_mm);
-PupilRayTransfer MapEntrancePupilRay(const Vec2& exit_position_mm, float eye_relief_mm,
-	float entrance_scale, float entrance_limit_mm, float parity);
+ObjectiveRegistration MapObjectiveAxisToEyepiece(const Vec3& eye_local,
+	const Vec3& objective_local, const Vec2& lens_radius);
 void AccelerateEye(Vec2& velocity, const Vec2& desired_velocity, float max_delta);
 void UpdateEyeTracking(EyeTrackingState& state, const Vec2& target, bool suspended, std::uint32_t epoch,
 	std::uint32_t frame, float dt, float tracking_speed, float acceleration_mm_s2);

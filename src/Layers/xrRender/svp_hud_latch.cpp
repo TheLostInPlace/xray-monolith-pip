@@ -195,20 +195,59 @@ static LPCSTR svp_hud_role_name(u8 role)
 	}
 }
 
-static bool svp_project_ndc(const Fmatrix& view, const Fmatrix& projection,
-	const Fvector& point, Fvector2& ndc)
+static bool svp_basis_coords(const Fvector& origin, const Fvector& right,
+	const Fvector& up, const Fvector& forward, const Fvector& point, Fvector& coords)
 {
-	Fmatrix transform;
-	transform.mul(projection, view);
-	Fvector4 source;
-	source.set(point.x, point.y, point.z, 1.f);
-	Fvector4 clip;
-	transform.transform(clip, source);
-	if (!_valid(clip) || clip.w <= EPS)
+	Fvector r = right;
+	Fvector u = up;
+	Fvector f = forward;
+	if (r.square_magnitude() <= EPS || u.square_magnitude() <= EPS
+		|| f.square_magnitude() <= EPS)
 		return false;
-	ndc.set(clip.x / clip.w, clip.y / clip.w);
-	return _valid(ndc);
+	r.normalize();
+	u.normalize();
+	f.normalize();
+	Fvector delta;
+	delta.sub(point, origin);
+	coords.set(delta.dotproduct(r), delta.dotproduct(u), delta.dotproduct(f));
+	return _valid(coords);
 }
+
+static bool svp_basis_direction(const Fvector& right, const Fvector& up,
+	const Fvector& forward, const Fvector& direction, Fvector& coords)
+{
+	Fvector r = right;
+	Fvector u = up;
+	Fvector f = forward;
+	Fvector d = direction;
+	if (r.square_magnitude() <= EPS || u.square_magnitude() <= EPS
+		|| f.square_magnitude() <= EPS || d.square_magnitude() <= EPS)
+		return false;
+	r.normalize();
+	u.normalize();
+	f.normalize();
+	d.normalize();
+	coords.set(d.dotproduct(r), d.dotproduct(u), d.dotproduct(f));
+	return _valid(coords);
+}
+
+struct SSvpRelativeProbe
+{
+	dxRender_Visual* visual = nullptr;
+	Fmatrix* root = nullptr;
+	const void* owner = nullptr;
+	Fvector camera = {};
+	Fvector lens = {};
+	Fvector root_lens = {};
+	Fvector axis_i = {};
+	Fvector axis_j = {};
+	Fvector axis_k = {};
+	float forward = -flt_max;
+	u8 role = IDSGraphManager::hud_unknown;
+	bool skinned = false;
+	bool snapshot = false;
+	bool valid = false;
+};
 
 static bool svp_axial_bounds(const Fbox& box, const Fmatrix& world,
 	const Fvector& origin, const Fvector& axis, float& lower, float& upper)
@@ -383,11 +422,17 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 		extern int ps_r__svp_cop_diag;
 		static u32 s_hud_diag_ms = 0;
 		const bool diag = ps_r__svp_cop_diag && (Device.dwTimeGlobal - s_hud_diag_ms > 3000);
+		const bool relative_diag = ps_r__svp_cop_diag >= 2
+			&& vp.svp_lens_frame == Device.dwFrame
+			&& vp.SnapshotExact(vp.svp_camera_frame, vp.svp_camera_session, Device.dwFrame)
+			&& vp.svp_lens_root && vp.svp_lens_visual;
+		SSvpRelativeProbe relative_probe;
 		if (diag)
 		{
 			s_hud_diag_ms = Device.dwTimeGlobal;
-			PipMsg("[SVP-HUD] tube=%.1fcm rcyl=%.1fcm cap=%.1fcm items=%u skip_ok=%d front=%.1fcm objectiveFilter=%d",
+			PipMsg("[SVP-HUD] tube=%.1fcm rcyl=%.1fcm cap=%.1fcm items=%u skip_ok=%d plane=%.1fcm legacyFront=%.1fcm objectiveFilter=%d",
 				tube * 100.f, rcyl * 100.f, tube * 1.75f * 100.f, (u32)graph.size(), (int)skip_ok,
+				(objective_filter ? tube : g_svp_legacy_front_m) * 100.f,
 				g_svp_legacy_front_m * 100.f, objective_filter ? 1 : 0);
 		}
 		extern int ps_r__svp_stats; extern u32 svp_stats_hud_cull_reject; extern u32 svp_ledger_hud_cull_reject;
@@ -473,75 +518,67 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 			{
 				auto tx = V->GetTexture();
 				if (objective_filter)
-					PipMsg("[SVP-ADMIT] %s role=%s t=%.2f rad=%.1fcm R=%.1fcm axial=[%.1f,%.1f]cm objective=%.1fcm reason=%s %s",
+					PipMsg("[SVP-ADMIT] %s role=%s t=%.2f rad=%.1fcm R=%.1fcm axial=[%.1f,%.1f]cm objective=%.1fcm reason=%s visual=%p root=%p lensVisual=%p lensRoot=%p %s",
 						drop ? "SUPPRESS" : "retain", svp_hud_role_name(item.hud_role), t,
 						rad * 100.f, V->vis.sphere.R * 100.f, axial_lo * 100.f, axial_hi * 100.f,
-						tube * 100.f, admission, tx ? tx->cName.c_str() : "?");
+						tube * 100.f, admission, (void*)V, (void*)item.pMatrix,
+						vp.svp_lens_visual, vp.svp_lens_root,
+						tx ? tx->cName.c_str() : "?");
 				else
 					PipMsg("[SVP-HUD] %s t=%.2f rad=%.1fcm R=%.1fcm %s", (drop || clip_obj) ? "SKIP" : "keep",
 						t, rad * 100.f, V->vis.sphere.R * 100.f, tx ? tx->cName.c_str() : "?");
 			}
 			if ((drop && skip_ok) || clip_obj) continue;
-			if (ps_r__svp_cop_diag >= 2 && item.hud_role == hud_primary_item && item.pMatrix)
+			if (relative_diag && item.hud_role == hud_primary_item
+				&& V != vp.svp_lens_visual)
 			{
-				static dxRender_Visual* s_visual = nullptr;
-				static u32 s_session = 0;
-				static u32 s_epoch = 0;
-				static u32 s_frame = u32(-1);
-				static u32 s_log_ms = 0;
-				static Fvector2 s_outer = {};
-				static Fvector2 s_inner = {};
-				static bool s_valid = false;
-				if (s_frame != Device.dwFrame)
+				Fmatrix root_world = *svp_pose_of(item.pMatrix);
+				Fmatrix point_world = root_world;
+				CSkeletonX* skeleton = fast_dynamic_cast<CSkeletonX*>(V);
+				bool snapshot = false;
+				bool comparable = skeleton != nullptr;
+				if (comparable)
 				{
-					Fvector inner_center;
-					svp_pose_of(item.pMatrix)->transform_tiny(inner_center, V->vis.sphere.P);
-					Fvector2 outer;
-					Fvector2 inner;
-					const bool projected = svp_project_ndc(Device.matrices[0].mView,
-						Device.matrices[0].mProjectHud, vp.eyepiece.m_W.c, outer)
-						&& svp_project_ndc(Device.matrices[1].mView,
-							Device.matrices[1].mProject, inner_center, inner);
-					const bool same = s_valid && projected && s_visual == V
-						&& s_session == vp.GetSVPSession()
-						&& s_epoch == vp.svp_camera_epoch
-						&& s_frame + 1 == Device.dwFrame;
-					if (projected && same)
+					Fmatrix bone;
+					if (skeleton->SVP_RigidBoneSnapshotXform(bone))
 					{
-						Fvector2 outer_delta;
-						outer_delta.sub(outer, s_outer);
-						Fvector2 inner_delta;
-						inner_delta.sub(inner, s_inner);
-						const float outer_mag = outer_delta.magnitude();
-						const float inner_mag = inner_delta.magnitude();
-						if (outer_mag > 0.0002f
-							&& (inner_mag > 0.0002f || Device.dwTimeGlobal - s_log_ms > 500))
-						{
-							s_log_ms = Device.dwTimeGlobal;
-							const float cosine = inner_mag > EPS
-								? outer_delta.dotproduct(inner_delta) / (outer_mag * inner_mag) : 0.f;
-							CSkeletonX* skeleton = fast_dynamic_cast<CSkeletonX*>(V);
-							auto texture = V->GetTexture();
-							PipMsg("[SVP-SWAY] probe=root-center role=%s texture=%s skinned=%d snapshot=%d outer=(%.5f,%.5f) inner=(%.5f,%.5f) dOuter=(%.5f,%.5f) dInner=(%.5f,%.5f) xprod=%.7f cosine=%.4f visual=%p session=%u epoch=%u",
-								svp_hud_role_name(item.hud_role),
-								texture ? texture->cName.c_str() : "?",
-								skeleton ? 1 : 0,
-								skeleton && skeleton->SVP_BoneSnapshotReady() ? 1 : 0,
-								outer.x, outer.y, inner.x, inner.y,
-								outer_delta.x, outer_delta.y, inner_delta.x, inner_delta.y,
-								outer_delta.x * inner_delta.x, cosine, (void*)V,
-								vp.GetSVPSession(), vp.svp_camera_epoch);
-						}
+						point_world.mulB_43(bone);
+						snapshot = true;
 					}
-					if (projected)
+					else
+						comparable = false;
+				}
+				Fvector point;
+				point_world.transform_tiny(point, V->vis.sphere.P);
+				Fvector camera;
+				if (comparable && svp_basis_coords(vp.svp_cam_pos, vp.svp_right, vp.svp_up,
+					vp.svp_fwd, point, camera) && camera.z > EPS
+					&& camera.z > relative_probe.forward)
+				{
+					Fvector lens;
+					Fvector root_lens;
+					if (svp_basis_coords(vp.eyepiece.m_W.c, vp.eyepiece.m_W.i,
+						vp.eyepiece.m_W.j, vp.eyepiece.m_W.k, point, lens)
+						&& svp_basis_coords(vp.eyepiece.m_W.c, vp.eyepiece.m_W.i,
+							vp.eyepiece.m_W.j, vp.eyepiece.m_W.k, root_world.c, root_lens)
+						&& svp_basis_direction(vp.eyepiece.m_W.i, vp.eyepiece.m_W.j,
+							vp.eyepiece.m_W.k, point_world.i, relative_probe.axis_i)
+						&& svp_basis_direction(vp.eyepiece.m_W.i, vp.eyepiece.m_W.j,
+							vp.eyepiece.m_W.k, point_world.j, relative_probe.axis_j)
+						&& svp_basis_direction(vp.eyepiece.m_W.i, vp.eyepiece.m_W.j,
+							vp.eyepiece.m_W.k, point_world.k, relative_probe.axis_k))
 					{
-						s_visual = V;
-						s_session = vp.GetSVPSession();
-						s_epoch = vp.svp_camera_epoch;
-						s_frame = Device.dwFrame;
-						s_outer = outer;
-						s_inner = inner;
-						s_valid = true;
+						relative_probe.visual = V;
+						relative_probe.root = item.pMatrix;
+						relative_probe.owner = skeleton ? skeleton->SVP_SkeletonOwner() : nullptr;
+						relative_probe.camera = camera;
+						relative_probe.lens = lens;
+						relative_probe.root_lens = root_lens;
+						relative_probe.forward = camera.z;
+						relative_probe.role = item.hud_role;
+						relative_probe.skinned = skeleton != nullptr;
+						relative_probe.snapshot = snapshot;
+						relative_probe.valid = true;
 					}
 				}
 			}
@@ -554,6 +591,101 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 			extern void svp_objective_hud_note_draw(u8);
 			svp_objective_hud_note_draw(item.hud_role);
 #endif
+		}
+		if (relative_diag && relative_probe.valid)
+		{
+			static dxRender_Visual* s_visual = nullptr;
+			static const void* s_root = nullptr;
+			static const void* s_owner = nullptr;
+			static const void* s_lens_root = nullptr;
+			static const void* s_lens_visual = nullptr;
+			static const void* s_lens_owner = nullptr;
+			static u32 s_session = 0;
+			static u32 s_epoch = 0;
+			static u32 s_log_ms = 0;
+			static Fvector s_camera = {};
+			static Fvector s_lens = {};
+			static Fvector s_root_lens = {};
+			static Fvector s_axis_i = {};
+			static Fvector s_axis_j = {};
+			static Fvector s_axis_k = {};
+			static bool s_valid = false;
+
+			const bool same = s_valid && s_visual == relative_probe.visual
+				&& s_root == relative_probe.root
+				&& s_owner == relative_probe.owner
+				&& s_lens_root == vp.svp_lens_root
+				&& s_lens_visual == vp.svp_lens_visual
+				&& s_lens_owner == vp.svp_lens_owner
+				&& s_session == vp.GetSVPSession()
+				&& s_epoch == vp.svp_camera_epoch;
+			const bool linked = same && Device.dwTimeGlobal - s_log_ms <= 500;
+			if (!linked || Device.dwTimeGlobal - s_log_ms > 250)
+			{
+				const u32 dt_ms = linked ? Device.dwTimeGlobal - s_log_ms : 0;
+				Fvector camera_delta = {};
+				Fvector lens_delta = {};
+				Fvector root_delta = {};
+				float angle_delta = 0.f;
+				if (linked)
+				{
+					camera_delta.sub(relative_probe.camera, s_camera);
+					lens_delta.sub(relative_probe.lens, s_lens);
+					root_delta.sub(relative_probe.root_lens, s_root_lens);
+					const float relative_trace =
+						relative_probe.axis_i.dotproduct(s_axis_i)
+						+ relative_probe.axis_j.dotproduct(s_axis_j)
+						+ relative_probe.axis_k.dotproduct(s_axis_k);
+					const float angle_cos = (relative_trace - 1.f) * 0.5f;
+					angle_delta = rad2deg(acosf(std::clamp(angle_cos, -1.f, 1.f)));
+				}
+				const int same_owner = relative_probe.owner == vp.svp_lens_owner ? 1 : 0;
+				auto texture = relative_probe.visual->GetTexture();
+				PipMsg("[SVP-REL] probe=forward-primary seed=%d dt_ms=%u pointLens=(%.5f,%.5f,%.5f) dPoint=(%.5f,%.5f,%.5f) axisK=(%.5f,%.5f,%.5f) dAngleDeg=%.5f rootLens=(%.5f,%.5f,%.5f) dRoot=(%.5f,%.5f,%.5f) camera=(%.5f,%.5f,%.5f) dCamera=(%.5f,%.5f,%.5f) sameRoot=%d sameOwner=%d skinned=%d snapshot=%d root=%p lensRoot=%p visual=%p lensVisual=%p role=%s texture=%s session=%u epoch=%u frame=%u",
+					linked ? 0 : 1, dt_ms,
+					relative_probe.lens.x, relative_probe.lens.y, relative_probe.lens.z,
+					lens_delta.x, lens_delta.y, lens_delta.z,
+					relative_probe.axis_k.x, relative_probe.axis_k.y, relative_probe.axis_k.z,
+					angle_delta,
+					relative_probe.root_lens.x, relative_probe.root_lens.y, relative_probe.root_lens.z,
+					root_delta.x, root_delta.y, root_delta.z,
+					relative_probe.camera.x, relative_probe.camera.y, relative_probe.camera.z,
+					camera_delta.x, camera_delta.y, camera_delta.z,
+					relative_probe.root == vp.svp_lens_root ? 1 : 0, same_owner,
+					relative_probe.skinned ? 1 : 0, relative_probe.snapshot ? 1 : 0,
+					(void*)relative_probe.root, vp.svp_lens_root,
+					(void*)relative_probe.visual, vp.svp_lens_visual,
+					svp_hud_role_name(relative_probe.role),
+					texture ? texture->cName.c_str() : "?",
+					vp.GetSVPSession(), vp.svp_camera_epoch, Device.dwFrame);
+				s_log_ms = Device.dwTimeGlobal;
+				s_visual = relative_probe.visual;
+				s_root = relative_probe.root;
+				s_owner = relative_probe.owner;
+				s_lens_root = vp.svp_lens_root;
+				s_lens_visual = vp.svp_lens_visual;
+				s_lens_owner = vp.svp_lens_owner;
+				s_session = vp.GetSVPSession();
+				s_epoch = vp.svp_camera_epoch;
+				s_camera = relative_probe.camera;
+				s_lens = relative_probe.lens;
+				s_root_lens = relative_probe.root_lens;
+				s_axis_i = relative_probe.axis_i;
+				s_axis_j = relative_probe.axis_j;
+				s_axis_k = relative_probe.axis_k;
+				s_valid = true;
+			}
+		}
+		else if (relative_diag)
+		{
+			static u32 s_unavailable_ms = 0;
+			if (Device.dwTimeGlobal - s_unavailable_ms > 1000)
+			{
+				s_unavailable_ms = Device.dwTimeGlobal;
+				PipMsg("[SVP-REL] probe=forward-primary unavailable reason=no-comparable-rigid-primary root=%p owner=%p session=%u epoch=%u frame=%u",
+					vp.svp_lens_root, vp.svp_lens_owner,
+					vp.GetSVPSession(), vp.svp_camera_epoch, Device.dwFrame);
+			}
 		}
 		if (diag && objective_filter)
 			PipMsg("[SVP-ADMIT] summary candidates=%u suppressed=%u clipon-unresolved=%u front=%.1fcm frame=%u session=%u",

@@ -146,7 +146,7 @@ static class svp_env_binder : public R_constant_setup
 		// debug forces the droplets in any weather, the value stands in for the density product
 		if (ps_r__svp_rain_debug > 0.f)
 			rain = ps_r__svp_rain_debug;
-		RCache.set_c(C, glare, rain, ps_r__svp_uv_debug ? 1.f : 0.f, ps_r__svp_autoflip ? 1.f : 0.f);
+		RCache.set_c(C, glare, rain, (float)ps_r__svp_uv_debug, ps_r__svp_autoflip ? 1.f : 0.f);
 	}
 } binder_svp_env;
 

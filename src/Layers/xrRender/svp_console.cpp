@@ -124,7 +124,7 @@ int ps_r__svp_acog_fiber = 0; // svp ACOG fiber reticle brightness source, 1 = s
 float ps_r__svp_veiling_glare = 0.0f; // svp veiling glare strength, off-axis sun scatter washes the image near the sun (0 = off)
 float ps_r__svp_rain_optic = 1.0f; // svp rain droplets on the objective glass, scaled by rain density (0 = off)
 float ps_r__svp_rain_debug = 0.0f; // svp forces the scope rain regardless of weather, the value stands in for rain density (0 = live weather)
-int ps_r__svp_uv_debug = 0; // svp debug: paint the scope by the sample-coord V (green top red bottom) to spot a flipped lens UV
+int ps_r__svp_uv_debug = 0; // svp sample coordinate display 0 off 1 V 2 U
 int ps_r__svp_autoflip = 1; // svp auto-correct a mesh-inverted lens (world upside down) by detecting the flipped sample-coord V (1 = on)
 int ps_r__svp_autoflip_reticle = 1; // svp auto-correct a mesh-inverted reticle to match the auto-flipped world (1 = on)
 float ps_r__svp_coating = 0.0f; // svp lens coating, typical multi-coated glass transmission loss + faint warm tint (0 = off, 1 = physical)
@@ -138,7 +138,7 @@ float ps_r__svp_nvg_sensitivity = 1.0f; // svp NVG bleach onset sensitivity, hig
 int ps_r__svp_nvg_objective = 1; // svp keeps the NVG sensor response but removes the eyepiece mask inside the objective view
 int ps_r__svp_hud_full = 2; // svpscope 1 body skip only, mode 2 clips at the objective admission plane instead renders (default), 1 = full barrel from the eye + near-blur, 0 = objective clip with the body rendered
 int ps_r__svp_weapon_continuity = 1; // svp same frame weapon pose and entrance pupil camera
-int ps_r__svp_ray_transfer = 1; // svp objective camera mode
+int ps_r__svp_ray_transfer = 2; // svp objective camera 0 translation 1 lock 2 registration
 int ps_r__svp_optic_body_suppress = 1; // svp omit the housing that contains the objective plane
 int ps_r__svp_near_pupil = 0; // svp old config compatibility, mode 2 always uses the raster near
 int ps_r__svp_drain_clip = 0; // svpscope 1 old whole item objective skip
@@ -267,7 +267,7 @@ void svp_console_init()
 	CMD4(CCC_Float, "r__svp_veiling_glare", &ps_r__svp_veiling_glare, 0.0f, 3.0f); // svp veiling glare near the sun (0 = off)
 	CMD4(CCC_Float, "r__svp_rain_optic", &ps_r__svp_rain_optic, 0.0f, 3.0f); // svp rain droplets on the objective (0 = off)
 	CMD4(CCC_Float, "r__svp_rain_debug", &ps_r__svp_rain_debug, 0.0f, 3.0f); // svp force scope rain, value = density stand-in (0 = live weather)
-	CMD4(CCC_Integer, "r__svp_uv_debug", &ps_r__svp_uv_debug, 0, 1); // svp debug: paint sample-coord V to spot a flipped lens UV
+	CMD4(CCC_Integer, "r__svp_uv_debug", &ps_r__svp_uv_debug, 0, 2); // svp sample coordinate display
 	CMD4(CCC_Integer, "r__svp_autoflip", &ps_r__svp_autoflip, 0, 1); // svp auto-correct a mesh-inverted lens (1 = on)
 	CMD4(CCC_Integer, "r__svp_autoflip_reticle", &ps_r__svp_autoflip_reticle, 0, 1); // svp auto-correct a mesh-inverted reticle (1 = on)
 	CMD4(CCC_Float, "r__svp_coating", &ps_r__svp_coating, 0.0f, 1.0f); // svp lens coating transmission loss + warm tint (0 = off, 1 = physical)
