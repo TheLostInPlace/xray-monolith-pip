@@ -1038,7 +1038,10 @@ static u64 svp_hash_optic_config(const CSecondVPParams::OpticConfig& config)
 {
 	u64 hash = 14695981039346656037ull;
 	svp_hash_bytes(hash, &config.has_objective_offset, sizeof(config.has_objective_offset));
+	svp_hash_bytes(hash, &config.has_hybrid_reflex, sizeof(config.has_hybrid_reflex));
+	svp_hash_bytes(hash, &config.hybrid_reflex, sizeof(config.hybrid_reflex));
 	svp_hash_bytes(hash, &config.zoom_type, sizeof(config.zoom_type));
+	svp_hash_bytes(hash, &config.reticle_type, sizeof(config.reticle_type));
 	svp_hash_bytes(hash, &config.weapon_id, sizeof(config.weapon_id));
 	svp_hash_bytes(hash, &config.objective_offset, sizeof(config.objective_offset));
 	svp_hash_bytes(hash, &config.objective_mm, sizeof(config.objective_mm));

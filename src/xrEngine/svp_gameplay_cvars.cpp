@@ -54,9 +54,10 @@ static void svp_dump_optic_record(LPCSTR name, const CSecondVPParams::OpticConfi
 	Msg("[SVP-CONFIG] %s valid=%d typed=%d token=%u gen=%u route=%u frame=%u session=%u",
 		name, config.valid, config.typed_route, config.context_token, config.generation,
 		config.route_epoch, config.frame, config.session);
-	Msg("[SVP-CONFIG] %s context=%s weapon=%s weapon_id=%u scope=%s diagnostic_scope=%s zoom=%u identity=%s",
+	Msg("[SVP-CONFIG] %s context=%s weapon=%s weapon_id=%u scope=%s diagnostic_scope=%s zoom=%u reticle=%u hybrid=%d/%d identity=%s",
 		name, config.context, config.weapon, config.weapon_id, config.scope,
-		config.diagnostic_scope, config.zoom_type, config.identity_source);
+		config.diagnostic_scope, config.zoom_type, config.reticle_type,
+		config.has_hybrid_reflex, config.hybrid_reflex, config.identity_source);
 	Msg("[SVP-CONFIG] %s profile=%s spec=%s model=%s binding=%s binding_section=%s",
 		name, config.profile, config.spec, config.model, config.binding, config.binding_section);
 	Msg("[SVP-CONFIG] %s objective=%d %.4f,%.4f,%.4f,%.4f@%s mm=%.3f@%s",

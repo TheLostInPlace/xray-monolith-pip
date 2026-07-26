@@ -6,7 +6,7 @@ end
 local RETRY_EV = "pip_scope_push"
 local RETRY_STEP_S = 0.5
 local RETRY_MAX = 60
-local TYPED_API_VERSION = 1
+local TYPED_API_VERSION = 2
 local RECONCILE_MS = 100
 
 local active_key
@@ -20,6 +20,7 @@ local next_reconcile_ms = 0
 local identity_diag_key
 local api_checked = false
 local api_supported = false
+local api_hybrid_reflex = false
 local api_begin
 local api_apply
 local api_clear
@@ -33,6 +34,7 @@ local function probe_typed_api()
 
     local version_fn = rawget(_G, "svp_optic_api_version")
     local connect_fn = rawget(_G, "svp_optic_api_connect")
+    local capability_fn = rawget(_G, "svp_optic_api_has_capability")
     local epoch_fn = rawget(_G, "svp_optic_route_epoch")
     local begin_fn = rawget(_G, "svp_begin_optic_context")
     local apply_fn = rawget(_G, "svp_apply_optic_profile")
@@ -61,6 +63,12 @@ local function probe_typed_api()
     api_begin = begin_fn
     api_apply = apply_fn
     api_clear = clear_fn
+    if type(capability_fn) == "function" then
+        local capability_ok, supported = pcall(capability_fn, "hybrid_reflex")
+        api_hybrid_reflex = capability_ok and supported == true
+    end
+    printf("[SVP-CONFIG] typed api version=%d hybrid_reflex=%s",
+        TYPED_API_VERSION, tostring(api_hybrid_reflex))
     return true
 end
 
@@ -123,6 +131,135 @@ local function read_num_info(scope_sec, weap_sec, key, scope_hint)
             return value, scope_hint, line_source(scope_hint, key), "scope_hint"
         end
     end
+end
+
+local function read_3dss_num_info(item, scope_sec, weap_sec, key, scope_hint)
+    local value
+    local section
+    local source
+    local kind
+
+    if item then
+        local ok = pcall(function()
+            item:iterate_installed_upgrades(function(upgrade_sec)
+                value = ini_sys:r_float_ex(upgrade_sec, key)
+                section = value ~= nil and upgrade_sec or nil
+                source = value ~= nil and line_source(upgrade_sec, key) or nil
+                kind = value ~= nil and "upgrade" or nil
+            end)
+        end)
+        if not ok then
+            value = nil
+            section = nil
+            source = nil
+            kind = nil
+        end
+    end
+
+    local modular = weap_sec
+        and ini_sys:r_bool_ex(weap_sec, "modular_attachments", false)
+    if value == nil and weap_sec and not modular then
+        value = ini_sys:r_float_ex(weap_sec, key)
+        if value ~= nil then
+            section = weap_sec
+            source = line_source(weap_sec, key)
+            kind = "weapon"
+        end
+    end
+
+    local sight_sec = scope_sec or scope_hint
+    if value == nil and sight_sec then
+        value = ini_sys:r_float_ex(sight_sec, key)
+        if value ~= nil then
+            section = sight_sec
+            source = line_source(sight_sec, key)
+            kind = scope_sec and "scope" or "scope_hint"
+        end
+    end
+
+    if value == nil then
+        value = ini_sys:r_float_ex("s3ds_defaults", key)
+        if value ~= nil then
+            section = "s3ds_defaults"
+            source = line_source(section, key)
+            kind = "default"
+        end
+    end
+    return value, section, source, kind
+end
+
+local hybrid_ini
+local hybrid_ini_loaded = false
+local function read_3dss_bool_info(item, scope_sec, weap_sec, key, scope_hint)
+    local value
+    local section
+    local source
+    local kind
+
+    if item then
+        pcall(function()
+            item:iterate_installed_upgrades(function(upgrade_sec)
+                if ini_sys:line_exist(upgrade_sec, key) then
+                    value = ini_sys:r_bool_ex(upgrade_sec, key, false)
+                    section = upgrade_sec
+                    source = line_source(upgrade_sec, key)
+                    kind = "upgrade"
+                end
+            end)
+        end)
+    end
+
+    local modular = weap_sec
+        and ini_sys:r_bool_ex(weap_sec, "modular_attachments", false)
+    if value == nil and weap_sec and not modular and ini_sys:line_exist(weap_sec, key) then
+        value = ini_sys:r_bool_ex(weap_sec, key, false)
+        section = weap_sec
+        source = line_source(weap_sec, key)
+        kind = "weapon"
+    end
+
+    if value == nil and scope_sec and ini_sys:line_exist(scope_sec, key) then
+        value = ini_sys:r_bool_ex(scope_sec, key, false)
+        section = scope_sec
+        source = line_source(scope_sec, key)
+        kind = "scope"
+    end
+    if value == nil and scope_hint and ini_sys:line_exist(scope_hint, key) then
+        value = ini_sys:r_bool_ex(scope_hint, key, false)
+        section = scope_hint
+        source = line_source(scope_hint, key)
+        kind = "scope_hint"
+    end
+
+    if value ~= nil then
+        return value, source_text(kind, section, source, key), true
+    end
+
+    if not hybrid_ini_loaded then
+        hybrid_ini_loaded = true
+        if getFS():exist("$game_config$", "pip_hybrid_optics.ltx") then
+            hybrid_ini = ini_file("pip_hybrid_optics.ltx")
+        end
+    end
+    if not hybrid_ini then
+        return false, "registry:missing", false
+    end
+    if weap_sec and hybrid_ini:section_exist(weap_sec)
+        and hybrid_ini:line_exist(weap_sec, key) then
+        return hybrid_ini:r_bool_ex(weap_sec, key, false),
+            "registry:pip_hybrid_optics.ltx:" .. weap_sec, true
+    end
+    if scope_sec and hybrid_ini:section_exist(scope_sec)
+        and hybrid_ini:line_exist(scope_sec, key) then
+        return hybrid_ini:r_bool_ex(scope_sec, key, false),
+            "registry:pip_hybrid_optics.ltx:" .. scope_sec, true
+    end
+    if scope_hint and hybrid_ini:section_exist(scope_hint)
+        and hybrid_ini:line_exist(scope_hint, key) then
+        return hybrid_ini:r_bool_ex(scope_hint, key, false),
+            "registry:pip_hybrid_optics.ltx:" .. scope_hint, true
+    end
+    return false, "default:legacy", false
 end
 
 local function resolve_aux(scope_sec, weap_sec, scope_hint)
@@ -363,8 +500,8 @@ local function field_text(scope_sec, weap_sec, field, scope_hint)
         .. "@" .. (source or "?")
 end
 
-local function log_optic(weapon, scope_sec, diagnostic_scope, scope_hint, weap_sec, zoom_type,
-    key, optics, lens, route, token)
+local function log_optic(item, weapon, scope_sec, diagnostic_scope, scope_hint, weap_sec,
+    zoom_type, key, optics, lens, hybrid_reflex, hybrid_authored, hybrid_source, route, token)
     local diag_key = table.concat({ key, route or "unknown", tostring(token or 0) }, "|")
     if get_console():get_integer("r__svp_diag") <= 0 or last_diag_key == diag_key then
         return
@@ -384,9 +521,17 @@ local function log_optic(weapon, scope_sec, diagnostic_scope, scope_hint, weap_s
         field_text(scope_sec, weap_sec, "scope_zoom_factor", scope_hint),
         field_text(scope_sec, weap_sec, "min_scope_zoom_factor", scope_hint),
         field_text(scope_sec, weap_sec, "scope_dynamic_zoom", scope_hint))
-    printf("[PIP-OPTIC-GEOM] hud=%s reticle=%s offset=%s off_src=%s objective_mm=%s mm_src=%s pupil=%s..%s",
+    local reticle, reticle_section, reticle_source, reticle_kind =
+        read_3dss_num_info(item, scope_sec, weap_sec, "s3ds_reticle_type", scope_hint)
+    local reticle_text = reticle == nil and "none"
+        or tostring(reticle) .. "@" .. (reticle_kind or "?")
+            .. "@" .. (reticle_section or "?") .. "@" .. (reticle_source or "?")
+    printf("[PIP-OPTIC-GEOM] hud=%s reticle=%s hybrid=%s authored=%s hybrid_src=%s offset=%s off_src=%s objective_mm=%s mm_src=%s pupil=%s..%s",
         field_text(scope_sec, weap_sec, "hud", scope_hint),
-        field_text(scope_sec, weap_sec, "s3ds_reticle_type", scope_hint),
+        reticle_text,
+        tostring(hybrid_reflex),
+        tostring(hybrid_authored),
+        hybrid_source or "none",
         lens and lens.offset_text or "none",
         lens and lens.offset_source or "none",
         tostring(lens and lens.objective_mm or 0),
@@ -406,11 +551,13 @@ local function materialize_legacy(optics, aux, lens)
         .. tostring(lens and lens.objective_mm or 0))
 end
 
-local function typed_table(token, key, weapon_id, scope_sec, diagnostic_scope, scope_hint, weap_sec,
-    zoom_type, optics, aux, lens)
+local function typed_table(token, key, item, weapon_id, scope_sec, diagnostic_scope, scope_hint,
+    weap_sec, zoom_type, optics, aux, lens, hybrid_reflex, hybrid_authored)
     local values = optics.values
     local sources = optics.sources
-    return {
+    local reticle_type =
+        read_3dss_num_info(item, scope_sec, weap_sec, "s3ds_reticle_type", scope_hint)
+    local config = {
         schema_version = 1,
         context_token = token,
         context = key,
@@ -421,6 +568,7 @@ local function typed_table(token, key, weapon_id, scope_sec, diagnostic_scope, s
         identity_source = scope_sec and "engine:CWeapon.GetScopeName"
             or (scope_hint and "legacy:permanent_scope" or "engine:none"),
         zoom_type = zoom_type or 0,
+        reticle_type = reticle_type or 0,
         profile = optics.profile or "default",
         spec = optics.spec or "",
         model = optics.model or "",
@@ -477,6 +625,10 @@ local function typed_table(token, key, weapon_id, scope_sec, diagnostic_scope, s
             physical_max = optics.physical_max_source or "none",
         },
     }
+    if api_hybrid_reflex and hybrid_authored then
+        config.hybrid_reflex = hybrid_reflex == true
+    end
+    return config
 end
 
 local function try_push(expected_key, expected_token, expected_route)
@@ -495,6 +647,8 @@ local function try_push(expected_key, expected_token, expected_route)
 
     local optics = pip_optic_profile.resolve(scope_sec, weap_sec, scope_hint)
     local aux = resolve_aux(scope_sec, weap_sec, scope_hint)
+    local hybrid_reflex, hybrid_source, hybrid_authored =
+        read_3dss_bool_info(item, scope_sec, weap_sec, "svp_hybrid_reflex", scope_hint)
     local landed, lens = resolve_lens(scope_sec, weap_sec, scope_hint)
     if not landed and not objective_optional(scope_sec, weap_sec, zoom_type, scope_hint) then
         return false
@@ -502,8 +656,9 @@ local function try_push(expected_key, expected_token, expected_route)
     materialize_legacy(optics, aux, lens)
 
     if expected_route == "typed" then
-        local config = typed_table(expected_token, key, weapon_id, scope_sec, diagnostic_scope,
-            scope_hint, weap_sec, zoom_type, optics, aux, lens)
+        local config = typed_table(expected_token, key, item, weapon_id, scope_sec,
+            diagnostic_scope, scope_hint, weap_sec, zoom_type, optics, aux, lens,
+            hybrid_reflex, hybrid_authored)
         local ok, accepted = pcall(api_apply, expected_token, config)
         if not ok or not accepted then
             printf("![SVP-CONFIG] apply failed token=%s context=%s call=%s result=%s",
@@ -512,8 +667,9 @@ local function try_push(expected_key, expected_token, expected_route)
         end
     end
 
-    log_optic(weapon, scope_sec, diagnostic_scope, scope_hint, weap_sec, zoom_type,
-        key, optics, lens, expected_route, expected_token)
+    log_optic(item, weapon, scope_sec, diagnostic_scope, scope_hint, weap_sec, zoom_type,
+        key, optics, lens, hybrid_reflex, hybrid_authored, hybrid_source,
+        expected_route, expected_token)
     return true
 end
 
@@ -677,7 +833,8 @@ end
 local function typed_test_table(token)
     local optics = pip_optic_profile.resolve(nil, nil)
     local aux = resolve_aux(nil, nil)
-    return typed_table(token, "test|1||0", 1, nil, nil, nil, "test", 0, optics, aux, nil)
+    return typed_table(token, "test|1||0", nil, 1, nil, nil, nil, "test", 0,
+        optics, aux, nil, false, true)
 end
 
 local function copy_test_table(value)
@@ -748,6 +905,16 @@ function test_typed_api()
         { name = "oversized", make = function()
             local value = copy_test_table(valid)
             value.profile = string.rep("x", 128)
+            return value
+        end },
+        { name = "hybrid_missing", make = function()
+            local value = copy_test_table(valid)
+            value.hybrid_reflex = nil
+            return value
+        end, expected = true },
+        { name = "hybrid_wrong", make = function()
+            local value = copy_test_table(valid)
+            value.hybrid_reflex = "true"
             return value
         end },
         { name = "recovery", make = function()

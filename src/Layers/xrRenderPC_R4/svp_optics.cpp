@@ -988,16 +988,15 @@ void CRenderTarget::draw_scope(ref_shader se, std::function<void()> bind)
 	RCache.set_xform_project(Device.mProject);
 }
 
-// pip render reflex-sight lenses (iScopeLense==10) with their own shaders, no-op for an eyepiece-only scope
-// svp draws them through the entrance-pupil camera so a hybrid holo dot magnifies and tracks with the world
-void CRenderTarget::draw_reflex(bool svp)
+// Draw captured reflex materials with their own shaders
+u32 CRenderTarget::draw_reflex(bool svp)
 {
 	PIX_EVENT_F("RENDER_REFLEX_SIGHTS x%u", (u32)RImplementation.GMBase.RGraph.mapReflexHUDSorted.size());
 
 	Fmatrix FTold = Device.mFullTransform;
 	if (svp)
 	{
-		// the svp camera is already active, keep it so the dot lands in the magnified scene
+		// Match the objective world and weapon projection
 		Device.mFullTransform.mul(Device.matrices[1].mProject, Device.matrices[1].mView);
 		RCache.set_xform_view(Device.matrices[1].mView);
 		RCache.set_xform_project(Device.matrices[1].mProject);
@@ -1009,16 +1008,156 @@ void CRenderTarget::draw_reflex(bool svp)
 	}
 	RImplementation.rmNear();
 
-	for (auto& N : RImplementation.GMBase.RGraph.mapReflexHUDSorted)
+	extern int ps_r__svp_diag;
+	static u32 s_node_diag_ms = 0;
+	const bool node_diag = svp && ps_r__svp_diag
+		&& Device.dwTimeGlobal - s_node_diag_ms > 1000;
+	if (node_diag)
+		s_node_diag_ms = Device.dwTimeGlobal;
+
+	auto& nodes = RImplementation.GMBase.RGraph.mapReflexHUDSorted;
+	u32 selected_index = u32(-1);
+	Fmatrix selected_world = {};
+	bool selected_frozen = false;
+	float selected_score = flt_max;
+	if (svp)
 	{
-		if (!N.pVisual || !N.pSE || !N.pMatrix)
+		auto& vp = Device.m_SecondViewport;
+		Fvector objective_axis = vp.objective.m_W.k;
+		if (_valid(objective_axis) && objective_axis.square_magnitude() > EPS)
+			objective_axis.normalize();
+		else
+			objective_axis.set(Device.matrices[1].mView._13,
+				Device.matrices[1].mView._23, Device.matrices[1].mView._33);
+
+		for (u32 index = 0; index < nodes.size(); ++index)
+		{
+			auto& N = nodes[index];
+			if (!N.pVisual || !N.pSE || !N.pMatrix)
+				continue;
+
+			CSkeletonX* sk = fast_dynamic_cast<CSkeletonX*>(N.pVisual);
+			BOOL snapshot_visible = TRUE;
+			const bool bone_visible = !sk
+				|| (sk->SVP_BoneSnapshotVisible(snapshot_visible)
+					? !!snapshot_visible : sk->SVP_LensBoneVisible());
+			const void* owner = sk ? sk->SVP_SkeletonOwner() : nullptr;
+			const bool root_match = !vp.svp_lens_root || N.pMatrix == vp.svp_lens_root;
+			const bool owner_match = vp.svp_lens_owner && owner
+				&& owner == vp.svp_lens_owner;
+			const bool related = root_match || owner_match;
+
+			Fmatrix refW = *RImplementation.GMBase.svp_pose_of(N.pMatrix);
+			Fmatrix boundsW = refW;
+			Fmatrix latched_bone;
+			const bool has_latched_bone = sk
+				&& RImplementation.GMBase.svp_lens_bone_of(N.pVisual, latched_bone);
+			if (has_latched_bone)
+				boundsW.mulB_43(latched_bone);
+			const bool frozen_reflex = svp_objective_hud_current()
+				&& sk && sk->SVP_BoneSnapshotReady();
+			if (!frozen_reflex)
+			{
+				Fmatrix live_bone;
+				if (has_latched_bone && sk->SVP_LensBoneXform(live_bone))
+				{
+					Fmatrix inv;
+					inv.invert(live_bone);
+					refW.mulB_43(latched_bone);
+					refW.mulB_43(inv);
+				}
+			}
+
+			const auto& vis = N.pVisual->getVisData();
+			Fvector world_center;
+			boundsW.transform_tiny(world_center, vis.sphere.P);
+			Fvector view_center;
+			Device.matrices[1].mView.transform_tiny(view_center, world_center);
+			const float world_scale = _max(boundsW.i.magnitude(),
+				_max(boundsW.j.magnitude(), boundsW.k.magnitude()));
+			const float world_radius = vis.sphere.R * world_scale;
+			const float near_plane = _max(vp.svp_near, EPS);
+			const float far_plane = _max(vp.svp_far, near_plane + EPS);
+
+			Fvector axis_delta;
+			axis_delta.sub(world_center, vp.objective.m_W.c);
+			const float axis_depth = axis_delta.dotproduct(objective_axis);
+			Fvector radial;
+			radial.mad(axis_delta, objective_axis, -axis_depth);
+			const float axis_offset = radial.magnitude();
+
+			bool visible = bone_visible && related
+				&& _valid(view_center) && _valid(world_radius) && world_radius > EPS
+				&& _valid(axis_depth) && _valid(axis_offset)
+				&& axis_depth + world_radius > -EPS
+				&& view_center.z + world_radius > near_plane
+				&& view_center.z - world_radius < far_plane;
+			float ndc_x = 0.f;
+			float ndc_y = 0.f;
+			if (visible && view_center.z > EPS)
+			{
+				const Fmatrix& P = Device.matrices[1].mProject;
+				const float clip_x = view_center.x * P._11 + view_center.y * P._21
+					+ view_center.z * P._31 + P._41;
+				const float clip_y = view_center.x * P._12 + view_center.y * P._22
+					+ view_center.z * P._32 + P._42;
+				const float clip_w = view_center.x * P._14 + view_center.y * P._24
+					+ view_center.z * P._34 + P._44;
+				const float inv_w = _abs(clip_w) > EPS_S ? 1.f / clip_w : 0.f;
+				ndc_x = clip_x * inv_w;
+				ndc_y = clip_y * inv_w;
+				const float depth = _max(view_center.z - world_radius, near_plane);
+				const float radius_x = _abs(P._11) * world_radius / depth;
+				const float radius_y = _abs(P._22) * world_radius / depth;
+				visible = clip_w > EPS
+					&& ndc_x + radius_x > -1.f && ndc_x - radius_x < 1.f
+					&& ndc_y + radius_y > -1.f && ndc_y - radius_y < 1.f;
+			}
+
+			const float score = axis_offset
+				/ _max(_max(axis_depth, world_radius), EPS);
+			if (node_diag)
+			{
+				auto tx = N.pVisual->GetTexture();
+				PipMsg("[SVP-HYBRID] candidate=%u tex=%s view=(%.4f %.4f %.4f) ndc=(%.3f %.3f) r=%.2fcm axis=(%.2f %.2f) score=%.4f visible=%d bone=%d related=%d role=%u frozen=%d owner=%p",
+					index, tx ? tx->cName.c_str() : "?", view_center.x, view_center.y,
+					view_center.z, ndc_x, ndc_y, world_radius * 100.f,
+					axis_depth * 100.f, axis_offset * 100.f, score,
+					visible ? 1 : 0, bone_visible ? 1 : 0, related ? 1 : 0,
+					N.hud_role, frozen_reflex ? 1 : 0, owner);
+			}
+			if (visible && score < selected_score)
+			{
+				selected_index = index;
+				selected_world = refW;
+				selected_frozen = frozen_reflex;
+				selected_score = score;
+			}
+		}
+	}
+
+	u32 drawn = 0;
+	u32 node_index = 0;
+	for (auto& N : nodes)
+	{
+		if (svp && node_index != selected_index)
+		{
+			node_index++;
 			continue;
+		}
+		if (!N.pVisual || !N.pSE || !N.pMatrix)
+		{
+			node_index++;
+			continue;
+		}
 		RCache.set_Element(N.pSE);
-		Fmatrix refW = *RImplementation.GMBase.svp_pose_of(N.pMatrix);
+		Fmatrix refW = svp ? selected_world
+			: *RImplementation.GMBase.svp_pose_of(N.pMatrix);
 		CSkeletonX* sk = fast_dynamic_cast<CSkeletonX*>(N.pVisual);
-		const bool frozen_reflex = svp_objective_hud_current() && sk && sk->SVP_BoneSnapshotReady();
-		// same bone step cancel as draw_scope, the reflex mesh rides one bone too
-		if (!frozen_reflex)
+		const bool frozen_reflex = svp ? selected_frozen
+			: svp_objective_hud_current() && sk && sk->SVP_BoneSnapshotReady();
+		// Match the objective pass bone pose
+		if (!svp && !frozen_reflex)
 		{
 			Fmatrix bL, bNow;
 			if (sk && RImplementation.GMBase.svp_lens_bone_of(N.pVisual, bL) && sk->SVP_LensBoneXform(bNow))
@@ -1028,6 +1167,13 @@ void CRenderTarget::draw_reflex(bool svp)
 				refW.mulB_43(bL);
 				refW.mulB_43(inv);
 			}
+		}
+		if (node_diag)
+		{
+			auto tx = N.pVisual->GetTexture();
+			PipMsg("[SVP-HYBRID] selected=%u tex=%s score=%.4f frozen=%d owner=%p",
+				node_index, tx ? tx->cName.c_str() : "?", selected_score,
+				frozen_reflex ? 1 : 0, sk ? sk->SVP_SkeletonOwner() : nullptr);
 		}
 		RCache.set_xform_world(refW);
 		RImplementation.apply_object(N.pObject);
@@ -1042,6 +1188,8 @@ void CRenderTarget::draw_reflex(bool svp)
 		N.pVisual->Render(0);
 		g_svp_hud_frozen_pass = frozen_was;
 		g_svp_hud_history_write = history_was;
+		drawn++;
+		node_index++;
 	}
 
 	RImplementation.rmNormal();
@@ -1049,189 +1197,145 @@ void CRenderTarget::draw_reflex(bool svp)
 	if (svp)
 		RCache.set_xform_view(Device.mView);
 	RCache.set_xform_project(Device.mProject);
+	return drawn;
 }
 
-// pip collimated reflex proxy, place a scaled copy of the reflex mesh at a virtual distance on the
-// boresight and draw it into the captured svp image so the magnifier carries it, sharp and tracking
-bool CRenderTarget::draw_reflex_proxy()
+// Render an engaged hybrid through the objective camera
+bool CRenderTarget::draw_hybrid_reflex()
 {
 	extern Fvector4 ps_s3ds_param_3;
 	extern int ps_markswitch_current;
-	// thermal image is pixelated and carries its own reticle, keep the proxy out of it
-	if (svp_thermal_active(ps_s3ds_param_3.x, ps_markswitch_current))
-		return false;
-
+	extern int scope_svp_enabled;
 	auto& G = RImplementation.GMBase.RGraph;
 	auto& vp = Device.m_SecondViewport;
+	constexpr int mark_magnifier_type = 12;
+	const float reticle_value = ps_s3ds_param_3.y;
+	const bool reticle_valid = _valid(reticle_value)
+		&& reticle_value >= 0.f && reticle_value <= float(u8(-1))
+		&& floorf(reticle_value) == reticle_value;
+	const int reticle_type = reticle_valid ? static_cast<int>(reticle_value) : -1;
+	const bool camera_current = vp.svp_camera_frame == Device.dwFrame
+		&& vp.svp_camera_session == vp.GetSVPSession();
+	const bool lens_current = vp.svp_lens_frame == Device.dwFrame
+		&& vp.svp_lens_root != nullptr && vp.svp_lens_visual != nullptr
+		&& vp.eyepiece.radius > EPS;
+	const bool target_current = RImplementation.TargetSVP == this
+		&& RImplementation.Target == this;
+	const auto& optic = vp.RenderOpticConfig();
+	const bool identity_current = optic.typed_route && optic.valid
+		&& optic.frame == Device.dwFrame
+			&& optic.session == vp.GetSVPSession()
+			&& (optic.scope[0] || optic.diagnostic_scope[0]);
+	const bool type_current = identity_current
+		&& optic.reticle_type == reticle_type;
+	const bool legacy_hybrid = !optic.has_hybrid_reflex
+		&& optic.reticle_type == mark_magnifier_type;
+	const bool hybrid_eligible = type_current
+		&& (optic.hybrid_reflex || legacy_hybrid);
 
-	// bone-folded world pose of a reflex node, same bone step cancel draw_reflex uses so the proxy
-	// matches the legacy 1x dot
-	auto pose_of = [&](auto& N) -> Fmatrix {
-		Fmatrix W = *RImplementation.GMBase.svp_pose_of(N.pMatrix);
-		Fmatrix bL, bNow;
-		CSkeletonX* sk = fast_dynamic_cast<CSkeletonX*>(N.pVisual);
-		const bool frozen = svp_objective_hud_current() && sk && sk->SVP_BoneSnapshotReady();
-		if (!frozen && sk && RImplementation.GMBase.svp_lens_bone_of(N.pVisual, bL)
-			&& sk->SVP_LensBoneXform(bNow))
-		{
-			Fmatrix inv; inv.invert(bNow);
-			W.mulB_43(bL);
-			W.mulB_43(inv);
-		}
-		return W;
+	enum class HybridState : u32
+	{
+		Inactive,
+		WrongMode,
+		WrongDomain,
+		NotHybrid,
+		Thermal,
+		StaleCamera,
+		StaleLens,
+		StaleIdentity,
+		StaleType,
+		Empty,
+		NoDraw,
+		Drawn
 	};
 
-	// primary node, measure boresight + subtense from the first valid reflex mesh
-	bool have_prim = false;
-	Fmatrix refW0; Fvector C0 = {}; float r0 = 0.f;
-	for (auto& N : G.mapReflexHUDSorted)
-	{
-		if (!N.pVisual || !N.pSE || !N.pMatrix)
-			continue;
-		refW0 = pose_of(N);
-		auto& V = N.pVisual->getVisData();
-		Fvector lc; V.box.getcenter(lc);
-		refW0.transform_tiny(C0, lc);
-		r0 = V.sphere.R;
-		have_prim = true;
-		break;
-	}
-	if (!have_prim)
-		return false;
-
-	// classify by aperture overlap, a coaxial hybrid (magnifier + holo) sits close enough that the
-	// reflex glass overlaps the eyepiece aperture, a stacked secondary (rmr) sits beyond both
-	{
-		auto& ep = Device.m_SecondViewport.eyepiece;
-		bool coax = ep.radius > EPS;
-		float lateral = 0.f;
-		if (coax)
-		{
-			Fvector eax; eax.set(ep.m_W.k); eax.normalize();
-			Fvector rel; rel.sub(C0, ep.m_W.c);
-			Fvector proj; proj.mad(ep.m_W.c, eax, rel.dotproduct(eax));
-			lateral = C0.distance_to(proj);
-			// r0 is the measured reflex glass radius, ep.radius the eyepiece, overlap when the
-			// lateral gap is under their radii summed
-			if (lateral > ep.radius + r0)
-				coax = false;
-		}
-		const char* cls = !(ep.radius > EPS) ? "legacy" : (coax ? "coax" : "stacked");
-		extern int ps_r__svp_diag;
-		static u32 s_cls_ms = 0;
-		if (ps_r__svp_diag && Device.dwTimeGlobal - s_cls_ms > 1000)
-		{
-			s_cls_ms = Device.dwTimeGlobal;
-			PipMsg("[SVP-RET] proxy class=%s lat=%.2fcm eye_r=%.2fcm", cls, lateral * 100.f, ep.radius * 100.f);
-		}
-		if (!coax)
-			return false; // stacked or no eyepiece, the real top sight draws via the 1x overlay
-	}
-
-	const float eye_dist = C0.distance_to(Device.vCameraPosition);
-	if (!(eye_dist > 0.02f)) // false for NaN too
-		return false;
-
-	// boresight, the reflex mesh normal is the real collimated axis, the stable sight line is fallback
-	Fvector b; b.set(refW0.k);
-	if (b.magnitude() < EPS)
-	{
-		CSecondVPParams::SightSnapshot sight;
-		if (vp.ReadSight(sight)
-			&& vp.SnapshotExact(sight.frame, sight.session, Device.dwFrame)
-			&& sight.optic_epoch == vp.svp_optic_epoch)
-			b.set(sight.direction);
-		else
-			return false;
-	}
-	b.normalize_safe();
-	if (b.magnitude() < 0.5f)
-		return false;
-
-	const float D = 10.0f; // virtual distance past the svp near plane, the projected size is D invariant
-	// the scale draws the reticle at the reflex glass angular size r0/eye_dist, the physical aperture
-	// bound, a collimated reticle cannot appear larger than its own window so no extra cap is applied
-	const float s = D / eye_dist;
-	Fvector target0; target0.mad(vp.svp_cam_pos, b, D);
-
-	// in-front + in-frame test against the svp camera, a wildly off-axis reflex is degenerate
-	Fmatrix FT; FT.mul(Device.matrices[1].mProject, Device.matrices[1].mView);
-	const float cx = target0.x*FT._11 + target0.y*FT._21 + target0.z*FT._31 + FT._41;
-	const float cy = target0.x*FT._12 + target0.y*FT._22 + target0.z*FT._32 + FT._42;
-	const float cw = target0.x*FT._14 + target0.y*FT._24 + target0.z*FT._34 + FT._44;
-	const bool front_ok = b.dotproduct(vp.svp_fwd) > 0.f;
-	const bool inframe = (cw > 0.f) && (_abs(cx) < 2.f*cw) && (_abs(cy) < 2.f*cw);
-	if (!front_ok || !inframe)
-		return false;
-
-	// bind the captured svp color with no depth so the additive dot always lands on top
-	u_setrt(Width, Height, rt_secondVP->pRT, nullptr, nullptr, nullptr);
-	RCache.set_CullMode(CULL_CCW);
-	RCache.set_Stencil(FALSE);
-	RCache.set_ColorWriteEnable();
-
-	Fmatrix FTold = Device.mFullTransform;
-	Device.mFullTransform.mul(Device.matrices[1].mProject, Device.matrices[1].mView);
-	RCache.set_xform_view(Device.matrices[1].mView);
-	RCache.set_xform_project(Device.matrices[1].mProject);
-	RImplementation.rmNormal();
-
+	HybridState state = HybridState::Inactive;
 	u32 drawn = 0;
-	for (auto& N : G.mapReflexHUDSorted)
+	if (!Device.true_pip_on || !vp.IsSVPActive())
+		state = HybridState::Inactive;
+	else if (scope_svp_enabled < 2)
+		state = HybridState::WrongMode;
+	else if (vp.svp_camera_domain != CSecondVPParams::camera_objective
+		|| vp.svp_front_use_m <= EPS || vp.objective.radius <= EPS)
+		state = HybridState::WrongDomain;
+	else if (!reticle_valid)
+		state = HybridState::StaleType;
+	else if (svp_thermal_active(ps_s3ds_param_3.x, ps_markswitch_current))
+		state = HybridState::Thermal;
+	else if (!camera_current || !target_current)
+		state = HybridState::StaleCamera;
+	else if (!lens_current)
+		state = HybridState::StaleLens;
+	else if (!identity_current)
+		state = HybridState::StaleIdentity;
+	else if (!type_current)
+		state = HybridState::StaleType;
+	else if (!hybrid_eligible)
+		state = HybridState::NotHybrid;
+	else if (G.mapScopeHUDSorted.empty() || G.mapReflexHUDSorted.empty())
+		state = HybridState::Empty;
+	else
 	{
-		if (!N.pVisual || !N.pSE || !N.pMatrix)
-			continue;
-		Fmatrix refW = pose_of(N);
-		auto& V = N.pVisual->getVisData();
-		Fvector lc; V.box.getcenter(lc);
-		Fvector Cn; refW.transform_tiny(Cn, lc);
-
-		// scale the mesh uniformly and anchor its box center on the boresight, extra meshes keep
-		// their scaled offset from the primary so a multi-element reticle stays rigid
-		Fmatrix proxyW = refW;
-		proxyW.i.mul(s); proxyW.j.mul(s); proxyW.k.mul(s);
-		Fvector off; proxyW.transform_dir(off, lc);
-		Fvector rel; rel.sub(Cn, C0); rel.mul(s);
-		proxyW.c.add(target0, rel);
-		proxyW.c.sub(off);
-
-		RCache.set_Element(N.pSE);
-		RCache.set_xform_world(proxyW);
-		RImplementation.apply_object(N.pObject);
-		RImplementation.apply_lmaterial();
-		CSkeletonX* sk = fast_dynamic_cast<CSkeletonX*>(N.pVisual);
-		const bool frozen_proxy = svp_objective_hud_current() && sk && sk->SVP_BoneSnapshotReady();
-		const bool frozen_was = g_svp_hud_frozen_pass;
-		const bool history_was = g_svp_hud_history_write;
-		if (frozen_proxy)
-		{
-			g_svp_hud_frozen_pass = true;
-			g_svp_hud_history_write = false;
-		}
-		N.pVisual->Render(0);
-		g_svp_hud_frozen_pass = frozen_was;
-		g_svp_hud_history_write = history_was;
-		drawn++;
+		// Post processed color stays intact while the optical reticle remains sharp
+		u_setrt(Width, Height, rt_secondVP->pRT, nullptr, nullptr, nullptr);
+		RCache.set_CullMode(CULL_CCW);
+		RCache.set_Stencil(FALSE);
+		RCache.set_ColorWriteEnable();
+		drawn = draw_reflex(true);
+		state = drawn ? HybridState::Drawn : HybridState::NoDraw;
 	}
 
-	RImplementation.rmNormal();
-	Device.mFullTransform = FTold;
-	RCache.set_xform_view(Device.mView);
-	RCache.set_xform_project(Device.mProject);
-
+	extern int ps_r__svp_diag;
+	static u32 s_diag_ms = 0;
+	static u32 s_last_state = u32(-1);
+	static int s_last_type = -2;
+	static int s_last_mark = -2;
+	static u32 s_last_epoch = u32(-1);
+	const u32 state_value = static_cast<u32>(state);
+	const bool changed = state_value != s_last_state || reticle_type != s_last_type
+		|| ps_markswitch_current != s_last_mark || vp.svp_optic_epoch != s_last_epoch;
+	if (ps_r__svp_diag && (changed || Device.dwTimeGlobal - s_diag_ms > 1000))
 	{
-		extern int ps_r__svp_diag;
-		static u32 s_prox_ms = 0;
-		if (ps_r__svp_diag && Device.dwTimeGlobal - s_prox_ms > 1000)
-		{
-			s_prox_ms = Device.dwTimeGlobal;
-			PipMsg("[SVP-RET] proxy drew=%u eye=%.1fcm theta=%.2fmrad s=%.2f front=%d in=%d",
-				drawn, eye_dist * 100.f, (r0 / eye_dist) * 1000.f, s, (int)front_ok, (int)inframe);
-		}
+		s_diag_ms = Device.dwTimeGlobal;
+		s_last_state = state_value;
+		s_last_type = reticle_type;
+		s_last_mark = ps_markswitch_current;
+		s_last_epoch = vp.svp_optic_epoch;
+		const char* state_name = state == HybridState::Drawn ? "drawn"
+			: state == HybridState::NoDraw ? "no_draw"
+			: state == HybridState::Empty ? "empty"
+			: state == HybridState::StaleType ? "stale_type"
+			: state == HybridState::StaleIdentity ? "stale_identity"
+			: state == HybridState::StaleLens ? "stale_lens"
+			: state == HybridState::StaleCamera ? "stale_camera"
+			: state == HybridState::Thermal ? "thermal"
+			: state == HybridState::NotHybrid ? "not_hybrid"
+			: state == HybridState::WrongDomain ? "wrong_domain"
+			: state == HybridState::WrongMode ? "wrong_mode"
+			: "inactive";
+		LPCSTR optic_name = optic.scope[0] ? optic.scope
+			: (optic.diagnostic_scope[0] ? optic.diagnostic_scope : "legacy");
+		PipMsg("[SVP-HYBRID] state=%s path=objective-mesh target=secondvp projection=scene rtype=%d config_type=%u authored=%d hybrid=%d legacy=%d eligible=%d image=%.0f mark=%d mag=%.2f scope=%u reflex=%u camera=%d lens=%d target_ok=%d typed=%d identity=%d type_ok=%d optic=%s spec=%s gen=%u drawn=%u session=%u epoch=%u frame=%u",
+			state_name, reticle_type, optic.reticle_type,
+			optic.has_hybrid_reflex ? 1 : 0, optic.hybrid_reflex ? 1 : 0,
+			legacy_hybrid ? 1 : 0,
+			hybrid_eligible ? 1 : 0, ps_s3ds_param_3.x, ps_markswitch_current,
+			vp.svp_mag, (u32)G.mapScopeHUDSorted.size(), (u32)G.mapReflexHUDSorted.size(),
+			camera_current ? 1 : 0, lens_current ? 1 : 0, target_current ? 1 : 0,
+			optic.typed_route ? 1 : 0, identity_current ? 1 : 0,
+			type_current ? 1 : 0,
+			optic_name, optic.spec[0] ? optic.spec : "none", optic.generation, drawn,
+			vp.GetSVPSession(), vp.svp_optic_epoch, Device.dwFrame);
 	}
 
-	if (drawn > 0) { if (ps_r__svp_stats) ++svp_stats_reflex_proxy; svp_ledger_reflex_proxy = 1; } // overlay + ledger proof the collimated proxy drew
-	return drawn > 0;
+	if (state == HybridState::Drawn)
+	{
+		if (ps_r__svp_stats)
+			++svp_stats_reflex_capture;
+		svp_ledger_reflex_capture = 1;
+		return true;
+	}
+	return false;
 }
 
 void CRenderTarget::phase_3DSSReticle()
@@ -1292,9 +1396,13 @@ void CRenderTarget::phase_3DSSReticle()
 
 		// a hybrid magnifier drew the holo dot inside the svp already, skip the 1x main-view overlay
 		extern int ps_r__svp_reflex_capture;
-		// suppress the 1x overlay only when the collimated proxy actually drew this frame, never blank the dot
+		// Suppress the fallback only for the captured optic identity
 		const bool reflex_in_svp = ps_r__svp_reflex_capture && svp
-			&& Device.m_SecondViewport.svp_reflex_proxy_ok;
+			&& Device.m_SecondViewport.svp_reflex_capture_ok
+			&& Device.m_SecondViewport.svp_reflex_capture_epoch
+				== Device.m_SecondViewport.svp_optic_epoch
+			&& Device.m_SecondViewport.svp_reflex_capture_session
+				== Device.m_SecondViewport.GetSVPSession();
 
 		// the scope shader reads generic2 as the gbuffer position for the holepunch/depth
 		HW.pContext->CopyResource(rt_Generic_2->pTexture->surface_get(), RImplementation.Target->rt_Position->pTexture->surface_get());

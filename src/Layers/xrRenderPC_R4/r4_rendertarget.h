@@ -473,8 +473,8 @@ public:
 	void svp_objective_hud_prepare(bool svp_follows); // pip validate one native objective weapon draw
 	void svp_objective_hud_report(); // pip report the native objective draw
 	void EvalSVP_DLSS(const SvpDlssInputs& in); // pip DLSS-SR eval, bilinear-passthrough stub for now (Task 7)
-	void draw_reflex(bool svp = false); // pip render reflex-sight lenses (mapReflexHUDSorted), svp draws them through the entrance-pupil camera
-	bool draw_reflex_proxy(); // pip collimated reflex proxy drawn into rt_secondVP after capture, returns true only on a proven draw
+	u32 draw_reflex(bool svp = false); // pip render captured reflex materials with their own shaders
+	bool draw_hybrid_reflex(); // pip render an engaged magnifier reflex through the objective camera
 	void phase_lut();
 	void phase_smaa();
 	void phase_scene_prepare();

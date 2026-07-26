@@ -24,7 +24,7 @@ u32 svp_stats_nvg_split = 0; // svp nvg tube split fires the overlay reads, incr
 u32 svp_stats_lod_scale = 0; // svp lod scale armed frames the overlay reads, incremented in svp_set_lod_scale
 u32 svp_stats_hud_cull_reject = 0; // svp hud drain cone rejects the overlay reads, incremented in svp_hud_latch
 u32 svp_stats_grass_cull_reject = 0; // svp grass cone rejects the overlay reads, incremented in the detail manager
-u32 svp_stats_reflex_proxy = 0; // svp reflex proxy draws the overlay reads, incremented in draw_reflex_proxy
+u32 svp_stats_reflex_capture = 0; // svp hybrid reflex draws the overlay reads
 u32 svp_stats_distort_guard = 0; // svp distort guard stamps the overlay reads, incremented in phase_combine
 u32 svp_stats_nvg_sky = 0; // svp nvg sky lum remaps the overlay reads, incremented in phase_combine
 u32 svp_stats_disc_latch = 0; // svp adaptive-res disc latch moves the overlay reads, incremented in phase_3DSSReticle
@@ -40,7 +40,7 @@ u32 svp_ledger_lights_skipped = 0;
 u32 svp_ledger_lod_scale = 0;
 u32 svp_ledger_hud_cull_reject = 0;
 u32 svp_ledger_grass_cull_reject = 0;
-u32 svp_ledger_reflex_proxy = 0;
+u32 svp_ledger_reflex_capture = 0;
 u32 svp_ledger_distort_guard = 0;
 u32 svp_ledger_nvg_sky = 0;
 u32 svp_ledger_disc_latch = 0;
@@ -84,7 +84,7 @@ float ps_r__svp_focus_m = 100.0f; // svp parallax focus distance in meters, obje
 int ps_r__svp_authored_optics = 1; // svp use the authored per-scope scope_objective_lens_offset for the front plane + defocus aperture (0 = measured geometry only)
 int ps_r__svp_measured_optics = 0; // svp fill the objective offset + mm from mesh detection when authored ltx is absent (0 = authored/live only, byte-identical)
 float ps_r__svp_eyebox = 1.0f; // svp eyebox strength, console unregistered, 1.0 keeps the anchor bound publish alive
-int ps_r__svp_reflex_capture = 0; // svp reflex/holo dot path, 0 = legacy 1x main-view overlay, 1 = collimated proxy inside the magnifier viewport (default 0 until in-game confirms the proxy)
+int ps_r__svp_reflex_capture = 1; // svp hybrid reflex through the objective camera, 0 keeps the 1x fallback
 float ps_s3ds_objective_mm = 0.f; // per-scope objective clear aperture mm from spec sheets, pushed by zzz_extra_scope_features (0 = mesh-relative fallback)
 float ps_s3ds_middle_grey = 0.f; // per-scope SVP tonemap middle-grey override, pushed by zzz_extra_scope_features (0 = inherit main)
 float ps_s3ds_adapt_speed = 0.f; // per-scope SVP tonemap adaptation speed override (0 = inherit main)
@@ -225,7 +225,7 @@ void svp_console_init()
 	CMD4(CCC_Float, "r__svp_focus_m", &ps_r__svp_focus_m, 10.0f, 1000.0f); // svp parallax focus distance m (fixed-parallax scopes sit at 100)
 	CMD4(CCC_Integer, "r__svp_authored_optics", &ps_r__svp_authored_optics, 0, 1); // svp use authored per-scope objective offset for front plane + aperture (0 = measured only)
 		CMD4(CCC_Integer, "r__svp_measured_optics", &ps_r__svp_measured_optics, 0, 1); // measured lens geometry fills unauthored optics (0 = off, authored/live only)
-	CMD4(CCC_Integer, "r__svp_reflex_capture", &ps_r__svp_reflex_capture, 0, 1); // svp reflex/holo dot path (0 = legacy 1x main-view overlay, 1 = collimated proxy in the magnifier viewport)
+	CMD4(CCC_Integer, "r__svp_reflex_capture", &ps_r__svp_reflex_capture, 0, 1); // svp hybrid reflex through the objective camera
 	CMD4(CCC_Float, "s3ds_objective_mm", &ps_s3ds_objective_mm, 0.0f, 200.0f); // per-scope objective clear aperture mm for the true exit pupil
 	CMD4(CCC_Float, "s3ds_middle_grey", &ps_s3ds_middle_grey, 0.0f, 2.0f); // per-scope SVP tonemap middle-grey (0 = inherit main)
 	CMD4(CCC_Float, "s3ds_adapt_speed", &ps_s3ds_adapt_speed, 0.0f, 20.0f); // per-scope SVP tonemap adaptation speed (0 = inherit main)

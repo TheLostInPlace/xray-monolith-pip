@@ -169,9 +169,14 @@ void CRenderTarget::phase_ssfx_taa()
 			if (Device.dwTimeGlobal - s_taa_mask_ms > 1000)
 			{
 				s_taa_mask_ms = Device.dwTimeGlobal;
-				PipMsg("[SVP-TAA] hard-mask target=motion-vectors draws=%u continuity=%d frame=%u session=%u",
-					draws, ps_r__svp_weapon_continuity, Device.dwFrame,
-					Device.m_SecondViewport.GetSVPSession());
+				auto& vp = Device.m_SecondViewport;
+				const bool hybrid = vp.svp_reflex_capture_ok
+					&& vp.svp_reflex_capture_epoch == vp.svp_optic_epoch
+					&& vp.svp_reflex_capture_session == vp.GetSVPSession();
+				PipMsg("[SVP-TAA] hard-mask target=motion-vectors draws=%u continuity=%d hybrid=%d capture_epoch=%u optic_epoch=%u frame=%u session=%u",
+					draws, ps_r__svp_weapon_continuity, hybrid ? 1 : 0,
+					vp.svp_reflex_capture_epoch, vp.svp_optic_epoch,
+					Device.dwFrame, vp.GetSVPSession());
 			}
 		}
 	}

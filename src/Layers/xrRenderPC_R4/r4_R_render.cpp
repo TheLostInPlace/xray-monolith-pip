@@ -785,14 +785,20 @@ void CRender::renderSceneLighting(BOOL bSUN, bool svp)
 
 		TargetSVP->phase_svp_capture(); // SVP combined color -> rt_secondVP, ready for the main lens
 
-		// pip a hybrid magnifier draws the holo dot as a collimated proxy into the captured svp image
-		// so it magnifies and tracks, success gates the 1x main-view overlay suppression
-		Device.m_SecondViewport.svp_reflex_proxy_ok = false;
-		if (ps_r__svp_reflex_capture
-			&& !GMBase.RGraph.mapReflexHUDSorted.empty()
-			&& !GMBase.RGraph.mapScopeHUDSorted.empty())
+		// The real reflex mesh draws through the objective after SVP post processing
+		Device.m_SecondViewport.svp_reflex_capture_ok = false;
+		Device.m_SecondViewport.svp_reflex_capture_epoch = u32(-1);
+		Device.m_SecondViewport.svp_reflex_capture_session = 0;
+		if (ps_r__svp_reflex_capture)
 		{
-			Device.m_SecondViewport.svp_reflex_proxy_ok = TargetSVP->draw_reflex_proxy();
+			Device.m_SecondViewport.svp_reflex_capture_ok = TargetSVP->draw_hybrid_reflex();
+			if (Device.m_SecondViewport.svp_reflex_capture_ok)
+			{
+				Device.m_SecondViewport.svp_reflex_capture_epoch =
+					Device.m_SecondViewport.svp_optic_epoch;
+				Device.m_SecondViewport.svp_reflex_capture_session =
+					Device.m_SecondViewport.GetSVPSession();
+			}
 		}
 
 		TargetMain->SetActive();

@@ -7,7 +7,7 @@ local external_checked = false
 local compat_section = "pip_mas_pizza_compat"
 local alias_meta_section = "pip_optic_external_aliases"
 local alias_schema_version = 1
-local alias_owner = "PiPMASPizzaCompatibility"
+local alias_owner = "PiP MAS Pizza Compatibility"
 local compat_probe_sections = { "exps3_mag", "gee36_dove" }
 
 local keys = {
@@ -80,7 +80,9 @@ local function ensure_external_aliases()
         return
     end
     if owner ~= alias_owner then
-        external_aliases_status = "owner_" .. tostring(owner or "missing")
+        external_aliases_status = "owner_mismatch"
+        printf("![PIP-COMPAT] alias owner expected=%s received=%s",
+            alias_owner, tostring(owner or "missing"))
         return
     end
 
@@ -187,6 +189,7 @@ local function validate_external_compat()
     local missing_geometry = {}
     local missing_zoom = {}
     local wrong_type = {}
+    local wrong_hybrid = {}
     local shader_contract = "missing"
     local function validate_runtime_section(section)
         if not ini_sys:section_exist(section) then
@@ -228,12 +231,24 @@ local function validate_external_compat()
 
     local version = "missing"
     local required_count = 0
+    local function validate_hybrid_sections(owner, key, expected)
+        for _, section in ipairs(list_values(ini_sys:r_string_ex(owner, key))) do
+            if not ini_sys:section_exist(section)
+                or not ini_sys:line_exist(section, "svp_hybrid_reflex")
+                or ini_sys:r_bool_ex(section, "svp_hybrid_reflex", not expected) ~= expected then
+                add_unique(wrong_hybrid, section)
+            end
+        end
+    end
     if ini_sys:section_exist(compat_section) then
         version = tostring(ini_sys:r_string_ex(compat_section, "version") or "unknown")
         local contract = ini_sys:r_string_ex(compat_section, "shader_contract")
         if contract and ini_sys:section_exist(contract)
-            and tonumber(ini_sys:r_string_ex(contract, "magnifier_reticle_type")) == 12 then
+            and tonumber(ini_sys:r_string_ex(contract, "magnifier_reticle_type")) == 12
+            and ini_sys:r_string_ex(contract, "hybrid_capability") == "svp_hybrid_reflex" then
             shader_contract = tostring(contract)
+            validate_hybrid_sections(contract, "hybrid_sections", true)
+            validate_hybrid_sections(contract, "hybrid_inactive_sections", false)
         else
             add_unique(missing, contract or "shader_contract")
         end
@@ -246,17 +261,20 @@ local function validate_external_compat()
                 add_unique(wrong_type, section)
             end
         end
+        validate_hybrid_sections(compat_section, "hybrid_sections", true)
+        validate_hybrid_sections(compat_section, "hybrid_inactive_sections", false)
     else
         add_unique(missing, compat_section)
     end
 
     if #missing > 0 or #invalid > 0 or #missing_hud > 0 or #missing_geometry > 0
-        or #missing_zoom > 0 or #wrong_type > 0 then
-        printf("![PIP-COMPAT] version=%s alias_schema=%d shader_contract=%s aliases=%d required=%d missing=%s invalid=%s hud=%s geometry=%s zoom=%s wrong_type=%s",
+        or #missing_zoom > 0 or #wrong_type > 0 or #wrong_hybrid > 0 then
+        printf("![PIP-COMPAT] version=%s alias_schema=%d shader_contract=%s aliases=%d required=%d missing=%s invalid=%s hud=%s geometry=%s zoom=%s wrong_type=%s hybrid=%s",
             version, alias_schema_version, shader_contract, total, required_count,
             table.concat(missing, ","), table.concat(invalid, ","),
             table.concat(missing_hud, ","), table.concat(missing_geometry, ","),
-            table.concat(missing_zoom, ","), table.concat(wrong_type, ","))
+            table.concat(missing_zoom, ","), table.concat(wrong_type, ","),
+            table.concat(wrong_hybrid, ","))
     else
         printf("[PIP-COMPAT] version=%s alias_schema=%d shader_contract=%s aliases=%d required=%d ready",
             version, alias_schema_version, shader_contract, total, required_count)

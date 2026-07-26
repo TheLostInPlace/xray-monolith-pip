@@ -141,6 +141,7 @@ void console_registrator::script_register(lua_State* L)
 		def("svp_detected_obj_mm", &svp_detected_obj_mm),
 		def("svp_optic_api_version", &svp_optic_api_version),
 		def("svp_optic_api_connect", &svp_optic_api_connect),
+		def("svp_optic_api_has_capability", &svp_optic_api_has_capability),
 		def("svp_optic_route_epoch", &svp_optic_route_epoch),
 		def("svp_begin_optic_context", &svp_begin_optic_context),
 		def("svp_apply_optic_profile", &svp_apply_optic_profile),

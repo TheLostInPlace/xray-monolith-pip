@@ -26,7 +26,7 @@ extern ECORE_API u32 svp_stats_nvg_split; // svp nvg tube split fires read by th
 extern ECORE_API u32 svp_stats_lod_scale; // svp lod scale armed frames read by the overlay, incremented in svp_set_lod_scale
 extern ECORE_API u32 svp_stats_hud_cull_reject; // svp hud drain cone rejects read by the overlay, incremented in svp_hud_latch
 extern ECORE_API u32 svp_stats_grass_cull_reject; // svp grass cone rejects read by the overlay, incremented in the detail manager
-extern ECORE_API u32 svp_stats_reflex_proxy; // svp reflex proxy draws read by the overlay, incremented in draw_reflex_proxy
+extern ECORE_API u32 svp_stats_reflex_capture; // svp hybrid reflex draws read by the overlay
 extern ECORE_API u32 svp_stats_distort_guard; // svp distort guard stamps read by the overlay, incremented in phase_combine
 extern ECORE_API u32 svp_stats_nvg_sky; // svp nvg sky lum remaps read by the overlay, incremented in phase_combine
 extern ECORE_API u32 svp_stats_disc_latch; // svp adaptive-res disc latch moves read by the overlay, incremented in phase_3DSSReticle
@@ -40,7 +40,7 @@ extern ECORE_API u32 svp_ledger_lights_skipped;
 extern ECORE_API u32 svp_ledger_lod_scale;
 extern ECORE_API u32 svp_ledger_hud_cull_reject;
 extern ECORE_API u32 svp_ledger_grass_cull_reject;
-extern ECORE_API u32 svp_ledger_reflex_proxy;
+extern ECORE_API u32 svp_ledger_reflex_capture;
 extern ECORE_API u32 svp_ledger_distort_guard;
 extern ECORE_API u32 svp_ledger_nvg_sky;
 extern ECORE_API u32 svp_ledger_disc_latch;

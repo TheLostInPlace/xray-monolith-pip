@@ -172,7 +172,10 @@ public:
 		bool valid = false;
 		bool typed_route = false;
 		bool has_objective_offset = false;
+		bool has_hybrid_reflex = false;
+		bool hybrid_reflex = false;
 		u8 zoom_type = 0;
+		u8 reticle_type = 0;
 		u32 weapon_id = 0;
 		u32 context_token = 0;
 		u32 generation = 0;
@@ -215,7 +218,7 @@ public:
 		string256 source[optic_value_count] = {};
 	};
 
-	static constexpr u32 optic_api_version = 1;
+	static constexpr u32 optic_api_version = 2;
 	void PublishWeaponPose(const WeaponPoseSnapshot& pose);
 	bool ReadWeaponPose(WeaponPoseSnapshot& pose) const;
 	void ClearWeaponPose();
@@ -281,8 +284,10 @@ public:
 	u32 svp_nvg_sensor_frame = u32(-1);
 	u32 svp_nvg_sensor_session = 0;
 
-	// pip set true only when the collimated reflex proxy drew into rt_secondVP this frame
-	bool svp_reflex_proxy_ok = false;
+	// pip set only when the hybrid reflex drew into rt_secondVP this frame
+	bool svp_reflex_capture_ok = false;
+	u32 svp_reflex_capture_epoch = u32(-1);
+	u32 svp_reflex_capture_session = 0;
 
 	// pip set only around the SVP water surface draw, makes ssfx_issvp read 0 so the SSS water shader
 	// uses the SVP reflection instead of its flat-scope fallback (ssfx_water.ps reflection = turbidity)

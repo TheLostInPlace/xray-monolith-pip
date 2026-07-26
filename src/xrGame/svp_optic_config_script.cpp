@@ -54,6 +54,8 @@ constexpr LPCSTR s_top_keys[] =
 	"diagnostic_scope",
 	"identity_source",
 	"zoom_type",
+	"reticle_type",
+	"hybrid_reflex",
 	"profile",
 	"spec",
 	"model",
@@ -254,6 +256,27 @@ bool svp_read_bool(lua_State* state, int table_index, LPCSTR key, bool& value, S
 	return true;
 }
 
+bool svp_read_optional_bool(lua_State* state, int table_index, LPCSTR key, bool& value,
+	bool& present, SParseError& error)
+{
+	const int value_index = svp_raw_field(state, table_index, key);
+	if (lua_isnil(state, value_index))
+	{
+		present = false;
+		lua_pop(state, 1);
+		return true;
+	}
+	if (lua_type(state, value_index) != LUA_TBOOLEAN)
+	{
+		svp_parse_error(error, key, "expected_boolean");
+		return false;
+	}
+	present = true;
+	value = lua_toboolean(state, value_index) != 0;
+	lua_pop(state, 1);
+	return true;
+}
+
 bool svp_read_string(lua_State* state, int table_index, LPCSTR key, LPSTR destination,
 	size_t capacity, SParseError& error)
 {
@@ -309,6 +332,12 @@ bool svp_parse_optic_config(const luabind::object& table, u32 context_token,
 	if (!svp_read_integer(state, table_index, "zoom_type", 0, u8(-1), integer, error))
 		return false;
 	config.zoom_type = static_cast<u8>(integer);
+	if (!svp_read_integer(state, table_index, "reticle_type", 0, u8(-1), integer, error))
+		return false;
+	config.reticle_type = static_cast<u8>(integer);
+	if (!svp_read_optional_bool(state, table_index, "hybrid_reflex",
+		config.hybrid_reflex, config.has_hybrid_reflex, error))
+		return false;
 
 	if (!svp_read_string(state, table_index, "context", config.context, sizeof(config.context), error) ||
 		!svp_read_string(state, table_index, "weapon", config.weapon, sizeof(config.weapon), error) ||
@@ -403,6 +432,11 @@ bool svp_optic_api_connect(int version)
 		Device.m_SecondViewport.ConnectOpticApi(static_cast<u32>(version));
 }
 
+bool svp_optic_api_has_capability(LPCSTR capability)
+{
+	return capability && 0 == xr_strcmp(capability, "hybrid_reflex");
+}
+
 u32 svp_optic_route_epoch()
 {
 	return Device.m_SecondViewport.GetOpticRouteEpoch();
@@ -461,8 +495,10 @@ bool svp_apply_optic_profile(u32 context_token, const luabind::object& table)
 		Device.m_SecondViewport.ReadOpticConfig(accepted);
 		if (accepted.generation != before.generation)
 		{
-			Msg("[SVP-CONFIG] publish token=%u gen=%u context=%s profile=%s spec=%s",
+			Msg("[SVP-CONFIG] publish token=%u gen=%u context=%s reticle=%u hybrid=%d/%d profile=%s spec=%s",
 				accepted.context_token, accepted.generation, accepted.context,
+				accepted.reticle_type, accepted.has_hybrid_reflex,
+				accepted.hybrid_reflex,
 				accepted.profile, accepted.spec);
 		}
 		return true;
