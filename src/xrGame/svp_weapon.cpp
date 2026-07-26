@@ -153,6 +153,11 @@ void CWeapon::UpdateSecondVP()
 
 	const bool zoomed = IsZoomed();
 	const bool svp_present = IsSecondVPZoomPresent();
+	if (m_zoomtype == 0 && svp_present)
+	{
+		m_svpMainViewIdentity = SvpZoomIdentity();
+		m_svpMainViewValid = true;
+	}
 	const bool svp_act = (scope_debug && svp_present && zoomed)
 		|| (m_zoomtype == 0 && pActor->cam_Active() == pActor->cam_FirstEye()
 			&& svp_present && zoomed);
@@ -285,6 +290,13 @@ void CWeapon::UpdateSecondVP()
 		pose.session = vp.GetSVPSession();
 		vp.PublishWeaponPose(pose);
 	}
+}
+
+// pip main view fov ownership, latched per optic identity so a lens snapshot gap cannot zoom the main view
+bool CWeapon::OwnsSvpMainView() const
+{
+	return scope_svp_enabled >= 2 && m_zoomtype == 0 && m_svpMainViewValid
+		&& m_svpMainViewIdentity == SvpZoomIdentity();
 }
 
 // pip SVP readiness, true when a fresh captured lens exists, reads the stable sight publish

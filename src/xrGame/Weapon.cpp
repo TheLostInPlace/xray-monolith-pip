@@ -154,6 +154,7 @@ CWeapon::CWeapon()
 	firstZoomDone = false;
 	m_svpZoomSeedValid = false;
 	m_svpZoomSeedMode = scope_svp_enabled;
+	m_svpMainViewValid = false;
 	m_set_next_ammoType_on_reload = undefined_ammo_type;
 	m_crosshair_inertion = 0.f;
 	m_activation_speed_is_overriden = false;

@@ -429,6 +429,8 @@ protected:
 	bool m_svpZoomSeedValid;
 	xr_map<shared_str, float> m_svpZoomFactors;
 	int m_svpZoomSeedMode;
+	shared_str m_svpMainViewIdentity;
+	bool m_svpMainViewValid;
 	shared_str SvpZoomIdentity() const;
 	void InvalidateSvpZoomSeed();
 	void CaptureSvpZoomSeed();
@@ -467,6 +469,8 @@ public:
 	}
 
 	IC bool IsScriptedZoom() const { return m_zoom_params.m_bScriptedZoom; }
+	// pip the svp has proven itself for this optic identity so the main view stays wide through snapshot gaps
+	bool OwnsSvpMainView() const;
 
 	// the lua binding reads this, scripts see the commanded detent while the fov keeps easing
 	float GetZoomFactorScript() const;
