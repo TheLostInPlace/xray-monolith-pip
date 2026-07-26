@@ -128,6 +128,9 @@ CWeapon::CWeapon()
 	m_zoom_params.m_pVision = NULL;
 	m_zoom_params.m_pNight_vision = NULL;
 	m_zoom_params.m_fSecondVPFovFactor = 0.0f;
+	m_zoom_params.m_bSvpDynamicZoom_Primary = FALSE;
+	m_zoom_params.m_bSvpDynamicZoom_Alt = FALSE;
+	m_zoom_params.m_bSvpDynamicZoom_GL = FALSE;
 
 	m_altAimPos = false;
 	m_zoomtype = 0;
@@ -384,17 +387,26 @@ void CWeapon::UpdateZoomParams() {
 	// update zoom factor
 	if (m_zoomtype == 2) //GL
 	{
-		m_zoom_params.m_bUseDynamicZoom = m_zoom_params.m_bUseDynamicZoom_GL || READ_IF_EXISTS(pSettings, r_bool, cNameSect(), "scope_dynamic_zoom_gl", false);
+		const BOOL mode_dynamic = scope_svp_enabled >= 2
+			? m_zoom_params.m_bSvpDynamicZoom_GL
+			: m_zoom_params.m_bUseDynamicZoom_GL;
+		m_zoom_params.m_bUseDynamicZoom = mode_dynamic || READ_IF_EXISTS(pSettings, r_bool, cNameSect(), "scope_dynamic_zoom_gl", false);
 		m_zoom_params.m_fScopeZoomFactor = g_player_hud->m_adjust_mode ? g_player_hud->m_adjust_zoom_factor[1] : READ_IF_EXISTS(pSettings, r_float, cNameSect(), "gl_zoom_factor", 0);
 		m_zoom_params.m_fZoomStepCount = 0;
 	} else if (m_zoomtype == 1) //Alt
 	{
-		m_zoom_params.m_bUseDynamicZoom = m_zoom_params.m_bUseDynamicZoom_Alt || READ_IF_EXISTS(pSettings, r_bool, cNameSect(), "scope_dynamic_zoom_alt", false);
+		const BOOL mode_dynamic = scope_svp_enabled >= 2
+			? m_zoom_params.m_bSvpDynamicZoom_Alt
+			: m_zoom_params.m_bUseDynamicZoom_Alt;
+		m_zoom_params.m_bUseDynamicZoom = mode_dynamic || READ_IF_EXISTS(pSettings, r_bool, cNameSect(), "scope_dynamic_zoom_alt", false);
 		m_zoom_params.m_fScopeZoomFactor = (g_player_hud->m_adjust_mode ? g_player_hud->m_adjust_zoom_factor[2] : READ_IF_EXISTS(pSettings, r_float, cNameSect(), "scope_zoom_factor_alt", 0)) / (READ_IF_EXISTS(pSettings, r_string, cNameSect(), "scope_texture_alt", NULL) && zoomFlags.test(SDS_ZOOM) && (SDS_Radius(true) > 0.0) ? zoom_multiple : 1);
 		m_zoom_params.m_fZoomStepCount = 0;
 	} else //Main Sight
 	{
-		m_zoom_params.m_bUseDynamicZoom = m_zoom_params.m_bUseDynamicZoom_Primary || READ_IF_EXISTS(pSettings, r_bool, cNameSect(), "scope_dynamic_zoom", false);
+		const BOOL mode_dynamic = scope_svp_enabled >= 2
+			? m_zoom_params.m_bSvpDynamicZoom_Primary
+			: m_zoom_params.m_bUseDynamicZoom_Primary;
+		m_zoom_params.m_bUseDynamicZoom = mode_dynamic || READ_IF_EXISTS(pSettings, r_bool, cNameSect(), "scope_dynamic_zoom", false);
 		u32 stepCount = 0;
 		if (g_player_hud->m_adjust_mode)
 		{
@@ -459,9 +471,15 @@ void CWeapon::UpdateZoomParams() {
 		const bool scope_attached = (ALife::eAddonPermanent != m_eScopeStatus
 			&& 0 != (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonScope)
 			&& HasValidScopeIndex());
-		svp_mags_data mags = svp_mags_resolve(cNameSect_str(), zoom_multiple);
-		if (mags.mode == svp_mag_none && scope_attached)
+		svp_mags_data mags;
+		if (scope_attached && m_modular_attachments)
 			mags = svp_mags_resolve(GetScopeName().c_str(), zoom_multiple);
+		else
+		{
+			mags = svp_mags_resolve(cNameSect_str(), zoom_multiple);
+			if (mags.mode == svp_mag_none && scope_attached)
+				mags = svp_mags_resolve(GetScopeName().c_str(), zoom_multiple);
+		}
 		if (mags.mode != svp_mag_none)
 		{
 			m_zoom_params.m_fScopeZoomFactor = mags.f_top;
@@ -616,13 +634,19 @@ void CWeapon::SetZoomTypeAndParams(u8 zoomType)
 	if (zoomType == 1)
 	{
 		SetZoomType(1);
-		m_zoom_params.m_bUseDynamicZoom = m_zoom_params.m_bUseDynamicZoom_Alt || READ_IF_EXISTS(pSettings, r_bool, cNameSect(), "scope_dynamic_zoom_alt", false);
+		const BOOL mode_dynamic = scope_svp_enabled >= 2
+			? m_zoom_params.m_bSvpDynamicZoom_Alt
+			: m_zoom_params.m_bUseDynamicZoom_Alt;
+		m_zoom_params.m_bUseDynamicZoom = mode_dynamic || READ_IF_EXISTS(pSettings, r_bool, cNameSect(), "scope_dynamic_zoom_alt", false);
 	}
 
 	if (zoomType == 0)
 	{
 		SetZoomType(0);
-		m_zoom_params.m_bUseDynamicZoom = m_zoom_params.m_bUseDynamicZoom_Primary || READ_IF_EXISTS(pSettings, r_bool, cNameSect(), "scope_dynamic_zoom", false);
+		const BOOL mode_dynamic = scope_svp_enabled >= 2
+			? m_zoom_params.m_bSvpDynamicZoom_Primary
+			: m_zoom_params.m_bUseDynamicZoom_Primary;
+		m_zoom_params.m_bUseDynamicZoom = mode_dynamic || READ_IF_EXISTS(pSettings, r_bool, cNameSect(), "scope_dynamic_zoom", false);
 	}
 }
 
@@ -672,6 +696,8 @@ void CWeapon::ForceSetZoomType(float val)
 			m_svpZoomSeedValid = true;
 		}
 	}
+	if (scope_svp_enabled >= 2)
+		UpdateZoomParams();
 }
 
 extern float g_ironsights_factor;
@@ -1038,6 +1064,9 @@ void CWeapon::Load(LPCSTR section)
 	}
 
 	m_zoom_params.m_bUseDynamicZoom = READ_IF_EXISTS(pSettings, r_bool, section, "scope_dynamic_zoom", FALSE);
+	m_zoom_params.m_bSvpDynamicZoom_Primary = m_zoom_params.m_bUseDynamicZoom;
+	m_zoom_params.m_bSvpDynamicZoom_Alt = READ_IF_EXISTS(pSettings, r_bool, section, "scope_dynamic_zoom_alt", FALSE);
+	m_zoom_params.m_bSvpDynamicZoom_GL = READ_IF_EXISTS(pSettings, r_bool, section, "scope_dynamic_zoom_gl", FALSE);
 	m_zoom_params.m_sUseZoomPostprocess = 0;
 	m_zoom_params.m_sUseBinocularVision = 0;
 
@@ -3516,7 +3545,13 @@ void CWeapon::SetZoomFactorScript(float f)
 void CWeapon::ZoomInc()
 {
 	// pip no IsScopeAttached gate, integrated scopes report none, dynamic zoom is the real gate
-	if (!m_zoom_params.m_bUseDynamicZoom) return;
+	if (!m_zoom_params.m_bUseDynamicZoom)
+	{
+		if (scope_svp_enabled >= 2 && ps_r__svp_diag)
+			PipMsg("[SVP-ZOOM-AUTH] weapon=%s type=%u wheel=inc accepted=0",
+				cNameSect_str(), m_zoomtype);
+		return;
+	}
 	// pip an authored single-throw scope clicks between its two detents, no analog, no smoothing
 	const bool click = g_zoom_clicks && m_zoom_params.m_fZoomStepCount == 1.f;
 	const bool smooth = g_zoom_smooth > 0.f && !click;
@@ -3578,7 +3613,13 @@ void CWeapon::ZoomInc()
 void CWeapon::ZoomDec()
 {
 	// pip no IsScopeAttached gate, integrated scopes report none, dynamic zoom is the real gate
-	if (!m_zoom_params.m_bUseDynamicZoom) return;
+	if (!m_zoom_params.m_bUseDynamicZoom)
+	{
+		if (scope_svp_enabled >= 2 && ps_r__svp_diag)
+			PipMsg("[SVP-ZOOM-AUTH] weapon=%s type=%u wheel=dec accepted=0",
+				cNameSect_str(), m_zoomtype);
+		return;
+	}
 	// pip an authored single-throw scope clicks between its two detents, no analog, no smoothing
 	const bool click = g_zoom_clicks && m_zoom_params.m_fZoomStepCount == 1.f;
 	const bool smooth = g_zoom_smooth > 0.f && !click;

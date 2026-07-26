@@ -414,6 +414,9 @@ protected:
 		BOOL m_bUseDynamicZoom_Primary;
 		BOOL m_bUseDynamicZoom_Alt;
 		BOOL m_bUseDynamicZoom_GL;
+		BOOL m_bSvpDynamicZoom_Primary;
+		BOOL m_bSvpDynamicZoom_Alt;
+		BOOL m_bSvpDynamicZoom_GL;
 		shared_str m_sUseZoomPostprocess;
 		shared_str m_sUseBinocularVision;
 		CBinocularsVision* m_pVision;

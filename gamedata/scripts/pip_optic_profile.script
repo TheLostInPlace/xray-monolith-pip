@@ -8,6 +8,7 @@ local compat_section = "pip_mas_pizza_compat"
 local alias_meta_section = "pip_optic_external_aliases"
 local alias_schema_version = 1
 local alias_owner = "PiP MAS Pizza Compatibility"
+local alias_owner_id = "pip_mas_pizza_compat"
 local compat_probe_sections = { "exps3_mag", "gee36_dove" }
 
 local keys = {
@@ -58,6 +59,10 @@ local function runtime_section(ini, scope_section, weapon_section, scope_hint)
     end
 end
 
+local function normalized_owner(value)
+    return string.lower(string.gsub(tostring(value or ""), "[^%w]", ""))
+end
+
 local function ensure_physical_specs()
     physical_specs = physical_specs or ini_file("pip_optic_physical_specs.ltx")
 end
@@ -74,15 +79,18 @@ local function ensure_external_aliases()
 
     local candidate = ini_file("pip_optic_external_aliases.ltx")
     local schema = tonumber(candidate:r_string_ex(alias_meta_section, "schema_version"))
+    local owner_id = candidate:r_string_ex(alias_meta_section, "owner_id")
     local owner = candidate:r_string_ex(alias_meta_section, "owner")
     if schema ~= alias_schema_version then
         external_aliases_status = "schema_" .. tostring(schema or "missing")
         return
     end
-    if owner ~= alias_owner then
+    local owner_valid = normalized_owner(owner_id) == normalized_owner(alias_owner_id)
+        or (not owner_id and normalized_owner(owner) == normalized_owner(alias_owner))
+    if not owner_valid then
         external_aliases_status = "owner_mismatch"
         printf("![PIP-COMPAT] alias owner expected=%s received=%s",
-            alias_owner, tostring(owner or "missing"))
+            alias_owner_id, tostring(owner_id or owner or "missing"))
         return
     end
 

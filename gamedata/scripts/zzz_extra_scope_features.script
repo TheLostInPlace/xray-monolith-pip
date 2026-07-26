@@ -657,7 +657,8 @@ local function try_push(expected_key, expected_token, expected_route)
     local hybrid_reflex, hybrid_source, hybrid_authored =
         read_3dss_bool_info(item, scope_sec, weap_sec, "svp_hybrid_reflex", scope_hint)
     local landed, lens = resolve_lens(scope_sec, weap_sec, scope_hint)
-    if not landed and not objective_optional(scope_sec, weap_sec, zoom_type, scope_hint) then
+    if expected_route ~= "typed" and not landed
+        and not objective_optional(scope_sec, weap_sec, zoom_type, scope_hint) then
         return false
     end
     if expected_route ~= "typed" then
@@ -671,6 +672,10 @@ local function try_push(expected_key, expected_token, expected_route)
             printf("![SVP-CONFIG] apply failed route=%s token=%s context=%s call=%s result=%s",
                 expected_route, tostring(expected_token), key, tostring(ok), tostring(accepted))
             return true
+        end
+        if not landed and get_console():get_integer("r__svp_diag") > 0 then
+            printf("[SVP-PUSH] typed objective=engine_fallback key=%s token=%s",
+                key, tostring(expected_token or 0))
         end
     end
 
