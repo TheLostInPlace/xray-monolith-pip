@@ -337,15 +337,8 @@ static void svp_bind_aperture(float pupil_mm)
 
 	const SSvpEyeSample eye = svp_update_eye_sample(Device.matrices[0].mView);
 	const Fvector2 raw_eye_offset_mm = eye.raw_mm;
-	extern int ps_r__svp_weapon_continuity;
-	extern int ps_r__svp_flat_window;
-	extern Fvector4 ps_s3ds_param_3;
-	const bool flat_optic = ps_r__svp_flat_window && (int)ps_s3ds_param_3.y == 8;
-	const bool entrance_camera = ps_r__svp_weapon_continuity
-		&& scope_svp_enabled >= 2 && viewport.IsSVPActive()
-		&& viewport.svp_camera_domain == CSecondVPParams::camera_objective
-		&& viewport.objective.radius > EPS && !flat_optic && eye.valid;
-	const Fvector2 eye_offset_mm = entrance_camera ? eye.raw_mm : eye.residual_mm;
+	// the objective camera consumes the raw offset, the aperture loss rides the tracked eye residual
+	const Fvector2 eye_offset_mm = eye.residual_mm;
 	const float inverse_lens_diameter = eyepiece.radius > EPS ? 0.5f / eyepiece.radius : 0.f;
 
 	RCache.set_c("svp_aperture", ps_r__svp_aperture ? 1.f : 0.f, g_pip_scope_magnification, minimum_mag, maximum_mag);
