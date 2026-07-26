@@ -5,6 +5,7 @@
 
 #include	"../../xrEngine/xr_ioconsole.h"
 #include	"../../xrEngine/xr_ioc_cmd.h"
+#include	"../../xrEngine/device.h"
 
 int scope_svp_enabled = 0; // true PiP second viewport scope (0 off, 1 eyepiece, 2 objective)
 float ps_r__svp_render_scale = 1.0f; // SVP render scale, 1.0 keeps the dwHeight/2 per side
@@ -18,7 +19,7 @@ u32 svp_stats_cull_reject = 0; // svp off-cone frustum-reject tally the overlay 
 u32 svp_stats_cull_reject_ident = 0; // svp identity-matrix sorted world statics the cone rejects, incremented in svp_cull_reject
 u32 svp_stats_lights_mirrored = 0; // svp lights the cone cull mirrors into the scope, incremented in lights_render
 u32 svp_stats_lights_skipped = 0; // svp lights the cone cull drops, incremented in lights_render
-u32 svp_stats_taa_stamp = 0; // svp taa sovereignty stamp fires the overlay reads, incremented in phase_ssfx_taa
+u32 svp_stats_taa_stamp = 0; // successful raw taa skip mask draws read by the overlay
 u32 svp_stats_nvg_split = 0; // svp nvg tube split fires the overlay reads, incremented in phase_combine
 u32 svp_stats_lod_scale = 0; // svp lod scale armed frames the overlay reads, incremented in svp_set_lod_scale
 u32 svp_stats_hud_cull_reject = 0; // svp hud drain cone rejects the overlay reads, incremented in svp_hud_latch
@@ -137,7 +138,7 @@ float ps_r__svp_nvg_sensitivity = 1.0f; // svp NVG bleach onset sensitivity, hig
 int ps_r__svp_nvg_objective = 1; // svp keeps the NVG sensor response but removes the eyepiece mask inside the objective view
 int ps_r__svp_hud_full = 2; // svpscope 1 body skip only, mode 2 clips at the objective admission plane instead renders (default), 1 = full barrel from the eye + near-blur, 0 = objective clip with the body rendered
 int ps_r__svp_weapon_continuity = 1; // svp same frame weapon pose and entrance pupil camera
-int ps_r__svp_ray_transfer = 1; // svp map pupil position and angle through the optic
+int ps_r__svp_ray_transfer = 1; // svp objective camera mode
 int ps_r__svp_optic_body_suppress = 1; // svp omit the housing that contains the objective plane
 int ps_r__svp_near_pupil = 0; // svp old config compatibility, mode 2 always uses the raster near
 int ps_r__svp_drain_clip = 0; // svpscope 1 old whole item objective skip
@@ -158,12 +159,31 @@ int ps_r__svp_light_cull = 1; // svp cone-cull the mirrored light blends, skip a
 int ps_r__svp_corner_mask = 1; // svp stencil the dead corners outside the eyepiece disc so the lighting + combine passes skip them (1 = on)
 int scope_debug = 0;
 
+class CCC_SvpScopeMode final : public CCC_Integer
+{
+public:
+	CCC_SvpScopeMode(LPCSTR name, int* value, int minimum, int maximum)
+		: CCC_Integer(name, value, minimum, maximum)
+	{
+	}
+
+	void Execute(LPCSTR args) override
+	{
+		const int previous = *value;
+		CCC_Integer::Execute(args);
+		if (*value == previous)
+			return;
+		Device.m_SecondViewport.SetOpticScopeMode(static_cast<u8>(*value));
+		Msg("[SVP-CONFIG] mode=%d state=invalidated", *value);
+	}
+};
+
 void svp_console_init()
 {
 #if defined(USE_DX11)
 	// true PiP scope cvars are DX11-only, do not register them on the DX10/9/8 renderers (the backing
 	// vars keep their 0 defaults so the shared code still reads them as off)
-	CMD4(CCC_Integer, "r__svpscope", &scope_svp_enabled, 0, 2);
+	CMD4(CCC_SvpScopeMode, "r__svpscope", &scope_svp_enabled, 0, 2);
 	CMD4(CCC_Float, "r__svp_render_scale", &ps_r__svp_render_scale, 0.5f, 1.0f); // takes effect on vid_restart, floor matches the runtime clamp
 	CMD4(CCC_Float, "r__svp_supersample", &ps_r__svp_supersample, 1.0f, 2.0f); // SSAA the magnified scope image, 1.0 = off (4x SVP cost at 2.0)
 	CMD4(CCC_Integer, "r__svp_diag", &ps_r__svp_diag, 0, 1); // SVP perf diagnostics log (0 = off)
@@ -261,7 +281,7 @@ void svp_console_init()
 	CMD4(CCC_Integer, "r__svp_nvg_objective", &ps_r__svp_nvg_objective, 0, 1); // svp separates the objective image from the wearer mask
 	CMD4(CCC_Integer, "r__svp_hud_full", &ps_r__svp_hud_full, 0, 2); // svp barrel modes 2 front plane clip, 1 full barrel, 0 objective clip and body
 	CMD4(CCC_Integer, "r__svp_weapon_continuity", &ps_r__svp_weapon_continuity, 0, 1); // svp objective weapon continuity
-	CMD4(CCC_Integer, "r__svp_ray_transfer", &ps_r__svp_ray_transfer, 0, 1); // svp reciprocal pupil ray mapping
+	CMD4(CCC_Integer, "r__svp_ray_transfer", &ps_r__svp_ray_transfer, 0, 2); // svp objective camera mode
 	CMD4(CCC_Integer, "r__svp_optic_body_suppress", &ps_r__svp_optic_body_suppress, 0, 1); // svp objective housing admission
 	CMD4(CCC_Integer, "r__svp_near_pupil", &ps_r__svp_near_pupil, 0, 1); // svp retained for old configs
 	CMD4(CCC_Integer, "r__svp_drain_clip", &ps_r__svp_drain_clip, 0, 1); // svpscope 1 old whole item objective skip

@@ -620,7 +620,10 @@ void CRenderTarget::phase_combine()
 	if (ps_r2_nightvision > 0)
 	{
 		if (svp_pass_now)
-			svp_nvg_objective_pass();
+		{
+			if (!svp_nvg_objective_pass())
+				phase_nightvision();
+		}
 		else if (!svp_nvg_pass())
 			phase_nightvision();
 	}

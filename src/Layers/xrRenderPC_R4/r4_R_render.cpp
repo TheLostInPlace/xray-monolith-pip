@@ -181,6 +181,10 @@ void CRender::Render()
 		return;
 	}
 
+	// lock one optic route for every scope consumer this frame
+	Device.m_SecondViewport.LatchOpticConfig(
+		Device.dwFrame, Device.m_SecondViewport.GetSVPSession());
+
 	// pip svp render-stats frame boundary, self-gates to nothing when r__svp_stats is 0
 	svp_stats::frame_begin();
 	svp_stats::section_begin(svp_stats::SEC_FRAME);

@@ -21,7 +21,7 @@ extern ECORE_API u32 svp_stats_cull_reject; // svp off-cone frustum-reject tally
 extern ECORE_API u32 svp_stats_cull_reject_ident; // svp identity-matrix sorted world statics the cone rejects, incremented in svp_cull_reject
 extern ECORE_API u32 svp_stats_lights_mirrored; // svp lights the cone cull mirrors into the scope, incremented in lights_render
 extern ECORE_API u32 svp_stats_lights_skipped; // svp lights the cone cull drops, incremented in lights_render
-extern ECORE_API u32 svp_stats_taa_stamp; // svp taa sovereignty stamp fires read by the overlay, incremented in phase_ssfx_taa
+extern ECORE_API u32 svp_stats_taa_stamp; // successful raw taa skip mask draws read by the overlay
 extern ECORE_API u32 svp_stats_nvg_split; // svp nvg tube split fires read by the overlay, incremented in phase_combine
 extern ECORE_API u32 svp_stats_lod_scale; // svp lod scale armed frames read by the overlay, incremented in svp_set_lod_scale
 extern ECORE_API u32 svp_stats_hud_cull_reject; // svp hud drain cone rejects read by the overlay, incremented in svp_hud_latch

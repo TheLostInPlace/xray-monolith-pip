@@ -195,6 +195,21 @@ static LPCSTR svp_hud_role_name(u8 role)
 	}
 }
 
+static bool svp_project_ndc(const Fmatrix& view, const Fmatrix& projection,
+	const Fvector& point, Fvector2& ndc)
+{
+	Fmatrix transform;
+	transform.mul(projection, view);
+	Fvector4 source;
+	source.set(point.x, point.y, point.z, 1.f);
+	Fvector4 clip;
+	transform.transform(clip, source);
+	if (!_valid(clip) || clip.w <= EPS)
+		return false;
+	ndc.set(clip.x / clip.w, clip.y / clip.w);
+	return _valid(ndc);
+}
+
 static bool svp_axial_bounds(const Fbox& box, const Fmatrix& world,
 	const Fvector& origin, const Fvector& axis, float& lower, float& upper)
 {
@@ -217,6 +232,96 @@ static bool svp_axial_bounds(const Fbox& box, const Fmatrix& world,
 		upper = _max(upper, axial);
 	}
 	return lower <= upper;
+}
+
+static bool svp_objective_hud_filter_ready()
+{
+	extern int scope_svp_enabled;
+	extern int ps_r__svp_optic_body_suppress;
+	auto& vp = Device.m_SecondViewport;
+	return ps_r__svp_optic_body_suppress && scope_svp_enabled >= 2
+		&& Device.true_pip_on && vp.IsSVPActive()
+		&& vp.svp_camera_domain == CSecondVPParams::camera_objective
+		&& vp.SnapshotExact(vp.svp_camera_frame, vp.svp_camera_session, Device.dwFrame)
+		&& vp.eyepiece.radius > EPS && vp.objective.radius > EPS;
+}
+
+void CDSGraphManager::svp_classify_objective_hud(dxRender_Visual* visual, Fmatrix* matrix,
+	u8 role, SSvpHudAdmission& admission)
+{
+	admission = SSvpHudAdmission();
+	if (!svp_objective_hud_filter_ready() || !visual || !matrix)
+		return;
+
+	auto& vp = Device.m_SecondViewport;
+	const Fvector origin = vp.eyepiece.m_W.c;
+	Fvector axis;
+	axis.sub(vp.objective.m_W.c, origin);
+	const float tube = axis.magnitude();
+	if (!_valid(tube) || tube <= EPS)
+	{
+		admission.reason = "tube";
+		return;
+	}
+	axis.div(tube);
+	admission.objective = tube;
+
+	Fmatrix world = *svp_pose_of(matrix);
+	if (CSkeletonX* skeleton = fast_dynamic_cast<CSkeletonX*>(visual))
+	{
+		Fmatrix bone;
+		if (svp_lens_bone_of(visual, bone) || skeleton->SVP_LensBoneXform(bone))
+			world.mulB_43(bone);
+	}
+
+	Fvector center;
+	world.transform_tiny(center, visual->vis.sphere.P);
+	Fvector offset;
+	offset.sub(center, origin);
+	admission.axial = offset.dotproduct(axis);
+	Fvector on_axis;
+	on_axis.mad(origin, axis, admission.axial);
+	admission.radial = on_axis.distance_to(center);
+	admission.radius = visual->vis.sphere.R;
+
+	const bool role_ok = role == IDSGraphManager::hud_primary_item
+		|| role == IDSGraphManager::hud_optic;
+	const bool size_ok = _valid(admission.radius) && admission.radius > EPS
+		&& admission.radius < tube * 1.75f;
+	const float body_radius = std::max(vp.eyepiece.radius, vp.objective.radius) * 1.75f + 0.01f;
+	const bool wrap = admission.radial < admission.radius * 0.6f
+		&& admission.radius < tube * 0.3f;
+	const bool axis_overlap = _valid(admission.radial)
+		&& (admission.radial < body_radius || wrap);
+	const bool bounds_ok = svp_axial_bounds(visual->vis.box, world, origin, axis,
+		admission.axial_lo, admission.axial_hi);
+	const float plane_epsilon = 0.001f;
+	const bool contains_objective = bounds_ok
+		&& admission.axial_lo <= tube + plane_epsilon
+		&& admission.axial_hi >= tube - plane_epsilon;
+	const bool local = admission.axial > -0.6f * tube
+		&& admission.axial < 1.4f * tube;
+
+	admission.candidate = role_ok && size_ok && axis_overlap && bounds_ok;
+	admission.reject = admission.candidate && local && contains_objective;
+	admission.forward = admission.candidate
+		&& admission.axial_lo > tube + plane_epsilon;
+	if (admission.reject)
+		admission.reason = "objective-body";
+	else if (admission.forward)
+		admission.reason = "forward";
+	else if (!role_ok)
+		admission.reason = "role";
+	else if (!size_ok)
+		admission.reason = "size";
+	else if (!axis_overlap)
+		admission.reason = "axis";
+	else if (!bounds_ok)
+		admission.reason = "bounds";
+	else if (!local)
+		admission.reason = "range";
+	else
+		admission.reason = "plane-miss";
 }
 
 // pip drain only the weapon list into the scope image, the caller owns the view/projection
@@ -253,12 +358,7 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 		if (tube > EPS)
 			axis.div(tube);
 		const float rcyl = std::max(vp.eyepiece.radius, vp.objective.radius) * 1.75f + 0.01f;
-		extern int ps_r__svp_optic_body_suppress;
-		const bool objective_filter = !legacy_mode && ps_r__svp_optic_body_suppress
-			&& scope_svp_enabled >= 2 && Device.true_pip_on && vp.IsSVPActive()
-			&& vp.svp_camera_domain == CSecondVPParams::camera_objective
-			&& vp.SnapshotExact(vp.svp_camera_frame, vp.svp_camera_session, Device.dwFrame)
-			&& vp.objective.radius > EPS;
+		const bool objective_filter = !legacy_mode && svp_objective_hud_filter_ready();
 		const bool measure_ok = (legacy_mode || objective_filter)
 			&& len2 > EPS && vp.eyepiece.radius > EPS;
 		const bool skip_ok = legacy_mode ? (g_svp_hud_skip_scope && measure_ok) : objective_filter;
@@ -301,7 +401,24 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 			float t = 0.f, rad = -1.f;
 			float axial_lo = 0.f, axial_hi = 0.f;
 			LPCSTR admission = "outside";
-			if (measure_ok && item.pMatrix)
+			if (objective_filter)
+			{
+				SSvpHudAdmission objective_admission;
+				svp_classify_objective_hud(V, item.pMatrix, item.hud_role, objective_admission);
+				t = tube > EPS ? objective_admission.axial / tube : 0.f;
+				rad = objective_admission.radial;
+				axial_lo = objective_admission.axial_lo;
+				axial_hi = objective_admission.axial_hi;
+				drop = objective_admission.reject;
+				admission = objective_admission.reason;
+				if (objective_admission.candidate)
+					++admit_candidates;
+				if (objective_admission.reject)
+					++admit_suppressed;
+				if (objective_admission.forward)
+					++admit_clipon_unresolved;
+			}
+			else if (measure_ok && item.pMatrix)
 			{
 				// skinned parts (addon scopes) sit at their bone, the rest-pose sphere lies elsewhere
 				Fmatrix W = *svp_pose_of(item.pMatrix);
@@ -323,73 +440,34 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 				// barrel sphere from impersonating a clamp
 				const float R = V->vis.sphere.R;
 				const bool wrap = (rad < R * 0.6f) && (R < tube * 0.3f);
-				if (objective_filter)
-				{
-					const bool role_ok = item.hud_role == IDSGraphManager::hud_primary_item
-						|| item.hud_role == IDSGraphManager::hud_optic;
-					const bool size_ok = _valid(R) && R > EPS && R < tube * 1.75f;
-					const bool coaxial = rad < rcyl || wrap;
-					const bool local = t > -0.6f && t < 1.4f;
-					const bool bounds_ok = svp_axial_bounds(V->vis.box, W, A, axis, axial_lo, axial_hi);
-					const bool contains_objective = bounds_ok
-						&& axial_lo <= tube + 0.001f && axial_hi >= tube - 0.001f;
-					const bool candidate = role_ok && size_ok && coaxial;
-					if (candidate)
-						++admit_candidates;
-					drop = candidate && local && contains_objective;
-					if (drop)
-					{
-						++admit_suppressed;
-						admission = "objective-body";
-					}
-					else if (candidate && !contains_objective
-						&& t >= 1.4f && t < clip_hi && rad < rcyl * 0.8f)
-					{
-						++admit_clipon_unresolved;
-						admission = "clipon-retained";
-					}
-					else if (candidate && !contains_objective)
-						admission = "plane-miss";
-					else if (candidate)
-						admission = "range-miss";
-					else if (!role_ok)
-						admission = "role";
-					else if (!size_ok)
-						admission = "size";
-					else
-						admission = "axis";
-				}
-				else
-				{
-					// clip-on optics sit coaxial PAST the objective, the tight radial keeps the
-					// under-slung barrel out of this branch
-					const bool clipon = (t >= 1.4f && t < clip_hi) && (rad < rcyl * 0.8f);
-					const bool explicit_optic = item.hud_role == IDSGraphManager::hud_optic;
-					drop = explicit_optic || ((R < tube * 1.75f)
-						&& (clipon || ((t > -0.6f && t < 1.4f) && (rad < rcyl || wrap))));
-					// only coaxial optic bodies define the front plane, a wrap mount's sphere is
-					// length-dominated and says nothing about the front lens
-					if (drop && (rad < rcyl || clipon))
-						front = _max(front, t * tube + R);
-					// a real clip-on front is a flat round disc, its mesh box has two long axes and a thin
-					// one, a front-sight post is a spike and must not push the plane past the objective
-					Fvector bs; V->vis.box.getsize(bs);
-					const float bmax = std::max(bs.x, std::max(bs.y, bs.z));
-					const float bmin = std::min(bs.x, std::min(bs.y, bs.z));
-					const float bmid = bs.x + bs.y + bs.z - bmax - bmin;
-					const bool disc_like = (bmax > EPS) && (bmid > 0.5f * bmax) && (bmin < 0.5f * bmax);
-					if (clipon && disc_like)
-						clipon_front = _max(clipon_front, t * tube + R);
-					// mode 2 drops pieces wholly behind the front plane, spanning pieces render whole
-					const float plane = (g_svp_legacy_front_m > EPS) ? g_svp_legacy_front_m : tube;
-					if (!drop && g_svp_hud_skip_scope >= 2 && (t * tube + R) < plane)
-						drop = true;
-					extern int ps_r__svp_drain_clip;
-					if (legacy_mode && ps_r__svp_drain_clip
-						&& vp.svp_opt_offset.z > EPS && vp.eyepiece.radius > EPS
-						&& (t * tube + R) < vp.svp_opt_offset.z * vp.eyepiece.radius)
-						clip_obj = true;
-				}
+				// clip-on optics sit coaxial PAST the objective, the tight radial keeps the
+				// under-slung barrel out of this branch
+				const bool clipon = (t >= 1.4f && t < clip_hi) && (rad < rcyl * 0.8f);
+				const bool explicit_optic = item.hud_role == IDSGraphManager::hud_optic;
+				drop = explicit_optic || ((R < tube * 1.75f)
+					&& (clipon || ((t > -0.6f && t < 1.4f) && (rad < rcyl || wrap))));
+				// only coaxial optic bodies define the front plane, a wrap mount's sphere is
+				// length-dominated and says nothing about the front lens
+				if (drop && (rad < rcyl || clipon))
+					front = _max(front, t * tube + R);
+				// a real clip-on front is a flat round disc, its mesh box has two long axes and a thin
+				// one, a front-sight post is a spike and must not push the plane past the objective
+				Fvector bs; V->vis.box.getsize(bs);
+				const float bmax = std::max(bs.x, std::max(bs.y, bs.z));
+				const float bmin = std::min(bs.x, std::min(bs.y, bs.z));
+				const float bmid = bs.x + bs.y + bs.z - bmax - bmin;
+				const bool disc_like = (bmax > EPS) && (bmid > 0.5f * bmax) && (bmin < 0.5f * bmax);
+				if (clipon && disc_like)
+					clipon_front = _max(clipon_front, t * tube + R);
+				// mode 2 drops pieces wholly behind the front plane, spanning pieces render whole
+				const float plane = (g_svp_legacy_front_m > EPS) ? g_svp_legacy_front_m : tube;
+				if (!drop && g_svp_hud_skip_scope >= 2 && (t * tube + R) < plane)
+					drop = true;
+				extern int ps_r__svp_drain_clip;
+				if (legacy_mode && ps_r__svp_drain_clip
+					&& vp.svp_opt_offset.z > EPS && vp.eyepiece.radius > EPS
+					&& (t * tube + R) < vp.svp_opt_offset.z * vp.eyepiece.radius)
+					clip_obj = true;
 			}
 			if (diag)
 			{
@@ -404,6 +482,69 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 						t, rad * 100.f, V->vis.sphere.R * 100.f, tx ? tx->cName.c_str() : "?");
 			}
 			if ((drop && skip_ok) || clip_obj) continue;
+			if (ps_r__svp_cop_diag >= 2 && item.hud_role == hud_primary_item && item.pMatrix)
+			{
+				static dxRender_Visual* s_visual = nullptr;
+				static u32 s_session = 0;
+				static u32 s_epoch = 0;
+				static u32 s_frame = u32(-1);
+				static u32 s_log_ms = 0;
+				static Fvector2 s_outer = {};
+				static Fvector2 s_inner = {};
+				static bool s_valid = false;
+				if (s_frame != Device.dwFrame)
+				{
+					Fvector inner_center;
+					svp_pose_of(item.pMatrix)->transform_tiny(inner_center, V->vis.sphere.P);
+					Fvector2 outer;
+					Fvector2 inner;
+					const bool projected = svp_project_ndc(Device.matrices[0].mView,
+						Device.matrices[0].mProjectHud, vp.eyepiece.m_W.c, outer)
+						&& svp_project_ndc(Device.matrices[1].mView,
+							Device.matrices[1].mProject, inner_center, inner);
+					const bool same = s_valid && projected && s_visual == V
+						&& s_session == vp.GetSVPSession()
+						&& s_epoch == vp.svp_camera_epoch
+						&& s_frame + 1 == Device.dwFrame;
+					if (projected && same)
+					{
+						Fvector2 outer_delta;
+						outer_delta.sub(outer, s_outer);
+						Fvector2 inner_delta;
+						inner_delta.sub(inner, s_inner);
+						const float outer_mag = outer_delta.magnitude();
+						const float inner_mag = inner_delta.magnitude();
+						if (outer_mag > 0.0002f
+							&& (inner_mag > 0.0002f || Device.dwTimeGlobal - s_log_ms > 500))
+						{
+							s_log_ms = Device.dwTimeGlobal;
+							const float cosine = inner_mag > EPS
+								? outer_delta.dotproduct(inner_delta) / (outer_mag * inner_mag) : 0.f;
+							CSkeletonX* skeleton = fast_dynamic_cast<CSkeletonX*>(V);
+							auto texture = V->GetTexture();
+							PipMsg("[SVP-SWAY] probe=root-center role=%s texture=%s skinned=%d snapshot=%d outer=(%.5f,%.5f) inner=(%.5f,%.5f) dOuter=(%.5f,%.5f) dInner=(%.5f,%.5f) xprod=%.7f cosine=%.4f visual=%p session=%u epoch=%u",
+								svp_hud_role_name(item.hud_role),
+								texture ? texture->cName.c_str() : "?",
+								skeleton ? 1 : 0,
+								skeleton && skeleton->SVP_BoneSnapshotReady() ? 1 : 0,
+								outer.x, outer.y, inner.x, inner.y,
+								outer_delta.x, outer_delta.y, inner_delta.x, inner_delta.y,
+								outer_delta.x * inner_delta.x, cosine, (void*)V,
+								vp.GetSVPSession(), vp.svp_camera_epoch);
+						}
+					}
+					if (projected)
+					{
+						s_visual = V;
+						s_session = vp.GetSVPSession();
+						s_epoch = vp.svp_camera_epoch;
+						s_frame = Device.dwFrame;
+						s_outer = outer;
+						s_inner = inner;
+						s_valid = true;
+					}
+				}
+			}
 			RCache.set_Element(item.pSE);
 			RCache.set_xform_world(*svp_pose_of(item.pMatrix));
 			RImplementation.apply_object(item.pObject);

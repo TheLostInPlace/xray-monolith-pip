@@ -38,7 +38,8 @@ local advanced_groups = {
         name = "Rendering",
         settings = {
             { "r__svpscope", "PiP Mode" },
-            { "r__svp_ray_transfer", "Pupil Ray Transfer" },
+            { "g_svp_optic_api", "Typed Optic Configuration" },
+            { "r__svp_ray_transfer", "Objective Camera Mode" },
             { "r__svp_optic_body_suppress", "Objective Housing Suppression" },
             { "r__svp_render_scale", "Render Scale" },
             { "r__svp_supersample", "Supersampling" },
@@ -114,7 +115,8 @@ local advanced_groups = {
 local descriptions = {
     r__svp_aperture = "Master switch for local physical optics effects.",
     r__svpscope = "PiP renderer mode. Zero disables PiP.",
-    r__svp_ray_transfer = "Map both pupil position and ray angle from the eyepiece to the objective.",
+    g_svp_optic_api = "Use the atomic typed optic profile. Zero or an older executable uses the legacy console bridge.",
+    r__svp_ray_transfer = "Objective camera mode. Zero translates across the pupil, one stays fixed to the objective, and two transfers the full pupil ray.",
     r__svp_optic_body_suppress = "Exclude only compact optic geometry that crosses the objective plane.",
     g_zoom_smooth = "Magnification transition speed. Zero changes zoom immediately.",
     g_zoom_analog = "Analog zoom granularity. Zero keeps authored zoom steps.",
@@ -173,8 +175,8 @@ local descriptions = {
 }
 local bool_commands = {
     r__svp_aperture = true,
+    g_svp_optic_api = true,
     r__svp_dlss = true,
-    r__svp_ray_transfer = true,
     r__svp_optic_body_suppress = true,
     r__svp_local_exposure = true,
     r__svp_photo_model = true,
@@ -186,6 +188,7 @@ local bool_commands = {
 
 local integer_commands = {
     r__svpscope = true,
+    r__svp_ray_transfer = true,
     r__scope_debug = true,
     r__svp_diag = true,
     r__svp_aperture_debug = true,

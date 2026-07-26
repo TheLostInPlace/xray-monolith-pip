@@ -7,6 +7,7 @@ bool CRenderTarget::svp_nvg_objective_pass()
 {
 	extern Fvector4 ps_dev_param_8;
 	auto& vp = Device.m_SecondViewport;
+	const u32 session = vp.GetSVPSession();
 	const bool objective = ps_r__svp_nvg_objective && ps_dev_param_8.x >= 1.f
 		&& Device.true_pip_on && vp.IsSVPActive()
 		&& vp.m_render_pass_is_svp && this == RImplementation.TargetSVP;
@@ -28,7 +29,11 @@ bool CRenderTarget::svp_nvg_objective_pass()
 	vp.svp_nvg_objective_region = true;
 	phase_nightvision();
 	vp.svp_nvg_objective_region = false;
-	vp.svp_nvg_sensor_frame = Device.dwFrame;
+	if (vp.IsSVPActive() && vp.GetSVPSession() == session)
+	{
+		vp.svp_nvg_sensor_frame = Device.dwFrame;
+		vp.svp_nvg_sensor_session = session;
+	}
 	return true;
 }
 
@@ -98,8 +103,9 @@ bool CRenderTarget::svp_nvg_pass()
 	});
 	RCache.set_ColorWriteEnable();
 
-	const bool objective_ready =
-		Device.m_SecondViewport.svp_nvg_sensor_frame == Device.dwFrame;
+	auto& viewport = Device.m_SecondViewport;
+	const bool objective_ready = viewport.svp_nvg_sensor_frame == Device.dwFrame
+		&& viewport.svp_nvg_sensor_session == viewport.GetSVPSession();
 	Device.m_SecondViewport.svp_nvg_objective_region = !objective_ready;
 	RCache.set_Element(s_nightvision->E[objective_ready ? 0 : ps_r2_nightvision]);
 	if (!objective_ready)

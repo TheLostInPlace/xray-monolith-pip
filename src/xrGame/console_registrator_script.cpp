@@ -7,6 +7,7 @@
 #include "script_engine.h"
 #include "../xrSound/Sound.h"
 #include "player_hud.h"
+#include "svp_optic_config_script.h"
 
 using namespace luabind;
 
@@ -138,6 +139,12 @@ void console_registrator::script_register(lua_State* L)
 		def("is_svp_active", &is_svp_active),
 		def("svp_detected_offset", &svp_detected_offset),
 		def("svp_detected_obj_mm", &svp_detected_obj_mm),
+		def("svp_optic_api_version", &svp_optic_api_version),
+		def("svp_optic_api_connect", &svp_optic_api_connect),
+		def("svp_optic_route_epoch", &svp_optic_route_epoch),
+		def("svp_begin_optic_context", &svp_begin_optic_context),
+		def("svp_apply_optic_profile", &svp_apply_optic_profile),
+		def("svp_clear_optic_profile", &svp_clear_optic_profile),
 
 		class_<CConsole>("CConsole")
 		.def("execute", &CConsole::Execute)

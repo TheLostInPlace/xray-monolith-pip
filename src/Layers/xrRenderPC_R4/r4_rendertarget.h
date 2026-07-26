@@ -253,7 +253,7 @@ public:
 	ref_shader s_scope_lensfx; // pip r__svp_lensfx additive lens FX (CA, distortion, exit-pupil dimming)
 	ref_shader s_svp_nearblur; // pip near-field defocus on the scope image (svpscope 2)
 	ref_shader s_svp_distort_stamp; // pip neutral distort-mask stamp over the composited lens
-	ref_shader s_svp_taa_stamp; // pip taa alpha stamp over the composited lens so the main resolve skips it
+	ref_shader s_svp_taa_stamp; // pip raw taa skip mask over the composited lens
 	bool m_scope_shaders_ready = false;
 	// taa history seeds from the current frame on the next resolve, true at creation and on scope edges
 	bool m_taa_seed_history = true;

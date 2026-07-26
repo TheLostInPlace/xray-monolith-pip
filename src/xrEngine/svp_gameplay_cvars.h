@@ -9,6 +9,7 @@ extern float g_zoom_analog;
 extern int g_zoom_clicks;
 extern int g_svp_zoom_base;
 extern int g_svp_authored_mags;
+extern int g_svp_optic_api;
 extern float g_svp_zero;
 extern int g_svp_unify_cam_fx;
 extern int g_svp_world_cam_fx;
@@ -17,6 +18,7 @@ extern int g_svp_zoom_sync;
 extern int g_svp_crescent;
 extern float g_svp_sens;
 extern float g_svp_sens_curve;
+extern bool svp_optic_api_active();
 
 // authored zoom factor convention base, a factor f renders mag (SVP_ZOOM_BASE_FOV / 0.75) / f
 constexpr float SVP_ZOOM_BASE_FOV = 75.f;

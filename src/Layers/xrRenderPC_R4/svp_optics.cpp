@@ -3,6 +3,7 @@
 #include "../xrRender/SkeletonX.h" // pip lens bone latch compensation for the skinned lens draws
 #include "../../xrEngine/igame_persistent.h" // pip env-driven eye pupil for the exit-pupil twilight dimming
 #include "../../xrEngine/environment.h"
+#include "../../xrEngine/svp_gameplay_cvars.h"
 #if defined(USE_DX11)
 #include "../../../gamedata/shaders/r3/scope_defines.h" // SCOPE_PHASE_* (kept in sync with the shader)
 #include "svp_physical_optics.h" // pip physical aperture math (exit pupil, virtual eye follower)
@@ -28,7 +29,8 @@ static bool svp_objective_hud_role(u8 role)
 {
 	return role == IDSGraphManager::hud_hands
 		|| role == IDSGraphManager::hud_primary_item
-		|| role == IDSGraphManager::hud_offhand_item;
+		|| role == IDSGraphManager::hud_offhand_item
+		|| role == IDSGraphManager::hud_optic;
 }
 
 bool svp_objective_hud_current()
@@ -86,7 +88,6 @@ extern int ps_r__svp_authored_optics;
 extern int ps_r__svp_diag;
 extern float ps_r__svp_eyebox;
 extern float ps_r__svp_twilight;
-extern float ps_s3ds_objective_mm;
 extern float ps_s3ds_transmission;
 extern float ps_s3ds_twilight_strength;
 extern float ps_s3ds_eye_relief_low_mm, ps_s3ds_eye_relief_high_mm;
@@ -125,12 +126,18 @@ static float svp_interp_profile(float low, float high)
 
 static float svp_eye_relief_mm()
 {
-	return svp_interp_profile(ps_s3ds_eye_relief_low_mm, ps_s3ds_eye_relief_high_mm);
+	const auto& config = Device.m_SecondViewport.RenderOpticConfig();
+	const float low = config.typed_route ? config.eye_relief_low_mm : ps_s3ds_eye_relief_low_mm;
+	const float high = config.typed_route ? config.eye_relief_high_mm : ps_s3ds_eye_relief_high_mm;
+	return svp_interp_profile(low, high);
 }
 
 static float svp_pupil_field_scale()
 {
-	return svp_interp_profile(ps_s3ds_pupil_field_low, ps_s3ds_pupil_field_high);
+	const auto& config = Device.m_SecondViewport.RenderOpticConfig();
+	const float low = config.typed_route ? config.pupil_field_low : ps_s3ds_pupil_field_low;
+	const float high = config.typed_route ? config.pupil_field_high : ps_s3ds_pupil_field_high;
+	return svp_interp_profile(low, high);
 }
 
 // exit pupil mm, authored low/high reciprocal-mag interp then objective/mag then the ocular-ratio proxy
@@ -139,8 +146,9 @@ static float svp_calc_exit_pupil_mm(float objective_mm)
 	if (g_pip_scope_magnification <= 0.01f)
 		return 0.f;
 
-	float low = ps_s3ds_exit_pupil_low_mm;
-	float high = ps_s3ds_exit_pupil_high_mm;
+	const auto& config = Device.m_SecondViewport.RenderOpticConfig();
+	float low = config.typed_route ? config.exit_pupil_low_mm : ps_s3ds_exit_pupil_low_mm;
+	float high = config.typed_route ? config.exit_pupil_high_mm : ps_s3ds_exit_pupil_high_mm;
 	if (objective_mm > 0.01f)
 	{
 		if (low <= 0.01f && g_pip_scope_min_mag > 0.01f)
@@ -170,8 +178,13 @@ static float svp_calc_twilight_dim(float pupil_mm, float environment_brightness)
 	const float exit_pupil_mm = svp_calc_exit_pupil_mm(svp_objective_mm());
 	const float pupil_ratio = _min(exit_pupil_mm / pupil_mm, 1.f);
 	const float relative_brightness = ps_r__svp_photo_model ? pupil_ratio * pupil_ratio : pupil_ratio;
-	const float twilight_strength = _min(ps_r__svp_twilight, 1.f) * clampr(ps_s3ds_twilight_strength, 0.f, 1.f);
-	float dimming = clampr(ps_s3ds_transmission, 0.f, 1.f) *
+	const auto& config = Device.m_SecondViewport.RenderOpticConfig();
+	const float authored_twilight = config.typed_route
+		? config.twilight_strength : ps_s3ds_twilight_strength;
+	const float authored_transmission = config.typed_route
+		? config.transmission : ps_s3ds_transmission;
+	const float twilight_strength = _min(ps_r__svp_twilight, 1.f) * clampr(authored_twilight, 0.f, 1.f);
+	float dimming = clampr(authored_transmission, 0.f, 1.f) *
 		(1.f + (_max(relative_brightness, 0.6f) - 1.f) * twilight_strength);
 	const float response = SvpPhysicalOptics::ApplyMagnificationResponse(
 		svp_make_response(ps_svp_dim_curve_low, ps_svp_dim_curve_high), g_pip_scope_magnification,
@@ -213,7 +226,8 @@ static void svp_update_eyebox_limit(float pupil_mm)
 		{
 			s_ebg_ms = Device.dwTimeGlobal;
 			PipMsg("[SVP-EYEBOX] gated off, authored %d obj_w %.3f obj_mm %.1f mag %.2f pupil %.1f",
-				ps_r__svp_authored_optics, scope_objective_lens_offset.w, ps_s3ds_objective_mm,
+				ps_r__svp_authored_optics, Device.m_SecondViewport.svp_opt_offset.w,
+				Device.m_SecondViewport.svp_opt_obj_mm,
 				g_pip_scope_magnification, pupil_mm);
 		}
 	}
@@ -280,12 +294,19 @@ SSvpEyeSample svp_update_eye_sample(const Fmatrix& eye_view)
 		-eye_ray.dotproduct(lens_up_view) * inverse_forward * eye_relief_mm);
 	sample.eye_relief_mm = eye_relief_mm;
 	const SvpPhysicalOptics::Vec2 raw = { sample.raw_mm.x, sample.raw_mm.y };
+	const auto& config = viewport.RenderOpticConfig();
+	const float tracking_limit = config.typed_route
+		? config.tracking_limit_mm : ps_s3ds_eye_tracking_limit_mm;
+	const float tracking_speed = config.typed_route
+		? config.tracking_speed : ps_s3ds_eye_tracking_speed;
+	const float tracking_accel = config.typed_route
+		? config.tracking_accel_mm_s2 : ps_s3ds_eye_tracking_accel_mm_s2;
 	const SvpPhysicalOptics::Vec2 target =
-		SvpPhysicalOptics::LimitEyeOffset(raw, ps_s3ds_eye_tracking_limit_mm);
+		SvpPhysicalOptics::LimitEyeOffset(raw, tracking_limit);
 	SvpPhysicalOptics::UpdateEyeTracking(tracking, target,
 		viewport.svp_eye_tracking_suspended.load(std::memory_order_acquire),
-		viewport.svp_optic_epoch, Device.dwFrame, Device.fTimeDelta,
-		ps_s3ds_eye_tracking_speed, ps_s3ds_eye_tracking_accel_mm_s2);
+		viewport.svp_camera_epoch, Device.dwFrame, Device.fTimeDelta,
+		tracking_speed, tracking_accel);
 	sample.residual_mm.set(sample.raw_mm.x - tracking.offset.x, sample.raw_mm.y - tracking.offset.y);
 
 	const float objective_mm = svp_objective_mm();
@@ -335,8 +356,14 @@ static void svp_bind_aperture(float pupil_mm)
 	const float tunnel_response = SvpPhysicalOptics::ApplyMagnificationResponse(
 		svp_make_response(ps_svp_tunnel_curve_low, ps_svp_tunnel_curve_high), g_pip_scope_magnification,
 		ps_svp_tunnel_scale, 0.f);
-	RCache.set_c("svp_optic_profile", ps_s3ds_tunneling_parallax, ps_s3ds_tunneling_min,
-		ps_s3ds_tunneling_max, tunnel_response);
+	const auto& config = viewport.RenderOpticConfig();
+	const float tunnel_parallax = config.typed_route
+		? config.tunneling_parallax : ps_s3ds_tunneling_parallax;
+	const float tunnel_min = config.typed_route
+		? config.tunneling_min : ps_s3ds_tunneling_min;
+	const float tunnel_max = config.typed_route
+		? config.tunneling_max : ps_s3ds_tunneling_max;
+	RCache.set_c("svp_optic_profile", tunnel_parallax, tunnel_min, tunnel_max, tunnel_response);
 	RCache.set_c("svp_pupil_model", svp_pupil_field_scale(), exit_response, ps_svp_tunnel_offset, 0.f);
 	RCache.set_c("svp_lens_center", eyepiece.m_W.c.x, eyepiece.m_W.c.y, eyepiece.m_W.c.z, inverse_lens_diameter);
 	RCache.set_c("svp_lens_right", lens_right.x, lens_right.y, lens_right.z, 0.f);
@@ -567,31 +594,41 @@ void CRenderTarget::svp_objective_hud_prepare(bool svp_follows)
 		return;
 	}
 
-	auto& graph = RImplementation.GMBase.RGraph.mapHUD;
-	if (graph.empty())
+	u32 queued = 0;
+	auto inspect = [&](auto& graph)
+	{
+		queued += (u32)graph.size();
+		for (auto& item : graph)
+		{
+			if (!svp_objective_hud_role(item.hud_role))
+				continue;
+			if (!item.pVisual || !item.pMatrix || !item.pSE)
+			{
+				++s_svp_objective_hud.roots_missing;
+				continue;
+			}
+			if (RImplementation.GMBase.svp_pose_of(item.pMatrix) == item.pMatrix)
+				++s_svp_objective_hud.roots_missing;
+			++s_svp_objective_hud.items;
+			CSkeletonX* skeleton = fast_dynamic_cast<CSkeletonX*>(item.pVisual);
+			if (skeleton)
+			{
+				++s_svp_objective_hud.skinned;
+				if (!skeleton->SVP_BoneSnapshotReady())
+					++s_svp_objective_hud.bones_missing;
+			}
+		}
+	};
+	auto& graph = RImplementation.GMBase.RGraph;
+	inspect(graph.mapHUD);
+	inspect(graph.mapHUDSorted.Sorted);
+	inspect(graph.mapHUDSorted.Wmark);
+	inspect(graph.mapHUDSorted.Emissive);
+	inspect(graph.mapHUDSorted.Distort);
+	if (!queued)
 	{
 		svp_objective_hud_bypass("hud-empty");
 		return;
-	}
-	for (auto& item : graph)
-	{
-		if (!svp_objective_hud_role(item.hud_role))
-			continue;
-		if (!item.pVisual || !item.pMatrix || !item.pSE)
-		{
-			++s_svp_objective_hud.roots_missing;
-			continue;
-		}
-		if (RImplementation.GMBase.svp_pose_of(item.pMatrix) == item.pMatrix)
-			++s_svp_objective_hud.roots_missing;
-		++s_svp_objective_hud.items;
-		CSkeletonX* skeleton = fast_dynamic_cast<CSkeletonX*>(item.pVisual);
-		if (skeleton)
-		{
-			++s_svp_objective_hud.skinned;
-			if (!skeleton->SVP_BoneSnapshotReady())
-				++s_svp_objective_hud.bones_missing;
-		}
 	}
 	if (!s_svp_objective_hud.items)
 	{
@@ -829,7 +866,8 @@ void CRenderTarget::draw_scope(ref_shader se, std::function<void()> bind)
 						{
 							s_ebg_ms = Device.dwTimeGlobal;
 							PipMsg("[SVP-EYEBOX] gated off, authored %d obj_w %.3f obj_mm %.1f mag %.2f pupil %.1f",
-								ps_r__svp_authored_optics, scope_objective_lens_offset.w, ps_s3ds_objective_mm,
+								ps_r__svp_authored_optics, Device.m_SecondViewport.svp_opt_offset.w,
+								Device.m_SecondViewport.svp_opt_obj_mm,
 								g_pip_scope_magnification, pupil_mm);
 						}
 					}

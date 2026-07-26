@@ -96,7 +96,8 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 		if (!drop)
 		{
 			if (i_mask[CDSGraphManager::fl_hud])
-				RGraph.mapHUDSorted.Distort.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh_d, i_mask[CDSGraphManager::fl_hud]);
+				RGraph.mapHUDSorted.Distort.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh_d,
+					i_mask[CDSGraphManager::fl_hud], val_hud_role);
 			else
 				RGraph.mapDynamicSorted.Distort.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh_d, i_mask[CDSGraphManager::fl_hud]);
 		}
@@ -135,23 +136,87 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 				world.transform_tiny(center, visual->getVisData().sphere.P);
 				return true;
 			};
-			// a scope can flag several lens surfaces (objective + ocular), keep the one in front of the eye
-			// and nearest it (the ocular the player looks through) for the SVP composite, and separately
-			// keep the FARTHEST in-front surface (the objective) as real geometry for the svpscope-2 camera
-			Fvector lp, to;
+			extern int scope_svp_enabled;
+			if (scope_svp_enabled < 2)
+			{
+				Fvector lp, to;
+				if (!lens_center(pVisual, xform, lp))
+					return;
+				to.sub(lp, Device.vCameraPosition);
+				const bool ahead = to.dotproduct(Device.vCameraDirection) > 0.f;
+				const float score = ahead
+					? to.square_magnitude() : (to.square_magnitude() + 1.0e6f);
+
+				auto& M = RGraph.mapScopeHUDSorted;
+				bool keep_oc = M.empty();
+				if (!keep_oc)
+				{
+					auto& f = M.front();
+					Fvector ep, te;
+					if (!lens_center(f.pVisual, f.pMatrix, ep))
+					{
+						M.clear();
+						keep_oc = true;
+					}
+					else
+					{
+						te.sub(ep, Device.vCameraPosition);
+						const float previous = te.dotproduct(Device.vCameraDirection) > 0.f
+							? te.square_magnitude() : (te.square_magnitude() + 1.0e6f);
+						keep_oc = score < previous;
+					}
+				}
+				if (keep_oc)
+				{
+					M.clear();
+					M.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh,
+						i_mask[CDSGraphManager::fl_hud], val_hud_role);
+				}
+
+				if (ahead)
+				{
+					auto& O = RGraph.mapScopeHUDObjective;
+					bool keep_obj = O.empty();
+					if (!keep_obj)
+					{
+						auto& f = O.front();
+						Fvector op, te;
+						if (!lens_center(f.pVisual, f.pMatrix, op))
+						{
+							O.clear();
+							keep_obj = true;
+						}
+						else
+						{
+							te.sub(op, Device.vCameraPosition);
+							keep_obj = te.dotproduct(Device.vCameraDirection) > 0.f
+								&& score > te.square_magnitude();
+						}
+					}
+					if (keep_obj)
+					{
+						O.clear();
+						O.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh,
+							i_mask[CDSGraphManager::fl_hud], val_hud_role);
+					}
+				}
+				return;
+			}
+			// HUD lens animation may cross the eye plane
+			Fvector lp;
 			if (!lens_center(pVisual, xform, lp))
 				return;
-			to.sub(lp, Device.vCameraPosition);
-			const bool ahead = to.dotproduct(Device.vCameraDirection) > 0.f;
-			const float score = ahead ? to.square_magnitude() : (to.square_magnitude() + 1.0e6f);
+			const float lens_distance = lp.distance_to_sqr(Device.vCameraPosition);
+			if (!_valid(lens_distance))
+				return;
 
-			// ocular = nearest in-front lens (the SVP composite surface, also the drawn lens)
+			// The ocular is the nearest visible lens
 			auto& M = RGraph.mapScopeHUDSorted;
 			bool keep_oc = M.empty();
 			if (!keep_oc)
 			{
 				auto& f = M.front();
-				Fvector ep, te;
+				Fvector ep;
 				if (!lens_center(f.pVisual, f.pMatrix, ep))
 				{
 					M.clear();
@@ -159,42 +224,40 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 				}
 				else
 				{
-					te.sub(ep, Device.vCameraPosition);
-					const float fscore = (te.dotproduct(Device.vCameraDirection) > 0.f) ? te.square_magnitude() : (te.square_magnitude() + 1.0e6f);
-					keep_oc = score < fscore;
+					const float previous_distance = ep.distance_to_sqr(Device.vCameraPosition);
+					keep_oc = !_valid(previous_distance) || lens_distance < previous_distance;
 				}
 			}
 			if (keep_oc)
 			{
 				M.clear();
-				M.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh, i_mask[CDSGraphManager::fl_hud]);
+				M.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh,
+					i_mask[CDSGraphManager::fl_hud], val_hud_role);
 			}
 
-			// objective = farthest in-front lens (front of the scope), geometry only for the camera, never drawn
-			if (ahead)
+			// The objective is the farthest visible lens
+			auto& O = RGraph.mapScopeHUDObjective;
+			bool keep_obj = O.empty();
+			if (!keep_obj)
 			{
-				auto& O = RGraph.mapScopeHUDObjective;
-				bool keep_obj = O.empty();
-				if (!keep_obj)
-				{
-					auto& f = O.front();
-					Fvector op, te;
-					if (!lens_center(f.pVisual, f.pMatrix, op))
-					{
-						O.clear();
-						keep_obj = true;
-					}
-					else
-					{
-						te.sub(op, Device.vCameraPosition);
-						keep_obj = (te.dotproduct(Device.vCameraDirection) > 0.f) && (score > te.square_magnitude());
-					}
-				}
-				if (keep_obj)
+				auto& f = O.front();
+				Fvector op;
+				if (!lens_center(f.pVisual, f.pMatrix, op))
 				{
 					O.clear();
-					O.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh, i_mask[CDSGraphManager::fl_hud]);
+					keep_obj = true;
 				}
+				else
+				{
+					const float previous_distance = op.distance_to_sqr(Device.vCameraPosition);
+					keep_obj = !_valid(previous_distance) || lens_distance > previous_distance;
+				}
+			}
+			if (keep_obj)
+			{
+				O.clear();
+				O.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh,
+					i_mask[CDSGraphManager::fl_hud], val_hud_role);
 			}
 			return;
 		}
@@ -205,7 +268,8 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 			for (const auto& n : RGraph.mapReflexHUDSorted)
 				if (n.pVisual == pVisual)
 					return;
-			RGraph.mapReflexHUDSorted.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh, i_mask[CDSGraphManager::fl_hud]);
+			RGraph.mapReflexHUDSorted.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh,
+				i_mask[CDSGraphManager::fl_hud], val_hud_role);
 			return;
 		}
 		if (Device.m_SecondViewport.IsSVPActive())
@@ -234,12 +298,14 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 		}
 
 		case 2: {
-			RGraph.mapScopeHUD.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh, i_mask[CDSGraphManager::fl_hud]);
+			RGraph.mapScopeHUD.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh,
+				i_mask[CDSGraphManager::fl_hud], val_hud_role);
 			return;
 		}
 
 		case 3: {
-			RGraph.mapScopeHUDSorted.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh, i_mask[CDSGraphManager::fl_hud]);
+			RGraph.mapScopeHUDSorted.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh,
+				i_mask[CDSGraphManager::fl_hud], val_hud_role);
 			return;
 		}
 	}
@@ -255,13 +321,15 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 				if (i_mask[CDSGraphManager::fl_cam])
 					RGraph.mapCamAttachedSorted.Emissive.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh_d, i_mask[CDSGraphManager::fl_cam]);
 				else
-					RGraph.mapHUDSorted.Emissive.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh_d, i_mask[CDSGraphManager::fl_hud]);
+					RGraph.mapHUDSorted.Emissive.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh_d,
+						i_mask[CDSGraphManager::fl_hud], val_hud_role);
 			}
 #endif // RENDER!=R_R1
 			if (i_mask[CDSGraphManager::fl_cam])
 				RGraph.mapCamAttachedSorted.Sorted.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh, i_mask[CDSGraphManager::fl_cam]);
 			else
-				RGraph.mapHUDSorted.Sorted.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh, i_mask[CDSGraphManager::fl_hud]);
+				RGraph.mapHUDSorted.Sorted.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh,
+					i_mask[CDSGraphManager::fl_hud], val_hud_role);
 			return;
 		}
 		else
@@ -291,7 +359,8 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 				if (i_mask[CDSGraphManager::fl_cam])
 					RGraph.mapCamAttachedSorted.Emissive.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh_d, i_mask[CDSGraphManager::fl_cam]);
 				else
-					RGraph.mapHUDSorted.Emissive.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh_d, i_mask[CDSGraphManager::fl_hud]);
+					RGraph.mapHUDSorted.Emissive.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh_d,
+						i_mask[CDSGraphManager::fl_hud], val_hud_role);
 			}
 				
 #endif	//	RENDER!=R_R1
@@ -328,7 +397,8 @@ void CDSGraphManager::r_dsgraph_insert_dynamic(dxRender_Visual *pVisual, Fmatrix
 	if (sh->flags.bWmark && i_mask[CDSGraphManager::fl_wmarks])
 	{
 		if (i_mask[CDSGraphManager::fl_hud])
-			RGraph.mapHUDSorted.Wmark.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh, i_mask[CDSGraphManager::fl_hud]);
+			RGraph.mapHUDSorted.Wmark.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh,
+				i_mask[CDSGraphManager::fl_hud], val_hud_role);
 		else
 			RGraph.mapDynamicSorted.Wmark.emplace_back(distSQ, SSA, val_pObject, pVisual, xform, sh, i_mask[CDSGraphManager::fl_hud]);
 		return;

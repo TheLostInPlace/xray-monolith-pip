@@ -147,6 +147,9 @@ CWeapon::CWeapon()
 	m_ef_main_weapon_type = u32(-1);
 	m_ef_weapon_type = u32(-1);
 	m_UIScope = NULL;
+	firstZoomDone = false;
+	m_svpZoomSeedValid = false;
+	m_svpZoomSeedMode = scope_svp_enabled;
 	m_set_next_ammoType_on_reload = undefined_ammo_type;
 	m_crosshair_inertion = 0.f;
 	m_activation_speed_is_overriden = false;
@@ -299,6 +302,66 @@ void updateCurrentScope() {
 	}
 }
 
+bool CWeapon::SetCurrentScopeIndex(u8 index, LPCSTR source)
+{
+	if (index >= m_scopes.size())
+	{
+		Msg("![MAS-SCOPE] section=%s source=%s index=%u count=%u action=rejected",
+			cNameSect_str(), source ? source : "unknown", u32(index), u32(m_scopes.size()));
+		return false;
+	}
+	if (m_cur_scope != index)
+	{
+		m_cur_scope = index;
+		InvalidateSvpZoomSeed();
+	}
+	return true;
+}
+
+bool CWeapon::ValidateModularScopeState(LPCSTR source, bool rebuild_item)
+{
+	if (!m_modular_attachments || m_eScopeStatus != ALife::eAddonAttachable)
+		return true;
+
+	const bool attached = 0 != (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonScope);
+	bool valid = true;
+	if (!HasValidScopeIndex() && (attached || !m_scopes.empty()))
+	{
+		LPCSTR group = READ_IF_EXISTS(pSettings, r_string, cNameSect(), "modular_scope_group", "none");
+		Msg("![MAS-SCOPE] section=%s group=%s source=%s index=%u count=%u action=%s",
+			cNameSect_str(), group, source ? source : "unknown", u32(m_cur_scope), u32(m_scopes.size()),
+			attached ? "detach_invalid" : "reset_invalid");
+		if (attached)
+			m_flagsAddOnState &= ~CSE_ALifeItemWeapon::eWeaponAddonScope;
+		m_cur_scope = 0;
+		InvalidateSvpZoomSeed();
+		valid = false;
+	}
+
+	if (!rebuild_item)
+		return valid;
+
+	if (m_scopeItem)
+	{
+		if (g_player_hud)
+			g_player_hud->detach_item(m_scopeItem);
+		xr_delete(m_scopeItem);
+	}
+
+	if (!IsScopeAttached() || !HasValidScopeIndex())
+		return valid;
+
+	m_scopeItem = xr_new<CAnonHudItem>();
+	m_scopeItem->Load(m_scopes[m_cur_scope].c_str());
+	if (g_player_hud && g_player_hud->attached_item(0)
+		&& g_player_hud->attached_item(0)->m_parent_hud_item == this)
+	{
+		g_player_hud->attach_item(m_scopeItem);
+		m_scopeItem->PlayAnimIdle();
+	}
+	return valid;
+}
+
 void CWeapon::UpdateZoomParams() {
 	//////////
 	m_zoom_params.m_fMinBaseZoomFactor = READ_IF_EXISTS(pSettings, r_float, cNameSect(), "min_scope_zoom_factor", 200.0f);
@@ -336,7 +399,9 @@ void CWeapon::UpdateZoomParams() {
 		if (g_player_hud->m_adjust_mode)
 		{
 			m_zoom_params.m_fScopeZoomFactor = g_player_hud->m_adjust_zoom_factor[0] / zoom_multiple;
-		} else if (ALife::eAddonPermanent != m_eScopeStatus && 0 != (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonScope) && m_scopes.size())
+		} else if (ALife::eAddonPermanent != m_eScopeStatus
+			&& 0 != (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonScope)
+			&& HasValidScopeIndex())
 		{
 			m_zoom_params.m_fScopeZoomFactor = pSettings->r_float(GetScopeName(), "scope_zoom_factor") / zoom_multiple;
 			if (m_modular_attachments) {
@@ -359,20 +424,32 @@ void CWeapon::UpdateZoomParams() {
 		m_zoom_params.m_fZoomStepCount = stepCount;
 	}
 
-	// pip recover a section-variant scope's max zoom, the parent merge can leave a base
-	// weapon's 0 in place of the scope's real value
-	if (m_zoom_params.m_bUseDynamicZoom && m_zoom_params.m_fScopeZoomFactor < 1.0f)
+	const bool indexed_scope_attached = m_eScopeStatus == ALife::eAddonAttachable
+		&& 0 != (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonScope)
+		&& HasValidScopeIndex();
+	if (m_zoomtype == 0 && scope_svp_enabled >= 2 && SvpMagsEligible()
+		&& m_zoom_params.m_bUseDynamicZoom && m_zoom_params.m_fScopeZoomFactor < 1.0f)
 	{
 		float recovered = 0.0f;
+		if (indexed_scope_attached)
+		{
+			const float value = READ_IF_EXISTS(pSettings, r_float, GetScopeName(), "scope_zoom_factor", 0.0f);
+			if (value >= 1.0f)
+				recovered = value;
+		}
 		if (const RStringVec* parents = pSettings->get_section_parents(cNameSect()))
 			for (const shared_str& p : *parents)
 			{
 				float v = READ_IF_EXISTS(pSettings, r_float, p.c_str(), "scope_zoom_factor", 0.0f);
 				if (v >= 1.0f)
-					recovered = v; // last valid parent wins; the scope _s settings is the inheriting one
+					recovered = v;
 			}
-		// 20.0 last-resort cap if no parent carries a usable value, so the lens still cannot break
-		m_zoom_params.m_fScopeZoomFactor = (recovered >= 1.0f ? recovered : 20.0f) / zoom_multiple;
+		if (recovered >= 1.0f)
+			m_zoom_params.m_fScopeZoomFactor = recovered / zoom_multiple;
+		else if (ps_r__svp_diag)
+			PipMsg("[SVP-ZOOM-CONFIG] section=%s scope=%s factor=%.2f action=legacy_retained",
+				cNameSect_str(), indexed_scope_attached ? GetScopeName().c_str() : "none",
+				m_zoom_params.m_fScopeZoomFactor);
 	}
 
 	// pip svp scopes may author true magnifications directly, engine derives the 75 base factors
@@ -380,9 +457,11 @@ void CWeapon::UpdateZoomParams() {
 	if (m_zoomtype == 0 && scope_svp_enabled >= 2 && g_svp_authored_mags && SvpMagsEligible())
 	{
 		const bool scope_attached = (ALife::eAddonPermanent != m_eScopeStatus
-			&& 0 != (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonScope) && m_scopes.size());
-		const shared_str sect = scope_attached ? GetScopeName() : cNameSect();
-		const svp_mags_data mags = svp_mags_resolve(sect.c_str(), zoom_multiple);
+			&& 0 != (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonScope)
+			&& HasValidScopeIndex());
+		svp_mags_data mags = svp_mags_resolve(cNameSect_str(), zoom_multiple);
+		if (mags.mode == svp_mag_none && scope_attached)
+			mags = svp_mags_resolve(GetScopeName().c_str(), zoom_multiple);
 		if (mags.mode != svp_mag_none)
 		{
 			m_zoom_params.m_fScopeZoomFactor = mags.f_top;
@@ -422,7 +501,8 @@ void CWeapon::UpdateUIScope()
 	shared_str scope_tex_name;
 	if (m_zoomtype == 0)
 	{
-		if (0 != (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonScope) && m_scopes.size())
+		if (0 != (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonScope)
+			&& HasValidScopeIndex())
 		{
 			if (!m_primary_scope_tex_name || m_modular_attachments) {
 				m_primary_scope_tex_name = pSettings->r_string(GetScopeName(), "scope_texture");
@@ -481,7 +561,9 @@ void CWeapon::SwitchZoomType()
 {
 	if (!useSeparateUBGLKeybind)
     {
-		if (m_zoomtype == 0 && (m_altAimPos || g_player_hud->m_adjust_mode || (m_modular_attachments && IsScopeAttached() && READ_IF_EXISTS(pSettings, r_bool, GetScopeName(), "use_alt_aim_hud", false))))
+		if (m_zoomtype == 0 && (m_altAimPos || g_player_hud->m_adjust_mode || (m_modular_attachments
+			&& IsScopeAttached() && HasValidScopeIndex()
+			&& READ_IF_EXISTS(pSettings, r_bool, GetScopeName(), "use_alt_aim_hud", false))))
 		{
             SetZoomTypeAndParams(1);
 		}
@@ -499,7 +581,9 @@ void CWeapon::SwitchZoomType()
 	}
     else
     {
-		if (m_zoomtype == 0 && (m_altAimPos || g_player_hud->m_adjust_mode || (m_modular_attachments && IsScopeAttached() && READ_IF_EXISTS(pSettings, r_bool, GetScopeName(), "use_alt_aim_hud", false))))
+		if (m_zoomtype == 0 && (m_altAimPos || g_player_hud->m_adjust_mode || (m_modular_attachments
+			&& IsScopeAttached() && HasValidScopeIndex()
+			&& READ_IF_EXISTS(pSettings, r_bool, GetScopeName(), "use_alt_aim_hud", false))))
 		{
 			SetZoomTypeAndParams(1);
 		}
@@ -544,8 +628,22 @@ void CWeapon::SetZoomTypeAndParams(u8 zoomType)
 
 void CWeapon::SetZoomType(u8 new_zoom_type)
 {
+	if (scope_svp_enabled >= 2 && m_zoomtype == 0)
+		CaptureSvpZoomSeed();
     int previous_zoom_type = m_zoomtype;
     m_zoomtype = new_zoom_type;
+	if (scope_svp_enabled >= 2 && m_zoomtype == 0)
+	{
+		const shared_str identity = SvpZoomIdentity();
+		const float power = SDS_Radius(false) > 0.f ? scope_scrollpower : 1.f;
+		const auto saved = m_svpZoomFactors.find(identity);
+		if (saved != m_svpZoomFactors.end())
+		{
+			m_fRTZoomFactor = saved->second * power;
+			m_svpZoomSeedIdentity = identity;
+			m_svpZoomSeedValid = true;
+		}
+	}
 
     ::luabind::functor<void> funct;
     if (ai().script_engine().functor("_G.CWeapon_OnSwitchZoomType", funct))
@@ -555,6 +653,25 @@ void CWeapon::SetZoomType(u8 new_zoom_type)
 
 	Device.m_SecondViewport.dlss_reset_next = true; // pip DLSS history reset on magnification change (logic thread)
 	UpdateSecondVP(); // pip re-evaluate SVP activation when the zoom type changes
+}
+
+void CWeapon::ForceSetZoomType(float val)
+{
+	if (scope_svp_enabled >= 2 && m_zoomtype == 0)
+		CaptureSvpZoomSeed();
+	m_zoomtype = (u8)val;
+	if (scope_svp_enabled >= 2 && m_zoomtype == 0)
+	{
+		const shared_str identity = SvpZoomIdentity();
+		const float power = SDS_Radius(false) > 0.f ? scope_scrollpower : 1.f;
+		const auto saved = m_svpZoomFactors.find(identity);
+		if (saved != m_svpZoomFactors.end())
+		{
+			m_fRTZoomFactor = saved->second * power;
+			m_svpZoomSeedIdentity = identity;
+			m_svpZoomSeedValid = true;
+		}
+	}
 }
 
 extern float g_ironsights_factor;
@@ -1058,13 +1175,13 @@ BOOL CWeapon::net_Spawn(CSE_Abstract* DC)
 	if (m_modular_attachments && m_cur_scope == 0 && (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonScope) != 0 && m_scopes.size() > 1)
 	{
 		m_cur_scope = ::Random.randI(1, m_scopes.size());
-		CWeaponMagazined* wm = smart_cast<CWeaponMagazined*>(this);
-		if (wm)
-		{
+	}
+	if (m_modular_attachments
+		&& 0 != (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonScope)
+		&& ValidateModularScopeState("net_spawn", true))
+	{
+		if (CWeaponMagazined* wm = smart_cast<CWeaponMagazined*>(this))
 			wm->LoadScopeKoeffs();
-			m_scopeItem = xr_new<CAnonHudItem>();
-			m_scopeItem->Load(m_scopes[m_cur_scope].c_str());
-		}
 	}
 
 	m_ammoType = E->ammo_type;
@@ -1204,7 +1321,10 @@ void CWeapon::load(IReader& input_packet)
 	load_data(iAmmoElapsed, input_packet);
 	load_data(m_cur_scope, input_packet);
 	load_data(m_flagsAddOnState, input_packet);
+	ValidateModularScopeState("load", true);
 	UpdateAddonsVisibility();
+	if (m_modular_attachments)
+		InitAddons();
 	load_data(m_ammoType, input_packet);
 	load_data(m_zoom_params.m_bIsZoomModeNow, input_packet);
 
@@ -2121,8 +2241,44 @@ float CWeapon::CurrentZoomFactor()
 	return m_zoom_params.m_fScopeZoomFactor;
 };
 
+shared_str CWeapon::SvpZoomIdentity() const
+{
+	if (m_eScopeStatus == ALife::eAddonAttachable && IsScopeAttached() && HasValidScopeIndex())
+	{
+		const shared_str scope = GetScopeName();
+		if (scope.size())
+			return scope;
+	}
+	return cNameSect();
+}
+
+void CWeapon::InvalidateSvpZoomSeed()
+{
+	m_svpZoomSeedValid = false;
+	m_svpZoomSeedIdentity = nullptr;
+}
+
+void CWeapon::CaptureSvpZoomSeed()
+{
+	if (scope_svp_enabled < 2 || m_zoomtype != 0 || !m_svpZoomSeedValid)
+		return;
+	if (SvpZoomIdentity() != m_svpZoomSeedIdentity)
+		return;
+	const float power = SDS_Radius(false) > 0.f ? scope_scrollpower : 1.f;
+	m_svpZoomFactors[m_svpZoomSeedIdentity] = m_fRTZoomFactor / power;
+}
+
+void CWeapon::SyncSvpZoomSeedMode()
+{
+	if (m_svpZoomSeedMode == scope_svp_enabled)
+		return;
+	m_svpZoomSeedMode = scope_svp_enabled;
+	InvalidateSvpZoomSeed();
+}
+
 void CWeapon::OnZoomIn()
 {
+	SyncSvpZoomSeedMode();
     //////////
     scope_radius = SDS_Radius(m_zoomtype == 1);
 
@@ -2155,9 +2311,7 @@ void CWeapon::OnZoomIn()
 
 	//Msg("m_fRTZoomFactor %f, scope_scrollpower %f", m_fRTZoomFactor, scope_scrollpower);
 
-	// pip re-derive the detent range at the live fov and pull a stale dialed factor into it,
-	// click optics land on the nearer detent, scripted factors stay untouched
-	if (m_zoom_params.m_bUseDynamicZoom && !m_zoom_params.m_bScriptedZoom && SvpDetentBase())
+	if (m_zoomtype == 0 && !m_zoom_params.m_bScriptedZoom && SvpDetentBase())
 	{
 		float delta, min_zoom_factor;
 		float power = scope_radius > 0.0 ? scope_scrollpower : 1;
@@ -2167,13 +2321,25 @@ void CWeapon::OnZoomIn()
 			GetZoomData(m_zoom_params.m_fScopeZoomFactor * power, m_zoom_params.m_fZoomStepCount, m_zoom_params.m_fMinBaseZoomFactor, delta, min_zoom_factor);
 		}
 		const float full = m_zoom_params.m_fScopeZoomFactor * power;
-		const float before = m_fRTZoomFactor;
-		if (g_zoom_clicks && m_zoom_params.m_fZoomStepCount == 1.f)
-			m_fRTZoomFactor = (m_fRTZoomFactor - full < min_zoom_factor - m_fRTZoomFactor) ? full : min_zoom_factor;
+		const shared_str identity = SvpZoomIdentity();
+		const auto saved = m_svpZoomFactors.find(identity);
+		const bool seed = saved == m_svpZoomFactors.end();
+		const float before = seed ? min_zoom_factor : saved->second * power;
+		if (seed)
+			m_fRTZoomFactor = min_zoom_factor;
 		else
+			m_fRTZoomFactor = saved->second * power;
+		if (!seed && g_zoom_clicks && m_zoom_params.m_fZoomStepCount == 1.f)
+			m_fRTZoomFactor = (m_fRTZoomFactor - full < min_zoom_factor - m_fRTZoomFactor) ? full : min_zoom_factor;
+		else if (!seed)
 			clamp(m_fRTZoomFactor, full, min_zoom_factor);
-		if (!fsimilar(before, m_fRTZoomFactor))
-			PipMsg("[SVP-SEED] %s f=%.1f->%.1f range=[%.1f..%.1f]", cNameSect().c_str(), before, m_fRTZoomFactor, full, min_zoom_factor);
+		m_svpZoomSeedIdentity = identity;
+		m_svpZoomSeedValid = true;
+		m_svpZoomFactors[identity] = m_fRTZoomFactor / power;
+		if (seed || ps_r__svp_diag)
+			PipMsg("[SVP-ZOOM] identity=%s source=%s before=%.2f factor=%.2f range=[%.2f..%.2f]",
+				identity.c_str(), seed ? "seed" : "restore", before, m_fRTZoomFactor,
+				full, min_zoom_factor);
 	}
 
 	if (m_zoom_params.m_bUseDynamicZoom)
@@ -2216,6 +2382,7 @@ void CWeapon::OnZoomOut()
         // store the dialed zoom, under smoothing the target (the current factor can be mid-glide)
         const float dialed = (g_zoom_smooth > 0.f) ? m_zoom_params.m_fZoomTargetFactor : GetZoomFactor();
         m_fRTZoomFactor = scope_radius > 0.0 ? dialed * scope_scrollpower : dialed;
+		CaptureSvpZoomSeed();
     }
     
 	m_zoom_params.m_fCurrentZoomFactor = g_fov;
@@ -2311,7 +2478,7 @@ void CWeapon::reload(LPCSTR section)
 	else
 		m_can_be_strapped = false;
 
-	if (m_eScopeStatus == ALife::eAddonAttachable && m_scopes.size())
+	if (m_eScopeStatus == ALife::eAddonAttachable && HasValidScopeIndex())
 	{
 		m_addon_holder_range_modifier = READ_IF_EXISTS(pSettings, r_float, GetScopeName(), "holder_range_modifier",
 		                                               m_holder_range_modifier);
@@ -3188,7 +3355,7 @@ float CWeapon::Weight() const
 	{
 		res += pSettings->r_float(GetGrenadeLauncherName(), "inv_weight");
 	}
-	if (IsScopeAttached() && m_scopes.size())
+	if (IsScopeAttached() && HasValidScopeIndex())
 	{
 		res += pSettings->r_float(GetScopeName(), "inv_weight");
 	}
@@ -3391,6 +3558,7 @@ void CWeapon::ZoomInc()
 	// pip capture the commanded zoom (the smooth target, not the mid-glide current) so a later
 	// alt-aim / UpdateZoomParams restore lands on the dialed magnification, not a stale snapshot
 	m_fRTZoomFactor = (smooth ? m_zoom_params.m_fZoomTargetFactor : GetZoomFactor()) * power;
+	CaptureSvpZoomSeed();
 
 	// pip the lever throw sweeps the transition shadow while the prism seats
 	if (click && scope_svp_enabled >= 2 && Device.m_SecondViewport.IsSVPActive() && !fsimilar(base, f / power))
@@ -3452,6 +3620,7 @@ void CWeapon::ZoomDec()
 	// pip capture the commanded zoom (the smooth target, not the mid-glide current) so a later
 	// alt-aim / UpdateZoomParams restore lands on the dialed magnification, not a stale snapshot
 	m_fRTZoomFactor = (smooth ? m_zoom_params.m_fZoomTargetFactor : GetZoomFactor()) * power;
+	CaptureSvpZoomSeed();
 
 	// pip the lever throw sweeps the transition shadow while the prism seats
 	if (click && scope_svp_enabled >= 2 && Device.m_SecondViewport.IsSVPActive() && !fsimilar(base, f / power))
@@ -3475,7 +3644,7 @@ u32 CWeapon::Cost() const
 	{
 		res += pSettings->r_u32(GetGrenadeLauncherName(), "cost");
 	}
-	if (IsScopeAttached() && m_scopes.size())
+	if (IsScopeAttached() && HasValidScopeIndex())
 	{
 		res += pSettings->r_u32(GetScopeName(), "cost");
 	}

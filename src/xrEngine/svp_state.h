@@ -78,6 +78,7 @@ public:
 	bool svp_panel_flat = false; // a reticle_type 8 flat window drives the svp this frame
 
 	u32 svp_optic_epoch = 0; // pip optic identity counter, bumps on a lens visual or radius change, subscribers reseed
+	u32 svp_camera_epoch = 0; // pip camera input counter, leaves target and disc sizing untouched
 	// pip resolved per-optic optics inputs, the bus fills these once at the lens derive so one
 	// precedence and one eps gate govern every consumer instead of each re-reading the raw cvars
 	Fvector4 svp_opt_offset = { 0.f, 0.f, 0.f, 0.f }; // xy lateral zw front/radius (eyepiece radii), authored_optics gated, 0 = none
@@ -104,6 +105,11 @@ public:
 		Fvector fire_ray_pos = {};
 		Fvector fire_ray_dir = {};
 		float fire_ray_zero = 0.f;
+		bool optic_typed = false;
+		bool optic_config_valid = false;
+		u32 optic_context_token = 0;
+		u32 optic_config_generation = 0;
+		u32 optic_route_epoch = 0;
 		u32 frame = u32(-1);
 		u32 session = 0;
 		Fvector muzzle_pos = {};
@@ -117,6 +123,11 @@ public:
 		Fvector position = {};
 		Fvector direction = {};
 		float lens_radius = 0.f;
+		bool optic_typed = false;
+		bool optic_config_valid = false;
+		u32 optic_context_token = 0;
+		u32 optic_config_generation = 0;
+		u32 optic_route_epoch = 0;
 		u32 frame = u32(-1);
 		u32 session = 0;
 		u32 optic_epoch = 0;
@@ -124,6 +135,82 @@ public:
 
 	struct FireTrace { Fvector pos; Fvector dir; u32 time_ms; };
 
+	enum EOpticConfigValue : u8
+	{
+		optic_objective_offset,
+		optic_objective_mm,
+		optic_middle_grey,
+		optic_adapt_speed,
+		optic_zero_m,
+		optic_tunneling_parallax,
+		optic_tunneling_min,
+		optic_tunneling_max,
+		optic_tracking_speed,
+		optic_tracking_accel,
+		optic_tracking_limit,
+		optic_eye_relief_low,
+		optic_eye_relief_high,
+		optic_exit_pupil_low,
+		optic_exit_pupil_high,
+		optic_pupil_parity,
+		optic_pupil_field_low,
+		optic_pupil_field_high,
+		optic_transmission,
+		optic_twilight_strength,
+		optic_physical_min,
+		optic_physical_max,
+		optic_value_count
+	};
+
+	struct OpticConfig
+	{
+		bool valid = false;
+		bool typed_route = false;
+		bool has_objective_offset = false;
+		u8 zoom_type = 0;
+		u32 weapon_id = 0;
+		u32 context_token = 0;
+		u32 generation = 0;
+		u32 route_epoch = 0;
+		u32 frame = u32(-1);
+		u32 session = 0;
+		u64 fingerprint = 0;
+		Fvector4 objective_offset = { 0.f, 0.f, 0.f, 0.f };
+		float objective_mm = 0.f;
+		float middle_grey = 0.f;
+		float adapt_speed = 0.f;
+		float zero_m = 100.f;
+		float tunneling_parallax = 0.035f;
+		float tunneling_min = 0.04f;
+		float tunneling_max = 0.06f;
+		float tracking_speed = 5.f;
+		float tracking_accel_mm_s2 = 80.f;
+		float tracking_limit_mm = 7.f;
+		float eye_relief_low_mm = 80.f;
+		float eye_relief_high_mm = 80.f;
+		float exit_pupil_low_mm = 0.f;
+		float exit_pupil_high_mm = 0.f;
+		float pupil_parity = -1.f;
+		float pupil_field_low = 0.55f;
+		float pupil_field_high = 0.55f;
+		float transmission = 1.f;
+		float twilight_strength = 0.35f;
+		float physical_min = 0.f;
+		float physical_max = 0.f;
+		string256 context = {};
+		string128 weapon = {};
+		string128 scope = {};
+		string128 diagnostic_scope = {};
+		string64 identity_source = {};
+		string128 profile = {};
+		string128 spec = {};
+		string32 model = {};
+		string32 binding = {};
+		string128 binding_section = {};
+		string256 source[optic_value_count] = {};
+	};
+
+	static constexpr u32 optic_api_version = 1;
 	void PublishWeaponPose(const WeaponPoseSnapshot& pose);
 	bool ReadWeaponPose(WeaponPoseSnapshot& pose) const;
 	void ClearWeaponPose();
@@ -132,6 +219,31 @@ public:
 	void ClearSight();
 	void AppendFireTrace(const FireTrace& trace);
 	void ReadFireTraces(FireTrace (&traces)[16]) const;
+	bool ConnectOpticApi(u32 version);
+	void SetOpticApiRequested(bool enabled);
+	void SetOpticScopeMode(u8 mode);
+	IC bool IsOpticApiConnected() const
+	{
+		return m_optic_api_connected.load(std::memory_order_acquire);
+	}
+	IC bool IsOpticApiEnabled() const
+	{
+		return m_optic_api_requested.load(std::memory_order_acquire) &&
+			m_optic_api_connected.load(std::memory_order_acquire) &&
+			m_optic_scope_mode.load(std::memory_order_acquire) > 0;
+	}
+	u32 BeginOpticContext(LPCSTR context, LPCSTR weapon, u32 weapon_id,
+		LPCSTR scope, u8 zoom_type,
+		LPCSTR identity_source, LPCSTR diagnostic_scope);
+	bool PublishOpticConfig(u32 context_token, const OpticConfig& config);
+	bool RejectOpticConfig(u32 context_token);
+	bool ClearOpticConfig(u32 context_token);
+	void InvalidateOpticConfig();
+	bool ReadOpticConfig(OpticConfig& config) const;
+	void LatchOpticConfig(u32 frame, u32 session);
+	const OpticConfig& RenderOpticConfig() const;
+	void ReadOpticConfigState(OpticConfig& accepted, OpticConfig& active, u32& route_epoch) const;
+	IC u32 GetOpticRouteEpoch() const { return m_optic_route_epoch.load(std::memory_order_acquire); }
 
 private:
 	mutable xrCriticalSection m_snapshot_lock;
@@ -139,6 +251,16 @@ private:
 	SightSnapshot m_sight;
 	FireTrace m_fire_traces[16] = {};
 	u32 m_fire_trace_head = 0;
+	OpticConfig m_optic_accepted;
+	OpticConfig m_optic_active;
+	OpticConfig m_optic_neutral;
+	std::atomic<bool> m_optic_api_requested{ true };
+	std::atomic<bool> m_optic_api_connected{ false };
+	std::atomic<u8> m_optic_scope_mode{ 0 };
+	std::atomic<u32> m_optic_route_epoch{ 1 };
+	u32 m_optic_token_counter = 0;
+	u32 m_optic_generation_counter = 0;
+	void ResetOpticConfigLocked();
 
 public:
 
@@ -152,6 +274,7 @@ public:
 	// pip marks the main lens region as an objective view during NVG processing
 	bool svp_nvg_objective_region = false;
 	u32 svp_nvg_sensor_frame = u32(-1);
+	u32 svp_nvg_sensor_session = 0;
 
 	// pip set true only when the collimated reflex proxy drew into rt_secondVP this frame
 	bool svp_reflex_proxy_ok = false;

@@ -125,6 +125,21 @@ public:
 	xr_vector<SSvpBoneLatch> m_svp_bone;
 	u32 m_svp_bone_frame{u32(-1)};
 	bool svp_lens_bone_of(dxRender_Visual* v, Fmatrix& out);
+	struct SSvpHudAdmission
+	{
+		float axial = 0.f;
+		float radial = -1.f;
+		float radius = 0.f;
+		float axial_lo = 0.f;
+		float axial_hi = 0.f;
+		float objective = 0.f;
+		LPCSTR reason = "inactive";
+		bool candidate = false;
+		bool reject = false;
+		bool forward = false;
+	};
+	void svp_classify_objective_hud(dxRender_Visual* visual, Fmatrix* matrix, u8 role,
+		SSvpHudAdmission& admission);
 	void r_dsgraph_render_hud_ui();
 	void r_dsgraph_render_lods(bool _setup_zb, bool _clear);
 	void r_dsgraph_render_sorted(bool render_hud = true);
