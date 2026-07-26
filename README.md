@@ -115,16 +115,226 @@ Important console commands:
 Existing weapon and scope definitions remain valid. New physical data can be authored without
 replacing the legacy fields used by older engines.
 
-Relevant public integration points:
+### Choose the smallest integration surface
 
-- `gamedata/configs/pip_optic_profiles.ltx` for per-optic physical profiles;
-- `gamedata/configs/pip_hybrid_optics.ltx` for explicit hybrid-reflex state;
-- `gamedata/scripts/zzz_extra_scope_features.script` for capability-probed publication;
-- `gamedata/scripts/ltx_help_ex.script` for supported configuration fields;
-- `svp_dump_optic` for resolved values and their source sections.
+| Need | Recommended route |
+| --- | --- |
+| Give a normal weapon-pack optic physical data | Add a DLTX profile and runtime alias |
+| Tune eye tracking or zeroing without claiming physical measurements | Add a controller-tuning DLTX section |
+| Mark an engaged or flipped hybrid magnifier | Add `svp_hybrid_reflex` to the existing runtime section |
+| Inspect the profile selected by the engine | Use `svp_dump_optic` or the read-only Lua inspector |
+| Publish an optic assembled dynamically at runtime | Use the typed Lua API |
 
-The typed optic API is versioned and capability-probed. On an older executable, the script
-omits unsupported calls and retains the legacy route instead of assuming fork-only exports.
+Most mods should use the data route. The bundled
+[`zzz_extra_scope_features.script`](gamedata/scripts/zzz_extra_scope_features.script) resolves
+the active weapon and scope, publishes one complete profile, and falls back to the legacy console
+route on an older executable. A second publisher should not compete with it unless the mod
+deliberately owns the entire optic lifecycle.
+
+### Add a physical profile with DLTX
+
+Do not replace `pip_optic_physical_specs.ltx`. Add a namespaced file matching the root:
+
+```text
+gamedata/configs/mod_pip_optic_physical_specs_<author-or-mod>.ltx
+```
+
+To reuse an existing canonical record, add only an alias whose section name exactly matches the
+runtime scope or weapon section:
+
+```ini
+; mod_pip_optic_physical_specs_my_pack.ltx
+[my_pack_vudu]
+spec = optic_eotech_vudu_1_6x24_ffp
+```
+
+For an optic not yet represented, add a uniquely named canonical record and its alias in the same
+file. This is the shape of the sourced Vudu record that already ships with the project:
+
+```ini
+[optic_eotech_vudu_1_6x24_ffp]
+data_grade = manufacturer_family
+optic_class = lpvo
+runtime_model = geometric
+magnification_min = 1
+magnification_max = 6
+objective_mm = 24
+eye_relief_low_min_mm = 83
+eye_relief_low_max_mm = 100
+eye_relief_high_min_mm = 82
+eye_relief_high_max_mm = 100
+fov_low_ft_100yd = 102.4
+fov_high_ft_100yd = 16.7
+```
+
+Do not redefine that section. For another optic, give the canonical section a real manufacturer
+and model identity, replace every value with data from its manufacturer or manual, and omit unknown
+values instead of copying a similar optic.
+
+The physical reader understands:
+
+| Key | Meaning |
+| --- | --- |
+| `runtime_model` | `geometric` for a direct-view optic or `display` for a sensor display |
+| `magnification_min`, `magnification_max` | Physical endpoints used by pupil calculations and validation |
+| `objective_mm` | Clear objective diameter in millimetres |
+| `eye_relief_mm` | One eye-relief value for both endpoints |
+| `eye_relief_low_mm`, `eye_relief_high_mm` | Endpoint-specific eye relief |
+| `eye_relief_*_min_mm`, `eye_relief_*_max_mm` | Manufacturer-published endpoint ranges, averaged by the current runtime |
+| `exit_pupil_low_mm`, `exit_pupil_high_mm` | Explicit endpoint exit pupils; otherwise derived from objective and magnification |
+| `pupil_parity`, `pupil_field_low`, `pupil_field_high` | Advanced pupil mapping; omit unless measured or calibrated |
+| `transmission` | Measured light transmission from 0 to 1; omission uses neutral transmission |
+
+`data_grade`, `optic_class`, and FOV fields retain provenance and review metadata. FOV fields do
+not set gameplay zoom. Physical `geometric` or `display` values take precedence over matching
+controller-tuning values.
+
+Keep mesh geometry and gameplay magnification on the existing runtime item section. Add fields
+with the weapon pack's normal `mod_system_*.ltx` DLTX file so older engines retain all legacy
+zoom and 3DSS data:
+
+```ini
+![my_pack_scope]
+scope_objective_lens_offset = 0, 0, 13.3, 0.73
+svp_magnifications = 1-6
+```
+
+`scope_objective_lens_offset` is `x, y, z, radius` in eyepiece-radius units. It is mesh-specific;
+do not copy another scope's tuple. `svp_magnifications` accepts `4` for fixed 4x, `1-6` for smooth
+1x to 6x, or `1,6` for a stepped switch. If it is absent or malformed, the engine keeps the
+existing `magnifications`, `magnification`, and legacy zoom-factor route.
+
+Profile lookup is deterministic:
+
+1. active weapon section;
+2. attached scope section;
+3. permanent-scope hint;
+4. default controller tuning.
+
+Within each identity, built-in aliases are checked before the optional compatibility alias
+contract. `pip_optic_external_aliases.ltx` is a single-owner, schema-checked compatibility file;
+ordinary weapon packs should extend `pip_optic_physical_specs.ltx` through DLTX instead of
+overwriting that contract.
+
+### Add controller tuning
+
+Physical measurements belong in `pip_optic_physical_specs.ltx`. Game-feel controls belong in a
+separate namespaced DLTX file matching `pip_optic_profiles.ltx`:
+
+```ini
+; mod_pip_optic_profiles_my_pack.ltx
+[my_pack_scope]
+s3ds_eye_tracking_speed = 5.5
+s3ds_eye_tracking_accel_mm_s2 = 90
+s3ds_eye_tracking_limit_mm = 7.5
+scope_zero_m = 100
+```
+
+Use this layer for controller behavior, not as a substitute for known objective, eye-relief, or
+exit-pupil measurements. See
+[`pip_optic_profiles.ltx`](gamedata/configs/pip_optic_profiles.ltx) for the supported tuning keys.
+
+For a hybrid optic, explicitly describe both states in its normal runtime sections:
+
+```ini
+![my_magnifier_engaged]
+svp_hybrid_reflex = true
+
+![my_magnifier_flipped]
+svp_hybrid_reflex = false
+```
+
+### Typed Lua API
+
+The engine API and the published profile table have separate versions:
+
+- typed API version `2`;
+- profile table schema version `1`.
+
+Probe global functions with `rawget`, require an exact API version, and use `pcall`. Never infer
+support from a console variable or call fork-only exports unconditionally.
+
+```lua
+local API_VERSION = 2
+
+local function connect_true_pip()
+    local version_fn = rawget(_G, "svp_optic_api_version")
+    local connect_fn = rawget(_G, "svp_optic_api_connect")
+    if type(version_fn) ~= "function" or type(connect_fn) ~= "function" then
+        return false
+    end
+
+    local ok, version = pcall(version_fn)
+    if not ok or version ~= API_VERSION then
+        return false
+    end
+
+    local connected_ok, connected = pcall(connect_fn, API_VERSION)
+    return connected_ok and connected == true
+end
+```
+
+The public functions are:
+
+| Function | Purpose |
+| --- | --- |
+| `svp_optic_api_version()` | Return the engine API version |
+| `svp_optic_api_connect(version)` | Activate the typed route after an exact-version handshake |
+| `svp_optic_api_has_capability(name)` | Query optional `hybrid_reflex` or `profile_inspector` support |
+| `svp_optic_route_epoch()` | Detect an engine-side route reset that requires republishing |
+| `svp_begin_optic_context(context, weapon, weapon_id, scope, zoom_type, identity_source, diagnostic_scope)` | Begin one weapon and optic identity and receive a nonzero token |
+| `svp_apply_optic_profile(token, table)` | Atomically validate and publish a complete schema-1 snapshot |
+| `svp_clear_optic_profile(token)` | Clear the current snapshot if the token still owns it |
+| `svp_current_optic_profile()` | Return the accepted profile and its provenance for inspection |
+
+Read-only inspection is safe for other mods:
+
+```lua
+local capability_fn = rawget(_G, "svp_optic_api_has_capability")
+local current_fn = rawget(_G, "svp_current_optic_profile")
+local has_inspector = false
+
+if type(capability_fn) == "function" then
+    local ok, supported = pcall(capability_fn, "profile_inspector")
+    has_inspector = ok and supported == true
+end
+
+if has_inspector and type(current_fn) == "function" then
+    local ok, profile = pcall(current_fn)
+    if ok and profile.valid then
+        printf("active PiP spec %s from %s", profile.spec, profile.binding_section)
+    end
+end
+```
+
+A direct publisher must begin a context, submit the full schema-1 table, clear its token on zoom
+out or ownership change, and republish after the route epoch changes. Unknown table keys, missing
+fields, out-of-range values, stale tokens, and changed identity fields are rejected as one unit.
+Every field in the canonical builder is required except `hybrid_reflex`, which must be omitted
+unless the capability probe succeeds.
+Use the `typed_table` builder in
+[`zzz_extra_scope_features.script`](gamedata/scripts/zzz_extra_scope_features.script) as the
+canonical field list and the validator in
+[`svp_optic_config_script.cpp`](src/xrGame/svp_optic_config_script.cpp) as the authoritative
+types and ranges.
+
+### Version-safe extension rules
+
+1. Preserve legacy weapon, zoom, 3DSS, and Mark Switch fields; PiP fields are additive.
+2. Namespace new filenames and canonical sections with the author or mod identity.
+3. Use `[new_section]` for a new section and `![existing_section]` only when patching a section
+   already defined in the same LTX root.
+4. Never ship a replacement `pip_optic_physical_specs.ltx`,
+   `pip_optic_profiles.ltx`, or `zzz_extra_scope_features.script` for a data-only addon.
+5. Treat API and table versions as exact contracts. Feature-probe optional capabilities.
+6. Increment a compatibility patch's own version whenever aliases, required sections, or runtime
+   mappings change, and keep its manifest, metadata, and LTX control version synchronized.
+7. Test both `r__svpscope 0` and `2`. A missing API must leave the old route functional.
+
+Enable `print_dltx_warnings 1` while authoring. Then use `r__svp_diag 1` and `svp_dump_optic` to
+confirm the active identity, canonical spec, resolved values, and the winning DLTX source. The
+runtime also writes `[PIP-OPTIC]`, `[PIP-OPTIC-ZOOM]`, `[PIP-OPTIC-GEOM]`, and `[SVP-CONFIG]`
+lines for concrete bug reports.
 
 ## Reporting problems
 
