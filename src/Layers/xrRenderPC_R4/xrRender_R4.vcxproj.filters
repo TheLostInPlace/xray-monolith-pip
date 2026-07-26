@@ -402,6 +402,9 @@
     <ClInclude Include="svp_camera.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="svp_optics.h">
+      <Filter>Core_Target</Filter>
+    </ClInclude>
     <ClInclude Include="svp_physical_optics.h">
       <Filter>Core_Target</Filter>
     </ClInclude>
@@ -850,6 +853,9 @@
       <Filter>Core_Target</Filter>
     </ClCompile>
     <ClCompile Include="svp_nearblur.cpp">
+      <Filter>Core_Target</Filter>
+    </ClCompile>
+    <ClCompile Include="svp_nvg.cpp">
       <Filter>Core_Target</Filter>
     </ClCompile>
     <ClCompile Include="svp_camera.cpp">

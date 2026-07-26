@@ -965,25 +965,38 @@ void player_hud::render_hud(IDSGraphManager* DM)
 
 	if (!b_r0 && !b_r1) return;
 
+	const auto previous_role = DM->get_HUD_Role();
+	DM->set_HUD_Role(IDSGraphManager::hud_hands);
 	DM->add_Dynamic(m_model->dcast_RenderVisual(), &m_transform);
 	DM->add_Dynamic(m_model_2->dcast_RenderVisual(), &m_transform_2);
 
 	if (m_attached_items[0])
+	{
+		DM->set_HUD_Role(IDSGraphManager::hud_primary_item);
 		m_attached_items[0]->render(DM);
+	}
 
 	if (m_attached_items[1])
+	{
+		DM->set_HUD_Role(IDSGraphManager::hud_offhand_item);
 		m_attached_items[1]->render(DM);
+	}
 
 	if (m_attached_items[SCOPE_ATTACH_IDX])
+	{
+		DM->set_HUD_Role(IDSGraphManager::hud_optic);
 		m_attached_items[SCOPE_ATTACH_IDX]->render(DM);
+	}
 
 	if (script_anim_item_model)
 	{
+		DM->set_HUD_Role(IDSGraphManager::hud_prop);
 		DM->add_Dynamic(script_anim_item_model->dcast_RenderVisual(), &m_item_pos);
 	}
 
 	if (g_actor->GetAttachments()->size())
 	{
+		DM->set_HUD_Role(IDSGraphManager::hud_prop);
 		for (auto& pair : *g_actor->GetAttachments())
 		{
 			script_attachment* att = pair.second;
@@ -1000,6 +1013,7 @@ void player_hud::render_hud(IDSGraphManager* DM)
 			}
 		}
 	}
+	DM->set_HUD_Role(previous_role);
 }
 
 #include "../xrEngine/motion.h"

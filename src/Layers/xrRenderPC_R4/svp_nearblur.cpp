@@ -36,7 +36,7 @@ bool CRenderTarget::svp_nearblur_pass()
 	extern Fvector4 ps_s3ds_param_3;
 	extern int ps_markswitch_current;
 	// thermal keeps full DoF only while its overlay is on, markswitch >= 2 falls back to a plain
-	// relayed image that should defocus like any optic
+	// objective image that should defocus like any optic
 	const bool thermal_active = svp_thermal_active(ps_s3ds_param_3.x, ps_markswitch_current);
 	if (ps_r__svp_near_blur > 0.01f && scope_svp_enabled >= 2 && !thermal_active
 		&& rt_Position && rt_secondVP->pRT)
@@ -83,8 +83,11 @@ bool CRenderTarget::svp_nearblur_pass()
 				const float focus = _max(ps_r__svp_focus_m, 1.f);
 				// the near field ends at the real muzzle, per weapon, clamped to the old design bound
 				float md = 1.5f;
-				if (Device.m_SecondViewport.muzzle_pos.square_magnitude() > EPS)
-					md = clampr(Device.m_SecondViewport.muzzle_pos.distance_to(Device.vCameraPosition), 0.5f, 3.f);
+				CSecondVPParams::WeaponPoseSnapshot pose;
+				if (Device.m_SecondViewport.ReadWeaponPose(pose)
+					&& Device.m_SecondViewport.SnapshotExact(pose.frame, pose.session, Device.dwFrame)
+					&& pose.muzzle_pos.square_magnitude() > EPS)
+					md = clampr(pose.muzzle_pos.distance_to(Device.vCameraPosition), 0.5f, 3.f);
 				// max radius is the physical coc at the svp near plane capped at the inscribed disc
 				const float z_near = Device.m_SecondViewport.svp_near;
 				const float coc_near = k * _max(1.f / _max(z_near, 0.05f) - 1.f / focus, 0.f);

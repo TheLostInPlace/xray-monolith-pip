@@ -1,5 +1,6 @@
 local profiles
 local physical_specs
+local external_aliases
 local keys = {
     "s3ds_tunneling_parallax",
     "s3ds_tunneling_min",
@@ -11,6 +12,7 @@ local keys = {
     "s3ds_eye_relief_high_mm",
     "s3ds_exit_pupil_low_mm",
     "s3ds_exit_pupil_high_mm",
+    "s3ds_pupil_parity",
     "s3ds_pupil_field_low",
     "s3ds_pupil_field_high",
     "s3ds_transmission",
@@ -26,15 +28,43 @@ local function runtime_section(ini, scope_section, weapon_section)
     end
 end
 
-local function physical_spec(scope_section, weapon_section)
-    physical_specs = physical_specs or ini_file("pip_optic_physical_specs.ltx")
-    local section = runtime_section(physical_specs, scope_section, weapon_section)
-    local spec = section and physical_specs:r_string_ex(section, "spec")
+local function validated_spec(spec)
     if spec and physical_specs:section_exist(spec) then
         local model = physical_specs:r_string_ex(spec, "runtime_model")
         if model == "geometric" or model == "display" then
             return spec, model
         end
+    end
+end
+
+local function section_spec(ini, section)
+    if not (section and ini:section_exist(section)) then
+        return nil, nil, false
+    end
+    local spec, model = validated_spec(ini:r_string_ex(section, "spec"))
+    return spec, model, true
+end
+
+local function physical_spec(scope_section, weapon_section)
+    physical_specs = physical_specs or ini_file("pip_optic_physical_specs.ltx")
+    external_aliases = external_aliases or ini_file("pip_optic_external_aliases.ltx")
+    local function resolve(section)
+        local spec, model, claimed = section_spec(physical_specs, section)
+        if claimed then
+            return spec, model, true
+        end
+        spec, model, claimed = section_spec(external_aliases, section)
+        if claimed then
+            return spec, model, true
+        end
+    end
+    local spec, model, claimed = resolve(scope_section)
+    if claimed then
+        return spec, model
+    end
+    spec, model, claimed = resolve(weapon_section)
+    if claimed then
+        return spec, model
     end
 end
 
@@ -94,6 +124,7 @@ local function physical_runtime_values(spec, model)
         s3ds_eye_relief_high_mm = eye_relief(spec, "high"),
         s3ds_exit_pupil_low_mm = low_exit_pupil,
         s3ds_exit_pupil_high_mm = high_exit_pupil,
+        s3ds_pupil_parity = model == "display" and 0 or spec_number(spec, "pupil_parity"),
         s3ds_pupil_field_low = low_field_scale,
         s3ds_pupil_field_high = high_field_scale,
         s3ds_transmission = model == "display" and 1 or spec_number(spec, "transmission") or 1,

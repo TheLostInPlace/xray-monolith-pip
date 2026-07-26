@@ -12,10 +12,12 @@
 #include "../../xrEngine/xr_ioconsole.h"         // pip Console registry for the [SVP-CFG] fingerprint
 #include "../../xrEngine/xr_ioc_cmd.h"           // pip IConsole_Command Name/Status/TStatus
 #include "svp_camera.h"
+#include "svp_optics.h"
+#include "svp_physical_optics.h"
 
 // pip scope_debug >= 2 world overlay, eyepiece (blue) objective (yellow) camera (white)
 // via DRender->add_lines, flushed by the stock debug render
-void debug_scope(Fmatrix scope_camera, float vfov, float aspect)
+void debug_scope(Fmatrix scope_camera, const Fmatrix& projection)
 {
 	auto dbg_line = [](const Fvector& a, const Fvector& b, u32 color, bool bHud) {
 		Fvector v[2] = { a, b };
@@ -89,35 +91,37 @@ void debug_scope(Fmatrix scope_camera, float vfov, float aspect)
 	// svpscope 1 (eyepiece) and 2 (objective) is obvious at a glance
 	draw_cube(scope_camera, eye.radius * 0.6f, 0xffff00ff);
 
-	// green world-view frustum from the SVP camera, the exact cone the scope image renders
-	if (vfov > EPS)
+	// green frustum follows the final projection
+	if (_abs(projection._11) > EPS && _abs(projection._22) > EPS)
 	{
 		const float d = 30.f;
-		const float hh = tanf(vfov * 0.5f) * d;
-		const float hw = hh * ((aspect > EPS) ? aspect : 1.f);
 		Fvector corner[4];
 		for (int i = 0; i < 4; i++)
 		{
 			const float sx = (i == 0 || i == 3) ? -1.f : 1.f;
 			const float sy = (i < 2) ? 1.f : -1.f;
+			const float vx = (sx - projection._31) / projection._11;
+			const float vy = (sy - projection._32) / projection._22;
 			corner[i].mad(scope_camera.c, scope_camera.k, d);
-			corner[i].mad(scope_camera.i, sx * hw);
-			corner[i].mad(scope_camera.j, sy * hh);
+			corner[i].mad(scope_camera.i, vx * d);
+			corner[i].mad(scope_camera.j, vy * d);
 			dbg_line(scope_camera.c, corner[i], 0xff00ff00, true);
 		}
 		for (int i = 0; i < 4; i++)
 			dbg_line(corner[i], corner[(i + 1) & 3], 0xff00ff00, true);
 	}
 
-	// cyan front-plane disc on the optical axis, mode 2 drops pieces wholly behind it
-	extern float g_svp_hud_front_m;
+	// cyan front plane disc at the objective distance
 	{
+		float vfov, aspect, near_plane, far_plane;
+		Fmatrix projection_copy = projection;
+		projection_copy.decompose_projection(vfov, aspect, near_plane, far_plane);
 		Fvector ax; ax.sub(p.objective.m_W.c, p.eyepiece.m_W.c);
 		const float tube = ax.magnitude();
 		if (tube > EPS)
 		{
 			ax.div(tube);
-			const float front = (g_svp_hud_front_m > EPS) ? g_svp_hud_front_m : tube;
+			const float front = (p.svp_front_use_m > EPS) ? p.svp_front_use_m : tube;
 			Fmatrix fm; fm.identity();
 			fm.k.set(ax);
 			Fvector seed = (_abs(ax.y) < 0.9f) ? Fvector{0, 1, 0} : Fvector{1, 0, 0};
@@ -175,9 +179,12 @@ static void svp_3db_overlay(float fNearPlane, bool has_sight, const Fvector& sig
 {
 	extern int ps_r__3db_debug;
 	auto& vp = Device.m_SecondViewport;
+	CSecondVPParams::WeaponPoseSnapshot pose;
+	const bool pose_valid = vp.ReadWeaponPose(pose)
+		&& vp.SnapshotExact(pose.frame, pose.session, Device.dwFrame);
 	// display distance, the ranged zero re-picks every tick and would teleport every
 	// endpoint while panning, settle it for drawing, the log keeps the live number
-	const float D_live = (vp.fire_ray_zero > 0.f) ? vp.fire_ray_zero : 100.f;
+	const float D_live = (pose.fire_ray_zero > 0.f) ? pose.fire_ray_zero : 100.f;
 	static float s_disp_D = 0.f;
 	static u32 s_disp_frame = 0;
 	if (Device.dwFrame != s_disp_frame + 1 || s_disp_D <= 0.f)
@@ -212,7 +219,8 @@ static void svp_3db_overlay(float fNearPlane, bool has_sight, const Fvector& sig
 	};
 
 	// yellow muzzle marker, red eyepiece and cyan objective only with a captured lens
-	cross(vp.muzzle_pos, 0.01f, 0xffffff00);
+	if (pose_valid)
+		cross(pose.muzzle_pos, 0.01f, 0xffffff00);
 	if (draw_lens)
 	{
 		cross(eyepiece_pos, 0.01f, 0xffff0000);
@@ -231,10 +239,10 @@ static void svp_3db_overlay(float fNearPlane, bool has_sight, const Fvector& sig
 	// the camera crosshair ray from the mirrored actor eye, the ballistic truth when aimpos
 	// is off, stays the shooter's eye while demo_record flies the device camera
 	Fvector cpos, cfwd;
-	if (vp.eye_ray_dir.square_magnitude() > EPS)
+	if (pose.eye_ray_dir.square_magnitude() > EPS)
 	{
-		cpos.set(vp.eye_ray_pos);
-		cfwd.set(vp.eye_ray_dir);
+		cpos.set(pose.eye_ray_pos);
+		cfwd.set(pose.eye_ray_dir);
 	}
 	else
 	{
@@ -247,11 +255,11 @@ static void svp_3db_overlay(float fNearPlane, bool has_sight, const Fvector& sig
 	cross(chp, D * 0.02f, 0xff4080ff);
 
 	// the raw fire axis, where bullets go with g_svp_zero 0
-	if (Device.dwFrame - vp.fire_ray_frame < 8)
+	if (pose_valid)
 	{
-		Fvector faxis; faxis.set(vp.fire_ray_dir); faxis.normalize_safe();
-		Fvector fire; fire.mad(vp.fire_ray_pos, faxis, D);
-		line(vp.fire_ray_pos, fire, 0xff00ff00);
+		Fvector faxis; faxis.set(pose.fire_ray_dir); faxis.normalize_safe();
+		Fvector fire; fire.mad(pose.fire_ray_pos, faxis, D);
+		line(pose.fire_ray_pos, fire, 0xff00ff00);
 		cross(fire, D * 0.02f, 0xff00ff00);
 		// the gap reads the fire axis against the sight line when captured, else the aim axis
 		float c = has_sight ? sight_axis.dotproduct(faxis) : cfwd.dotproduct(faxis);
@@ -261,23 +269,25 @@ static void svp_3db_overlay(float fNearPlane, bool has_sight, const Fvector& sig
 		{
 			s_aim_ms = Device.dwTimeGlobal;
 			if (has_sight)
-				PipMsg("[3DB] axis gap %.2f mrad at %.0fm (zero %.0f)", acosf(c) * 1000.f, D, vp.fire_ray_zero);
+				PipMsg("[3DB] axis gap %.2f mrad at %.0fm (zero %.0f)", acosf(c) * 1000.f, D, pose.fire_ray_zero);
 			else
-				PipMsg("[3DB] fire-aim gap %.2f mrad at %.0fm (zero %.0f)", acosf(c) * 1000.f, D, vp.fire_ray_zero);
+				PipMsg("[3DB] fire-aim gap %.2f mrad at %.0fm (zero %.0f)", acosf(c) * 1000.f, D, pose.fire_ray_zero);
 		}
 
 		// the zeroed departure ray the shot actually flies, only with a captured sight line
-		if (has_sight && ps_r__3db_debug >= 2 && vp.fire_ray_zero > 0.f)
+		if (has_sight && ps_r__3db_debug >= 2 && pose.fire_ray_zero > 0.f)
 		{
 			Fvector zp; zp.mad(sight_org, sight_axis, D);
-			line(vp.fire_ray_pos, zp, 0xffffffff);
+			line(pose.fire_ray_pos, zp, 0xffffffff);
 		}
 	}
 
 	// fading shot tracers, brightness decays over 5s
 	if (ps_r__3db_debug >= 3)
 	{
-		for (const auto& tr : vp.fire_traces)
+		CSecondVPParams::FireTrace traces[16];
+		vp.ReadFireTraces(traces);
+		for (const auto& tr : traces)
 		{
 			const u32 age = Device.dwTimeGlobal - tr.time_ms;
 			if (!tr.time_ms || age >= 5000)
@@ -302,7 +312,20 @@ void ballistics_debug_overlay()
 
 // pip build the SVP camera (fills Device.matrices[1]) from the captured lens + the weapon
 // zoom factor, called after the lens derives so TargetSVP->SetActive reads it ready
-void svpCamera()
+static LPCSTR svp_camera_domain_name(CSecondVPParams::ECameraDomain domain)
+{
+	switch (domain)
+	{
+	case CSecondVPParams::camera_main_eye:
+		return "main-eye";
+	case CSecondVPParams::camera_objective:
+		return "objective";
+	default:
+		return "eyepiece";
+	}
+}
+
+bool svpCamera()
 {
 	// the published zoom is raise transient free, unset falls back to the shader constant
 	const float zoom_src = (Device.m_SecondViewport.svp_zoom_pub > 1.f)
@@ -329,11 +352,11 @@ void svpCamera()
 	// under mProjectHud, the fit is screen height 2 over that. depth on the view forward, exact off axis
 	Fmatrix eyeW0; eyeW0.invert(mm.mView);
 	Fvector camfwd; camfwd.set(eyeW0.k); camfwd.normalize();
-	Fvector eyed; eyed.sub(params.svp_sight_pos, eyeW0.c);
+	Fvector eyed; eyed.sub(params.eyepiece.m_W.c, eyeW0.c);
 	const float lens_depth = eyed.dotproduct(camfwd);
 	const float ndc_height = (lens_depth > EPS)
-		? (2.f * params.svp_lens_r * mm.mProjectHud._22 / lens_depth) : 0.f;
-	const bool analytic_ok = params.eyepiece.radius > EPS && params.svp_lens_r > EPS
+		? (2.f * params.eyepiece.radius * mm.mProjectHud._22 / lens_depth) : 0.f;
+	const bool analytic_ok = params.eyepiece.radius > EPS
 		&& lens_depth > EPS && _valid(ndc_height) && ndc_height > 1e-4f;
 	const float ratio_analytic = analytic_ok ? (2.f / ndc_height) : 0.f;
 	float ratio_magnification = 1.f;
@@ -345,8 +368,8 @@ void svpCamera()
 	// panel's angular subtense at the weapon zoom, magnification then tracks the stock look
 	extern int ps_r__svp_flat_window;
 	extern Fvector4 ps_s3ds_param_3;
-	const bool flat_window = ps_r__svp_flat_window && (int)ps_s3ds_param_3.y == 8
-		&& Device.m_SecondViewport.svp_disc_px > 1.f;
+	const bool flat_optic = ps_r__svp_flat_window && (int)ps_s3ds_param_3.y == 8;
+	const bool flat_window = flat_optic && Device.m_SecondViewport.svp_disc_px > 1.f;
 	auto window_fov = [&](float zdeg) {
 		const float p = _min(Device.m_SecondViewport.svp_disc_px / (float)Device.dwHeight, 1.5f);
 		return 2.f * atanf(p * tanf(deg2rad(zdeg) * 0.5f));
@@ -425,7 +448,7 @@ void svpCamera()
 				PipMsg("[SVP-RATIO] meas %.3f analytic %.3f final %.3f flat %d p3y %.1f measH %.3f ndcH %.3f depth %.1fcm r %.2fcm aim %.2f alt %d ok %d hfov %.1f",
 					2.f / meas_h, ratio_analytic, ratio_magnification, (int)flat_window,
 					ps_s3ds_param_3.y, meas_h, ndc_height,
-					lens_depth * 100.f, params.svp_lens_r * 100.f,
+					lens_depth * 100.f, params.eyepiece.radius * 100.f,
 					g_pGamePersistent->m_pGShaderConstants->hud_params.x,
 					(int)Device.m_SecondViewport.svp_alt_sight, (int)analytic_ok,
 					rad2deg(hf));
@@ -462,6 +485,10 @@ void svpCamera()
 		}
 	}
 
+	SSvpEyeSample eye_sample;
+	if (scope_svp_enabled >= 2 && params.IsSVPActive())
+		eye_sample = svp_update_eye_sample(mm.mView);
+
 	// the fov we render at to get the correct zoom, the eyepiece-fit ratio scales the vFov
 	float vFov = 2.0f * atan(tan(fov * 0.5f) / (ratio_use * scope_magnification));
 	// flat window renders exactly the panel subtense (tan-correct, the mag division is not)
@@ -481,52 +508,134 @@ void svpCamera()
 
 	auto near_plane = fNearPlane;
 	auto m_W_svpcam = params.eyepiece.m_W; // svpscope 1 places the camera on the eyepiece
-	// svpscope 2 renders the world from the entrance pupil, the eye slid up the optical
-	// axis to the measured front plane
+	params.svp_camera_domain = CSecondVPParams::camera_eyepiece;
+	Fvector2 entrance_exit_mm = {};
+	Fvector2 entrance_shift_mm = {};
+	Fvector2 entrance_slope = {};
+	float entrance_limit_mm = 0.f;
+	float pupil_mag_error = -1.f;
+	bool entrance_enabled = false;
+	bool entrance_clipped = false;
+	int entrance_ray_mode = 0;
+	float entrance_parity_state = 0.f;
+	extern int ps_r__svp_weapon_continuity;
+	extern int ps_r__svp_ray_transfer;
+	extern float ps_s3ds_pupil_parity;
+	// mode 2 falls back to the main eye until a valid objective is available
 	if (scope_svp_enabled >= 2)
 	{
-		Fmatrix eyeW; eyeW.invert(Device.matrices[0].mView);
-		m_W_svpcam.c.set(eyeW.c);
-		extern float g_svp_hud_front_m;
-		// latch the front plane at the settle edge, the script push lands frames after zoom in so a
-		// live per-frame read would step the camera mid aim, hold the settled value for the aim
-		static float s_front_hold = 0.f;
-		static u32 s_front_frame = 0;
-		static bool s_front_latched = false;
-		const float aim_r = g_pGamePersistent ? g_pGamePersistent->m_pGShaderConstants->hud_params.x : 0.f;
-		if (Device.dwFrame != s_front_frame + 1) s_front_latched = false; // session gap re-latches
-		s_front_frame = Device.dwFrame;
-		if (aim_r > 0.999f) { if (!s_front_latched) { s_front_hold = g_svp_hud_front_m; s_front_latched = true; } }
-		else s_front_latched = false; // unsettled, re-latch at the next settle
-		const float front_use = s_front_latched ? s_front_hold : g_svp_hud_front_m;
-		if (front_use > EPS)
+		m_W_svpcam.c.set(eyeW0.c);
+		params.svp_camera_domain = CSecondVPParams::camera_main_eye;
+		Fvector ax;
+		ax.set(params.eyepiece.m_W.k);
+		ax.normalize_safe();
+		Fvector objective_delta;
+		objective_delta.sub(params.objective.m_W.c, params.eyepiece.m_W.c);
+		const float front_use = objective_delta.dotproduct(ax);
+		params.svp_front_use_m = (_valid(front_use) && front_use > EPS) ? front_use : 0.f;
+		if (params.svp_front_use_m > EPS)
 		{
-			// the entrance pupil sits ON the axis, no eye lateral residue in the formed image
-			// (eye movement belongs to the exit-pupil crescent, not the camera)
-			Fvector ax; ax.set(params.eyepiece.m_W.k); ax.normalize();
-			m_W_svpcam.c.mad(params.eyepiece.m_W.c, ax, front_use);
-			// side/top mounted optics view the world from the objective's real lateral position
-			const Fvector4& off = params.svp_opt_offset;
-			if (params.eyepiece.radius > EPS && (_abs(off.x) > EPS || _abs(off.y) > EPS))
+			m_W_svpcam.c.set(params.objective.m_W.c);
+			near_plane = R_VIEWPORT_NEAR;
+			params.svp_camera_domain = CSecondVPParams::camera_objective;
+
+			if (ps_r__svp_weapon_continuity && !flat_optic && eye_sample.valid
+				&& params.objective.radius > EPS)
 			{
-				Fvector ri; ri.set(params.eyepiece.m_W.i); ri.normalize();
-				Fvector up; up.set(params.eyepiece.m_W.j); up.normalize();
-				m_W_svpcam.c.mad(ri, off.x * params.eyepiece.radius);
-				m_W_svpcam.c.mad(up, off.y * params.eyepiece.radius);
+				entrance_limit_mm = params.svp_opt_obj_mm > EPS
+					? params.svp_opt_obj_mm * 0.5f : params.objective.radius * 1000.f;
+				entrance_parity_state = std::clamp(ps_s3ds_pupil_parity, -1.f, 1.f);
+				pupil_mag_error = _abs(eye_sample.entrance_scale - scope_magnification)
+					/ _max(scope_magnification, 0.01f);
+
+				if (!ps_r__svp_ray_transfer)
+				{
+					entrance_shift_mm.set(
+						eye_sample.raw_mm.x * eye_sample.entrance_scale * entrance_parity_state,
+						eye_sample.raw_mm.y * eye_sample.entrance_scale * entrance_parity_state);
+					const float shift_mm = entrance_shift_mm.magnitude();
+					if (shift_mm > entrance_limit_mm && shift_mm > EPS)
+					{
+						entrance_shift_mm.mul(entrance_limit_mm / shift_mm);
+						entrance_clipped = true;
+					}
+					const float pupil_scale = eye_sample.entrance_scale * entrance_parity_state;
+					if (_abs(pupil_scale) > EPS)
+						entrance_exit_mm.set(entrance_shift_mm.x / pupil_scale, entrance_shift_mm.y / pupil_scale);
+					Fvector right = params.objective.m_W.i;
+					Fvector up = params.objective.m_W.j;
+					right.normalize_safe();
+					up.normalize_safe();
+					m_W_svpcam.c.mad(right, entrance_shift_mm.x * 0.001f);
+					m_W_svpcam.c.mad(up, entrance_shift_mm.y * 0.001f);
+					entrance_enabled = true;
+					entrance_ray_mode = 1;
+				}
+				else
+				{
+					Fvector base_forward = params.eyepiece.m_W.k;
+					Fvector base_up = params.eyepiece.m_W.j;
+					base_forward.normalize_safe();
+					base_up.normalize_safe();
+					Fvector base_right;
+					base_right.crossproduct(base_up, base_forward);
+					if (base_right.square_magnitude() > EPS_S)
+					{
+						base_right.normalize_safe();
+						base_up.crossproduct(base_forward, base_right);
+						base_up.normalize_safe();
+
+						Fvector eye_right = params.eyepiece.m_W.i;
+						Fvector eye_up = params.eyepiece.m_W.j;
+						eye_right.normalize_safe();
+						eye_up.normalize_safe();
+						Fvector raw_world = eye_right;
+						raw_world.mul(eye_sample.raw_mm.x);
+						raw_world.mad(eye_up, eye_sample.raw_mm.y);
+						const SvpPhysicalOptics::Vec2 raw_local = {
+							raw_world.dotproduct(base_right),
+							raw_world.dotproduct(base_up)
+						};
+						const auto transfer = SvpPhysicalOptics::MapEntrancePupilRay(raw_local,
+							eye_sample.eye_relief_mm, eye_sample.entrance_scale, entrance_limit_mm,
+							ps_s3ds_pupil_parity);
+						if (transfer.valid)
+						{
+							entrance_exit_mm.set(transfer.exit_position_mm.x, transfer.exit_position_mm.y);
+							entrance_shift_mm.set(transfer.entrance_position_mm.x, transfer.entrance_position_mm.y);
+							entrance_slope.set(transfer.entrance_slope.x, transfer.entrance_slope.y);
+							entrance_clipped = transfer.clipped;
+							m_W_svpcam.c.mad(base_right, entrance_shift_mm.x * 0.001f);
+							m_W_svpcam.c.mad(base_up, entrance_shift_mm.y * 0.001f);
+							entrance_enabled = true;
+							entrance_ray_mode = 1;
+
+							if (pupil_mag_error <= 0.2f)
+							{
+								Fvector ray_forward = base_forward;
+								ray_forward.mad(base_right, entrance_slope.x);
+								ray_forward.mad(base_up, entrance_slope.y);
+								ray_forward.normalize_safe();
+								Fvector ray_right;
+								ray_right.crossproduct(base_up, ray_forward);
+								if (ray_right.square_magnitude() > EPS_S)
+								{
+									ray_right.normalize_safe();
+									Fvector ray_up;
+									ray_up.crossproduct(ray_forward, ray_right);
+									ray_up.normalize_safe();
+									m_W_svpcam.i.set(ray_right);
+									m_W_svpcam.j.set(ray_up);
+									m_W_svpcam.k.set(ray_forward);
+									entrance_ray_mode = 2;
+								}
+							}
+							else
+								entrance_ray_mode = 3;
+						}
+					}
+				}
 			}
-			// mode 2 pushes the scope near clip to the pupil front plane so behind-pupil barrel
-			// falls behind it, world geometry sits far past this
-			extern int ps_r__svp_near_pupil;
-			if (ps_r__svp_near_pupil && front_use > near_plane)
-				near_plane = front_use;
-		}
-		extern int ps_r__svp_cop_diag;
-		static u32 s_frontcam_ms = 0;
-		if (ps_r__svp_cop_diag && Device.dwTimeGlobal - s_frontcam_ms > 500)
-		{
-			s_frontcam_ms = Device.dwTimeGlobal;
-			PipMsg("[SVP-CAM] frontplane hold=%.1fcm live=%.1fcm aim=%.3f latched=%d",
-				front_use * 100.f, g_svp_hud_front_m * 100.f, aim_r, (int)s_front_latched);
 		}
 	}
 
@@ -587,6 +696,55 @@ void svpCamera()
 	auto svp_proj = Fmatrix().build_projection(vfov_use, aspect, near_plane, fFarPlane);
 	auto svp_proj_hud = Fmatrix().build_projection(vfov_use, aspect, near_plane, fFarPlane_hud);
 
+	if (scope_svp_enabled >= 2)
+	{
+		extern int ps_r__svp_cop_diag;
+		static u32 s_frontcam_ms = 0;
+		if (ps_r__svp_cop_diag && Device.dwTimeGlobal - s_frontcam_ms > 500)
+		{
+			s_frontcam_ms = Device.dwTimeGlobal;
+			Fvector ax;
+			ax.set(params.eyepiece.m_W.k);
+			ax.normalize_safe();
+			Fvector axis_center;
+			axis_center.mad(params.eyepiece.m_W.c, ax, params.svp_front_use_m);
+			Fvector eye_to_eyepiece;
+			eye_to_eyepiece.sub(params.eyepiece.m_W.c, eyeW0.c);
+			const float eye_axial = eye_to_eyepiece.dotproduct(ax);
+			Fvector eye_axis;
+			eye_axis.mad(eyeW0.c, ax, eye_axial);
+			PipMsg("[SVP-CAM] domain=%s front=%.1fcm near=%.1fcm objectiveLateral=%.1fcm eyeOff=%.1fcm raw=(%.1f,%.1f)mm entrance=(%.1f,%.1f)mm limit=%.1fmm entranceScale=%.2f parity=%.2f enabled=%d clipped=%d mag=%.2f epoch=%u",
+				svp_camera_domain_name(params.svp_camera_domain),
+				params.svp_front_use_m * 100.f, near_plane * 100.f,
+				params.objective.m_W.c.distance_to(axis_center) * 100.f,
+				params.eyepiece.m_W.c.distance_to(eye_axis) * 100.f,
+				eye_sample.raw_mm.x, eye_sample.raw_mm.y,
+				entrance_shift_mm.x, entrance_shift_mm.y,
+				entrance_limit_mm,
+				eye_sample.entrance_scale, std::clamp(ps_s3ds_pupil_parity, -1.f, 1.f),
+				entrance_enabled ? 1 : 0,
+				entrance_clipped ? 1 : 0,
+				scope_magnification, params.svp_optic_epoch);
+			const char* ray_mode = entrance_ray_mode == 2 ? "trace"
+				: (entrance_ray_mode == 3 ? "mag-mismatch"
+					: (entrance_ray_mode == 1 ? "translation" : "fixed"));
+			Fvector handed;
+			handed.crossproduct(m_W_svpcam.i, m_W_svpcam.j);
+			Fvector base_forward = params.eyepiece.m_W.k;
+			base_forward.normalize_safe();
+			PipMsg("[SVP-RAY] mode=%s raw=(%.2f,%.2f)mm used=(%.2f,%.2f)mm shift=(%.2f,%.2f)mm slope=(%.5f,%.5f) eyeRelief=%.1fmm pupilMag=%.3f renderMag=%.3f error=%.3f limit=%.1fmm clipped=%d fwdDot=%.5f handed=%.5f",
+				ray_mode, eye_sample.raw_mm.x, eye_sample.raw_mm.y,
+				entrance_exit_mm.x, entrance_exit_mm.y,
+				entrance_shift_mm.x, entrance_shift_mm.y,
+				entrance_slope.x, entrance_slope.y,
+				eye_sample.eye_relief_mm, eye_sample.entrance_scale,
+				scope_magnification, pupil_mag_error, entrance_limit_mm,
+				entrance_clipped ? 1 : 0,
+				base_forward.dotproduct(m_W_svpcam.k),
+				handed.dotproduct(m_W_svpcam.k));
+		}
+	}
+
 	// pip DLSS jitter the SVP scene projection (gated), {0,0} otherwise, applied to mProject only
 	Device.m_SecondViewport.svp_jitter_px.set(0, 0);
 	if (ps_r__svp_dlss != 0)
@@ -599,7 +757,7 @@ void svpCamera()
 
 	// the held dbg radius keeps the lines through a culled weapon, it zeroes on unscope
 	if (scope_debug >= 2 && (params.eyepiece.radius > EPS || params.dbg_eyepiece_r > EPS))
-		debug_scope(m_W_svpcam, vFov, (float)aspect);
+		debug_scope(m_W_svpcam, svp_proj);
 
 	Device.matrices[1].mView.invert(m_W_svpcam);
 	Device.matrices[1].mProject = svp_proj;
@@ -607,6 +765,7 @@ void svpCamera()
 
 	// pip cache the SVP scene constants for the DLSS eval inputs and the defocus bind (render thread,
 	// written then read the same frame). svp_fov is radians from the projection, the basis is the camera world
+	const u32 camera_session = params.GetSVPSession();
 	{
 		auto& vp = Device.m_SecondViewport;
 		Device.matrices[1].mProject.decompose_projection(vp.svp_fov, vp.svp_aspect, vp.svp_near, vp.svp_far);
@@ -614,18 +773,19 @@ void svpCamera()
 		vp.svp_right = m_W_svpcam.i;
 		vp.svp_up = m_W_svpcam.j;
 		vp.svp_fwd = m_W_svpcam.k;
+		vp.svp_camera_session = camera_session;
+		vp.svp_camera_frame = Device.dwFrame;
 	}
 
 	// pip snapshot the svp runtime state into the crash-context ring for tester crash logs
 	{
-		extern float g_svp_hud_front_m;
 		auto& vp = Device.m_SecondViewport;
 		SvpCrashFrame cf;
 		cf.frame = Device.dwFrame;
 		cf.mode = scope_svp_enabled;
 		cf.active = vp.IsSVPActive();
 		cf.render_pass_is_svp = vp.m_render_pass_is_svp;
-		cf.hud_front_m = g_svp_hud_front_m;
+		cf.hud_front_m = vp.svp_front_use_m;
 		cf.mag = vp.svp_mag;
 		cf.fov_deg = rad2deg(vp.svp_fov);
 		cf.disc_px = vp.svp_disc_px;
@@ -671,66 +831,6 @@ void svpCamera()
 				svp_fov, rad2deg(vFov), d.magnitude() * 100.f, fwd * 100.f, lat_v.magnitude() * 100.f,
 				params.eyepiece.radius * 100.f, od.dotproduct(eyefwd) * 100.f, params.objective.radius * 100.f,
 				cant);
-
-			// barrel-continuity probe: one weapon-fixed point (the objective) through both pipelines,
-			// a steady delta while sway swings = static projection mismatch, delta tracking sway = lag
-			const float disc_px_probe = (params.svp_disc_px > 1.f)
-				? params.svp_disc_px : (float)Device.dwHeight / _max(ratio_magnification, 1.f);
-			if (params.svp_fov > EPS)
-			{
-				auto to_px = [](const Fvector& w, const Fmatrix& v, const Fmatrix& pr, float W, float H, Fvector2& o) -> bool {
-					Fmatrix vpm; vpm.mul(pr, v);
-					Fvector4 c; vpm.transform(c, {w.x, w.y, w.z, 1});
-					if (!_valid(c.w) || c.w < EPS) return false;
-					o.set((c.x / c.w * 0.5f + 0.5f) * W, (0.5f - c.y / c.w * 0.5f) * H);
-					return true;
-				};
-				float dt_cd = camdir.dotproduct(eyefwd);
-				clamp(dt_cd, -1.f, 1.f);
-				const float sway = rad2deg(acosf(dt_cd));
-				float hud_fov_d = params.svp_fov;
-				extern int ps_r__svp_hud_fov_match;
-				if (ps_r__svp_hud_fov_match == 1 && g_pip_scope_ratio > EPS)
-				{
-					float hf, _a2, _n2, _f2;
-					Device.matrices[0].mProjectHud.decompose_projection(hf, _a2, _n2, _f2);
-					if (hf > EPS) hud_fov_d = 2.f * atanf(tanf(hf * 0.5f) / g_pip_scope_ratio);
-				}
-				Fmatrix hp; hp.build_projection(hud_fov_d, params.svp_aspect, 0.10f, params.svp_far);
-				Fmatrix hv = Device.matrices[1].mView;
-				Fvector hvd; hvd.sub(params.eyepiece.m_W.c, m_W_svpcam.c);
-				if (ps_r__svp_hud_fov_match && hvd.magnitude() > 0.01f)
-					hv.build_camera(m_W_svpcam.c, params.eyepiece.m_W.c, params.eyepiece.m_W.j);
-				Fvector2 px_out, uv_in, px_disc;
-				if (to_px(params.objective.m_W.c, Device.matrices[0].mView, Device.matrices[0].mProjectHud, float(Device.dwWidth), float(Device.dwHeight), px_out)
-					&& to_px(params.objective.m_W.c, hv, hp, 1.f, 1.f, uv_in)
-					&& to_px(params.eyepiece.m_W.c, Device.matrices[0].mView, Device.matrices[0].mProjectHud, float(Device.dwWidth), float(Device.dwHeight), px_disc))
-				{
-					const float bx = px_disc.x + (uv_in.x - 0.5f) * disc_px_probe;
-					const float by = px_disc.y + (uv_in.y - 0.5f) * disc_px_probe;
-					// near-field coc at the objective probe from the near-blur thin-lens formula, in svp px
-					// covered means the blur radius spans the pipeline mismatch at the disc rim
-					extern float ps_r__svp_near_blur, ps_r__svp_focus_m;
-					const float omm = Device.m_SecondViewport.svp_opt_obj_mm;
-					const float A = (omm > 0.01f) ? omm * 0.001f : 0.024f;
-					const float vfov = (Device.m_SecondViewport.svp_fov > 0.01f) ? Device.m_SecondViewport.svp_fov : 0.35f;
-					const float k = A * (float)Device.svp_height() / vfov * _min(ps_r__svp_near_blur, 3.f);
-					const float z = od.dotproduct(eyefwd);
-					const float coc = k * _max(1.f / _max(z, 0.05f) - 1.f / _max(ps_r__svp_focus_m, 1.f), 0.f);
-					Fvector2 rdir; rdir.set(uv_in.x - 0.5f, uv_in.y - 0.5f);
-					const float rlen = sqrtf(rdir.x * rdir.x + rdir.y * rdir.y);
-					Fvector2 rim;
-					if (rlen > EPS)
-						rim.set(px_disc.x + rdir.x / rlen * 0.5f * disc_px_probe, px_disc.y + rdir.y / rlen * 0.5f * disc_px_probe);
-					else
-						rim.set(px_disc.x, px_disc.y);
-					const float mismatch = sqrtf((bx - px_out.x) * (bx - px_out.x) + (by - px_out.y) * (by - px_out.y));
-					const int covered = (coc >= mismatch) ? 1 : 0;
-					PipMsg("[SVP-BARREL] sway=%.2fdeg fovmatch=%d out=(%.0f,%.0f) in=(%.0f,%.0f) delta=(%.0f,%.0f)px rim=(%.0f,%.0f) coc=%.0fpx mismatch=%.0fpx covered=%d",
-						sway, ps_r__svp_hud_fov_match, px_out.x, px_out.y, bx, by, bx - px_out.x, by - px_out.y,
-						rim.x, rim.y, coc, mismatch, covered);
-				}
-			}
 		}
 	}
 
@@ -759,10 +859,14 @@ void svpCamera()
 			auto& vp = Device.m_SecondViewport;
 			// the sight line from the stable published copy, else the eyepiece axis
 			Fvector s_org, saxis;
-			if (vp.svp_sight_ok)
+			CSecondVPParams::SightSnapshot sight;
+			const bool sight_ok = vp.ReadSight(sight)
+				&& vp.SnapshotExact(sight.frame, sight.session, Device.dwFrame)
+				&& sight.optic_epoch == vp.svp_optic_epoch;
+			if (sight_ok)
 			{
-				s_org.set(vp.svp_sight_pos);
-				saxis.set(vp.svp_sight_dir);
+				s_org.set(sight.position);
+				saxis.set(sight.direction);
 			}
 			else
 			{
@@ -830,7 +934,11 @@ void svpCamera()
 					"models_reflex_lens.s", "models_scope_zwrite.s", "models_scope_back.s",
 					"models_scope_reticle.vs", "models_reflex_reticle.vs", "models_reflex_lens.vs",
 					"scope_vertex.vs", "scope_defines.h", "svp_nearblur.ps",
-					"gbuffer_stage.h", "nv_utils.h", "thermal_utils.h" };
+					"scope_depth_write.ps", "svp_taa_stamp.ps",
+					"gbuffer_stage.h", "nv_utils.h", "thermal_utils.h",
+					"night_vision.h", "nightvision_gen_1.ps", "nightvision_gen_2.ps",
+					"nightvision_gen_3.ps", "combine_1.ps", "combine_2_naa.ps",
+					"pp_blur.ps", "sky2.ps" };
 				for (const char* fn : s_scope_files)
 				{
 					string_path rel;
@@ -904,6 +1012,45 @@ void svpCamera()
 			}
 		}
 	}
+
+	static bool s_camera_valid = false;
+	static u32 s_camera_frame = u32(-1);
+	static u32 s_camera_session = 0;
+	static u32 s_camera_epoch = 0;
+	static CSecondVPParams::ECameraDomain s_camera_domain = CSecondVPParams::camera_eyepiece;
+	static int s_camera_ray_mode = 0;
+	static float s_camera_parity = 0.f;
+	const bool first_camera = !s_camera_valid;
+	const bool frame_gap = s_camera_valid && Device.dwFrame != s_camera_frame + 1;
+	const bool session_change = s_camera_valid && camera_session != s_camera_session;
+	const bool epoch_change = s_camera_valid && params.svp_optic_epoch != s_camera_epoch;
+	const bool domain_change = s_camera_valid && params.svp_camera_domain != s_camera_domain;
+	const bool ray_change = s_camera_valid && entrance_ray_mode != s_camera_ray_mode;
+	const bool parity_change = s_camera_valid && _abs(entrance_parity_state - s_camera_parity) > 0.001f;
+	const bool history_reset = first_camera || frame_gap || session_change || epoch_change
+		|| domain_change || ray_change || parity_change;
+	if (history_reset)
+	{
+		extern int ps_r__svp_cop_diag;
+		if (ps_r__svp_cop_diag)
+		{
+			LPCSTR reason = first_camera ? "initial" : (session_change ? "session"
+				: (frame_gap ? "gap" : (epoch_change ? "optic"
+					: (domain_change ? "domain" : (ray_change ? "ray" : "parity")))));
+			PipMsg("[SVP-CAM] history=reset reason=%s previous=%s current=%s frame=%u session=%u",
+				reason, svp_camera_domain_name(s_camera_domain),
+				svp_camera_domain_name(params.svp_camera_domain),
+				Device.dwFrame, camera_session);
+		}
+	}
+	s_camera_valid = true;
+	s_camera_frame = Device.dwFrame;
+	s_camera_session = camera_session;
+	s_camera_epoch = params.svp_optic_epoch;
+	s_camera_domain = params.svp_camera_domain;
+	s_camera_ray_mode = entrance_ray_mode;
+	s_camera_parity = entrance_parity_state;
+	return history_reset;
 }
 
 // pip front/second focal-plane world points (scope_w_ffp/sfp); the scope shader projects the SVP image through them
@@ -936,7 +1083,7 @@ void ffp_sfp()
 	Fvector p_d = Fvector(p_o).sub(p_e);
 
 	// each focal anchor sits one eyepiece focal length inside its end of the tube (f_e ~ the
-	// authored eye relief, symmetric relay), the old 0.2/0.8 split stays as the cvar fallback
+	// authored eye relief, symmetric focal model), the old 0.2/0.8 split stays as the cvar fallback
 	float t1 = 0.2f, t2 = 0.8f;
 	{
 		extern int ps_r__svp_focal_derive;
@@ -962,7 +1109,7 @@ static xr_vector<Fvector4> g_pip_hud_geom; // pip diag: snapshot of HUD geometry
 void svp_snapshot_hud_geom()
 {
 	g_pip_hud_geom.clear();
-	auto snap = [](auto& lst) { for (auto& H : lst) { if (!H.pVisual || !H.pMatrix) continue; auto& VV = H.pVisual->getVisData(); Fvector w; H.pMatrix->transform_tiny(w, VV.sphere.P); Fvector4 e; e.set(w.x, w.y, w.z, VV.sphere.R); g_pip_hud_geom.push_back(e); } };
+	auto snap = [](auto& lst) { for (auto& H : lst) { if (!H.pVisual || !H.pMatrix) continue; auto& VV = H.pVisual->getVisData(); Fvector w; RImplementation.GMBase.svp_pose_of(H.pMatrix)->transform_tiny(w, VV.sphere.P); Fvector4 e; e.set(w.x, w.y, w.z, VV.sphere.R); g_pip_hud_geom.push_back(e); } };
 	snap(RImplementation.GMBase.RGraph.mapHUDSorted.Sorted);
 	snap(RImplementation.GMBase.RGraph.mapHUD);
 }
@@ -1131,31 +1278,8 @@ void CRender::deriveScopeLens()
 
 		auto* p = &Device.m_SecondViewport;
 
-		// publish the optic epoch from the fresh lens identity, before the pose hold so a swap the
-		// hold would reject still bumps it, the visual and radius are pose invariant per optic
+		// publish the optic epoch from the fresh lens identity
 		p->svp_optic_epoch = svp_epoch_update(N.pVisual, radius);
-
-		// while aimed the eyepiece cannot lurch far from the camera, a stale or exo-arm pose reads
-		// double the distance and whips the fit, hold the last good pose instead
-		extern int ps_r__svp_lens_reject;
-		static Fmatrix s_eyep_hold; static float s_eyep_holdr = 0.f, s_eyep_holdd = 0.f;
-		static u32 s_eyep_frame = 0; static bool s_eyep_ok = false;
-		static u32 s_eyep_epoch = 0;
-		// a session gap or an optic swap drops the hold so the new optic's fresh pose is taken
-		if (Device.dwFrame != s_eyep_frame + 1 || p->svp_optic_epoch != s_eyep_epoch) s_eyep_ok = false;
-		s_eyep_frame = Device.dwFrame;
-		s_eyep_epoch = p->svp_optic_epoch;
-		const float aim_x = g_pGamePersistent ? g_pGamePersistent->m_pGShaderConstants->hud_params.x : 0.f;
-		const float new_d = m_W.c.distance_to(Device.vCameraPosition);
-		if (ps_r__svp_lens_reject && s_eyep_ok && aim_x > 0.9f && new_d > s_eyep_holdd * 1.6f)
-		{
-			m_W = s_eyep_hold;
-			radius = s_eyep_holdr;
-		}
-		else
-		{
-			s_eyep_hold = m_W; s_eyep_holdr = radius; s_eyep_holdd = new_d; s_eyep_ok = true;
-		}
 
 		p->eyepiece.m_W = m_W;
 		p->eyepiece.radius = radius;
@@ -1164,17 +1288,20 @@ void CRender::deriveScopeLens()
 		// the record instead of the raw cvars
 		svp_optics_resolve(p, radius);
 
-		// ballistics sight line, a whole stable copy, logic fires while this frame re-derives
+		// ballistics sight line publishes as one record
 		if (radius > EPS)
 		{
-			p->svp_sight_pos.set(m_W.c);
+			CSecondVPParams::SightSnapshot sight;
+			sight.position.set(m_W.c);
 			Fvector sk;
 			sk.set(m_W.k);
 			sk.normalize_safe();
-			p->svp_sight_dir.set(sk);
-			p->svp_lens_r = radius;
-			p->svp_sight_frame = Device.dwFrame;
-			p->svp_sight_ok = true;
+			sight.direction.set(sk);
+			sight.lens_radius = radius;
+			sight.frame = Device.dwFrame;
+			sight.session = p->GetSVPSession();
+			sight.optic_epoch = p->svp_optic_epoch;
+			p->PublishSight(sight);
 		}
 
 		// panel aspect from the lens AABB, the two largest extents are the plane W:H (the ~0 axis is

@@ -462,12 +462,16 @@ public:
 	void phase_gasmask_drops();
 	void phase_gasmask_dudv();
 	void phase_nightvision();
+	bool svp_nvg_objective_pass();
+	bool svp_nvg_pass();
 	void phase_fakescope(); //crookr
 	void phase_heatvision(); //--DSR-- HeatVision
 	void phase_3DSSReticle(); // Redotix99: for 3D Shader Based Scopes
 	void phase_svp_capture(); // pip copy the SVP combined color into rt_secondVP for the lens to sample
 	bool svp_nearblur_pass(); // pip near-field defocus dispatch, true when it ran else the caller copies
 	void draw_scope(ref_shader se, std::function<void()> bind); // pip render the scope lens meshes forcing se per phase
+	void svp_objective_hud_prepare(bool svp_follows); // pip validate one native objective weapon draw
+	void svp_objective_hud_report(); // pip report the native objective draw
 	void EvalSVP_DLSS(const SvpDlssInputs& in); // pip DLSS-SR eval, bilinear-passthrough stub for now (Task 7)
 	void draw_reflex(bool svp = false); // pip render reflex-sight lenses (mapReflexHUDSorted), svp draws them through the entrance-pupil camera
 	bool draw_reflex_proxy(); // pip collimated reflex proxy drawn into rt_secondVP after capture, returns true only on a proven draw

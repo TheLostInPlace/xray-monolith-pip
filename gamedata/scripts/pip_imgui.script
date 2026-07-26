@@ -38,6 +38,8 @@ local advanced_groups = {
         name = "Rendering",
         settings = {
             { "r__svpscope", "PiP Mode" },
+            { "r__svp_ray_transfer", "Pupil Ray Transfer" },
+            { "r__svp_optic_body_suppress", "Objective Housing Suppression" },
             { "r__svp_render_scale", "Render Scale" },
             { "r__svp_supersample", "Supersampling" },
             { "r__svp_dlss", "DLSS Upscaling" },
@@ -79,6 +81,7 @@ local advanced_groups = {
             { "s3ds_eye_relief_high_mm", "High-zoom Eye Relief" },
             { "s3ds_exit_pupil_low_mm", "Low-zoom Exit Pupil" },
             { "s3ds_exit_pupil_high_mm", "High-zoom Exit Pupil" },
+            { "s3ds_pupil_parity", "Pupil Parity" },
             { "s3ds_pupil_field_low", "Low-zoom Pupil Field" },
             { "s3ds_pupil_field_high", "High-zoom Pupil Field" },
             { "s3ds_transmission", "Light Transmission" },
@@ -111,6 +114,8 @@ local advanced_groups = {
 local descriptions = {
     r__svp_aperture = "Master switch for local physical optics effects.",
     r__svpscope = "PiP renderer mode. Zero disables PiP.",
+    r__svp_ray_transfer = "Map both pupil position and ray angle from the eyepiece to the objective.",
+    r__svp_optic_body_suppress = "Exclude only compact optic geometry that crosses the objective plane.",
     g_zoom_smooth = "Magnification transition speed. Zero changes zoom immediately.",
     g_zoom_analog = "Analog zoom granularity. Zero keeps authored zoom steps.",
     r__svp_render_scale = "Scope render resolution; higher values cost more GPU time.",
@@ -143,6 +148,7 @@ local descriptions = {
     s3ds_eye_relief_high_mm = "Manufacturer eye relief at maximum magnification, in millimeters.",
     s3ds_exit_pupil_low_mm = "Published or derived exit pupil at minimum magnification, in millimeters.",
     s3ds_exit_pupil_high_mm = "Published or derived exit pupil at maximum magnification, in millimeters.",
+    s3ds_pupil_parity = "Signed pupil conjugacy. Minus one is the geometric riflescope mapping, plus one is the same-side diagnostic, and zero fixes display optics.",
     s3ds_pupil_field_low = "Field-dependent pupil displacement derived from low-zoom FOV geometry.",
     s3ds_pupil_field_high = "Field-dependent pupil displacement derived from high-zoom FOV geometry.",
     s3ds_transmission = "Published fraction of light transmitted through the optic.",
@@ -168,6 +174,8 @@ local descriptions = {
 local bool_commands = {
     r__svp_aperture = true,
     r__svp_dlss = true,
+    r__svp_ray_transfer = true,
+    r__svp_optic_body_suppress = true,
     r__svp_local_exposure = true,
     r__svp_photo_model = true,
     r__svp_authored_optics = true,

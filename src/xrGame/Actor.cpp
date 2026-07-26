@@ -1274,7 +1274,7 @@ void CActor::UpdateCL()
 			g_pGamePersistent->m_pGShaderConstants->m_blender_mode.set(0.f, 0.f, 0.f, 0.f);
 
 			// Turn off SecondVP
-			Device.m_SecondViewport.svp_eye_tracking_suspended = false;
+			Device.m_SecondViewport.svp_eye_tracking_suspended.store(false, std::memory_order_release);
 			Device.m_SecondViewport.SetSVPActive(false);			
 		}
 	}

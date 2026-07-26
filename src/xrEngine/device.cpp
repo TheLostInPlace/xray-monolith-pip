@@ -453,6 +453,8 @@ void CRenderDevice::on_idle()
 	mViewCam.set(mView);
 	mFullTransformHud.mul(mProjectHud, mViewHud);
 	mFullTransformCam.mul(mProjectCam, mViewCam);
+	if (true_pip_on)
+		Device.matrices[0].mProjectHud = mProjectHud;
 
 	// Save previous frame grass benders data
 	IGame_Persistent::grass_data& GData = g_pGamePersistent->grass_shader_data;
@@ -919,19 +921,82 @@ void CLoadScreenRenderer::OnRender()
 
 void CSecondVPParams::SetSVPActive(bool bState) //--#SM+#-- +SecondVP+
 {
-	if (bState && !isActive)
-		dlss_reset_next = true; // pip DLSS history reset on ADS-in (logic thread)
+	const bool was_active = isActive.load(std::memory_order_acquire);
+	if (bState != was_active)
+	{
+		if (!bState)
+			isActive.store(false, std::memory_order_release);
+		m_svp_session.fetch_add(1, std::memory_order_acq_rel);
+		if (bState)
+		{
+			ClearWeaponPose();
+			ClearSight();
+			dlss_reset_next = true;
+			isActive.store(true, std::memory_order_release);
+		}
+	}
 	if (!bState)
 	{
-		svp_eye_tracking_valid = false;
-		svp_eye_tracking_offset.set(0.f, 0.f);
-		svp_eye_tracking_velocity.set(0.f, 0.f);
-		svp_eye_residual.set(0.f, 0.f);
-		svp_eye_tracking_frame = u32(-1);
+		ClearWeaponPose();
+		ClearSight();
+		svp_nvg_sensor_frame = u32(-1);
+		svp_camera_frame = u32(-1);
+		svp_camera_session = 0;
 	}
-	isActive = bState;
 	if (g_pGamePersistent != NULL)
-		g_pGamePersistent->m_pGShaderConstants->m_blender_mode.z = (isActive ? 1.0f : 0.0f);
+		g_pGamePersistent->m_pGShaderConstants->m_blender_mode.z = bState ? 1.0f : 0.0f;
+}
+
+void CSecondVPParams::PublishWeaponPose(const WeaponPoseSnapshot& pose)
+{
+	xrCriticalSectionGuard guard(m_snapshot_lock);
+	m_weapon_pose = pose;
+}
+
+bool CSecondVPParams::ReadWeaponPose(WeaponPoseSnapshot& pose) const
+{
+	xrCriticalSectionGuard guard(m_snapshot_lock);
+	pose = m_weapon_pose;
+	return pose.frame != u32(-1);
+}
+
+void CSecondVPParams::ClearWeaponPose()
+{
+	xrCriticalSectionGuard guard(m_snapshot_lock);
+	m_weapon_pose = WeaponPoseSnapshot{};
+}
+
+void CSecondVPParams::PublishSight(const SightSnapshot& sight)
+{
+	xrCriticalSectionGuard guard(m_snapshot_lock);
+	m_sight = sight;
+}
+
+bool CSecondVPParams::ReadSight(SightSnapshot& sight) const
+{
+	xrCriticalSectionGuard guard(m_snapshot_lock);
+	sight = m_sight;
+	return sight.frame != u32(-1);
+}
+
+void CSecondVPParams::ClearSight()
+{
+	xrCriticalSectionGuard guard(m_snapshot_lock);
+	m_sight = SightSnapshot{};
+}
+
+void CSecondVPParams::AppendFireTrace(const FireTrace& trace)
+{
+	xrCriticalSectionGuard guard(m_snapshot_lock);
+	m_fire_traces[m_fire_trace_head % 16] = trace;
+	++m_fire_trace_head;
+}
+
+void CSecondVPParams::ReadFireTraces(FireTrace (&traces)[16]) const
+{
+	xrCriticalSectionGuard guard(m_snapshot_lock);
+	for (u32 i = 0; i < 16; ++i)
+		traces[i] = m_fire_traces[i];
 }
 
 bool CSecondVPParams::IsSVPFrame() //--#SM+#-- +SecondVP+

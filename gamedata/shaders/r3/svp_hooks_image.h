@@ -1,4 +1,4 @@
-// svp_hooks_image 20260715 thinhook
+// svp_hooks_image 20260723 pupil
 // relocated true-PiP scope image effects, included by scope_custom_image.h after LCD_RES
 #ifndef SVP_HOOKS_IMAGE_INCLUDED
 #define SVP_HOOKS_IMAGE_INCLUDED
@@ -103,7 +103,7 @@ void svp_img_sensor_noise(inout float3 back, float2 scope_tc)
 
 void svp_img_thermal_veil(inout float3 back, gbuffer_data gbd)
 {
-		// front-lens veil retired, svp_optics.z is a dead lane, no-op kept for the compat patch call
+		// the chunked path keeps the legacy depth veil disabled
 }
 
 void svp_img_lcd_mask(inout float3 back)

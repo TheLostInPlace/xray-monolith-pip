@@ -68,6 +68,37 @@ Vec2 LimitEyeOffset(const Vec2& offset, float limit_mm)
 	return limited;
 }
 
+PupilRayTransfer MapEntrancePupilRay(const Vec2& exit_position_mm, float eye_relief_mm,
+	float entrance_scale, float entrance_limit_mm, float parity)
+{
+	PupilRayTransfer transfer;
+	if (!std::isfinite(exit_position_mm.x) || !std::isfinite(exit_position_mm.y)
+		|| !std::isfinite(eye_relief_mm) || eye_relief_mm <= 0.01f
+		|| !std::isfinite(entrance_scale) || entrance_scale <= 0.01f
+		|| !std::isfinite(entrance_limit_mm) || entrance_limit_mm <= 0.01f
+		|| !std::isfinite(parity) || std::abs(parity) < 0.5f)
+		return transfer;
+
+	const float sign = parity < 0.f ? -1.f : 1.f;
+	const float exit_limit_mm = entrance_limit_mm / entrance_scale;
+	transfer.exit_position_mm = LimitEyeOffset(exit_position_mm, exit_limit_mm);
+	const float delta_x = transfer.exit_position_mm.x - exit_position_mm.x;
+	const float delta_y = transfer.exit_position_mm.y - exit_position_mm.y;
+	transfer.clipped = delta_x * delta_x + delta_y * delta_y > 0.000001f;
+
+	transfer.entrance_position_mm.x = sign * entrance_scale * transfer.exit_position_mm.x;
+	transfer.entrance_position_mm.y = sign * entrance_scale * transfer.exit_position_mm.y;
+	transfer.exit_slope.x = -transfer.exit_position_mm.x / eye_relief_mm;
+	transfer.exit_slope.y = -transfer.exit_position_mm.y / eye_relief_mm;
+	transfer.entrance_slope.x = sign * transfer.exit_slope.x / entrance_scale;
+	transfer.entrance_slope.y = sign * transfer.exit_slope.y / entrance_scale;
+	transfer.valid = std::isfinite(transfer.entrance_position_mm.x)
+		&& std::isfinite(transfer.entrance_position_mm.y)
+		&& std::isfinite(transfer.entrance_slope.x)
+		&& std::isfinite(transfer.entrance_slope.y);
+	return transfer;
+}
+
 void AccelerateEye(Vec2& velocity, const Vec2& desired_velocity, float max_delta)
 {
 	max_delta = std::max(max_delta, 0.f);

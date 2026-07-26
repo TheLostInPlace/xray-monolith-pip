@@ -24,12 +24,24 @@ struct EyeTrackingState
 	bool valid = false;
 };
 
+struct PupilRayTransfer
+{
+	Vec2 exit_position_mm;
+	Vec2 entrance_position_mm;
+	Vec2 exit_slope;
+	Vec2 entrance_slope;
+	bool clipped = false;
+	bool valid = false;
+};
+
 float SampleMagnificationResponse(const MagnificationResponse& response, float magnification);
 float ApplyMagnificationResponse(const MagnificationResponse& response, float magnification, float scale, float offset);
 float MagnificationFraction(float magnification, float minimum, float maximum);
 float InterpolateMagnification(float low, float high, float magnification, float minimum, float maximum);
 float InterpolateReciprocalMagnification(float low, float high, float magnification, float minimum, float maximum);
 Vec2 LimitEyeOffset(const Vec2& offset, float limit_mm);
+PupilRayTransfer MapEntrancePupilRay(const Vec2& exit_position_mm, float eye_relief_mm,
+	float entrance_scale, float entrance_limit_mm, float parity);
 void AccelerateEye(Vec2& velocity, const Vec2& desired_velocity, float max_delta);
 void UpdateEyeTracking(EyeTrackingState& state, const Vec2& target, bool suspended, std::uint32_t epoch,
 	std::uint32_t frame, float dt, float tracking_speed, float acceleration_mm_s2);

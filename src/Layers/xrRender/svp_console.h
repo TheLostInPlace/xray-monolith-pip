@@ -118,6 +118,7 @@ extern ECORE_API float ps_s3ds_eye_relief_low_mm;
 extern ECORE_API float ps_s3ds_eye_relief_high_mm;
 extern ECORE_API float ps_s3ds_exit_pupil_low_mm;
 extern ECORE_API float ps_s3ds_exit_pupil_high_mm;
+extern ECORE_API float ps_s3ds_pupil_parity;
 extern ECORE_API float ps_s3ds_pupil_field_low;
 extern ECORE_API float ps_s3ds_pupil_field_high;
 extern ECORE_API float ps_s3ds_transmission;
@@ -149,7 +150,14 @@ extern ECORE_API float ps_r__svp_sharpen_falloff;
 extern ECORE_API float ps_r__svp_sharpen_inner;
 extern ECORE_API float ps_r__svp_nvg_bleach;
 extern ECORE_API float ps_r__svp_nvg_sensitivity;
+extern ECORE_API int ps_r__svp_nvg_objective;
 extern ECORE_API int ps_r__svp_hud_full;
+extern ECORE_API int ps_r__svp_weapon_continuity;
+extern ECORE_API int ps_r__svp_ray_transfer;
+extern ECORE_API int ps_r__svp_optic_body_suppress;
+extern ECORE_API int ps_r__svp_near_pupil;
+extern ECORE_API int ps_r__svp_drain_clip;
+extern ECORE_API int ps_r__svp_nearblur_scatter;
 
 // registers every svp console command, called once from xrRender_initconsole
 extern void svp_console_init();

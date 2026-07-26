@@ -18,6 +18,7 @@ function IsBinoc(sec)
 end
 
 local RETRY_EV = "pip_scope_push"
+local active_key
 
 -- read a key from the attached-scope section first, then the weapon section, absent = nil
 local function read_str(scope_sec, weap_sec, key)
@@ -74,18 +75,35 @@ local function push_lens(scope_sec, weap_sec)
     return true
 end
 
--- resolve and push for the live aim, returns true when settled (pushed, alt-cleared or unscoped)
-local function try_push()
+local function aim_context()
     local item = db.actor and db.actor:active_item()
     local weapon = item and item:cast_Weapon()
-    if not (item and weapon and weapon:IsZoomed()) then
-        return true
-    end
-    if IsBinoc(item:section()) then
-        return true
+    if not (item and weapon and weapon:IsZoomed()) or IsBinoc(item:section()) then
+        return
     end
     local scope_sec = utils_item.get_attached_scope(item)
     local weap_sec = item:section()
+    local zoom_type = weapon:GetZoomType()
+    local key = table.concat({ weap_sec or "", scope_sec or "", tostring(zoom_type or 0) }, "|")
+    return item, weapon, scope_sec, weap_sec, zoom_type, key
+end
+
+local function clear_objective(key)
+    exec_console_cmd("scope_objective_lens_offset 0,0,0,0")
+    exec_console_cmd("s3ds_objective_mm 0")
+    printf("[SVP-PUSH] objective cleared key=%s", key or "?")
+end
+
+-- resolve and push for the live aim, returns true when settled (pushed, alt-cleared or unscoped)
+local function try_push(expected_key)
+    local item, weapon, scope_sec, weap_sec, zoom_type, key = aim_context()
+    if not item then
+        return true
+    end
+    if key ~= expected_key or key ~= active_key then
+        printf("[SVP-PUSH] stale retry stopped expected=%s current=%s", expected_key or "?", key or "?")
+        return true
+    end
     push_aux(scope_sec, weap_sec)
     pip_optic_profile.apply(scope_sec, weap_sec)
     -- the resolved value wins even on an alt zoom type, gamma analog zoom raises the type on the
@@ -93,11 +111,8 @@ local function try_push()
     if push_lens(scope_sec, weap_sec) then
         return true
     end
-    -- genuinely no objective, an alt sight clears the stale primary value, the primary optic keeps
-    -- its last value and retries until the detection cache warms
-    if weapon:GetZoomType() ~= 0 then
-        exec_console_cmd("scope_objective_lens_offset 0,0,0,0")
-        exec_console_cmd("s3ds_objective_mm 0")
+    -- an alt sight stays clear while a primary optic retries until its detection cache warms
+    if zoom_type ~= 0 then
         return true
     end
     return false
@@ -109,20 +124,27 @@ local RETRY_STEP_S = 0.5
 local RETRY_MAX = 60
 
 local function push_offset()
-    if try_push() then
+    RemoveTimeEvent(RETRY_EV, "retry")
+    local item, weapon, scope_sec, weap_sec, zoom_type, key = aim_context()
+    if not item then
         return
     end
-    -- detection cache is cold on the zoom-in frame, leave the previous value and re-resolve until it warms
-    printf("[SVP-PUSH] skip kept, retrying the live aim")
-    RemoveTimeEvent(RETRY_EV, "retry")
+    if active_key ~= key then
+        active_key = key
+        clear_objective(key)
+    end
+    if try_push(key) then
+        return
+    end
+    printf("[SVP-PUSH] unresolved cleared, retrying key=%s", key)
     local tries = 0
     CreateTimeEvent(RETRY_EV, "retry", RETRY_STEP_S, function()
         tries = tries + 1
-        if try_push() then
+        if try_push(key) then
             return true
         end
         if tries >= RETRY_MAX then
-            printf("[SVP-PUSH] unresolved after retry, kept")
+            printf("[SVP-PUSH] unresolved after retry key=%s", key)
             return true
         end
         ResetTimeEvent(RETRY_EV, "retry", RETRY_STEP_S)
@@ -132,6 +154,7 @@ end
 
 local function clear_offset()
     RemoveTimeEvent(RETRY_EV, "retry")
+    active_key = nil
     -- the objective/mm are read only while scoped, leave them for the next aim to re-resolve so a
     -- zoom out never stomps a just pushed value, only the scope tonemapper returns to the default view
     exec_console_cmd("s3ds_middle_grey 0")

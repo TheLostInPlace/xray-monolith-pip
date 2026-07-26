@@ -61,7 +61,7 @@ int ps_r__svp_adaptive_grow = 0;     // 1 sizes the SVP up to the disc past the 
 int ps_r__svp_drain_anchor = 1;      // the drain clip-on window widens to the authored front plane (0 = the fixed 1.4-2.6 window)
 int ps_r__svp_settle_derive = 1;     // eyebox settle + recoil windows derive from the weapon's authored timing (0 = flat 400/250/1000ms)
 int ps_r__svp_ratio_derive = 1;      // ratio latch band derives from the measured noise, never looser than the fixed band (0 = fixed 25%/2%)
-int ps_r__svp_lens_reject = 1;       // while aimed, reject an eyepiece pose that jumps far (a stale or exo-arm pose) and hold the last good one (0 = take every pose)
+int ps_r__svp_lens_reject = 0;       // legacy config compatibility
 int ps_r__svp_recoil_hold = 1;       // the scope optics derivation (fov reference + fit band) holds through the post-shot window (0 = live)
 int ps_r__svp_roll_stabilize = 0; // svp level the scope world on lean/cant (0 = realistic image tilts with the cant, default; 1 = leveled)
 int ps_r__svp_clean_optics = 1; // svp strip the 3DSS fake cosmetics (parallax shadow, chromatism, nvg blur, fisheye) for a clean scope (1 = stripped, default; 0 = full 3DSS look)
@@ -102,6 +102,7 @@ float ps_s3ds_eye_relief_low_mm = 80.0f;
 float ps_s3ds_eye_relief_high_mm = 80.0f;
 float ps_s3ds_exit_pupil_low_mm = 0.0f; // zero derives the endpoint from objective diameter
 float ps_s3ds_exit_pupil_high_mm = 0.0f;
+float ps_s3ds_pupil_parity = -1.0f; // signed exit to entrance pupil mapping
 float ps_s3ds_pupil_field_low = 0.55f;
 float ps_s3ds_pupil_field_high = 0.55f;
 float ps_s3ds_transmission = 1.0f;
@@ -133,9 +134,13 @@ float ps_r__svp_sharpen_falloff = 0.0f; // svp sharpen radial falloff toward the
 float ps_r__svp_sharpen_inner = 0.0f; // svp sharpen inner crisp-zone radius before the falloff starts (0 = from center)
 float ps_r__svp_nvg_bleach = 0.0f; // svp NVG highlight bleach roll-off, replaces the hard clamp so bright sources compress not clip (0 = off, stock)
 float ps_r__svp_nvg_sensitivity = 1.0f; // svp NVG bleach onset sensitivity, higher rolls off dimmer sources
-int ps_r__svp_hud_full = 2; // svpscope 1 body skip only, mode 2 clips at the pupil camera near plane instead renders (default), 1 = full barrel from the eye + near-blur, 0 = objective clip with the body rendered
-int ps_r__svp_near_pupil = 0; // svp mode 2 push the scope near clip to the pupil front plane so behind-pupil barrel falls behind it (0 = main-view near plane)
-int ps_r__svp_drain_clip = 0; // svp clip the drained barrel wholly behind the authored objective plane, w2 near-blur dissolves the surviving sliver (0 = drain the whole barrel)
+int ps_r__svp_nvg_objective = 1; // svp keeps the NVG sensor response but removes the eyepiece mask inside the objective view
+int ps_r__svp_hud_full = 2; // svpscope 1 body skip only, mode 2 clips at the objective admission plane instead renders (default), 1 = full barrel from the eye + near-blur, 0 = objective clip with the body rendered
+int ps_r__svp_weapon_continuity = 1; // svp same frame weapon pose and entrance pupil camera
+int ps_r__svp_ray_transfer = 1; // svp map pupil position and angle through the optic
+int ps_r__svp_optic_body_suppress = 1; // svp omit the housing that contains the objective plane
+int ps_r__svp_near_pupil = 0; // svp old config compatibility, mode 2 always uses the raster near
+int ps_r__svp_drain_clip = 0; // svpscope 1 old whole item objective skip
 int ps_r__svp_cull = 1; // svp cull the scope geometry to the scope frustum, the SVP re-submits the whole main-frustum world otherwise (1 = on)
 int ps_r__svp_skip_motionblur = 0; // svp skip motion blur on the scope pass, magnified blur is an artifact and a small cost (0 = keep)
 int ps_r__svp_skip_hud_distort = 1; // svp skip hud-layer distortion on the scope pass, the muzzle heat billboard sits on the entrance pupil and warps the image (1 = skip)
@@ -179,7 +184,7 @@ void svp_console_init()
 	CMD4(CCC_Integer, "r__svp_drain_anchor", &ps_r__svp_drain_anchor, 0, 1); // drain clip-on window anchors on the authored front (0 = fixed window)
 	CMD4(CCC_Integer, "r__svp_settle_derive", &ps_r__svp_settle_derive, 0, 1); // eyebox windows from authored weapon timing (0 = flat ms)
 	CMD4(CCC_Integer, "r__svp_ratio_derive", &ps_r__svp_ratio_derive, 0, 1); // ratio latch band from measured noise (0 = fixed band)
-	CMD4(CCC_Integer, "r__svp_lens_reject", &ps_r__svp_lens_reject, 0, 1); // while aimed, reject a far-jumping eyepiece pose and hold the last good (0 = take every pose)
+	CMD4(CCC_Integer, "r__svp_lens_reject", &ps_r__svp_lens_reject, 0, 1); // legacy config compatibility
 	CMD4(CCC_Integer, "r__svp_recoil_hold", &ps_r__svp_recoil_hold, 0, 1); // scope optics derivation holds through the post-shot window (0 = live)
 	CMD4(CCC_Integer, "r__svp_roll_stabilize", &ps_r__svp_roll_stabilize, 0, 1); // svp keep the scope world level on lean/cant (0 = realistic image-tilts-with-cant)
 	CMD4(CCC_Integer, "r__svp_clean_optics", &ps_r__svp_clean_optics, 0, 1); // strip 3DSS fake cosmetics (parallax shadow/chromatism/nvg blur/fisheye), 0 = full look
@@ -219,6 +224,7 @@ void svp_console_init()
 	CMD4(CCC_Float, "s3ds_eye_relief_high_mm", &ps_s3ds_eye_relief_high_mm, 20.0f, 150.0f);
 	CMD4(CCC_Float, "s3ds_exit_pupil_low_mm", &ps_s3ds_exit_pupil_low_mm, 0.0f, 100.0f);
 	CMD4(CCC_Float, "s3ds_exit_pupil_high_mm", &ps_s3ds_exit_pupil_high_mm, 0.0f, 100.0f);
+	CMD4(CCC_Float, "s3ds_pupil_parity", &ps_s3ds_pupil_parity, -1.0f, 1.0f);
 	CMD4(CCC_Float, "s3ds_pupil_field_low", &ps_s3ds_pupil_field_low, 0.0f, 6.0f);
 	CMD4(CCC_Float, "s3ds_pupil_field_high", &ps_s3ds_pupil_field_high, 0.0f, 6.0f);
 	CMD4(CCC_Float, "s3ds_transmission", &ps_s3ds_transmission, 0.0f, 1.0f);
@@ -252,9 +258,13 @@ void svp_console_init()
 	CMD4(CCC_Float, "r__svp_sharpen_inner", &ps_r__svp_sharpen_inner, 0.0f, 1.0f); // svp sharpen inner crisp radius (0 = from center)
 	CMD4(CCC_Float, "r__svp_nvg_bleach", &ps_r__svp_nvg_bleach, 0.0f, 1.0f); // svp NVG highlight bleach roll-off (0 = off, stock clamp)
 	CMD4(CCC_Float, "r__svp_nvg_sensitivity", &ps_r__svp_nvg_sensitivity, 0.1f, 4.0f); // svp NVG bleach onset sensitivity
-	CMD4(CCC_Integer, "r__svp_hud_full", &ps_r__svp_hud_full, 0, 2); // svp barrel: 2 front-plane clip (default), 1 full barrel from the eye, 0 objective clip + body
-	CMD4(CCC_Integer, "r__svp_near_pupil", &ps_r__svp_near_pupil, 0, 1); // svp mode 2 push the near clip to the pupil front plane (0 = main-view near)
-	CMD4(CCC_Integer, "r__svp_drain_clip", &ps_r__svp_drain_clip, 0, 1); // svp clip the drained barrel behind the authored objective plane (0 = whole barrel)
+	CMD4(CCC_Integer, "r__svp_nvg_objective", &ps_r__svp_nvg_objective, 0, 1); // svp separates the objective image from the wearer mask
+	CMD4(CCC_Integer, "r__svp_hud_full", &ps_r__svp_hud_full, 0, 2); // svp barrel modes 2 front plane clip, 1 full barrel, 0 objective clip and body
+	CMD4(CCC_Integer, "r__svp_weapon_continuity", &ps_r__svp_weapon_continuity, 0, 1); // svp objective weapon continuity
+	CMD4(CCC_Integer, "r__svp_ray_transfer", &ps_r__svp_ray_transfer, 0, 1); // svp reciprocal pupil ray mapping
+	CMD4(CCC_Integer, "r__svp_optic_body_suppress", &ps_r__svp_optic_body_suppress, 0, 1); // svp objective housing admission
+	CMD4(CCC_Integer, "r__svp_near_pupil", &ps_r__svp_near_pupil, 0, 1); // svp retained for old configs
+	CMD4(CCC_Integer, "r__svp_drain_clip", &ps_r__svp_drain_clip, 0, 1); // svpscope 1 old whole item objective skip
 	CMD4(CCC_Integer, "r__svp_cull", &ps_r__svp_cull, 0, 1); // svp frustum cull the scope geometry (1 = on)
 	CMD4(CCC_Integer, "r__svp_skip_motionblur", &ps_r__svp_skip_motionblur, 0, 1); // svp skip motion blur on the scope
 	CMD4(CCC_Integer, "r__svp_skip_hud_distort", &ps_r__svp_skip_hud_distort, 0, 1); // svp skip hud-layer distortion on the scope
