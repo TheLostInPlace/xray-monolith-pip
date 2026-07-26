@@ -42,6 +42,8 @@ namespace
 	// gpu-ms color thresholds, cell turns yellow past warn, red past crit
 	const double GPU_WARN_MS = 3.0;
 	const double GPU_CRIT_MS = 6.0;
+	const double AVG_TAU_SEC = 1.0;   // rolling-average time constant for the panel numbers
+	const double ROW_MIN_MS = 0.005;  // a row prints once its average clears this
 
 	const u32 RING = 4;         // frames of query latency, readback is non-blocking on the oldest
 	const u32 MAX_PAIRS = 128;  // timestamp pairs per frame, past this the frame flags overflow
@@ -100,6 +102,10 @@ namespace
 	stats_frame s_snap;
 	bool s_snap_valid = false;
 
+	// per-section rolling gpu average, advanced only on frames that resolved valid timestamps
+	double s_sec_avg[SEC_COUNT];
+	bool s_avg_seeded = false;
+
 	CTimer s_frame_timer;
 	bool s_frame_timer_started = false;
 
@@ -142,6 +148,8 @@ namespace
 		s_snap_valid = false;
 		s_frame_no = 0;
 		s_ft_head = 0;
+		s_avg_seeded = false;
+		ZeroMemory(s_sec_avg, sizeof(s_sec_avg)); // no stale averages from a prior session
 		ZeroMemory(s_ft_time, sizeof(s_ft_time)); // drop any stale window samples from a prior session
 		return true;
 	}
@@ -170,6 +178,21 @@ namespace
 		}
 		s_snap = s.data;
 		s_snap_valid = true;
+
+		// alpha from the frame delta so the ~1s constant holds at any frame rate, first frame seeds outright
+		const float dt = Device.fTimeDelta;
+		if (!s_avg_seeded)
+		{
+			for (u32 i = 0; i < SEC_COUNT; ++i)
+				s_sec_avg[i] = s.data.sec[i].gpu_ms;
+			s_avg_seeded = true;
+		}
+		else if (dt > 0.f)
+		{
+			const double a = 1.0 - exp(-double(dt) / AVG_TAU_SEC);
+			for (u32 i = 0; i < SEC_COUNT; ++i)
+				s_sec_avg[i] += a * (s.data.sec[i].gpu_ms - s_sec_avg[i]);
+		}
 	}
 
 	u32 gpu_color(double ms)
@@ -539,10 +562,15 @@ namespace svp_stats
 			const u32 brk_n = sizeof(brk) / sizeof(brk[0]);
 
 			// other is whatever the bucket holds past the timed sub passes, nothing hides in it silently
-			double sub_sum = 0.0;
+			// the average of a difference is the difference of the averages, same alpha and same frames
+			double sub_sum = 0.0, sub_sum_avg = 0.0;
 			for (u32 i = 0; i < brk_n; ++i)
+			{
 				sub_sum += d.sec[brk[i].s].gpu_ms;
+				sub_sum_avg += s_sec_avg[brk[i].s];
+			}
 			const double other = d.sec[SEC_MAIN_COMBINE].gpu_ms - sub_sum;
+			const double other_avg = s_sec_avg[SEC_MAIN_COMBINE] - sub_sum_avg;
 
 			char btail[2][96];
 			u32 bt = 0;
@@ -556,13 +584,14 @@ namespace svp_stats
 				xr_sprintf(btail[bt++], "lean %u%s", d.lean_on ? 1u : 0u, lf);
 			}
 
+			// visibility keys on the average so a content-driven row cannot pop as the camera turns
 			u32 shown = 1; // the other row always prints
 			for (u32 i = 0; i < brk_n; ++i)
-				if (brk[i].always || d.sec[brk[i].s].gpu_ms >= 0.005)
+				if (brk[i].always || s_sec_avg[brk[i].s] >= ROW_MIN_MS)
 					++shown;
 
 			const float blabel_w = F.SizeOf_("combine1") + digit;
-			float bcontent_w = blabel_w + cell;
+			float bcontent_w = blabel_w + cell + gap + cell;
 			for (u32 i = 0; i < bt; ++i)
 				bcontent_w = _max(bcontent_w, F.SizeOf_(btail[i]));
 			const float bpanel_w = bcontent_w + 2.f * pad;
@@ -571,6 +600,7 @@ namespace svp_stats
 			const float btop = top + panel_h + step * 0.4f;
 			const float blabel_l = bpanel_l + pad;
 			const float bval_r = blabel_l + blabel_w + cell;
+			const float bavg_r = bval_r + gap + cell;
 
 			UIRender->SetShader(**s_shader);
 			UIRender->StartPrimitive(6, IUIRender::ptTriList, IUIRender::pttTL);
@@ -583,25 +613,29 @@ namespace svp_stats
 			UIRender->FlushPrimitive();
 
 			float by = btop + pad;
-			auto brow = [&](u32 lc, LPCSTR label, u32 vc, LPCSTR val)
+			auto brow = [&](u32 lc, LPCSTR label, u32 vc, LPCSTR val, u32 ac, LPCSTR avg)
 			{
 				F.SetAligment(CGameFont::alLeft); F.SetColor(lc); F.Out(blabel_l, by, "%s", label);
 				F.SetAligment(CGameFont::alRight); F.SetColor(vc); F.Out(bval_r, by, "%s", val);
+				F.SetColor(ac); F.Out(bavg_r, by, "%s", avg);
 				by += step;
 			};
 
-			brow(c_hdr, "combine", c_hdr, "MS");
-			char bb[24];
+			brow(c_hdr, "combine", c_hdr, "MS", c_hdr, "AVG");
+			char bb[24], ba[24];
 			for (u32 i = 0; i < brk_n; ++i)
 			{
 				const double ms = d.sec[brk[i].s].gpu_ms;
-				if (!brk[i].always && ms < 0.005)
+				const double avg = s_sec_avg[brk[i].s];
+				if (!brk[i].always && avg < ROW_MIN_MS)
 					continue;
 				xr_sprintf(bb, "%.2f", ms);
-				brow(c_txt, brk[i].name, gpu_color(ms), bb);
+				xr_sprintf(ba, "%.2f", avg);
+				brow(c_txt, brk[i].name, gpu_color(ms), bb, gpu_color(avg), ba);
 			}
 			xr_sprintf(bb, "%.2f", other);
-			brow(c_dim, "other", c_txt, bb);
+			xr_sprintf(ba, "%.2f", other_avg);
+			brow(c_dim, "other", c_txt, bb, c_txt, ba);
 
 			F.SetAligment(CGameFont::alLeft);
 			F.SetColor(c_txt);
