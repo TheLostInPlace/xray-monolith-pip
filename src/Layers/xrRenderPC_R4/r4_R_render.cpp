@@ -727,6 +727,7 @@ void CRender::renderSceneLighting(BOOL bSUN, bool svp)
 	// not re-render + clear the shared GMBase emissive list that the main pass still needs
 	{
 		PIX_EVENT(DEFER_SELF_ILLUM);
+		svp_stats::section_begin(svp_stats::SEC_MAIN_EMISSIVE);
 		Target->phase_accumulator();
 		// Render emissive geometry, stencil - write 0x0 at pixel pos
 		RCache.set_xform_project(Device.mProject);
@@ -742,6 +743,7 @@ void CRender::renderSceneLighting(BOOL bSUN, bool svp)
 		RCache.set_CullMode(CULL_CCW);
 		RCache.set_ColorWriteEnable();
 		GMBase.r_dsgraph_render_emissive(RImplementation.o.ssfx_bloom ? false : true);
+		svp_stats::section_end(svp_stats::SEC_MAIN_EMISSIVE);
 	}
 
 	if (RImplementation.o.ssfx_bloom)

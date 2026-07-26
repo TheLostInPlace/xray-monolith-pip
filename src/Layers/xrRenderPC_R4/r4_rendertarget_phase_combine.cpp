@@ -3,6 +3,7 @@
 #include "../../xrEngine/environment.h"
 
 #include "../xrRender/dxEnvironmentRender.h"
+#include "svp_stats.h" // pip combine sub timers for the breakdown panel
 
 #define STENCIL_CULL 0
 
@@ -41,7 +42,12 @@ void CRenderTarget::phase_combine()
 {
 	PIX_EVENT(phase_combine);
     PROF_EVENT("phase_combine");
-	
+
+	// combine sub timers run on the main pass only so the scope pass never splits the bucket
+	const bool sub_tm = !Device.m_SecondViewport.m_render_pass_is_svp;
+	auto tm_beg = [sub_tm](svp_stats::section_e s) { if (sub_tm) svp_stats::section_begin(s); };
+	auto tm_end = [sub_tm](svp_stats::section_e s) { if (sub_tm) svp_stats::section_end(s); };
+
 	bool ssfx_PrevPos_Requiered = false;
 
 	//	TODO: DX10: Remove half poxel offset
@@ -107,13 +113,17 @@ void CRenderTarget::phase_combine()
 			if (RImplementation.o.ssfx_ao && ps_ssfx_ao.y > 0)
 			{
 				ssfx_PrevPos_Requiered = true;
+				tm_beg(svp_stats::SEC_C_AO);
 				phase_ssfx_ao(); // [SSFX] - New AO Phase
+				tm_end(svp_stats::SEC_C_AO);
 			}
 
 			if (RImplementation.o.ssfx_il && ps_ssfx_il.y > 0)
 			{
 				ssfx_PrevPos_Requiered = true;
+				tm_beg(svp_stats::SEC_C_IL);
 				phase_ssfx_il(); // [SSFX] - New IL Phase
+				tm_end(svp_stats::SEC_C_IL);
 			}
 		}
 	}
@@ -156,11 +166,13 @@ void CRenderTarget::phase_combine()
 		if (svp_nvg_sky)
 			t_LUM_dest->surface_set(RImplementation.TargetMain->rt_LUM_pool[0]->pSurface);
 
+		tm_beg(svp_stats::SEC_C_SKY);
 		g_pGamePersistent->Environment().RenderSky();
 
 		//	Igor: Render clouds before compine without Z-test
 		//	to avoid siluets. HOwever, it's a bit slower process.
 		g_pGamePersistent->Environment().RenderClouds();
+		tm_end(svp_stats::SEC_C_SKY);
 
 		if (svp_nvg_sky)
 			t_LUM_dest->surface_set(rt_LUM_pool[1]->pSurface);
@@ -194,6 +206,7 @@ void CRenderTarget::phase_combine()
 	}*/
 
 	// Draw full-screen quad textured with our scene image
+	tm_beg(svp_stats::SEC_C_COMBINE1);
 	if (!_menu_pp)
 	{
 		PIX_EVENT(combine_1);
@@ -332,6 +345,7 @@ void CRenderTarget::phase_combine()
 			RCache.set_Stencil(FALSE, D3DCMP_EQUAL, 0x01, 0xff, 0);
 		}
 	}
+	tm_end(svp_stats::SEC_C_COMBINE1);
 
 	//Copy previous rt
 	if (!RImplementation.o.dx10_msaa)
@@ -345,11 +359,14 @@ void CRenderTarget::phase_combine()
 	if (RImplementation.o.ssfx_ssr && ((svp_pass && ps_r__svp_skip_ssr < 2) || !Device.m_SecondViewport.IsSVPFrame()))
 	{
 		ssfx_PrevPos_Requiered = true;
+		tm_beg(svp_stats::SEC_C_SSR);
 		phase_ssfx_ssr(); // [SSFX] - New SSR Phase
+		tm_end(svp_stats::SEC_C_SSR);
 	}
 
 	// pip water SSR only at level 0 (the reflective water below needs it, the SSS shader discards it
 	// otherwise), always on the main
+	tm_beg(svp_stats::SEC_C_WATER);
 	if (RImplementation.o.ssfx_water && ((svp_pass && ps_r__svp_skip_ssr == 0) || !Device.m_SecondViewport.IsSVPFrame()))
 	{
 		FLOAT ColorRGBA[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -396,7 +413,9 @@ void CRenderTarget::phase_combine()
 	RCache.set_xform_world(Fidentity);
 	RImplementation.GMBase.r_dsgraph_render_water(!svp_pass);
 	Device.m_SecondViewport.force_water_reflect = false;
-	
+	tm_end(svp_stats::SEC_C_WATER);
+
+	tm_beg(svp_stats::SEC_C_RAIN);
 	{
 		if (RImplementation.o.ssfx_rain)
 		{
@@ -410,6 +429,7 @@ void CRenderTarget::phase_combine()
 
 		g_pGamePersistent->Environment().RenderLast(); // rain/thunder-bolts
 	}
+	tm_end(svp_stats::SEC_C_RAIN);
 
 	/*if (ssfx_PrevPos_Requiered)
 		HW.pContext->CopyResource(rt_ssfx_prevPos->pTexture->surface_get(), rt_Position->pTexture->surface_get());*/
@@ -424,6 +444,7 @@ void CRenderTarget::phase_combine()
 	}
 
 	// Forward rendering
+	tm_beg(svp_stats::SEC_C_FWD);
 	{
 		PIX_EVENT(Forward_rendering);
 
@@ -442,6 +463,7 @@ void CRenderTarget::phase_combine()
 		RImplementation.render_forward();
 		if (g_pGamePersistent) g_pGamePersistent->OnRenderPPUI_main(); // PP-UI
 	}
+	tm_end(svp_stats::SEC_C_FWD);
 
 	//	Igor: for volumetric lights
 	//	combine light volume here
@@ -473,7 +495,9 @@ void CRenderTarget::phase_combine()
 	}
 
 	// for msaa we need a resolved color buffer - Holger
+	tm_beg(svp_stats::SEC_C_BLOOM);
 	phase_bloom(); // HDR RT invalidated here
+	tm_end(svp_stats::SEC_C_BLOOM);
 
 	//RImplementation.rmNormal();
 	//u_setrt(rt_Generic_1,0,0,HW.pBaseZB);
@@ -538,12 +562,18 @@ void CRenderTarget::phase_combine()
 	if (!_menu_pp)
 	{
 		if (ps_sunshafts_mode == R2SS_SCREEN_SPACE || ps_sunshafts_mode == R2SS_COMBINE_SUNSHAFTS)
+		{
+			tm_beg(svp_stats::SEC_C_SUNSHAFT);
 			phase_sunshafts();
+			tm_end(svp_stats::SEC_C_SUNSHAFT);
+		}
 	}
 
 	if (RImplementation.o.ssfx_fog && ps_ssfx_fog_scattering > 0)
 	{
+		tm_beg(svp_stats::SEC_C_FOG);
 		phase_ssfx_fog_scattering();
+		tm_end(svp_stats::SEC_C_FOG);
 	}
 
 	// pip with DLSS on, skip the SVP engine AA/post so rt_Generic_0$svp stays aliased + jittered for the
@@ -580,7 +610,11 @@ void CRenderTarget::phase_combine()
 	// Compute blur textures for the SVP post effects without changing the DLSS input
 	// Off keeps the stock IsSVPFrame skip
 	if ((Device.true_pip_on && Device.m_SecondViewport.m_render_pass_is_svp) || !Device.m_SecondViewport.IsSVPFrame())
+	{
+		tm_beg(svp_stats::SEC_C_BLUR);
 		phase_blur();
+		tm_end(svp_stats::SEC_C_BLUR);
+	}
 
 	//Compute bloom (new)
 	if (RImplementation.o.ssfx_bloom)
@@ -588,7 +622,11 @@ void CRenderTarget::phase_combine()
 		// pip run bloom on the SVP pass too so magnified bright sources flare (per-target buffers)
 		if ((Device.true_pip_on && Device.m_SecondViewport.m_render_pass_is_svp && ps_r__svp_bloom)
 			|| !Device.m_SecondViewport.IsSVPFrame())
+		{
+			tm_beg(svp_stats::SEC_C_BLOOM);
 			phase_ssfx_bloom();
+			tm_end(svp_stats::SEC_C_BLOOM);
+		}
 		else
 			HW.pContext->ClearRenderTargetView(rt_ssfx_bloom1->pRT, ColorRGBA);
 	}
@@ -602,11 +640,17 @@ void CRenderTarget::phase_combine()
 	const bool svp_pass_now = Device.true_pip_on && Device.m_SecondViewport.m_render_pass_is_svp;
 	if (ps_r2_ls_flags.test(R2FLAG_DOF) && !(svp_pass_now && ps_r__svp_skip_dof))
 	{
+		tm_beg(svp_stats::SEC_C_DOF);
 		phase_dof();
+		tm_end(svp_stats::SEC_C_DOF);
 	}
 
 	if (!(svp_pass_now && ps_r__svp_skip_lut))
+	{
+		tm_beg(svp_stats::SEC_C_LUT);
 		phase_lut();
+		tm_end(svp_stats::SEC_C_LUT);
+	}
 
 	// pip the eye side overlays apply once on the main pass
 	if(ps_r2_mask_control.x > 0 && !svp_pass_now)
@@ -653,7 +697,9 @@ void CRenderTarget::phase_combine()
 	if (RImplementation.o.ssfx_taa && ps_ssfx_taa.x > 0 &&
 		!(Device.true_pip_on && Device.m_SecondViewport.m_render_pass_is_svp))
 	{
+		tm_beg(svp_stats::SEC_C_TAA);
 		phase_ssfx_taa();
+		tm_end(svp_stats::SEC_C_TAA);
 	}
 
 	// pip clear the scope capture maps at the main-pass tail after every consumer (lens composite,
@@ -692,10 +738,11 @@ void CRenderTarget::phase_combine()
 	RCache.set_Stencil(FALSE);
 
 
+	tm_beg(svp_stats::SEC_C_COMBINE2);
 	if (1)
 	{
 		PIX_EVENT(combine_2);
-		// 
+		//
 		struct v_aa
 		{
 			Fvector4 p;
@@ -797,6 +844,7 @@ void CRenderTarget::phase_combine()
 		RCache.set_Geometry(g_aa_AA);
 		RCache.Render(D3DPT_TRIANGLELIST, Offset, 0, 4, 0, 2);
 	}
+	tm_end(svp_stats::SEC_C_COMBINE2);
 	RCache.set_Stencil(FALSE);
 
 	if (RImplementation.o.dx11_hdr10) {
@@ -821,7 +869,9 @@ void CRenderTarget::phase_combine()
 	if (PP_Complex && !(Device.true_pip_on && Device.m_SecondViewport.m_render_pass_is_svp))
 	{
 		PIX_EVENT(phase_pp);
+		tm_beg(svp_stats::SEC_C_COMBINE2);
 		phase_pp();
+		tm_end(svp_stats::SEC_C_COMBINE2);
 	}
 
 	//	Re-adapt luminance

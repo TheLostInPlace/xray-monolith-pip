@@ -2,6 +2,8 @@
 #include "r4.h"
 #include "svp_stats.h"
 
+#include "../../xrEngine/igame_persistent.h"
+#include "../../xrEngine/environment.h"
 #include "../../xrEngine/GameFont.h"
 #include "../../Include/xrRender/UIRender.h"
 #include "../../Include/xrRender/UIShader.h"
@@ -63,6 +65,7 @@ namespace
 		bool svp_grow;
 		double frame_ms;
 		bool svp_active;
+		float sun_shafts; // weather sunshafts intensity, the phase_sunshafts early-out reads the same value
 	};
 
 	struct frame_slot
@@ -333,6 +336,9 @@ namespace svp_stats
 		d.optic_resolve = svp_stats_optic_resolve;
 		d.svp_grow = (ps_r__svp_adaptive_grow != 0);
 		d.svp_mag = g_pip_scope_magnification;
+		d.sun_shafts = 0.f;
+		if (g_pGamePersistent && g_pGamePersistent->Environment().CurrentEnv)
+			d.sun_shafts = g_pGamePersistent->Environment().CurrentEnv->m_fSunShaftsIntensity;
 		HW.pContext->End(s_cur->disjoint);
 		s_cur->in_flight = true;
 	}
@@ -352,23 +358,23 @@ namespace svp_stats
 		double svp_gpu = d.sec[SEC_SVP_GBUFFER].gpu_ms + d.sec[SEC_SVP_LIGHTS].gpu_ms
 			+ d.sec[SEC_SVP_EMISSIVE].gpu_ms + d.sec[SEC_SVP_COMBINE].gpu_ms;
 		double main_gpu = d.sec[SEC_MAIN_GBUFFER].gpu_ms + d.sec[SEC_MAIN_LIGHTS].gpu_ms
-			+ d.sec[SEC_MAIN_COMBINE].gpu_ms;
+			+ d.sec[SEC_MAIN_EMISSIVE].gpu_ms + d.sec[SEC_MAIN_COMBINE].gpu_ms;
 		double svp_cpu = d.sec[SEC_SVP_GBUFFER].cpu_ms + d.sec[SEC_SVP_LIGHTS].cpu_ms
 			+ d.sec[SEC_SVP_EMISSIVE].cpu_ms + d.sec[SEC_SVP_COMBINE].cpu_ms;
 		double main_cpu = d.sec[SEC_MAIN_GBUFFER].cpu_ms + d.sec[SEC_MAIN_LIGHTS].cpu_ms
-			+ d.sec[SEC_MAIN_COMBINE].cpu_ms;
+			+ d.sec[SEC_MAIN_EMISSIVE].cpu_ms + d.sec[SEC_MAIN_COMBINE].cpu_ms;
 		u32 svp_calls = d.sec[SEC_SVP_GBUFFER].calls + d.sec[SEC_SVP_LIGHTS].calls
 			+ d.sec[SEC_SVP_EMISSIVE].calls + d.sec[SEC_SVP_COMBINE].calls;
 		u32 main_calls = d.sec[SEC_MAIN_GBUFFER].calls + d.sec[SEC_MAIN_LIGHTS].calls
-			+ d.sec[SEC_MAIN_COMBINE].calls;
+			+ d.sec[SEC_MAIN_EMISSIVE].calls + d.sec[SEC_MAIN_COMBINE].calls;
 		u32 svp_verts = d.sec[SEC_SVP_GBUFFER].verts + d.sec[SEC_SVP_LIGHTS].verts
 			+ d.sec[SEC_SVP_EMISSIVE].verts + d.sec[SEC_SVP_COMBINE].verts;
 		u32 main_verts = d.sec[SEC_MAIN_GBUFFER].verts + d.sec[SEC_MAIN_LIGHTS].verts
-			+ d.sec[SEC_MAIN_COMBINE].verts;
+			+ d.sec[SEC_MAIN_EMISSIVE].verts + d.sec[SEC_MAIN_COMBINE].verts;
 		u32 svp_polys = d.sec[SEC_SVP_GBUFFER].polys + d.sec[SEC_SVP_LIGHTS].polys
 			+ d.sec[SEC_SVP_EMISSIVE].polys + d.sec[SEC_SVP_COMBINE].polys;
 		u32 main_polys = d.sec[SEC_MAIN_GBUFFER].polys + d.sec[SEC_MAIN_LIGHTS].polys
-			+ d.sec[SEC_MAIN_COMBINE].polys;
+			+ d.sec[SEC_MAIN_EMISSIVE].polys + d.sec[SEC_MAIN_COMBINE].polys;
 
 		CGameFont& F = *s_font;
 		const float H = (float)Device.dwHeight;
@@ -471,8 +477,8 @@ namespace svp_stats
 			row(c_txt, "gbuffer", gpu_color(d.sec[SEC_SVP_GBUFFER].gpu_ms), sb, gpu_color(d.sec[SEC_MAIN_GBUFFER].gpu_ms), mb, true);
 			xr_sprintf(sb, "%.2f", d.sec[SEC_SVP_LIGHTS].gpu_ms); xr_sprintf(mb, "%.2f", d.sec[SEC_MAIN_LIGHTS].gpu_ms);
 			row(c_txt, "lights", gpu_color(d.sec[SEC_SVP_LIGHTS].gpu_ms), sb, gpu_color(d.sec[SEC_MAIN_LIGHTS].gpu_ms), mb, true);
-			xr_sprintf(sb, "%.2f", d.sec[SEC_SVP_EMISSIVE].gpu_ms);
-			row(c_txt, "emissive", gpu_color(d.sec[SEC_SVP_EMISSIVE].gpu_ms), sb, c_dim, "-", true);
+			xr_sprintf(sb, "%.2f", d.sec[SEC_SVP_EMISSIVE].gpu_ms); xr_sprintf(mb, "%.2f", d.sec[SEC_MAIN_EMISSIVE].gpu_ms);
+			row(c_txt, "emissive", gpu_color(d.sec[SEC_SVP_EMISSIVE].gpu_ms), sb, gpu_color(d.sec[SEC_MAIN_EMISSIVE].gpu_ms), mb, true);
 			xr_sprintf(sb, "%.2f", d.sec[SEC_SVP_COMBINE].gpu_ms); xr_sprintf(mb, "%.2f", d.sec[SEC_MAIN_COMBINE].gpu_ms);
 			row(c_txt, "combine", gpu_color(d.sec[SEC_SVP_COMBINE].gpu_ms), sb, gpu_color(d.sec[SEC_MAIN_COMBINE].gpu_ms), mb, true);
 		}
@@ -499,6 +505,95 @@ namespace svp_stats
 			F.SetColor(i == 0 ? c_hdr : c_txt);
 			F.Out(label_l, y, "%s", foot[i]);
 			y += step;
+		}
+
+		// second box under the main panel, splits the main combine bucket into its post passes
+		{
+			struct brk_row { LPCSTR name; section_e s; bool always; };
+			static const brk_row brk[] = {
+				{ "ao",       SEC_C_AO,       true  },
+				{ "il",       SEC_C_IL,       false },
+				{ "sky",      SEC_C_SKY,      false },
+				{ "combine1", SEC_C_COMBINE1, true  },
+				{ "ssr",      SEC_C_SSR,      true  },
+				{ "water",    SEC_C_WATER,    false },
+				{ "rain",     SEC_C_RAIN,     false },
+				{ "fwd",      SEC_C_FWD,      false },
+				{ "bloom",    SEC_C_BLOOM,    false },
+				{ "sunshaft", SEC_C_SUNSHAFT, false },
+				{ "fog",      SEC_C_FOG,      false },
+				{ "taa",      SEC_C_TAA,      true  },
+				{ "blur",     SEC_C_BLUR,     false },
+				{ "dof",      SEC_C_DOF,      false },
+				{ "lut",      SEC_C_LUT,      false },
+				{ "combine2", SEC_C_COMBINE2, true  },
+			};
+			const u32 brk_n = sizeof(brk) / sizeof(brk[0]);
+
+			// other is whatever the bucket holds past the timed sub passes, nothing hides in it silently
+			double sub_sum = 0.0;
+			for (u32 i = 0; i < brk_n; ++i)
+				sub_sum += d.sec[brk[i].s].gpu_ms;
+			const double other = d.sec[SEC_MAIN_COMBINE].gpu_ms - sub_sum;
+
+			char btail[2][96];
+			u32 bt = 0;
+			xr_sprintf(btail[bt++], "sun %s shafts %.3f", d.sun_passes ? "on" : "off", d.sun_shafts);
+
+			u32 shown = 1; // the other row always prints
+			for (u32 i = 0; i < brk_n; ++i)
+				if (brk[i].always || d.sec[brk[i].s].gpu_ms >= 0.005)
+					++shown;
+
+			const float blabel_w = F.SizeOf_("combine1") + digit;
+			float bcontent_w = blabel_w + cell;
+			for (u32 i = 0; i < bt; ++i)
+				bcontent_w = _max(bcontent_w, F.SizeOf_(btail[i]));
+			const float bpanel_w = bcontent_w + 2.f * pad;
+			const float bpanel_h = (1u + shown + bt) * step + 2.f * pad;
+			const float bpanel_l = right - bpanel_w;
+			const float btop = top + panel_h + step * 0.4f;
+			const float blabel_l = bpanel_l + pad;
+			const float bval_r = blabel_l + blabel_w + cell;
+
+			UIRender->SetShader(**s_shader);
+			UIRender->StartPrimitive(6, IUIRender::ptTriList, IUIRender::pttTL);
+			UIRender->PushPoint(bpanel_l, btop, 0.f, back, 0.f, 0.f);
+			UIRender->PushPoint(bpanel_l + bpanel_w, btop, 0.f, back, 1.f, 0.f);
+			UIRender->PushPoint(bpanel_l + bpanel_w, btop + bpanel_h, 0.f, back, 1.f, 1.f);
+			UIRender->PushPoint(bpanel_l, btop, 0.f, back, 0.f, 0.f);
+			UIRender->PushPoint(bpanel_l + bpanel_w, btop + bpanel_h, 0.f, back, 1.f, 1.f);
+			UIRender->PushPoint(bpanel_l, btop + bpanel_h, 0.f, back, 0.f, 1.f);
+			UIRender->FlushPrimitive();
+
+			float by = btop + pad;
+			auto brow = [&](u32 lc, LPCSTR label, u32 vc, LPCSTR val)
+			{
+				F.SetAligment(CGameFont::alLeft); F.SetColor(lc); F.Out(blabel_l, by, "%s", label);
+				F.SetAligment(CGameFont::alRight); F.SetColor(vc); F.Out(bval_r, by, "%s", val);
+				by += step;
+			};
+
+			brow(c_hdr, "combine", c_hdr, "MS");
+			char bb[24];
+			for (u32 i = 0; i < brk_n; ++i)
+			{
+				const double ms = d.sec[brk[i].s].gpu_ms;
+				if (!brk[i].always && ms < 0.005)
+					continue;
+				xr_sprintf(bb, "%.2f", ms);
+				brow(c_txt, brk[i].name, gpu_color(ms), bb);
+			}
+			xr_sprintf(bb, "%.2f", other);
+			brow(c_dim, "other", c_txt, bb);
+
+			F.SetAligment(CGameFont::alLeft);
+			F.SetColor(c_txt);
+			for (u32 i = 0; i < bt; ++i)
+			{
+				F.Out(blabel_l, by, "%s", btail[i]);
+				by += step;
+			}
 		}
 
 		F.OnRender();

@@ -11,12 +11,32 @@ namespace svp_stats
 	{
 		SEC_MAIN_GBUFFER = 0,
 		SEC_MAIN_LIGHTS,
+		SEC_MAIN_EMISSIVE,
 		SEC_MAIN_COMBINE,
 		SEC_SVP_GBUFFER,
 		SEC_SVP_LIGHTS,
 		SEC_SVP_EMISSIVE,
 		SEC_SVP_COMBINE,
 		SEC_FRAME,
+		// combine sub sections, timed on the main pass only, they nest inside SEC_MAIN_COMBINE
+		SEC_C_AO,
+		SEC_C_IL,
+		SEC_C_SKY,
+		SEC_C_COMBINE1,
+		SEC_C_SSR,
+		SEC_C_WATER,
+		SEC_C_RAIN,
+		SEC_C_FWD,
+		SEC_C_BLOOM,
+		SEC_C_SUNSHAFT,
+		SEC_C_FOG,
+		SEC_C_TAA,
+		SEC_C_BLUR,
+		SEC_C_DOF,
+		SEC_C_LUT,
+		SEC_C_COMBINE2,
+		SEC_C_FIRST = SEC_C_AO,
+		SEC_C_LAST = SEC_C_COMBINE2,
 		SEC_COUNT
 	};
 
