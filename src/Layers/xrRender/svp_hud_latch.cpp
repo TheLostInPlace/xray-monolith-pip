@@ -364,21 +364,9 @@ void CDSGraphManager::svp_classify_objective_hud(dxRender_Visual* visual, Fmatri
 }
 
 // pip drain only the weapon list into the scope image, the caller owns the view/projection
-int g_svp_hud_skip_scope = 0; // hud_full mode: 1 drops the scope body, 2 also drops pieces fully behind the front lens
-float g_svp_legacy_front_m = 0.f;
 void CDSGraphManager::r_dsgraph_render_hud_svp()
 {
 	PROF_EVENT("r_dsgraph_render_hud_svp");
-	// mode 1 keeps the heuristic body skip
-	// the mode 2 objective admission plane replaces it
-	extern int scope_svp_enabled;
-	const bool legacy_mode = scope_svp_enabled == 1;
-	{
-		extern int ps_r__svp_hud_full;
-		g_svp_hud_skip_scope = legacy_mode ? ps_r__svp_hud_full : 0;
-	}
-	if (!legacy_mode)
-		g_svp_legacy_front_m = 0.f;
 	// same camera and projection as the world, real depth so the scene occludes the weapon
 	// sliver and vice versa (rmNear depth-fronting belonged to the retired separate camera)
 	RImplementation.rmNormal();
@@ -386,39 +374,15 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 	if (!graph.empty())
 	{
 		std::sort(graph.begin(), graph.end());
-		// the scope body hugs the eyepiece-objective axis, everything else on the weapon (barrel,
-		// sights, hands) sits off-axis. the size cap keeps a merged whole-gun mesh from matching
 		const auto& vp = Device.m_SecondViewport;
-		const Fvector A = vp.eyepiece.m_W.c;
-		Fvector ax; ax.sub(vp.objective.m_W.c, A);
+		Fvector ax;
+		ax.sub(vp.objective.m_W.c, vp.eyepiece.m_W.c);
 		const float len2 = ax.square_magnitude();
 		const float tube = _sqrt(len2);
-		Fvector axis = ax;
-		if (tube > EPS)
-			axis.div(tube);
-		const float rcyl = std::max(vp.eyepiece.radius, vp.objective.radius) * 1.75f + 0.01f;
-		const bool objective_filter = !legacy_mode && svp_objective_hud_filter_ready();
-		const bool measure_ok = (legacy_mode || objective_filter)
-			&& len2 > EPS && vp.eyepiece.radius > EPS;
-		const bool skip_ok = legacy_mode ? (g_svp_hud_skip_scope && measure_ok) : objective_filter;
-		float front = 0.f;
-		float clipon_front = 0.f;
+		const bool objective_filter = svp_objective_hud_filter_ready();
 		u32 admit_candidates = 0;
 		u32 admit_suppressed = 0;
 		u32 admit_clipon_unresolved = 0;
-		// the clip-on window widens to the authored front plane when the per-scope data reaches
-		// past the fixed bound, widening only so no rig loses a classification it had
-		float clip_hi = 2.6f;
-		{
-			extern int ps_r__svp_drain_anchor;
-			const float auth_z = vp.svp_opt_offset.z; // bus resolved, authored_optics folded in
-			if (ps_r__svp_drain_anchor && auth_z > EPS && tube > EPS)
-			{
-				const float t_front = auth_z * vp.eyepiece.radius / tube;
-				if (t_front > clip_hi)
-					clip_hi = t_front;
-			}
-		}
 		extern int ps_r__svp_cop_diag;
 		static u32 s_hud_diag_ms = 0;
 		const bool diag = ps_r__svp_cop_diag && (Device.dwTimeGlobal - s_hud_diag_ms > 3000);
@@ -430,19 +394,22 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 		if (diag)
 		{
 			s_hud_diag_ms = Device.dwTimeGlobal;
-			PipMsg("[SVP-HUD] tube=%.1fcm rcyl=%.1fcm cap=%.1fcm items=%u skip_ok=%d plane=%.1fcm legacyFront=%.1fcm objectiveFilter=%d",
-				tube * 100.f, rcyl * 100.f, tube * 1.75f * 100.f, (u32)graph.size(), (int)skip_ok,
-				(objective_filter ? tube : g_svp_legacy_front_m) * 100.f,
-				g_svp_legacy_front_m * 100.f, objective_filter ? 1 : 0);
+			PipMsg("[SVP-HUD] tube=%.1fcm items=%u objectiveFilter=%d",
+				tube * 100.f, (u32)graph.size(), objective_filter ? 1 : 0);
 		}
-		extern int ps_r__svp_stats; extern u32 svp_stats_hud_cull_reject; extern u32 svp_ledger_hud_cull_reject;
+		extern int ps_r__svp_stats;
+		extern u32 svp_stats_hud_cull_reject;
 		for (auto& item : graph)
 		{
-			if (svp_cull_reject(item.pVisual, svp_pose_of(item.pMatrix))) { if (ps_r__svp_stats) ++svp_stats_hud_cull_reject; svp_ledger_hud_cull_reject = 1; continue; } // pip skip off-cone SVP geometry
+			if (svp_cull_reject(item.pVisual, svp_pose_of(item.pMatrix)))
+			{
+				if (ps_r__svp_stats)
+					++svp_stats_hud_cull_reject;
+				continue;
+			}
 			dxRender_Visual* V = item.pVisual;
 			VERIFY(V && V->shader._get());
 			bool drop = false;
-			bool clip_obj = false;
 			float t = 0.f, rad = -1.f;
 			float axial_lo = 0.f, axial_hi = 0.f;
 			LPCSTR admission = "outside";
@@ -463,57 +430,6 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 				if (objective_admission.forward)
 					++admit_clipon_unresolved;
 			}
-			else if (measure_ok && item.pMatrix)
-			{
-				// skinned parts (addon scopes) sit at their bone, the rest-pose sphere lies elsewhere
-				Fmatrix W = *svp_pose_of(item.pMatrix);
-				CSkeletonX* sk = fast_dynamic_cast<CSkeletonX*>(V);
-				if (sk)
-				{
-					Fmatrix boneR;
-					if (svp_lens_bone_of(V, boneR) || sk->SVP_LensBoneXform(boneR))
-						W.mulB_43(boneR);
-				}
-				Fvector c; W.transform_tiny(c, V->vis.sphere.P);
-				Fvector ac; ac.sub(c, A);
-				t = ac.dotproduct(ax) / len2;
-				// radial distance to the axis LINE, the ocular stack (eyecup, rear housing) sits
-				// on-axis behind the eyepiece and must match too or it shows as rings in the image
-				Fvector p; p.set(A); p.mad(ax, t);
-				rad = p.distance_to(c);
-				// mounts wrap the tube with the center pulled off-axis, the size cap keeps a
-				// barrel sphere from impersonating a clamp
-				const float R = V->vis.sphere.R;
-				const bool wrap = (rad < R * 0.6f) && (R < tube * 0.3f);
-				// clip-on optics sit coaxial PAST the objective, the tight radial keeps the
-				// under-slung barrel out of this branch
-				const bool clipon = (t >= 1.4f && t < clip_hi) && (rad < rcyl * 0.8f);
-				const bool explicit_optic = item.hud_role == IDSGraphManager::hud_optic;
-				drop = explicit_optic || ((R < tube * 1.75f)
-					&& (clipon || ((t > -0.6f && t < 1.4f) && (rad < rcyl || wrap))));
-				// only coaxial optic bodies define the front plane, a wrap mount's sphere is
-				// length-dominated and says nothing about the front lens
-				if (drop && (rad < rcyl || clipon))
-					front = _max(front, t * tube + R);
-				// a real clip-on front is a flat round disc, its mesh box has two long axes and a thin
-				// one, a front-sight post is a spike and must not push the plane past the objective
-				Fvector bs; V->vis.box.getsize(bs);
-				const float bmax = std::max(bs.x, std::max(bs.y, bs.z));
-				const float bmin = std::min(bs.x, std::min(bs.y, bs.z));
-				const float bmid = bs.x + bs.y + bs.z - bmax - bmin;
-				const bool disc_like = (bmax > EPS) && (bmid > 0.5f * bmax) && (bmin < 0.5f * bmax);
-				if (clipon && disc_like)
-					clipon_front = _max(clipon_front, t * tube + R);
-				// mode 2 drops pieces wholly behind the front plane, spanning pieces render whole
-				const float plane = (g_svp_legacy_front_m > EPS) ? g_svp_legacy_front_m : tube;
-				if (!drop && g_svp_hud_skip_scope >= 2 && (t * tube + R) < plane)
-					drop = true;
-				extern int ps_r__svp_drain_clip;
-				if (legacy_mode && ps_r__svp_drain_clip
-					&& vp.svp_opt_offset.z > EPS && vp.eyepiece.radius > EPS
-					&& (t * tube + R) < vp.svp_opt_offset.z * vp.eyepiece.radius)
-					clip_obj = true;
-			}
 			if (diag)
 			{
 				auto tx = V->GetTexture();
@@ -525,10 +441,10 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 						vp.svp_lens_visual, vp.svp_lens_root,
 						tx ? tx->cName.c_str() : "?");
 				else
-					PipMsg("[SVP-HUD] %s t=%.2f rad=%.1fcm R=%.1fcm %s", (drop || clip_obj) ? "SKIP" : "keep",
+					PipMsg("[SVP-HUD] keep t=%.2f rad=%.1fcm R=%.1fcm %s",
 						t, rad * 100.f, V->vis.sphere.R * 100.f, tx ? tx->cName.c_str() : "?");
 			}
-			if ((drop && skip_ok) || clip_obj) continue;
+			if (drop) continue;
 			if (relative_diag && item.hud_role == hud_primary_item
 				&& V != vp.svp_lens_visual)
 			{
@@ -691,18 +607,6 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 			PipMsg("[SVP-ADMIT] summary candidates=%u suppressed=%u clipon-unresolved=%u front=%.1fcm frame=%u session=%u",
 				admit_candidates, admit_suppressed, admit_clipon_unresolved,
 				vp.svp_front_use_m * 100.f, vp.svp_camera_frame, vp.svp_camera_session);
-		// consumed by next frame's near plane, the authored (or detected) objective plane wins,
-		// a confirmed clip-on front sitting beyond it keeps the plane ahead of the ring
-		const float auth_z = vp.svp_opt_offset.z; // bus resolved, authored_optics folded in
-		if (legacy_mode)
-		{
-			g_svp_legacy_front_m = _max(front, clipon_front);
-			if (auth_z > EPS && vp.eyepiece.radius > EPS)
-			{
-				const float authored = auth_z * vp.eyepiece.radius;
-				g_svp_legacy_front_m = _max(authored, clipon_front);
-			}
-		}
 		graph.clear();
 	}
 	RCache.set_xform_world(Fidentity);

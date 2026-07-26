@@ -3,13 +3,14 @@
 #include "xr_ioconsole.h"
 #include "xr_ioc_cmd.h"
 #include "device.h"
+#include "svp_console_policy.h"
 
 float g_zoom_smooth = 12.f; // pip dynamic-scope zoom smoothing rate (lerp per second), 0 = instant stepped feel
 float g_zoom_analog = 0.f; // pip dynamic-scope analog zoom, 0 = discrete config steps, >0 = fine steps across the range
 int g_zoom_clicks = 1; // pip a scope authoring zoom_step_count 1 clicks between its two detents, ignoring analog and smoothing, 0 = off
 int g_svp_zoom_base = 1; // pip true svp scopes derive the bottom detent in the authored 75 base so it renders 1x, 0 = legacy fov derivation
 int g_svp_authored_mags = 1; // pip svp scopes read authored magnifications from the scope section, 0 = legacy scope_zoom_factor derivation
-int g_svp_optic_api = 1;
+static int s_svp_optic_api = 1;
 float g_svp_zero = 100.f; // pip auto-zero cap in meters, shots converge on the aimed surface up to this range, 0 = raw fire axis
 int g_svp_unify_cam_fx = 1; // pip camera-only effector kicks also rotate the weapon while a PiP scope is aimed, 0 = stock split
 int g_svp_world_cam_fx = 1; // pip cam effectors keep driving the main view while a PiP scope is aimed, 0 = frozen surround
@@ -23,25 +24,6 @@ bool svp_optic_api_active()
 {
 	return Device.m_SecondViewport.IsOpticApiEnabled();
 }
-
-class CCC_SvpOpticApi final : public CCC_Integer
-{
-public:
-	CCC_SvpOpticApi(LPCSTR name, int* value, int minimum, int maximum)
-		: CCC_Integer(name, value, minimum, maximum)
-	{
-	}
-
-	void Execute(LPCSTR args) override
-	{
-		const int previous = *value;
-		CCC_Integer::Execute(args);
-		if (*value == previous)
-			return;
-		Device.m_SecondViewport.SetOpticApiRequested(*value != 0);
-		Msg("[SVP-CONFIG] route=%s state=invalidated", *value ? "typed" : "legacy");
-	}
-};
 
 static LPCSTR svp_optic_source(const CSecondVPParams::OpticConfig& config,
 	CSecondVPParams::EOpticConfigValue field)
@@ -109,7 +91,7 @@ public:
 		u32 route_epoch = 0;
 		Device.m_SecondViewport.ReadOpticConfigState(accepted, active, route_epoch);
 		Msg("[SVP-CONFIG] api=%d connected=%d active=%d route_epoch=%u",
-			g_svp_optic_api, Device.m_SecondViewport.IsOpticApiConnected(),
+			s_svp_optic_api, Device.m_SecondViewport.IsOpticApiConnected(),
 			svp_optic_api_active(), route_epoch);
 		svp_dump_optic_record("accepted", accepted);
 		svp_dump_optic_record("active", active);
@@ -120,16 +102,16 @@ void svp_gameplay_cvars_init()
 {
 	CMD4(CCC_Float, "g_zoom_smooth", &g_zoom_smooth, 0.f, 60.f);
 	CMD4(CCC_Float, "g_zoom_analog", &g_zoom_analog, 0.f, 200.f);
-	CMD4(CCC_Integer, "g_zoom_clicks", &g_zoom_clicks, 0, 1);
-	CMD4(CCC_Integer, "g_svp_zoom_base", &g_svp_zoom_base, 0, 1);
-	CMD4(CCC_Integer, "g_svp_authored_mags", &g_svp_authored_mags, 0, 1);
-	CMD4(CCC_SvpOpticApi, "g_svp_optic_api", &g_svp_optic_api, 0, 1);
-	CMD4(CCC_Float, "g_svp_zero", &g_svp_zero, 0.f, 1000.f);
-	CMD4(CCC_Integer, "g_svp_unify_cam_fx", &g_svp_unify_cam_fx, 0, 1);
-	CMD4(CCC_Integer, "g_svp_world_cam_fx", &g_svp_world_cam_fx, 0, 1);
-	CMD4(CCC_Integer, "g_svp_hud_true_fov", &g_svp_hud_true_fov, 0, 1);
-	CMD4(CCC_Integer, "g_svp_zoom_sync", &g_svp_zoom_sync, 0, 1);
-	CMD4(CCC_Integer, "g_svp_crescent", &g_svp_crescent, 0, 1);
+	CMD4(CCC_SvpFixedInteger, "g_zoom_clicks", &g_zoom_clicks, 0, 1);
+	CMD4(CCC_SvpFixedInteger, "g_svp_zoom_base", &g_svp_zoom_base, 0, 1);
+	CMD4(CCC_SvpFixedInteger, "g_svp_authored_mags", &g_svp_authored_mags, 0, 1);
+	CMD4(CCC_SvpFixedInteger, "g_svp_optic_api", &s_svp_optic_api, 0, 1);
+	CMD4(CCC_SvpProfileFloat, "g_svp_zero", &g_svp_zero, 0.f, 1000.f);
+	CMD4(CCC_SvpFixedInteger, "g_svp_unify_cam_fx", &g_svp_unify_cam_fx, 0, 1);
+	CMD4(CCC_SvpFixedInteger, "g_svp_world_cam_fx", &g_svp_world_cam_fx, 0, 1);
+	CMD4(CCC_SvpInternalInteger, "g_svp_hud_true_fov", &g_svp_hud_true_fov, 0, 1);
+	CMD4(CCC_SvpFixedInteger, "g_svp_zoom_sync", &g_svp_zoom_sync, 0, 1);
+	CMD4(CCC_SvpFixedInteger, "g_svp_crescent", &g_svp_crescent, 0, 1);
 	CMD4(CCC_Float, "g_svp_sens", &g_svp_sens, 0.1f, 3.f);
 	CMD4(CCC_Float, "g_svp_sens_curve", &g_svp_sens_curve, 0.f, 2.f);
 	CMD1(CCC_SvpDumpOptic, "svp_dump_optic");

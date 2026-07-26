@@ -5,7 +5,7 @@
 // true PiP second viewport (SVP) console vars, the complete extern set
 // definitions and registration live in svp_console.cpp
 
-extern ECORE_API int scope_svp_enabled; // true PiP scope mode (0 off, 1 eyepiece, 2 objective)
+extern ECORE_API int scope_svp_enabled; // true PiP scope mode with zero off and positive inputs objective
 extern ECORE_API int scope_debug; // scope debug overlay level
 extern ECORE_API int ps_r__3db_debug; // ballistics overlay level
 
@@ -38,11 +38,8 @@ extern ECORE_API u32 svp_ledger_cull_reject_ident;
 extern ECORE_API u32 svp_ledger_lights_mirrored;
 extern ECORE_API u32 svp_ledger_lights_skipped;
 extern ECORE_API u32 svp_ledger_lod_scale;
-extern ECORE_API u32 svp_ledger_hud_cull_reject;
 extern ECORE_API u32 svp_ledger_grass_cull_reject;
-extern ECORE_API u32 svp_ledger_reflex_capture;
 extern ECORE_API u32 svp_ledger_distort_guard;
-extern ECORE_API u32 svp_ledger_nvg_sky;
 extern ECORE_API u32 svp_ledger_disc_latch;
 extern ECORE_API u32 svp_ledger_fwd_keep;
 extern ECORE_API float ps_r__svp_adaptive_res;
@@ -71,17 +68,11 @@ extern ECORE_API float ps_r__svp_obj_size;
 extern ECORE_API int ps_r__svp_focal_derive;
 extern ECORE_API int ps_r__svp_glare_model;
 extern ECORE_API int ps_r__svp_photo_model;
-extern ECORE_API int ps_r__svp_drain_anchor;
-extern ECORE_API int ps_r__svp_settle_derive;
-extern ECORE_API int ps_r__svp_ratio_derive;
-extern ECORE_API int ps_r__svp_lens_reject;
-extern ECORE_API int ps_r__svp_recoil_hold;
 extern ECORE_API int ps_r__svp_roll_stabilize;
 extern ECORE_API int ps_r__svp_clean_optics;
 extern ECORE_API int ps_r__svp_distort_guard;
 extern ECORE_API int ps_r__svp_jitterfix;
 extern ECORE_API int ps_r__svp_taa_mask;
-extern ECORE_API int ps_r__svp_hud_fov_match;
 extern ECORE_API int ps_r__svp_bloom;
 extern ECORE_API int ps_r__svp_local_exposure;
 extern ECORE_API float ps_r__svp_exposure_bias;
@@ -151,12 +142,8 @@ extern ECORE_API float ps_r__svp_sharpen_inner;
 extern ECORE_API float ps_r__svp_nvg_bleach;
 extern ECORE_API float ps_r__svp_nvg_sensitivity;
 extern ECORE_API int ps_r__svp_nvg_objective;
-extern ECORE_API int ps_r__svp_hud_full;
 extern ECORE_API int ps_r__svp_weapon_continuity;
-extern ECORE_API int ps_r__svp_ray_transfer;
 extern ECORE_API int ps_r__svp_optic_body_suppress;
-extern ECORE_API int ps_r__svp_near_pupil;
-extern ECORE_API int ps_r__svp_drain_clip;
 extern ECORE_API int ps_r__svp_nearblur_scatter;
 
 // registers every svp console command, called once from xrRender_initconsole

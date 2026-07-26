@@ -73,7 +73,14 @@ local function probe_typed_api()
 end
 
 local function typed_route()
-    return probe_typed_api() and get_console():get_integer("g_svp_optic_api") > 0
+    return probe_typed_api()
+end
+
+local function select_route()
+    if typed_route() then
+        return "typed"
+    end
+    return "legacy_console"
 end
 
 local function line_source(section, key)
@@ -288,7 +295,7 @@ local function resolve_aux(scope_sec, weap_sec, scope_hint)
         adapt_speed_source = adapt ~= nil
             and source_text(adapt_kind, adapt_section, adapt_file, "s3ds_adapt_speed")
             or "lua_default",
-        zero_m = zero and zero > 0 and zero or 100,
+        zero_m = zero ~= nil and zero or 100,
         zero_source = zero_source or "lua_default",
     }
 end
@@ -540,7 +547,7 @@ local function log_optic(item, weapon, scope_sec, diagnostic_scope, scope_hint, 
         tostring(optics.exit_pupil_high_mm or "none"))
 end
 
-local function materialize_legacy(optics, aux, lens)
+local function materialize_legacy_console(optics, aux, lens)
     pip_optic_profile.materialize_legacy(optics)
     exec_console_cmd("s3ds_middle_grey " .. tostring(aux.middle_grey))
     exec_console_cmd("s3ds_adapt_speed " .. tostring(aux.adapt_speed))
@@ -653,16 +660,16 @@ local function try_push(expected_key, expected_token, expected_route)
     if not landed and not objective_optional(scope_sec, weap_sec, zoom_type, scope_hint) then
         return false
     end
-    materialize_legacy(optics, aux, lens)
-
-    if expected_route == "typed" then
+    if expected_route ~= "typed" then
+        materialize_legacy_console(optics, aux, lens)
+    else
         local config = typed_table(expected_token, key, item, weapon_id, scope_sec,
             diagnostic_scope, scope_hint, weap_sec, zoom_type, optics, aux, lens,
             hybrid_reflex, hybrid_authored)
-        local ok, accepted = pcall(api_apply, expected_token, config)
+        local ok, accepted = pcall(api_apply, config.context_token, config)
         if not ok or not accepted then
-            printf("![SVP-CONFIG] apply failed token=%s context=%s call=%s result=%s",
-                tostring(expected_token), key, tostring(ok), tostring(accepted))
+            printf("![SVP-CONFIG] apply failed route=%s token=%s context=%s call=%s result=%s",
+                expected_route, tostring(expected_token), key, tostring(ok), tostring(accepted))
             return true
         end
     end
@@ -685,43 +692,26 @@ local function clear_token()
     active_token = nil
 end
 
+local function clear_legacy_route(route)
+    if route == "legacy_console" then
+        exec_console_cmd("s3ds_middle_grey 0")
+        exec_console_cmd("s3ds_adapt_speed 0")
+    end
+end
+
 local function clear_offset()
     RemoveTimeEvent(RETRY_EV, "retry")
-    local mode = get_console():get_integer("r__svpscope")
-    if mode > 0 then
+    local route = active_route
+    if route == "typed" then
         clear_token()
     else
         active_token = nil
     end
+    clear_legacy_route(route)
     active_key = nil
     active_route = nil
     last_diag_key = nil
     identity_diag_key = nil
-    if mode <= 0 then
-        return
-    end
-    exec_console_cmd("s3ds_middle_grey 0")
-    exec_console_cmd("s3ds_adapt_speed 0")
-end
-
-local PIP_MIGRATION_VERSION = 20260712
-local function run_migrations()
-    local saved = axr_main.config:r_value("pip", "migration_version", 2, 0)
-    if saved >= PIP_MIGRATION_VERSION then
-        return
-    end
-    if saved < 20260710 then
-        exec_console_cmd("r__svp_veiling_glare 0")
-        exec_console_cmd("r__svp_coating 0")
-        exec_console_cmd("r__svp_mirage 0")
-        exec_console_cmd("r__svp_reticle_washout 0")
-    end
-    if saved < 20260712 then
-        exec_console_cmd("r__svp_obj_size 1.0")
-    end
-    axr_main.config:w_value("pip", "migration_version", PIP_MIGRATION_VERSION)
-    axr_main.config:save()
-    printf("pip migration %s applied", PIP_MIGRATION_VERSION)
 end
 
 local function push_offset(force)
@@ -731,10 +721,11 @@ local function push_offset(force)
     if not item then
         return
     end
-    run_migrations()
-
-    local route = typed_route() and "typed" or "legacy"
+    local route = select_route()
     if force or active_key ~= key or active_route ~= route then
+        if active_route ~= route then
+            clear_legacy_route(active_route)
+        end
         clear_token()
         active_key = key
         active_route = route
@@ -784,7 +775,7 @@ local function route_update()
     next_reconcile_ms = now + RECONCILE_MS
 
     local mode = get_console():get_integer("r__svpscope")
-    local api = probe_typed_api() and get_console():get_integer("g_svp_optic_api") or 0
+    local api = probe_typed_api() and 1 or 0
     local epoch = 0
     if api_supported then
         local ok, value = pcall(api_route_epoch)
@@ -804,6 +795,7 @@ local function route_update()
         last_api = api
         last_route_epoch = epoch
         RemoveTimeEvent(RETRY_EV, "retry")
+        clear_legacy_route(active_route)
         active_token = nil
         active_key = nil
         active_route = nil
@@ -822,7 +814,7 @@ local function route_update()
     end
 
     local item, _, _, _, _, _, _, _, key = aim_context()
-    local route = api > 0 and "typed" or "legacy"
+    local route = select_route()
     if item and (key ~= active_key or route ~= active_route) then
         push_offset(true)
     elseif not item and active_key then
@@ -942,7 +934,7 @@ function on_game_start()
     end
     probe_typed_api()
     last_mode = get_console():get_integer("r__svpscope")
-    last_api = api_supported and get_console():get_integer("g_svp_optic_api") or 0
+    last_api = api_supported and 1 or 0
     if api_supported then
         local ok, epoch = pcall(api_route_epoch)
         last_route_epoch = ok and epoch or 0

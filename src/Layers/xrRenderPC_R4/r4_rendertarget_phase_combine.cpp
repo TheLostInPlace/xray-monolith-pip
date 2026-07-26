@@ -151,7 +151,8 @@ void CRenderTarget::phase_combine()
 		extern Fvector4 ps_dev_param_8;
 		const bool svp_nvg_sky = Device.true_pip_on && Device.m_SecondViewport.m_render_pass_is_svp
 			&& ps_dev_param_8.x >= 1.f && RImplementation.TargetMain && this != RImplementation.TargetMain;
-		if (svp_nvg_sky) { if (ps_r__svp_stats) ++svp_stats_nvg_sky; svp_ledger_nvg_sky = 1; } // overlay + ledger proof the nvg sky lum remap fired
+		if (svp_nvg_sky && ps_r__svp_stats)
+			++svp_stats_nvg_sky;
 		if (svp_nvg_sky)
 			t_LUM_dest->surface_set(RImplementation.TargetMain->rt_LUM_pool[0]->pSurface);
 

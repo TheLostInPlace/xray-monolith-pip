@@ -295,7 +295,7 @@ bool CWeapon::GetSVPCameraMatrix()
 	if (!vp.ReadSight(sight) || sight.lens_radius <= EPS
 		|| !vp.SnapshotRecent(sight.frame, sight.session, Device.dwFrame))
 		return false;
-	if (scope_svp_enabled < 2 || !svp_optic_api_active())
+	if (!scope_svp_enabled || !svp_optic_api_active())
 		return true;
 
 	CSecondVPParams::OpticConfig config;

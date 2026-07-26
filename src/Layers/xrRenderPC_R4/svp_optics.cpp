@@ -1205,7 +1205,6 @@ bool CRenderTarget::draw_hybrid_reflex()
 {
 	extern Fvector4 ps_s3ds_param_3;
 	extern int ps_markswitch_current;
-	extern int scope_svp_enabled;
 	auto& G = RImplementation.GMBase.RGraph;
 	auto& vp = Device.m_SecondViewport;
 	constexpr int mark_magnifier_type = 12;
@@ -1236,7 +1235,6 @@ bool CRenderTarget::draw_hybrid_reflex()
 	enum class HybridState : u32
 	{
 		Inactive,
-		WrongMode,
 		WrongDomain,
 		NotHybrid,
 		Thermal,
@@ -1253,8 +1251,6 @@ bool CRenderTarget::draw_hybrid_reflex()
 	u32 drawn = 0;
 	if (!Device.true_pip_on || !vp.IsSVPActive())
 		state = HybridState::Inactive;
-	else if (scope_svp_enabled < 2)
-		state = HybridState::WrongMode;
 	else if (vp.svp_camera_domain != CSecondVPParams::camera_objective
 		|| vp.svp_front_use_m <= EPS || vp.objective.radius <= EPS)
 		state = HybridState::WrongDomain;
@@ -1311,7 +1307,6 @@ bool CRenderTarget::draw_hybrid_reflex()
 			: state == HybridState::Thermal ? "thermal"
 			: state == HybridState::NotHybrid ? "not_hybrid"
 			: state == HybridState::WrongDomain ? "wrong_domain"
-			: state == HybridState::WrongMode ? "wrong_mode"
 			: "inactive";
 		LPCSTR optic_name = optic.scope[0] ? optic.scope
 			: (optic.diagnostic_scope[0] ? optic.diagnostic_scope : "legacy");
@@ -1332,7 +1327,6 @@ bool CRenderTarget::draw_hybrid_reflex()
 	{
 		if (ps_r__svp_stats)
 			++svp_stats_reflex_capture;
-		svp_ledger_reflex_capture = 1;
 		return true;
 	}
 	return false;

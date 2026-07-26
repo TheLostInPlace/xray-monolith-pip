@@ -1101,20 +1101,6 @@ bool CSecondVPParams::ConnectOpticApi(u32 version)
 	return true;
 }
 
-void CSecondVPParams::SetOpticApiRequested(bool enabled)
-{
-	const bool previous = m_optic_api_requested.load(std::memory_order_acquire);
-	if (previous == enabled)
-		return;
-	if (!enabled)
-		m_optic_api_requested.store(false, std::memory_order_release);
-
-	xrCriticalSectionGuard guard(m_snapshot_lock);
-	ResetOpticConfigLocked();
-	if (enabled)
-		m_optic_api_requested.store(true, std::memory_order_release);
-}
-
 void CSecondVPParams::SetOpticScopeMode(u8 mode)
 {
 	const u8 previous = m_optic_scope_mode.load(std::memory_order_acquire);

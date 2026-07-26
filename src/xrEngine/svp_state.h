@@ -43,7 +43,6 @@ public:
 	struct Lens { Fmatrix m_W; float radius; };
 	enum ECameraDomain : u8
 	{
-		camera_eyepiece,
 		camera_main_eye,
 		camera_objective
 	};
@@ -59,8 +58,8 @@ public:
 	// svpCamera tail (render thread, written then read same frame) for the eval inputs
 	float svp_near = 0.f, svp_far = 0.f, svp_fov = 0.f, svp_aspect = 1.f;
 	Fvector svp_cam_pos = {}, svp_up = {}, svp_right = {}, svp_fwd = {};
-	float svp_front_use_m = 0.f; // signed eyepiece to objective distance used by mode 2
-	ECameraDomain svp_camera_domain = camera_eyepiece;
+	float svp_front_use_m = 0.f; // signed eyepiece to objective distance used by true PiP
+	ECameraDomain svp_camera_domain = camera_main_eye;
 	u32 svp_camera_frame = u32(-1); // render frame that published matrices[1]
 	u32 svp_camera_session = 0; // SVP session that published matrices[1]
 	const void* svp_lens_root = nullptr;
@@ -68,7 +67,6 @@ public:
 	const void* svp_lens_owner = nullptr;
 	u32 svp_lens_frame = u32(-1);
 	Fvector2 svp_jitter_px = {}; // raw sub-pixel jitter baked into matrices[1].mProject, {0,0} at gate 0
-	Fvector2 svp_principal_ndc = {}; // physical off axis shift before temporal jitter
 	bool m_lens_prev_valid = false; // render-thread edge state for the lens-appears reset trigger
 
 	float svp_disc_px = 0.f; // pip on-screen eyepiece disc diameter (px), learned in the lens composite
@@ -228,7 +226,6 @@ public:
 	void AppendFireTrace(const FireTrace& trace);
 	void ReadFireTraces(FireTrace (&traces)[16]) const;
 	bool ConnectOpticApi(u32 version);
-	void SetOpticApiRequested(bool enabled);
 	void SetOpticScopeMode(u8 mode);
 	IC bool IsOpticApiConnected() const
 	{
@@ -236,8 +233,7 @@ public:
 	}
 	IC bool IsOpticApiEnabled() const
 	{
-		return m_optic_api_requested.load(std::memory_order_acquire) &&
-			m_optic_api_connected.load(std::memory_order_acquire) &&
+		return m_optic_api_connected.load(std::memory_order_acquire) &&
 			m_optic_scope_mode.load(std::memory_order_acquire) > 0;
 	}
 	u32 BeginOpticContext(LPCSTR context, LPCSTR weapon, u32 weapon_id,
@@ -262,7 +258,6 @@ private:
 	OpticConfig m_optic_accepted;
 	OpticConfig m_optic_active;
 	OpticConfig m_optic_neutral;
-	std::atomic<bool> m_optic_api_requested{ true };
 	std::atomic<bool> m_optic_api_connected{ false };
 	std::atomic<u8> m_optic_scope_mode{ 0 };
 	std::atomic<u32> m_optic_route_epoch{ 1 };

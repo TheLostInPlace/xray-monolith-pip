@@ -3,6 +3,8 @@
 #include "../xrEngine/device.h"
 #include "../xrEngine/svp_gameplay_cvars.h"
 #include "../Layers/xrRender/svp_console.h"
+#include "ai_space.h"
+#include "script_engine.h"
 
 #include <cmath>
 
@@ -419,6 +421,59 @@ bool svp_bounded_text(LPCSTR text, size_t capacity)
 {
 	return text && xr_strlen(text) < capacity;
 }
+
+luabind::object svp_profile_table(const CSecondVPParams::OpticConfig& config,
+	LPCSTR route)
+{
+	lua_State* state = ai().script_engine().lua();
+	luabind::object table = luabind::newtable(state);
+	table["valid"] = config.valid;
+	table["route"] = route;
+	table["context"] = config.context;
+	table["weapon"] = config.weapon;
+	table["weapon_id"] = static_cast<int>(config.weapon_id);
+	table["scope"] = config.scope;
+	table["diagnostic_scope"] = config.diagnostic_scope;
+	table["identity_source"] = config.identity_source;
+	table["zoom_type"] = static_cast<int>(config.zoom_type);
+	table["reticle_type"] = static_cast<int>(config.reticle_type);
+	table["profile"] = config.profile;
+	table["spec"] = config.spec;
+	table["model"] = config.model;
+	table["binding"] = config.binding;
+	table["binding_section"] = config.binding_section;
+	table["has_objective_offset"] = config.has_objective_offset;
+	table["objective_x"] = config.objective_offset.x;
+	table["objective_y"] = config.objective_offset.y;
+	table["objective_z"] = config.objective_offset.z;
+	table["objective_w"] = config.objective_offset.w;
+	table["objective_mm"] = config.objective_mm;
+	table["middle_grey"] = config.middle_grey;
+	table["adapt_speed"] = config.adapt_speed;
+	table["zero_m"] = config.zero_m;
+	table["tunneling_parallax"] = config.tunneling_parallax;
+	table["tunneling_min"] = config.tunneling_min;
+	table["tunneling_max"] = config.tunneling_max;
+	table["tracking_speed"] = config.tracking_speed;
+	table["tracking_accel_mm_s2"] = config.tracking_accel_mm_s2;
+	table["tracking_limit_mm"] = config.tracking_limit_mm;
+	table["eye_relief_low_mm"] = config.eye_relief_low_mm;
+	table["eye_relief_high_mm"] = config.eye_relief_high_mm;
+	table["exit_pupil_low_mm"] = config.exit_pupil_low_mm;
+	table["exit_pupil_high_mm"] = config.exit_pupil_high_mm;
+	table["pupil_parity"] = config.pupil_parity;
+	table["pupil_field_low"] = config.pupil_field_low;
+	table["pupil_field_high"] = config.pupil_field_high;
+	table["transmission"] = config.transmission;
+	table["twilight_strength"] = config.twilight_strength;
+	table["physical_min"] = config.physical_min;
+	table["physical_max"] = config.physical_max;
+	luabind::object sources = luabind::newtable(state);
+	for (u32 i = 0; i < CSecondVPParams::optic_value_count; ++i)
+		sources[s_source_keys[i]] = config.source[i];
+	table["sources"] = sources;
+	return table;
+}
 }
 
 int svp_optic_api_version()
@@ -434,7 +489,9 @@ bool svp_optic_api_connect(int version)
 
 bool svp_optic_api_has_capability(LPCSTR capability)
 {
-	return capability && 0 == xr_strcmp(capability, "hybrid_reflex");
+	return capability && (
+		0 == xr_strcmp(capability, "hybrid_reflex") ||
+		0 == xr_strcmp(capability, "profile_inspector"));
 }
 
 u32 svp_optic_route_epoch()
@@ -490,7 +547,6 @@ bool svp_apply_optic_profile(u32 context_token, const luabind::object& table)
 				context_token);
 			return false;
 		}
-
 		CSecondVPParams::OpticConfig accepted;
 		Device.m_SecondViewport.ReadOpticConfig(accepted);
 		if (accepted.generation != before.generation)
@@ -522,4 +578,12 @@ bool svp_apply_optic_profile(u32 context_token, const luabind::object& table)
 bool svp_clear_optic_profile(u32 context_token)
 {
 	return Device.m_SecondViewport.ClearOpticConfig(context_token);
+}
+
+luabind::object svp_current_optic_profile()
+{
+	CSecondVPParams::OpticConfig config;
+	if (Device.m_SecondViewport.ReadOpticConfig(config))
+		return svp_profile_table(config, "typed");
+	return svp_profile_table(config, "none");
 }

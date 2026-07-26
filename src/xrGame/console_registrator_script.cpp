@@ -91,7 +91,7 @@ bool is_svp_active()
 	return Device.m_SecondViewport.IsSVPActive();
 }
 
-// pip measured lens optics, kill-switch gated so a default build never runs detection
+// pip measured lens optics fills missing authored geometry
 extern int ps_r__svp_measured_optics;
 
 // run the mesh detection on one hud model, true when a lens with an objective is found
@@ -146,6 +146,7 @@ void console_registrator::script_register(lua_State* L)
 		def("svp_begin_optic_context", &svp_begin_optic_context),
 		def("svp_apply_optic_profile", &svp_apply_optic_profile),
 		def("svp_clear_optic_profile", &svp_clear_optic_profile),
+		def("svp_current_optic_profile", &svp_current_optic_profile),
 
 		class_<CConsole>("CConsole")
 		.def("execute", &CConsole::Execute)

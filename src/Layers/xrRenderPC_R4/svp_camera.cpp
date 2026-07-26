@@ -167,8 +167,8 @@ void debug_scope(Fmatrix scope_camera, const Fmatrix& projection)
 		objTrue.radius = p.dbg_objective_r;
 	draw_circle(Fmatrix(objTrue.m_W).mulB_43(Fmatrix().scale(objTrue.radius, objTrue.radius, 0.f)), 0xffff8000, true);
 	draw_camera(0xffffffff);             // scope cam white
-	// pip magenta cube at the live SVP camera position, updates each frame so the camera move between
-	// svpscope 1 (eyepiece) and 2 (objective) is obvious at a glance
+	// Magenta marks the live SVP camera
+	// It shows main eye fallback versus the objective at a glance
 	draw_cube(scope_camera, eye.radius * 0.6f, 0xffff00ff);
 
 	// green frustum follows the final projection
@@ -217,12 +217,11 @@ void debug_scope(Fmatrix scope_camera, const Fmatrix& projection)
 				s_cam_ms = Device.dwTimeGlobal;
 				Fvector ec; ec.sub(scope_camera.c, p.eyepiece.m_W.c);
 				extern Fvector4 ps_s3ds_param_3;
-				extern int ps_r__svp_hud_full;
-				PipMsg("[SVP-CAM] pos=(%.2f,%.2f,%.2f) fwd=(%.2f,%.2f,%.2f) vfov=%.2fdeg cam2eye=%.1fcm tube=%.1fcm frontplane=%.1fcm it=%.0f full=%d",
+				PipMsg("[SVP-CAM] pos=(%.2f,%.2f,%.2f) fwd=(%.2f,%.2f,%.2f) vfov=%.2fdeg cam2eye=%.1fcm tube=%.1fcm frontplane=%.1fcm it=%.0f",
 					scope_camera.c.x, scope_camera.c.y, scope_camera.c.z,
 					scope_camera.k.x, scope_camera.k.y, scope_camera.k.z,
 					rad2deg(vfov), ec.magnitude() * 100.f, tube * 100.f, front * 100.f,
-					ps_s3ds_param_3.x, ps_r__svp_hud_full);
+					ps_s3ds_param_3.x);
 			}
 		}
 	}
@@ -401,7 +400,7 @@ static LPCSTR svp_camera_domain_name(CSecondVPParams::ECameraDomain domain)
 	case CSecondVPParams::camera_objective:
 		return "objective";
 	default:
-		return "eyepiece";
+		return "unknown";
 	}
 }
 
@@ -591,8 +590,8 @@ bool svpCamera()
 	}
 
 	auto near_plane = fNearPlane;
-	auto m_W_svpcam = params.eyepiece.m_W; // svpscope 1 places the camera on the eyepiece
-	params.svp_camera_domain = CSecondVPParams::camera_eyepiece;
+	auto m_W_svpcam = params.eyepiece.m_W;
+	params.svp_camera_domain = CSecondVPParams::camera_main_eye;
 	Fvector2 exit_height_mm = {};
 	Fvector2 entrance_height_mm = {};
 	Fvector2 principal_ndc = {};
@@ -606,8 +605,7 @@ bool svpCamera()
 	int entrance_ray_mode = 0;
 	float entrance_parity_state = 0.f;
 	extern int ps_r__svp_weapon_continuity;
-	extern int ps_r__svp_ray_transfer;
-	// mode 2 falls back to the main eye until a valid objective is available
+	// True PiP falls back to the main eye until a valid objective is available
 	if (scope_svp_enabled >= 2)
 	{
 		m_W_svpcam.c.set(eyeW0.c);
@@ -628,66 +626,27 @@ bool svpCamera()
 			if (ps_r__svp_weapon_continuity && !flat_optic
 				&& params.objective.radius > EPS)
 			{
-				if (ps_r__svp_ray_transfer == 0)
+				Fmatrix eyepiece_inverse;
+				if (_valid(params.eyepiece.m_W.i) && _valid(params.eyepiece.m_W.j)
+					&& _valid(params.eyepiece.m_W.k) && _valid(params.eyepiece.m_W.c)
+					&& eyepiece_inverse.invert_b(params.eyepiece.m_W))
 				{
-					if (eye_sample.valid)
+					eyepiece_inverse.transform_tiny(registration_eye_local, eyeW0.c);
+					eyepiece_inverse.transform_tiny(
+						registration_objective_local, params.objective.m_W.c);
+					objective_registration = SvpPhysicalOptics::MapObjectiveAxisToEyepiece(
+						{ registration_eye_local.x, registration_eye_local.y,
+							registration_eye_local.z },
+						{ registration_objective_local.x, registration_objective_local.y,
+							registration_objective_local.z },
+						{ params.eyepiece.radius, params.eyepiece.radius });
+					if (objective_registration.valid)
 					{
-						entrance_limit_mm = params.svp_opt_obj_mm > EPS
-							? params.svp_opt_obj_mm * 0.5f : params.objective.radius * 1000.f;
-						entrance_parity_state = std::clamp(pupil_parity, -1.f, 1.f);
-						pupil_mag_error = _abs(eye_sample.entrance_scale - scope_magnification)
-							/ _max(scope_magnification, 0.01f);
-						entrance_height_mm.set(
-							eye_sample.raw_mm.x * eye_sample.entrance_scale * entrance_parity_state,
-							eye_sample.raw_mm.y * eye_sample.entrance_scale * entrance_parity_state);
-						const float shift_mm = entrance_height_mm.magnitude();
-						if (shift_mm > entrance_limit_mm && shift_mm > EPS)
-						{
-							entrance_height_mm.mul(entrance_limit_mm / shift_mm);
-							entrance_clipped = true;
-						}
-						const float pupil_scale = eye_sample.entrance_scale * entrance_parity_state;
-						if (_abs(pupil_scale) > EPS)
-							exit_height_mm.set(entrance_height_mm.x / pupil_scale, entrance_height_mm.y / pupil_scale);
-						Fvector right = params.objective.m_W.i;
-						Fvector up = params.objective.m_W.j;
-						right.normalize_safe();
-						up.normalize_safe();
-						m_W_svpcam.c.mad(right, entrance_height_mm.x * 0.001f);
-						m_W_svpcam.c.mad(up, entrance_height_mm.y * 0.001f);
+						principal_ndc.set(objective_registration.principal.x,
+							objective_registration.principal.y);
 						entrance_enabled = true;
-						entrance_ray_mode = 1;
+						entrance_ray_mode = 2;
 					}
-				}
-				else if (ps_r__svp_ray_transfer == 2)
-				{
-					Fmatrix eyepiece_inverse;
-					if (_valid(params.eyepiece.m_W.i) && _valid(params.eyepiece.m_W.j)
-						&& _valid(params.eyepiece.m_W.k) && _valid(params.eyepiece.m_W.c)
-						&& eyepiece_inverse.invert_b(params.eyepiece.m_W))
-					{
-						eyepiece_inverse.transform_tiny(registration_eye_local, eyeW0.c);
-						eyepiece_inverse.transform_tiny(
-							registration_objective_local, params.objective.m_W.c);
-						objective_registration = SvpPhysicalOptics::MapObjectiveAxisToEyepiece(
-							{ registration_eye_local.x, registration_eye_local.y,
-								registration_eye_local.z },
-							{ registration_objective_local.x, registration_objective_local.y,
-								registration_objective_local.z },
-							{ params.eyepiece.radius, params.eyepiece.radius });
-						if (objective_registration.valid)
-						{
-							principal_ndc.set(objective_registration.principal.x,
-								objective_registration.principal.y);
-							entrance_enabled = true;
-							entrance_ray_mode = 2;
-						}
-					}
-				}
-				else
-				{
-					entrance_enabled = true;
-					entrance_ray_mode = 3;
 				}
 			}
 		}
@@ -803,7 +762,6 @@ bool svpCamera()
 		svp_proj_hud._31 += principal_ndc.x;
 		svp_proj_hud._32 += principal_ndc.y;
 	}
-	params.svp_principal_ndc = principal_ndc;
 
 	if (scope_svp_enabled >= 2)
 	{
@@ -835,15 +793,13 @@ bool svpCamera()
 				entrance_enabled ? 1 : 0,
 				entrance_clipped ? 1 : 0,
 				scope_magnification, params.svp_optic_epoch, params.svp_camera_epoch);
-			const char* ray_mode = entrance_ray_mode == 3 ? "objective-lock"
-				: (entrance_ray_mode == 2 ? "objective-register"
-					: (entrance_ray_mode == 1 ? "legacy-translation" : "fixed"));
+			const char* ray_mode = entrance_ray_mode == 2 ? "objective-register" : "fixed";
 			Fvector handed;
 			handed.crossproduct(m_W_svpcam.i, m_W_svpcam.j);
 			Fvector base_forward = params.eyepiece.m_W.k;
 			base_forward.normalize_safe();
 			PipMsg("[SVP-RAY] control=%d mode=%s registerVersion=1 raw=(%.2f,%.2f)mm eyeLocal=(%.5f,%.5f,%.5f) objectiveLocal=(%.5f,%.5f,%.5f) hit=(%.5f,%.5f) principal=(%.5f,%.5f) fraction=%.5f valid=%d inside=%d exitHeight=(%.2f,%.2f)mm entranceHeight=(%.2f,%.2f)mm pupilMag=%.3f renderMag=%.3f error=%.3f limit=%.1fmm clipped=%d fwdDot=%.5f handed=%.5f session=%u epoch=%u frame=%u",
-				ps_r__svp_ray_transfer, ray_mode, eye_sample.raw_mm.x, eye_sample.raw_mm.y,
+				2, ray_mode, eye_sample.raw_mm.x, eye_sample.raw_mm.y,
 				registration_eye_local.x, registration_eye_local.y, registration_eye_local.z,
 				registration_objective_local.x, registration_objective_local.y,
 				registration_objective_local.z,
@@ -1205,7 +1161,7 @@ bool svpCamera()
 	static u32 s_camera_frame = u32(-1);
 	static u32 s_camera_session = 0;
 	static u32 s_camera_epoch = 0;
-	static CSecondVPParams::ECameraDomain s_camera_domain = CSecondVPParams::camera_eyepiece;
+	static CSecondVPParams::ECameraDomain s_camera_domain = CSecondVPParams::camera_main_eye;
 	static int s_camera_ray_mode = 0;
 	static float s_camera_parity = 0.f;
 	const bool first_camera = !s_camera_valid;
@@ -1496,16 +1452,9 @@ void CRender::deriveScopeLens()
 			}
 			if (!bone_vis)
 				continue;
-			float score = dist;
-			if (scope_svp_enabled < 2)
+			if (dist < best_score)
 			{
-				if (fwd < 0.2f)
-					continue;
-				score = (1.f - fwd) + dist * 0.02f;
-			}
-			if (score < best_score)
-			{
-				best_score = score;
+				best_score = dist;
 				best = &N;
 			}
 		}
