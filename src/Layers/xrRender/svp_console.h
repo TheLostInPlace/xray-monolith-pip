@@ -72,8 +72,14 @@ extern ECORE_API u32 svp_stats_copies;
 extern ECORE_API u32 svp_stats_copy_kb;
 extern ECORE_API u32 svp_stats_tiny;
 extern ECORE_API u32 svp_stats_shadow;
-// tallies one tracked full-frame copy, self-gated so it costs an int compare when the overlay is off
-extern ECORE_API void svp_note_copy(u32 bytes);
+// tracked copy categories, hist is the closed temporal publishes, tail the back-copies, scene the alias publishes
+enum svp_copy_cat_e { SVP_CP_HIST = 0, SVP_CP_TAIL, SVP_CP_SCENE, SVP_CP_COUNT };
+extern ECORE_API u32 svp_stats_copy_kb_cat[SVP_CP_COUNT];
+// brackets one tracked full-frame copy, self-gated so it costs an int compare when the overlay is off
+extern ECORE_API void svp_copy_begin(u32 cat, u32 bytes);
+extern ECORE_API void svp_copy_end(u32 cat);
+// gpu timer hook, the r4 stats module installs it, null on the renderers without a query pool
+extern ECORE_API void (*svp_copy_timer_hook)(u32 cat, bool begin);
 
 // optics derivation
 extern ECORE_API float ps_r__svp_obj_dist;

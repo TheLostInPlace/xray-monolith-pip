@@ -35,8 +35,10 @@ namespace svp_stats
 		SEC_C_DOF,
 		SEC_C_LUT,
 		SEC_C_COMBINE2,
-		SEC_C_FIRST = SEC_C_AO,
-		SEC_C_LAST = SEC_C_COMBINE2,
+		// tracked copy cost by category, each accumulates across every copy site of its kind
+		SEC_CP_HIST,
+		SEC_CP_TAIL,
+		SEC_CP_SCENE,
 		SEC_COUNT
 	};
 

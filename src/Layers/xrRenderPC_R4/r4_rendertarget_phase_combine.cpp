@@ -399,11 +399,12 @@ void CRenderTarget::phase_combine()
 	tm_end(svp_stats::SEC_C_COMBINE1);
 
 	//Copy previous rt
-	svp_note_copy(rt_copy_bytes(rt_Generic_temp));
+	svp_copy_begin(SVP_CP_SCENE, rt_copy_bytes(rt_Generic_temp));
 	if (!RImplementation.o.dx10_msaa)
 		HW.pContext->CopyResource(rt_Generic_temp->pTexture->surface_get(), rt_Generic_0->pTexture->surface_get());
 	else
 		HW.pContext->CopyResource(rt_Generic_temp->pTexture->surface_get(), rt_Generic_0_r->pTexture->surface_get());
+	svp_copy_end(SVP_CP_SCENE);
 
 	// rt_Generic_temp now mirrors rt_Generic_0, every writer below flags it so the refresh copy can drop
 	bool gen0_dirty = false;
@@ -465,8 +466,9 @@ void CRenderTarget::phase_combine()
 		set_viewport_size(HW.pContext, w, h);
 
 		// Save Frame
-		svp_note_copy(rt_copy_bytes(rt_ssfx_water));
+		svp_copy_begin(SVP_CP_SCENE, rt_copy_bytes(rt_ssfx_water));
 		HW.pContext->CopyResource(rt_ssfx_water->pTexture->surface_get(), rt_ssfx_temp->pTexture->surface_get());
+		svp_copy_end(SVP_CP_SCENE);
 
 		// Water SSR Blur
 		phase_ssfx_water_blur();
@@ -523,11 +525,12 @@ void CRenderTarget::phase_combine()
 		svp_stats_lean_flags |= svp_stats::LEAN_GLASS;
 	if (RImplementation.o.ssfx_glass && !lean_glass)
 	{
-		svp_note_copy(rt_copy_bytes(rt_Generic_temp));
+		svp_copy_begin(SVP_CP_SCENE, rt_copy_bytes(rt_Generic_temp));
 		if (!RImplementation.o.dx10_msaa)
 			HW.pContext->CopyResource(rt_Generic_temp->pTexture->surface_get(), rt_Generic_0->pTexture->surface_get());
 		else
 			HW.pContext->CopyResource(rt_Generic_temp->pTexture->surface_get(), rt_Generic_0_r->pTexture->surface_get());
+		svp_copy_end(SVP_CP_SCENE);
 	}
 
 	// Forward rendering
@@ -805,8 +808,9 @@ void CRenderTarget::phase_combine()
 
 	if (ssfx_PrevPos_Requiered)
 	{
-		svp_note_copy(rt_copy_bytes(rt_ssfx_prevPos));
+		svp_copy_begin(SVP_CP_HIST, rt_copy_bytes(rt_ssfx_prevPos));
 		HW.pContext->CopyResource(rt_ssfx_prevPos->pTexture->surface_get(), rt_Position->pTexture->surface_get());
+		svp_copy_end(SVP_CP_HIST);
 	}
 
 	// PP enabled ?
