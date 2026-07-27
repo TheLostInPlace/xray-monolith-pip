@@ -404,6 +404,72 @@ static LPCSTR svp_camera_domain_name(CSecondVPParams::ECameraDomain domain)
 	}
 }
 
+// objective near plane, r__svp_near above zero is a manual override, otherwise it tracks the nearest
+// drawn weapon extent the drain published last frame, rising slowly and dropping at once
+static float svp_auto_near(CSecondVPParams& vp, float cap, float& out_min, bool& out_manual,
+	bool& out_fresh)
+{
+	extern float ps_r__svp_near;
+	static float s_slew = R_VIEWPORT_NEAR;
+	static u32 s_frame = u32(-1);
+	static u32 s_epoch = u32(-1);
+	static u32 s_session = 0;
+	out_min = vp.svp_hud_min_axial; // raw published value, the log needs the sentinel verbatim
+	out_fresh = false;
+	out_manual = (ps_r__svp_near > 0.f);
+	if (out_manual)
+	{
+		s_slew = R_VIEWPORT_NEAR;
+		s_frame = Device.dwFrame;
+		s_epoch = vp.svp_optic_epoch;
+		return ps_r__svp_near;
+	}
+	if (!(cap > R_VIEWPORT_NEAR))
+		return R_VIEWPORT_NEAR;
+	// this runs once per svp camera build, which is not once per main frame, so the window spans
+	// from the previous build rather than a fixed frame
+	const u32 prev_build = s_frame;
+	const bool gap = (s_frame == u32(-1)) || (Device.dwFrame < s_frame)
+		|| (Device.dwFrame - s_frame > 8) || (s_session != vp.GetSVPSession());
+	if (gap || s_epoch != vp.svp_optic_epoch)
+		s_slew = R_VIEWPORT_NEAR;
+	s_frame = Device.dwFrame;
+	s_epoch = vp.svp_optic_epoch;
+	s_session = vp.GetSVPSession();
+
+	// a missed publish holds the last value, real transitions floor through the slew reset above
+	float target = s_slew;
+	const bool fresh = vp.svp_hud_min_frame != u32(-1) && prev_build != u32(-1) && !gap
+		&& vp.svp_hud_min_frame >= prev_build
+		&& vp.svp_hud_min_session == vp.GetSVPSession()
+		&& vp.svp_hud_min_epoch == vp.svp_optic_epoch;
+	out_fresh = fresh;
+	if (!fresh)
+	{
+		extern int ps_r__svp_cop_diag;
+		static u32 s_stale_ms = 0;
+		if (ps_r__svp_cop_diag && Device.dwTimeGlobal - s_stale_ms > 5000)
+		{
+			s_stale_ms = Device.dwTimeGlobal;
+			PipMsg("[SVP-CAM] near hold, no fresh publish, r__svp_optic_body_suppress off kills the derive");
+		}
+	}
+	if (fresh)
+	{
+		// half the measured clearance absorbs the one frame of lag, the sentinel means nothing
+		// ahead so the cap is safe, and a zero reaches the plane so only the floor is
+		target = (out_min < 0.f) ? cap
+			: (out_min > 0.f ? 0.5f * out_min : (float)R_VIEWPORT_NEAR);
+	}
+	clamp(target, (float)R_VIEWPORT_NEAR, cap);
+	const float dt = Device.fTimeDelta;
+	const float a = (dt > 0.f) ? (1.f - exp(-dt / 0.25f)) : 1.f;
+	s_slew += a * (target - s_slew);
+	s_slew = _min(target, s_slew); // rises on the constant, drops the frame the target does
+	clamp(s_slew, (float)R_VIEWPORT_NEAR, cap);
+	return s_slew;
+}
+
 bool svpCamera()
 {
 	// the published zoom is raise transient free, unset falls back to the shader constant
@@ -599,6 +665,9 @@ bool svpCamera()
 	Fvector registration_objective_local = {};
 	SvpPhysicalOptics::ObjectiveRegistration objective_registration;
 	float entrance_limit_mm = 0.f;
+	float near_min_axial = 0.f;
+	bool near_manual = false;
+	bool near_fresh = false;
 	float pupil_mag_error = -1.f;
 	bool entrance_enabled = false;
 	bool entrance_clipped = false;
@@ -620,7 +689,7 @@ bool svpCamera()
 		if (params.svp_front_use_m > EPS)
 		{
 			m_W_svpcam.c.set(params.objective.m_W.c);
-			near_plane = R_VIEWPORT_NEAR;
+			near_plane = svp_auto_near(params, fNearPlane, near_min_axial, near_manual, near_fresh);
 			params.svp_camera_domain = CSecondVPParams::camera_objective;
 
 			if (ps_r__svp_weapon_continuity && !flat_optic
@@ -780,9 +849,11 @@ bool svpCamera()
 			const float eye_axial = eye_to_eyepiece.dotproduct(ax);
 			Fvector eye_axis;
 			eye_axis.mad(eyeW0.c, ax, eye_axial);
-			PipMsg("[SVP-CAM] domain=%s front=%.1fcm near=%.1fcm objectiveLateral=%.1fcm eyeOff=%.1fcm raw=(%.1f,%.1f)mm entranceHeight=(%.1f,%.1f)mm principal=(%.5f,%.5f) limit=%.1fmm entranceScale=%.2f parity=%.2f enabled=%d clipped=%d mag=%.2f opticEpoch=%u cameraEpoch=%u",
+			PipMsg("[SVP-CAM] domain=%s front=%.1fcm near=%.1fcm nearMode=%s minAxial=%.4fm nearFresh=%d nearBones=%u nearSkip=%u objectiveLateral=%.1fcm eyeOff=%.1fcm raw=(%.1f,%.1f)mm entranceHeight=(%.1f,%.1f)mm principal=(%.5f,%.5f) limit=%.1fmm entranceScale=%.2f parity=%.2f enabled=%d clipped=%d mag=%.2f opticEpoch=%u cameraEpoch=%u",
 				svp_camera_domain_name(params.svp_camera_domain),
 				params.svp_front_use_m * 100.f, near_plane * 100.f,
+				near_manual ? "manual" : "auto", near_min_axial, near_fresh ? 1 : 0,
+				params.svp_hud_min_bones, params.svp_hud_axis_skip,
 				params.objective.m_W.c.distance_to(axis_center) * 100.f,
 				params.eyepiece.m_W.c.distance_to(eye_axis) * 100.f,
 				eye_sample.raw_mm.x, eye_sample.raw_mm.y,

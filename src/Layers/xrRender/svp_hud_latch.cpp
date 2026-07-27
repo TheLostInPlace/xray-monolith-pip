@@ -36,6 +36,46 @@ bool CSkeletonX::SVP_LensBoneXform(Fmatrix& out)
 	return true;
 }
 
+u16 CSkeletonX::SVP_MeasureBoneCount() const
+{
+	return Parent ? (u16)Parent->LL_BoneCount() : 0;
+}
+
+// pip world corners of one bone's obb, posed from the same palette the drain renders with so the
+// measurement and the draw cannot disagree
+bool CSkeletonX::SVP_BoneCornersWorld(u16 bone, const Fmatrix& pose, Fvector* corners8)
+{
+	if (!Parent || bone >= Parent->LL_BoneCount())
+		return false;
+	Fmatrix bone_x;
+	const bool snapped = SVP_BoneSnapshotXform(bone, bone_x);
+	{
+		xrCriticalSectionGuard guard(&Parent->UCalc_Mutex);
+		if (!Parent->LL_GetBoneVisible(bone))
+			return false;
+		if (!snapped)
+			bone_x = Parent->LL_GetBoneInstance(bone).mRenderTransform;
+	}
+	const Fobb& obb = Parent->LL_GetData(bone).obb;
+	const Fvector& S = obb.m_halfsize;
+	if (!_valid(S) || S.x <= EPS || S.y <= EPS || S.z <= EPS)
+		return false;
+	Fmatrix box_x;
+	obb.xform_get(box_x);
+	Fmatrix X = pose;
+	X.mulB_43(bone_x);
+	X.mulB_43(box_x);
+	for (u32 c = 0; c < 8; ++c)
+	{
+		Fvector local;
+		local.set((c & 1) ? S.x : -S.x, (c & 2) ? S.y : -S.y, (c & 4) ? S.z : -S.z);
+		X.transform_tiny(corners8[c], local);
+		if (!_valid(corners8[c]))
+			return false;
+	}
+	return true;
+}
+
 // pip lens bone visibility, hidden markswitch lens meshes must not win the eyepiece pick
 bool CSkeletonX::SVP_LensBoneVisible()
 {
@@ -250,10 +290,12 @@ struct SSvpRelativeProbe
 };
 
 static bool svp_axial_bounds(const Fbox& box, const Fmatrix& world,
-	const Fvector& origin, const Fvector& axis, float& lower, float& upper)
+	const Fvector& origin, const Fvector& axis, float& lower, float& upper, Fbox& box_w,
+	Fvector* corners_w)
 {
 	lower = 1e9f;
 	upper = -1e9f;
+	box_w.invalidate();
 	for (u32 corner = 0; corner < 8; ++corner)
 	{
 		Fvector local;
@@ -269,8 +311,77 @@ static bool svp_axial_bounds(const Fbox& box, const Fmatrix& world,
 			return false;
 		lower = _min(lower, axial);
 		upper = _max(upper, axial);
+		box_w.modify(point);
+		corners_w[corner] = point;
 	}
 	return lower <= upper;
+}
+
+// axial depth where a posed box first clears every side plane forward of the apex, a lower bound
+// on the nearest visible point, negative when no forward part of the box satisfies some plane
+static float svp_cone_entry(const CFrustum& F, const Fvector* corner,
+	const Fvector& origin, const Fvector& axis, float apex)
+{
+	// box corner bits are x y z, an edge joins the two corners differing in one bit
+	static const u8 edge[12][2] = {
+		{ 0, 1 }, { 2, 3 }, { 4, 5 }, { 6, 7 },
+		{ 0, 2 }, { 1, 3 }, { 4, 6 }, { 5, 7 },
+		{ 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 }
+	};
+	float axial[8];
+	float entry = -1.f;
+	for (int pi = 0; pi < F.p_count; ++pi)
+	{
+		const CFrustum::fplane& P = F.planes[pi];
+		float cls[8];
+		float best = flt_max;
+		for (u32 c = 0; c < 8; ++c)
+		{
+			cls[c] = P.classify(corner[c]);
+			Fvector o;
+			o.sub(corner[c], origin);
+			axial[c] = o.dotproduct(axis);
+			// the aabb test treats a positive classify as outside, behind the apex every plane
+			// alone admits mirror points that are not visibility so those are clamped out
+			if (cls[c] <= 0.f && axial[c] >= apex)
+				best = _min(best, axial[c]);
+		}
+		for (u32 e = 0; e < 12; ++e)
+		{
+			const u32 c0 = edge[e][0], c1 = edge[e][1];
+			// an inside region crossing the apex plane is visible exactly at the apex
+			if ((axial[c0] < apex) != (axial[c1] < apex))
+			{
+				const float span = axial[c1] - axial[c0];
+				if (_abs(span) > EPS_S)
+				{
+					const float s = (apex - axial[c0]) / span;
+					if (cls[c0] + s * (cls[c1] - cls[c0]) <= 0.f)
+						best = _min(best, apex);
+				}
+			}
+			const float a = cls[c0];
+			const float b = cls[c1];
+			if ((a <= 0.f) == (b <= 0.f))
+				continue;
+			const float den = a - b;
+			if (_abs(den) < EPS_S)
+				continue;
+			Fvector d;
+			d.sub(corner[c1], corner[c0]);
+			Fvector x;
+			x.mad(corner[c0], d, a / den);
+			Fvector o;
+			o.sub(x, origin);
+			const float t = o.dotproduct(axis);
+			if (t >= apex)
+				best = _min(best, t);
+		}
+		if (best >= flt_max)
+			return -1.f; // no forward part satisfies this plane, the box is not visible
+		entry = _max(entry, best); // the deepest per-plane entry bounds the real one from below
+	}
+	return _valid(entry) ? entry : -1.f;
 }
 
 static bool svp_objective_hud_filter_ready()
@@ -333,7 +444,8 @@ void CDSGraphManager::svp_classify_objective_hud(dxRender_Visual* visual, Fmatri
 	const bool axis_overlap = _valid(admission.radial)
 		&& (admission.radial < body_radius || wrap);
 	const bool bounds_ok = svp_axial_bounds(visual->vis.box, world, origin, axis,
-		admission.axial_lo, admission.axial_hi);
+		admission.axial_lo, admission.axial_hi, admission.box_w, admission.corners_w);
+	admission.box_valid = bounds_ok;
 	const float plane_epsilon = 0.001f;
 	const bool contains_objective = bounds_ok
 		&& admission.axial_lo <= tube + plane_epsilon
@@ -371,7 +483,8 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 	// sliver and vice versa (rmNear depth-fronting belonged to the retired separate camera)
 	RImplementation.rmNormal();
 	auto& graph = RGraph.mapHUD;
-	if (!graph.empty())
+	// an empty weapon list still has to publish, otherwise the camera reads stale and floors itself
+	if (!graph.empty() || svp_objective_hud_filter_ready())
 	{
 		std::sort(graph.begin(), graph.end());
 		const auto& vp = Device.m_SecondViewport;
@@ -399,6 +512,149 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 		}
 		extern int ps_r__svp_stats;
 		extern u32 svp_stats_hud_cull_reject;
+		// nearest drawn weapon extent in front of the objective, the near-plane derive reads it next frame
+		// svp_cull_reject exempts posed items so the scope frustum is tested here or the barrel never leaves
+		// -1 is the sentinel for nothing ahead, 0 means geometry reaches the objective plane
+		float min_axial = -1.f;
+		CFrustum cone;
+		bool cone_ok = false;
+		if (objective_filter
+			&& Device.m_SecondViewport.SnapshotExact(Device.m_SecondViewport.svp_camera_frame,
+				Device.m_SecondViewport.svp_camera_session, Device.dwFrame))
+		{
+			Fmatrix full;
+			full.mul(Device.matrices[1].mProject, Device.matrices[1].mView);
+			cone.CreateFromMatrix(full, FRUSTUM_P_LRTB);
+			cone_ok = true;
+		}
+		// any part ahead of the plane measures, and the depth used is where the cone actually
+		// reaches the geometry, so a barrel under the optical axis measures further out as zoom rises
+		const Fvector cone_origin = vp.eyepiece.m_W.c;
+		Fvector cone_axis = ax;
+		if (tube > EPS)
+			cone_axis.div(tube);
+		u32 measured_bones = 0;
+		u32 axis_bones = 0;
+		static u32 s_neardump_ms = 0;
+		const bool near_dump = ps_r__svp_cop_diag >= 2 && cone_ok
+			&& Device.dwTimeGlobal - s_neardump_ms > 1000;
+		if (near_dump)
+			s_neardump_ms = Device.dwTimeGlobal;
+		auto fold_near = [&](const Fvector* corners, float lo, float hi)
+		{
+			if (hi <= tube)
+				return -1.f;
+			const float ahead = _max(lo - tube, 0.f);
+			// a negative entry means no forward part of the box is visible, it constrains nothing
+			const float entry = svp_cone_entry(cone, corners, cone_origin, cone_axis, tube);
+			if (entry < 0.f)
+				return -1.f;
+			const float v = _max(ahead, entry - tube);
+			if (!_valid(v))
+				return -1.f;
+			min_axial = (min_axial < 0.f) ? v : _min(min_axial, v);
+			return v;
+		};
+		// pip a bone box the sight axis passes through ahead of the plane is housing around the
+		// camera not image content, it must not floor the near measure
+		auto axis_through_box = [&](const Fvector* c8)
+		{
+			Fmatrix box;
+			box.identity();
+			box.i.sub(c8[1], c8[0]); box.i.mul(0.5f);
+			box.j.sub(c8[2], c8[0]); box.j.mul(0.5f);
+			box.k.sub(c8[4], c8[0]); box.k.mul(0.5f);
+			box.c.add(c8[0], c8[7]); box.c.mul(0.5f);
+			Fmatrix inv;
+			if (!inv.invert_b(box))
+				return true;
+			Fvector o, d;
+			inv.transform_tiny(o, cone_origin);
+			inv.transform_dir(d, cone_axis);
+			float t0 = tube, t1 = flt_max;
+			for (u32 i = 0; i < 3; ++i)
+			{
+				const float oc = (&o.x)[i];
+				const float dc = (&d.x)[i];
+				if (_abs(dc) < 1e-6f)
+				{
+					if (_abs(oc) > 1.f)
+						return false;
+					continue;
+				}
+				float ta = (-1.f - oc) / dc;
+				float tb = (1.f - oc) / dc;
+				if (ta > tb)
+				{
+					const float tt = ta;
+					ta = tb;
+					tb = tt;
+				}
+				t0 = _max(t0, ta);
+				t1 = _min(t1, tb);
+				if (t0 > t1)
+					return false;
+			}
+			return true;
+		};
+		auto measure_near = [&](dxRender_Visual* V, Fmatrix* M, const SSvpHudAdmission& a, u8 role)
+		{
+			if (!a.box_valid || !cone_ok || a.axial_hi <= tube)
+				return;
+			LPCSTR rn = near_dump ? svp_hud_role_name(role) : "";
+			float bb[6] = { a.box_w.min.x, a.box_w.min.y, a.box_w.min.z,
+				a.box_w.max.x, a.box_w.max.y, a.box_w.max.z };
+			u32 mask = 0xff;
+			if (cone.testAABB(bb, mask) == fcvNone)
+				return;
+			// a one piece weapon aabb contains the optical axis so it always measures zero, its
+			// bones do not, the on-axis body sits behind the lens plane and drains away
+			CSkeletonX* sk = (V && M) ? fast_dynamic_cast<CSkeletonX*>(V) : nullptr;
+			u32 used = 0;
+			if (sk)
+			{
+				const Fmatrix& pose = *svp_pose_of(M);
+				const u16 count = sk->SVP_MeasureBoneCount();
+				Fvector bc[8];
+				for (u16 b = 0; b < count; ++b)
+				{
+					if (!sk->SVP_BoneCornersWorld(b, pose, bc))
+						continue;
+					float lo = flt_max, hi = -flt_max;
+					for (u32 c = 0; c < 8; ++c)
+					{
+						Fvector o;
+						o.sub(bc[c], cone_origin);
+						const float d = o.dotproduct(cone_axis);
+						lo = _min(lo, d);
+						hi = _max(hi, d);
+					}
+					if (hi <= tube) // behind the objective, early out before the corner math
+						continue;
+					if (axis_through_box(bc))
+					{
+						++axis_bones;
+						if (near_dump)
+							PipMsg("[SVP-NEARDUMP] %s vis=%p bone=%u lo=%.3f hi=%.3f axis skip", rn, (void*)V, b, lo - tube, hi - tube);
+						continue;
+					}
+					const float fv = fold_near(bc, lo, hi);
+					if (fv >= 0.f)
+						++used;
+					if (near_dump)
+						PipMsg("[SVP-NEARDUMP] %s vis=%p bone=%u lo=%.3f hi=%.3f v=%.3f", rn, (void*)V, b, lo - tube, hi - tube, fv);
+				}
+			}
+			// a posed skeleton speaks through its bones, the whole box serves boneless visuals only
+			// and never when the sight axis passes through it
+			if (!sk && !axis_through_box(a.corners_w))
+			{
+				const float fv = fold_near(a.corners_w, a.axial_lo, a.axial_hi);
+				if (near_dump)
+					PipMsg("[SVP-NEARDUMP] %s vis=%p wholebox lo=%.3f hi=%.3f v=%.3f", rn, (void*)V, a.axial_lo - tube, a.axial_hi - tube, fv);
+			}
+			measured_bones += used;
+		};
 		for (auto& item : graph)
 		{
 			if (svp_cull_reject(item.pVisual, svp_pose_of(item.pMatrix)))
@@ -412,10 +668,10 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 			bool drop = false;
 			float t = 0.f, rad = -1.f;
 			float axial_lo = 0.f, axial_hi = 0.f;
+			SSvpHudAdmission objective_admission;
 			LPCSTR admission = "outside";
 			if (objective_filter)
 			{
-				SSvpHudAdmission objective_admission;
 				svp_classify_objective_hud(V, item.pMatrix, item.hud_role, objective_admission);
 				t = tube > EPS ? objective_admission.axial / tube : 0.f;
 				rad = objective_admission.radial;
@@ -445,6 +701,9 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 						t, rad * 100.f, V->vis.sphere.R * 100.f, tx ? tx->cName.c_str() : "?");
 			}
 			if (drop) continue;
+			// only geometry the scope can actually see may raise the near plane, and only the part
+			// ahead of the objective, anything behind it is past the camera already
+			measure_near(V, item.pMatrix, objective_admission, item.hud_role);
 			if (relative_diag && item.hud_role == hud_primary_item
 				&& V != vp.svp_lens_visual)
 			{
@@ -507,6 +766,41 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 			extern void svp_objective_hud_note_draw(u8);
 			svp_objective_hud_note_draw(item.hud_role);
 #endif
+		}
+		// reflex lenses project through matrices[1] too, they draw later in the frame from a map the
+		// main combine clears at its tail, so this walk still sees them
+#ifdef USE_DX11
+		if (cone_ok)
+		{
+			for (auto& n : RGraph.mapReflexHUDSorted)
+			{
+				if (!n.pVisual || !n.pMatrix)
+					continue;
+				if (svp_cull_reject(n.pVisual, svp_pose_of(n.pMatrix)))
+					continue;
+				SSvpHudAdmission ra;
+				svp_classify_objective_hud(n.pVisual, n.pMatrix, n.hud_role, ra);
+				// the same objective body suppression the main walk applies, a rejected lens is the
+				// on axis thing that must never floor the measure
+				if (ra.reject)
+					continue;
+				measure_near(n.pVisual, n.pMatrix, ra, n.hud_role);
+			}
+		}
+#endif
+		if (near_dump)
+			PipMsg("[SVP-NEARDUMP] frame min=%.3f bones=%u skip=%u", min_axial, measured_bones, axis_bones);
+		// publish for the next frame's objective camera, stamped so a gap or a new optic fails safe
+		// -1 means the drain ran and saw nothing ahead of the objective, not missing data
+		if (objective_filter && cone_ok)
+		{
+			auto& bus = Device.m_SecondViewport;
+			bus.svp_hud_min_axial = min_axial;
+			bus.svp_hud_min_bones = measured_bones;
+			bus.svp_hud_axis_skip = axis_bones;
+			bus.svp_hud_min_frame = Device.dwFrame;
+			bus.svp_hud_min_session = bus.GetSVPSession();
+			bus.svp_hud_min_epoch = bus.svp_optic_epoch;
 		}
 		if (relative_diag && relative_probe.valid)
 		{

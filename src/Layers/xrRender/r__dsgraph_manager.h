@@ -137,6 +137,10 @@ public:
 		bool candidate = false;
 		bool reject = false;
 		bool forward = false;
+		// world aabb and its 8 posed corners, the near-plane derive frustum tests them
+		Fbox box_w;
+		Fvector corners_w[8];
+		bool box_valid = false;
 	};
 	void svp_classify_objective_hud(dxRender_Visual* visual, Fmatrix* matrix, u8 role,
 		SSvpHudAdmission& admission);

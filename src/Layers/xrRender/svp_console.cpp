@@ -53,6 +53,7 @@ int ps_r__svp_dlss = 0; // SVP DLSS-SR master gate, 0 = stock (render_scale iner
 // unit), refined per scope from real objective_mm later
 float ps_r__svp_obj_dist = 1.0f;     // svpscope 2 objective: scale on the AUTO geomscan front distance (1.0 = raw auto, fixed 14r fallback when geomscan finds nothing)
 float ps_r__svp_obj_size = 1.0f;     // svpscope 2 objective radius = eyepiece_radius * this (authored-set median, mod_system_3dss_objective_lenses n=67, 0.65 = the old tuned value)
+float ps_r__svp_near = 0.0f;         // objective near plane, 0 = auto from the nearest drawn weapon, positive meters = manual override
 int ps_r__svp_focal_derive = 1;      // svpscope 2 focal anchors derive from eye relief + tube length (0 = the original 0.4/0.6 split)
 int ps_r__svp_glare_model = 1;       // veiling glare falloff: 1 = Stiles-Holladay 1/theta^2 vs the scope's half fov, 0 = legacy pow6 cone
 int ps_r__svp_photo_model = 1;       // eye photometrics: 1 = Moon-Spencer pupil + squared relative brightness, 0 = legacy linear models
@@ -240,6 +241,7 @@ void svp_console_init()
 	CMD4(CCC_Float, "r__svp_cull_ssa", &ps_r__svp_cull_ssa, 0.0f, 8.0f); // SVP small-object cull strength (0 = off)
 	CMD4(CCC_SvpInternalInteger, "r__svp_dlss", &ps_r__svp_dlss, 0, 1);
 	CMD4(CCC_SvpInternalFloat, "r__svp_obj_dist", &ps_r__svp_obj_dist, 0.0f, 3.0f);
+	CMD4(CCC_SvpVolatileFloat, "r__svp_near", &ps_r__svp_near, 0.0f, 0.5f); // objective near plane (0 = auto), session only
 	CMD4(CCC_SvpInternalFloat, "r__svp_obj_size", &ps_r__svp_obj_size, 0.1f, 6.0f);
 	CMD4(CCC_SvpFixedInteger, "r__svp_focal_derive", &ps_r__svp_focal_derive, 0, 1);
 	CMD4(CCC_SvpFixedInteger, "r__svp_glare_model", &ps_r__svp_glare_model, 0, 1);

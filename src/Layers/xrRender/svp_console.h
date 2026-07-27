@@ -84,6 +84,7 @@ extern ECORE_API void (*svp_copy_timer_hook)(u32 cat, bool begin);
 // optics derivation
 extern ECORE_API float ps_r__svp_obj_dist;
 extern ECORE_API float ps_r__svp_obj_size;
+extern ECORE_API float ps_r__svp_near;
 extern ECORE_API int ps_r__svp_focal_derive;
 extern ECORE_API int ps_r__svp_glare_model;
 extern ECORE_API int ps_r__svp_photo_model;

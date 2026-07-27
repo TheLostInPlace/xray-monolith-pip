@@ -80,6 +80,15 @@ public:
 	float svp_panel_vcrop = 1.f; // svp_glass2.w flat-panel V-crop (1 = svp matches the panel)
 	bool svp_panel_flat = false; // a reticle_type 8 flat window drives the svp this frame
 
+	// pip nearest drawn weapon extent ahead of the objective (m), published by the svp hud drain and
+	// read by the next frame's objective camera, -1 = nothing ahead, 0 = geometry reaches the plane
+	float svp_hud_min_axial = -1.f;
+	u32 svp_hud_min_bones = 0; // bones the derive actually measured, 0 = whole-visual box path
+	u32 svp_hud_axis_skip = 0; // bones excluded because the sight axis passes through their box
+	u32 svp_hud_min_frame = u32(-1);
+	u32 svp_hud_min_session = 0;
+	u32 svp_hud_min_epoch = 0;
+
 	u32 svp_optic_epoch = 0; // pip optic identity counter, bumps on a lens visual or radius change, subscribers reseed
 	u32 svp_camera_epoch = 0; // pip camera input counter, leaves target and disc sizing untouched
 	// pip resolved per-optic optics inputs, the bus fills these once at the lens derive so one
