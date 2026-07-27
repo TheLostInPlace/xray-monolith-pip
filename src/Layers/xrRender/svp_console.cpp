@@ -156,6 +156,9 @@ int ps_r__svp_sss_sun = 0; // svp compute the scope SSS pass and keep the sun co
 int ps_r__svp_cull_grass = 1; // svp cull grass instances to the scope cone instead of replaying the whole main field (1 = on)
 int ps_r__svp_light_cull = 1; // svp cone-cull the mirrored light blends, skip a light whose sphere never meets the scope cone (1 = on, 0 = mirror everything)
 int ps_r__svp_corner_mask = 1; // svp stencil the dead corners outside the eyepiece disc so the lighting + combine passes skip them (1 = on)
+int ps_r__pp_lean = 0; // master gate for the idle post-pass skips in phase_combine (0 = stock, every pass runs)
+int ps_r__ssfx_ssr_enable = 1; // ssfx screen space reflections master switch, the shader-presence flag has no off (1 = on)
+u32 svp_stats_lean_flags = 0; // bit per lean skip that fired this frame, decoded by the breakdown panel
 int scope_debug = 0;
 
 class CCC_SvpScopeMode final : public CCC_Integer
@@ -313,6 +316,8 @@ void svp_console_init()
 	CMD4(CCC_Integer, "r__svp_cull_grass", &ps_r__svp_cull_grass, 0, 1); // svp cull grass to the scope cone
 	CMD4(CCC_Integer, "r__svp_light_cull", &ps_r__svp_light_cull, 0, 1); // svp cone-cull the mirrored light blends (1 = on)
 	CMD4(CCC_SvpFixedInteger, "r__svp_corner_mask", &ps_r__svp_corner_mask, 0, 1);
+	CMD4(CCC_Integer, "r__pp_lean", &ps_r__pp_lean, 0, 1); // skip idle post passes (0 = stock)
+	CMD4(CCC_Integer, "r__ssfx_ssr_enable", &ps_r__ssfx_ssr_enable, 0, 1); // ssfx ssr master switch (1 = on)
 	CMD4(CCC_Integer, "r__scope_debug", &scope_debug, 0, 4);
 #endif
 }

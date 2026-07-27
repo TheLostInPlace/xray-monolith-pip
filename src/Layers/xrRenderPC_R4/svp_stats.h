@@ -40,6 +40,14 @@ namespace svp_stats
 		SEC_COUNT
 	};
 
+	// lean post gate skips, phase_combine ors these into svp_stats_lean_flags per frame
+	enum lean_bit_e
+	{
+		LEAN_LUT = 1 << 0,
+		LEAN_WATER = 1 << 1,
+		LEAN_GLASS = 1 << 2,
+	};
+
 	// frame boundary, disjoint query + ring advance, render thread inside Render() only
 	void frame_begin();
 	void frame_end(bool svp_active);

@@ -7,6 +7,57 @@
 
 #define STENCIL_CULL 0
 
+namespace
+{
+	// stock r3\lut.ps with comments and whitespace stripped, its body is a passthrough
+	const char* const LUT_IDENTITY_SRC =
+		"#include\"common.h\"uniformfloatlut_control;"
+		"uniformTexture2Ds_lut_1;uniformTexture2Ds_lut_2;uniformTexture2Ds_lut_3;"
+		"uniformTexture2Ds_lut_4;uniformTexture2Ds_lut_5;"
+		"structv2p{float2tc0:TEXCOORD0;};"
+		"float4main(v2pI):SV_Target{float4final=s_image.Sample(smp_rtlinear,I.tc0);returnfinal;}";
+
+	// drops a leading bom, line and block comments, and every whitespace byte
+	void lean_strip_hlsl(const char* src, int len, xr_string& out)
+	{
+		int i = 0;
+		if (len >= 3 && u8(src[0]) == 0xEF && u8(src[1]) == 0xBB && u8(src[2]) == 0xBF)
+			i = 3;
+		bool line_cmt = false, blk_cmt = false;
+		for (; i < len; ++i)
+		{
+			const char c = src[i];
+			if (line_cmt) { if (c == '\n') line_cmt = false; continue; }
+			if (blk_cmt) { if (c == '*' && i + 1 < len && src[i + 1] == '/') { blk_cmt = false; ++i; } continue; }
+			if (c == '/' && i + 1 < len && src[i + 1] == '/') { line_cmt = true; ++i; continue; }
+			if (c == '/' && i + 1 < len && src[i + 1] == '*') { blk_cmt = true; ++i; continue; }
+			if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\v' || c == '\f') continue;
+			out += c;
+		}
+	}
+
+	// verdict on the resolved lut shader, a read failure or any difference means run the pass
+	bool lean_lut_identity()
+	{
+		static int verdict = -1;
+		if (verdict >= 0)
+			return verdict != 0;
+		verdict = 0;
+		string_path pname;
+		strconcat(sizeof(pname), pname, ::Render->getShaderPath(), "lut.ps");
+		IReader* R = FS.r_open("$game_shaders$", pname);
+		if (R)
+		{
+			xr_string norm;
+			lean_strip_hlsl((const char*)R->pointer(), R->length(), norm);
+			FS.r_close(R);
+			verdict = (0 == xr_strcmp(norm.c_str(), LUT_IDENTITY_SRC)) ? 1 : 0;
+		}
+		Msg("[SVP-LEAN] lut %s", verdict ? "identity" : "real");
+		return verdict != 0;
+	}
+}
+
 void CRenderTarget::DoAsyncScreenshot()
 {
 	//	Igor: screenshot will not have postprocess applied.
@@ -353,22 +404,43 @@ void CRenderTarget::phase_combine()
 	else
 		HW.pContext->CopyResource(rt_Generic_temp->pTexture->surface_get(), rt_Generic_0_r->pTexture->surface_get());
 
+	// rt_Generic_temp now mirrors rt_Generic_0, every writer below flags it so the refresh copy can drop
+	bool gen0_dirty = false;
+
 	// pip the SVP runs SSR + water like the main view, off and legacy fake SVP keep the stock skip
 	const bool svp_pass = Device.true_pip_on && Device.m_SecondViewport.m_render_pass_is_svp;
 	// pip the deferred SSR runs on the scope at levels 0/1 (reflective surfaces), skipped at 2 (matte)
-	if (RImplementation.o.ssfx_ssr && ((svp_pass && ps_r__svp_skip_ssr < 2) || !Device.m_SecondViewport.IsSVPFrame()))
+	// r__ssfx_ssr_enable is the only off switch, the o.ssfx_ssr flag is shader presence and never clears
+	if (RImplementation.o.ssfx_ssr && ps_r__ssfx_ssr_enable
+		&& ((svp_pass && ps_r__svp_skip_ssr < 2) || !Device.m_SecondViewport.IsSVPFrame()))
 	{
 		ssfx_PrevPos_Requiered = true;
 		tm_beg(svp_stats::SEC_C_SSR);
 		phase_ssfx_ssr(); // [SSFX] - New SSR Phase
 		tm_end(svp_stats::SEC_C_SSR);
+		gen0_dirty = true; // the ssr combine pass composites straight into rt_Generic_0
 	}
 
 	// pip water SSR only at level 0 (the reflective water below needs it, the SSS shader discards it
 	// otherwise), always on the main
-	tm_beg(svp_stats::SEC_C_WATER);
-	if (RImplementation.o.ssfx_water && ((svp_pass && ps_r__svp_skip_ssr == 0) || !Device.m_SecondViewport.IsSVPFrame()))
+	const bool water_chain = RImplementation.o.ssfx_water
+		&& ((svp_pass && ps_r__svp_skip_ssr == 0) || !Device.m_SecondViewport.IsSVPFrame());
+	// lean drops the whole chain with no water in the graph, one clear on the way in kills the stale reflection
+	const bool lean_water = (ps_r__pp_lean != 0) && RImplementation.GMBase.RGraph.mapWater.empty();
+	if (water_chain && lean_water)
 	{
+		if (!m_lean_water_cleared)
+		{
+			FLOAT ClearWater[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			HW.pContext->ClearRenderTargetView(rt_ssfx_water->pRT, ClearWater);
+			m_lean_water_cleared = true;
+		}
+		svp_stats_lean_flags |= svp_stats::LEAN_WATER;
+	}
+	tm_beg(svp_stats::SEC_C_WATER);
+	if (water_chain && !lean_water)
+	{
+		m_lean_water_cleared = false;
 		FLOAT ColorRGBA[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		HW.pContext->ClearRenderTargetView(rt_ssfx_temp->pRT, ColorRGBA);
 		HW.pContext->ClearRenderTargetView(rt_ssfx_temp2->pRT, ColorRGBA);
@@ -411,7 +483,10 @@ void CRenderTarget::phase_combine()
 	// reflection back on for the SVP draw at level 0, do not clear the shared mapWater (main pass needs it)
 	Device.m_SecondViewport.force_water_reflect = svp_pass && (ps_r__svp_skip_ssr == 0);
 	RCache.set_xform_world(Fidentity);
+	const u32 water_calls0 = RCache.stat.calls;
 	RImplementation.GMBase.r_dsgraph_render_water(!svp_pass);
+	if (RCache.stat.calls != water_calls0)
+		gen0_dirty = true;
 	Device.m_SecondViewport.force_water_reflect = false;
 	tm_end(svp_stats::SEC_C_WATER);
 
@@ -427,7 +502,11 @@ void CRenderTarget::phase_combine()
 				u_setrt(rt_Generic_0_r, 0, rt_ssfx_motion_vectors, rt_MSAADepth->pZRT);
 		}
 
+		// covers rain particles and dry-weather thunderbolts alike, both draw into rt_Generic_0
+		const u32 last_calls0 = RCache.stat.calls;
 		g_pGamePersistent->Environment().RenderLast(); // rain/thunder-bolts
+		if (RCache.stat.calls != last_calls0)
+			gen0_dirty = true;
 	}
 	tm_end(svp_stats::SEC_C_RAIN);
 
@@ -435,7 +514,12 @@ void CRenderTarget::phase_combine()
 		HW.pContext->CopyResource(rt_ssfx_prevPos->pTexture->surface_get(), rt_Position->pTexture->surface_get());*/
 
 	// Update rt_Generic_temp ( rain and water )
-	if (RImplementation.o.ssfx_glass)
+
+	// lean drops the refresh only when no writer touched rt_Generic_0 since the copy above
+	const bool lean_glass = (ps_r__pp_lean != 0) && !gen0_dirty;
+	if (RImplementation.o.ssfx_glass && lean_glass)
+		svp_stats_lean_flags |= svp_stats::LEAN_GLASS;
+	if (RImplementation.o.ssfx_glass && !lean_glass)
 	{
 		if (!RImplementation.o.dx10_msaa)
 			HW.pContext->CopyResource(rt_Generic_temp->pTexture->surface_get(), rt_Generic_0->pTexture->surface_get());
@@ -645,7 +729,12 @@ void CRenderTarget::phase_combine()
 		tm_end(svp_stats::SEC_C_DOF);
 	}
 
-	if (!(svp_pass_now && ps_r__svp_skip_lut))
+	// lean drops the lut grade and its copy back, only once the resolved shader verifies as a passthrough
+	const bool lut_stock_skip = (svp_pass_now && ps_r__svp_skip_lut) != 0;
+	const bool lean_lut = (ps_r__pp_lean != 0) && lean_lut_identity();
+	if (!lut_stock_skip && lean_lut)
+		svp_stats_lean_flags |= svp_stats::LEAN_LUT;
+	if (!lut_stock_skip && !lean_lut)
 	{
 		tm_beg(svp_stats::SEC_C_LUT);
 		phase_lut();

@@ -27,8 +27,11 @@ extern u32 svp_stats_nvg_sky;
 extern u32 svp_stats_disc_latch;
 extern u32 svp_stats_fwd_keep;
 extern u32 svp_stats_optic_resolve;
+extern u32 svp_stats_lean_flags;
 // adaptive-res grow gate, defined in svp_console.cpp
 extern int ps_r__svp_adaptive_grow;
+// lean post gate, defined in svp_console.cpp
+extern int ps_r__pp_lean;
 // engine scope magnification, defined in xrRender_console.cpp
 extern float g_pip_scope_magnification;
 
@@ -66,6 +69,8 @@ namespace
 		double frame_ms;
 		bool svp_active;
 		float sun_shafts; // weather sunshafts intensity, the phase_sunshafts early-out reads the same value
+		u32 lean_flags;
+		bool lean_on;
 	};
 
 	struct frame_slot
@@ -236,6 +241,7 @@ namespace svp_stats
 		svp_stats_disc_latch = 0;
 		svp_stats_fwd_keep = 0;
 		svp_stats_optic_resolve = 0;
+		svp_stats_lean_flags = 0;
 		// feed the rolling ~1s window for the spike readout, skip the first frame's null delta
 		if (fms > 0.0)
 		{
@@ -339,6 +345,8 @@ namespace svp_stats
 		d.sun_shafts = 0.f;
 		if (g_pGamePersistent && g_pGamePersistent->Environment().CurrentEnv)
 			d.sun_shafts = g_pGamePersistent->Environment().CurrentEnv->m_fSunShaftsIntensity;
+		d.lean_flags = svp_stats_lean_flags;
+		d.lean_on = (ps_r__pp_lean != 0);
 		HW.pContext->End(s_cur->disjoint);
 		s_cur->in_flight = true;
 	}
@@ -539,6 +547,14 @@ namespace svp_stats
 			char btail[2][96];
 			u32 bt = 0;
 			xr_sprintf(btail[bt++], "sun %s shafts %.3f", d.sun_passes ? "on" : "off", d.sun_shafts);
+			// lean row, gate state then a letter per skip that actually fired this frame
+			{
+				char lf[64]; lf[0] = 0;
+				if (d.lean_flags & LEAN_LUT) xr_strcat(lf, " LUT");
+				if (d.lean_flags & LEAN_WATER) xr_strcat(lf, " WATER");
+				if (d.lean_flags & LEAN_GLASS) xr_strcat(lf, " GLASS");
+				xr_sprintf(btail[bt++], "lean %u%s", d.lean_on ? 1u : 0u, lf);
+			}
 
 			u32 shown = 1; // the other row always prints
 			for (u32 i = 0; i < brk_n; ++i)

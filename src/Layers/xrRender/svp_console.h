@@ -62,6 +62,11 @@ extern ECORE_API int ps_r__svp_skip_volumetric;
 extern ECORE_API int ps_r__svp_skip_grass;
 extern ECORE_API int ps_r__svp_sss_sun;
 
+// main-view post gate, lossless skips for post passes with nothing to do
+extern ECORE_API int ps_r__pp_lean;
+extern ECORE_API int ps_r__ssfx_ssr_enable;
+extern ECORE_API u32 svp_stats_lean_flags; // bit per lean skip that fired this frame, decoded by the breakdown panel
+
 // optics derivation
 extern ECORE_API float ps_r__svp_obj_dist;
 extern ECORE_API float ps_r__svp_obj_size;
