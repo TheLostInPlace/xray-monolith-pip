@@ -20,15 +20,12 @@ extern Fvector4 ps_s3ds_param_4;
 
 static constexpr int S3DS_SEE_THROUGH_BIT = 1 << 2;
 
+// stale nvg patch shaders still declare this, a deterministic zero keeps them on authored behavior
 static class svp_nvg_view_binder : public R_constant_setup
 {
 	virtual void setup(R_constant* C)
 	{
-		const bool active = ps_dev_param_8.x >= 1.f;
-		const bool objective = active && ps_r__svp_nvg_objective && Device.true_pip_on
-			&& (Device.m_SecondViewport.m_render_pass_is_svp
-				|| Device.m_SecondViewport.svp_nvg_objective_region);
-		RCache.set_c(C, objective ? 1.f : 0.f, 0.f, 0.f, 0.f);
+		RCache.set_c(C, 0.f, 0.f, 0.f, 0.f);
 	}
 } binder_svp_nvg_view;
 
@@ -217,7 +214,7 @@ static const struct { const char* name; R_constant_setup* setup; } s_svp_binders
 	{ "svp_env", &binder_svp_env }, // pip glass environment data (glare, rain)
 	{ "ssfx_issvp", &ssfx_issvp },
 	{ "svp_nearblur_mode", &binder_svp_nearblur }, // pip near-blur composite selector
-	{ "svp_nvg_view", &binder_svp_nvg_view }, // pip objective view leaves the wearer mask in the main view
+	{ "svp_nvg_view", &binder_svp_nvg_view }, // pip stale nvg patch inertizer
 };
 
 void RegisterSvpConstants(CBlender_Compile& dst)

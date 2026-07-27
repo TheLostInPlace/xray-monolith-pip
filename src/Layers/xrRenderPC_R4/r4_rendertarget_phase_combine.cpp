@@ -757,14 +757,9 @@ void CRenderTarget::phase_combine()
 		}
 	}
 
-	if (ps_r2_nightvision > 0)
+	if (ps_r2_nightvision > 0 && !svp_pass_now)
 	{
-		if (svp_pass_now)
-		{
-			if (!svp_nvg_objective_pass())
-				phase_nightvision();
-		}
-		else if (!svp_nvg_pass())
+		if (!svp_nvg_pass())
 			phase_nightvision();
 	}
 

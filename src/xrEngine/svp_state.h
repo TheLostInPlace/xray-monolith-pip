@@ -283,11 +283,6 @@ public:
 	// set by the double-pass, read by the hybrid IsSVPFrame when true_pip is on
 	bool m_render_pass_is_svp = false;
 
-	// pip marks the main lens region as an objective view during NVG processing
-	bool svp_nvg_objective_region = false;
-	u32 svp_nvg_sensor_frame = u32(-1);
-	u32 svp_nvg_sensor_session = 0;
-
 	// pip set only when the hybrid reflex drew into rt_secondVP this frame
 	bool svp_reflex_capture_ok = false;
 	u32 svp_reflex_capture_epoch = u32(-1);

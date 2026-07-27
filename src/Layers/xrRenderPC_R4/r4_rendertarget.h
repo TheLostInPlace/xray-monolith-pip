@@ -464,7 +464,6 @@ public:
 	void phase_gasmask_drops();
 	void phase_gasmask_dudv();
 	void phase_nightvision();
-	bool svp_nvg_objective_pass();
 	bool svp_nvg_pass();
 	void phase_fakescope(); //crookr
 	void phase_heatvision(); //--DSR-- HeatVision

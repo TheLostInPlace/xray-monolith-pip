@@ -135,7 +135,7 @@ float ps_r__svp_sharpen_falloff = 0.0f; // svp sharpen radial falloff toward the
 float ps_r__svp_sharpen_inner = 0.0f; // svp sharpen inner crisp-zone radius before the falloff starts (0 = from center)
 float ps_r__svp_nvg_bleach = 0.0f; // svp NVG highlight bleach roll-off, replaces the hard clamp so bright sources compress not clip (0 = off, stock)
 float ps_r__svp_nvg_sensitivity = 1.0f; // svp NVG bleach onset sensitivity, higher rolls off dimmer sources
-int ps_r__svp_nvg_objective = 1; // svp keeps the NVG sensor response but removes the eyepiece mask inside the objective view
+int ps_r__svp_nvg_objective = 1; // svp lens draws the centered tube class so wearer mask furniture stays off the glass
 static int s_svp_compat_hud_full = 2;
 int ps_r__svp_weapon_continuity = 1; // svp same frame weapon pose and entrance pupil camera
 static int s_svp_compat_ray_transfer = 2;
