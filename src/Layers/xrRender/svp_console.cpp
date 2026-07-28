@@ -159,6 +159,7 @@ int ps_r__svp_light_cull = 1; // svp cone-cull the mirrored light blends, skip a
 int ps_r__svp_corner_mask = 1; // svp stencil the dead corners outside the eyepiece disc so the lighting + combine passes skip them (1 = on)
 int ps_r__pp_lean = 0; // master gate for the idle post-pass skips in phase_combine (0 = stock, every pass runs)
 int ps_r__ssfx_ssr_enable = 1; // ssfx screen space reflections master switch, the shader-presence flag has no off (1 = on)
+int ps_r__ssfx_bloom_hud = 0; // hud sorted glass in the bloom emissive buffer (0 = excluded, 1 = the old double count)
 u32 svp_stats_lean_flags = 0; // bit per lean skip that fired this frame, decoded by the breakdown panel
 u32 svp_stats_copies = 0; // tracked full-frame CopyResource calls this frame, tallied by svp_copy_begin
 u32 svp_stats_copy_kb = 0; // destination kilobytes those tracked copies moved
@@ -347,6 +348,7 @@ void svp_console_init()
 	CMD4(CCC_SvpFixedInteger, "r__svp_corner_mask", &ps_r__svp_corner_mask, 0, 1);
 	CMD4(CCC_Integer, "r__pp_lean", &ps_r__pp_lean, 0, 1); // skip idle post passes (0 = stock)
 	CMD4(CCC_Integer, "r__ssfx_ssr_enable", &ps_r__ssfx_ssr_enable, 0, 1); // ssfx ssr master switch (1 = on)
+	CMD4(CCC_Integer, "r__ssfx_bloom_hud", &ps_r__ssfx_bloom_hud, 0, 1); // hud glass in the bloom emissive buffer (0 = fixed)
 	CMD4(CCC_Integer, "r__scope_debug", &scope_debug, 0, 4);
 #endif
 }

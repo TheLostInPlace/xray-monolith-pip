@@ -752,7 +752,9 @@ void CRender::renderSceneLighting(BOOL bSUN, bool svp)
 		FLOAT ColorRGBA[4] = { 0,0,0,0 };
 		HW.pContext->ClearRenderTargetView(Target->rt_ssfx_bloom_emissive->pRT, ColorRGBA);
 		Target->u_setrt(Target->rt_ssfx_bloom_emissive, NULL, NULL, !RImplementation.o.dx10_msaa ? HW.pBaseZB : Target->rt_MSAADepth->pZRT);
-		GMBase.r_dsgraph_render_emissive(true, true);
+		// hud sorted glass (collimator dots, pda screen) stays out of the bloom emissive buffer,
+		// the bloom build's hud mask owns the hud response and feeding it here double counts unmasked
+		GMBase.r_dsgraph_render_emissive(true, ps_r__ssfx_bloom_hud != 0);
 	}
 
 	// Lighting, shadow maps build once on the main atlas, render_lights accumulates per viewport
