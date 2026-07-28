@@ -18,6 +18,18 @@
 
 using namespace R_dsgraph;
 
+// pip per visual table of posed vert angles for the bones the sight axis passes through, their
+// boxes lie near the axis so the verts carry the visible depth instead
+struct SSvpMeshNearEntry { float tan_theta; float axial_min; };
+struct SSvpMeshNearTable
+{
+	u32 session = 0;
+	u32 epoch = u32(-1);
+	bool built = false;
+	xr_vector<SSvpMeshNearEntry> entries; // sorted by angle, axial_min is the running minimum
+};
+static xr_map<const dxRender_Visual*, SSvpMeshNearTable> s_svp_mesh_near;
+
 // pip object-space render (skinning) matrix of the lens bone, the SVP eyepiece uses it so a skinned
 // scope lens follows its bone through ADS and sway instead of the kinematics root
 bool CSkeletonX::SVP_LensBoneXform(Fmatrix& out)
@@ -74,6 +86,52 @@ bool CSkeletonX::SVP_BoneCornersWorld(u16 bone, const Fmatrix& pose, Fvector* co
 			return false;
 	}
 	return true;
+}
+
+// pip posed world verts of the flagged bones, the same palette composition as the bone corners
+u32 CSkeletonX::SVP_MeshVertsWorld(const Fmatrix& pose, const xr_vector<u8>& through,
+	xr_vector<Fvector>& out)
+{
+	if (!Parent || through.empty())
+		return 0;
+	xr_vector<Fvector> bind;
+	xr_vector<u16> bone;
+	SVP_GatherVerts(bind, bone);
+	if (bind.empty())
+		return 0;
+	xr_vector<Fmatrix> palette(through.size());
+	xr_vector<u8> ok(through.size(), 0);
+	for (u16 b = 0; b < (u16)through.size(); ++b)
+	{
+		if (!through[b])
+			continue;
+		Fmatrix bone_x;
+		const bool snapped = SVP_BoneSnapshotXform(b, bone_x);
+		{
+			xrCriticalSectionGuard guard(&Parent->UCalc_Mutex);
+			if (b >= Parent->LL_BoneCount() || !Parent->LL_GetBoneVisible(b))
+				continue;
+			if (!snapped)
+				bone_x = Parent->LL_GetBoneInstance(b).mRenderTransform;
+		}
+		palette[b].mul_43(pose, bone_x);
+		ok[b] = 1;
+	}
+	u32 added = 0;
+	for (u32 i = 0; i < bind.size(); ++i)
+	{
+		const u16 b = bone[i];
+		if (b >= (u16)through.size() || !ok[b])
+			continue;
+		Fvector w;
+		palette[b].transform_tiny(w, bind[i]);
+		if (_valid(w))
+		{
+			out.push_back(w);
+			++added;
+		}
+	}
+	return added;
 }
 
 // pip lens bone visibility, hidden markswitch lens meshes must not win the eyepiece pick
@@ -597,6 +655,76 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 			}
 			return true;
 		};
+		// verts stand in for the boxes the axis disqualifies, the hud assembly is rigid to the
+		// scope for a session so the angles hold between rebuilds
+		auto mesh_near_table = [&](CSkeletonX* sk, dxRender_Visual* V, const Fmatrix& pose,
+			const xr_vector<u8>& through) -> const SSvpMeshNearTable&
+		{
+			static u32 s_mesh_session = 0;
+			if (s_mesh_session != vp.GetSVPSession())
+			{
+				s_mesh_session = vp.GetSVPSession();
+				s_svp_mesh_near.clear();
+			}
+			SSvpMeshNearTable& t = s_svp_mesh_near[V];
+			if (t.built && t.session == vp.GetSVPSession() && t.epoch == vp.svp_optic_epoch)
+				return t;
+			t.session = vp.GetSVPSession();
+			t.epoch = vp.svp_optic_epoch;
+			t.built = true;
+			t.entries.clear();
+			xr_vector<Fvector> verts;
+			sk->SVP_MeshVertsWorld(pose, through, verts);
+			t.entries.reserve(verts.size());
+			const Fvector apex = vp.objective.m_W.c;
+			for (const Fvector& w : verts)
+			{
+				Fvector o;
+				o.sub(w, apex);
+				const float axial = o.dotproduct(cone_axis);
+				if (!(axial > EPS))
+					continue;
+				Fvector radial;
+				radial.mad(o, cone_axis, -axial);
+				const float tan_t = radial.magnitude() / axial;
+				if (_valid(tan_t) && _valid(axial))
+					t.entries.push_back({ tan_t, axial });
+			}
+			std::sort(t.entries.begin(), t.entries.end(),
+				[](const SSvpMeshNearEntry& l, const SSvpMeshNearEntry& r) { return l.tan_theta < r.tan_theta; });
+			float run = flt_max;
+			for (SSvpMeshNearEntry& e : t.entries)
+			{
+				run = _min(run, e.axial_min);
+				e.axial_min = run;
+			}
+			return t;
+		};
+		// the running minimum at the cone edge is the nearest vert the current fov can see
+		auto mesh_near_query = [&](const SSvpMeshNearTable& t) -> float
+		{
+			if (t.entries.empty())
+				return -1.f;
+			const Fmatrix& P = Device.matrices[1].mProject;
+			if (!(P._11 > EPS) || !(P._22 > EPS))
+				return -1.f;
+			const float tx = 1.f / P._11;
+			const float ty = 1.f / P._22;
+			const float tan_half = _sqrt(tx * tx + ty * ty);
+			u32 lo2 = 0, hi2 = (u32)t.entries.size();
+			while (lo2 < hi2)
+			{
+				const u32 mid = (lo2 + hi2) / 2;
+				if (t.entries[mid].tan_theta < tan_half)
+					lo2 = mid + 1;
+				else
+					hi2 = mid;
+			}
+			if (lo2 == 0)
+				return -1.f;
+			const float best = t.entries[lo2 - 1].axial_min;
+			return (_valid(best) && best < flt_max) ? _max(best, 0.f) : -1.f;
+		};
 		auto measure_near = [&](dxRender_Visual* V, Fmatrix* M, const SSvpHudAdmission& a, u8 role)
 		{
 			if (!a.box_valid || !cone_ok || a.axial_hi <= tube)
@@ -616,6 +744,7 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 				const Fmatrix& pose = *svp_pose_of(M);
 				const u16 count = sk->SVP_MeasureBoneCount();
 				Fvector bc[8];
+				xr_vector<u8> through;
 				for (u16 b = 0; b < count; ++b)
 				{
 					if (!sk->SVP_BoneCornersWorld(b, pose, bc))
@@ -634,8 +763,11 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 					if (axis_through_box(bc))
 					{
 						++axis_bones;
+						if (through.empty())
+							through.resize(count, 0);
+						through[b] = 1;
 						if (near_dump)
-							PipMsg("[SVP-NEARDUMP] %s vis=%p bone=%u lo=%.3f hi=%.3f axis skip", rn, (void*)V, b, lo - tube, hi - tube);
+							PipMsg("[SVP-NEARDUMP] %s vis=%p bone=%u lo=%.3f hi=%.3f axis mesh", rn, (void*)V, b, lo - tube, hi - tube);
 						continue;
 					}
 					const float fv = fold_near(bc, lo, hi);
@@ -643,6 +775,18 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 						++used;
 					if (near_dump)
 						PipMsg("[SVP-NEARDUMP] %s vis=%p bone=%u lo=%.3f hi=%.3f v=%.3f", rn, (void*)V, b, lo - tube, hi - tube, fv);
+				}
+				if (!through.empty())
+				{
+					const SSvpMeshNearTable& t = mesh_near_table(sk, V, pose, through);
+					const float mv = mesh_near_query(t);
+					if (mv >= 0.f)
+					{
+						min_axial = (min_axial < 0.f) ? mv : _min(min_axial, mv);
+						++used;
+					}
+					if (near_dump)
+						PipMsg("[SVP-NEARDUMP] %s vis=%p mesh verts=%u v=%.3f", rn, (void*)V, (u32)t.entries.size(), mv);
 				}
 			}
 			// a posed skeleton speaks through its bones, the whole box serves boneless visuals only
