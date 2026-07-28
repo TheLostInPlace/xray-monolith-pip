@@ -1013,6 +1013,7 @@ u32 CRenderTarget::draw_reflex(bool svp)
 	Fmatrix selected_world = {};
 	bool selected_frozen = false;
 	bool selected_straddle = false;
+	Fvector selected_shift = {};
 	float selected_score = flt_max;
 	float hybrid_front = -1.f;
 	if (svp)
@@ -1138,6 +1139,13 @@ u32 CRenderTarget::draw_reflex(bool svp)
 				selected_frozen = frozen_reflex;
 				selected_straddle = straddle;
 				selected_score = score;
+				selected_shift.set(0.f, 0.f, 0.f);
+				if (straddle)
+				{
+					// minimum axial push that clears the near plane with one near depth spare
+					const float push = near_plane * 2.f + world_radius - view_center.z;
+					selected_shift.mul(objective_axis, push);
+				}
 			}
 		}
 
@@ -1165,14 +1173,10 @@ u32 CRenderTarget::draw_reflex(bool svp)
 		RCache.set_Element(N.pSE);
 		Fmatrix refW = svp ? selected_world
 			: *RImplementation.GMBase.svp_pose_of(N.pMatrix);
-		// a mesh on the entrance pupil is collimated content, drawn at its eye distance so
-		// the scope projection magnifies the angle the wearer view established
+		// a mesh straddling the camera plane cannot rasterize, the minimum axial push
+		// clears the near plane and the window keeps filling the view
 		if (svp && selected_straddle)
-		{
-			Fvector shift;
-			shift.sub(Device.m_SecondViewport.objective.m_W.c, Device.vCameraPosition);
-			refW.c.add(shift);
-		}
+			refW.c.add(selected_shift);
 		CSkeletonX* sk = fast_dynamic_cast<CSkeletonX*>(N.pVisual);
 		const bool frozen_reflex = svp ? selected_frozen
 			: svp_objective_hud_current() && sk && sk->SVP_BoneSnapshotReady();
