@@ -758,8 +758,14 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 						lo = _min(lo, d);
 						hi = _max(hi, d);
 					}
-					if (hi <= tube) // behind the objective, early out before the corner math
+					if (hi <= tube)
+					{
+						// a behind verdict from a lying obb hides forward children, the verts arbitrate
+						if (through.empty())
+							through.resize(count, 0);
+						through[b] = 1;
 						continue;
+					}
 					if (axis_through_box(bc))
 					{
 						++axis_bones;
@@ -773,6 +779,13 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 					const float fv = fold_near(bc, lo, hi);
 					if (fv >= 0.f)
 						++used;
+					else
+					{
+						// a bone obb can undercover the rigid children riding it, the verts arbitrate
+						if (through.empty())
+							through.resize(count, 0);
+						through[b] = 1;
+					}
 					if (near_dump)
 						PipMsg("[SVP-NEARDUMP] %s vis=%p bone=%u lo=%.3f hi=%.3f v=%.3f", rn, (void*)V, b, lo - tube, hi - tube, fv);
 				}
