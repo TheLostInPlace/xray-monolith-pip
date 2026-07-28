@@ -1012,6 +1012,7 @@ u32 CRenderTarget::draw_reflex(bool svp)
 	u32 selected_index = u32(-1);
 	Fmatrix selected_world = {};
 	bool selected_frozen = false;
+	bool selected_straddle = false;
 	float selected_score = flt_max;
 	float hybrid_front = -1.f;
 	if (svp)
@@ -1097,7 +1098,8 @@ u32 CRenderTarget::draw_reflex(bool svp)
 			float ndc_y = 0.f;
 			// a sphere straddling the camera plane projects to infinity, the depth test above
 			// already admits it so the screen bounds refine only a fully forward candidate
-			if (visible && view_center.z - world_radius > near_plane)
+			const bool straddle = view_center.z - world_radius <= near_plane;
+			if (visible && !straddle)
 			{
 				const Fmatrix& P = Device.matrices[1].mProject;
 				const float clip_x = view_center.x * P._11 + view_center.y * P._21
@@ -1134,6 +1136,7 @@ u32 CRenderTarget::draw_reflex(bool svp)
 				selected_index = index;
 				selected_world = refW;
 				selected_frozen = frozen_reflex;
+				selected_straddle = straddle;
 				selected_score = score;
 			}
 		}
@@ -1162,6 +1165,14 @@ u32 CRenderTarget::draw_reflex(bool svp)
 		RCache.set_Element(N.pSE);
 		Fmatrix refW = svp ? selected_world
 			: *RImplementation.GMBase.svp_pose_of(N.pMatrix);
+		// a mesh on the entrance pupil is collimated content, drawn at its eye distance so
+		// the scope projection magnifies the angle the wearer view established
+		if (svp && selected_straddle)
+		{
+			Fvector shift;
+			shift.sub(Device.m_SecondViewport.objective.m_W.c, Device.vCameraPosition);
+			refW.c.add(shift);
+		}
 		CSkeletonX* sk = fast_dynamic_cast<CSkeletonX*>(N.pVisual);
 		const bool frozen_reflex = svp ? selected_frozen
 			: svp_objective_hud_current() && sk && sk->SVP_BoneSnapshotReady();
