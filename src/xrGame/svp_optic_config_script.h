@@ -19,3 +19,11 @@ u32 svp_begin_optic_context(LPCSTR context, LPCSTR weapon, double weapon_id,
 luabind::object svp_apply_optic_profile(double context_token, const luabind::object& table);
 bool svp_clear_optic_profile(double context_token);
 luabind::object svp_current_optic_profile();
+
+#if defined(SVP_TEST_CLIENT)
+struct lua_State;
+class CSecondVPParams;
+void svp_test_client_attach(lua_State* state);
+void svp_test_client_set_scope_mode(int mode);
+CSecondVPParams& svp_test_client_viewport();
+#endif

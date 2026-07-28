@@ -1,4 +1,8 @@
+#if defined(SVP_TEST_CLIENT)
+#include "../xrCore/xrCore.h"
+#else
 #include "stdafx.h"
+#endif
 #include "svp_mags.h"
 #include "../xrEngine/svp_gameplay_cvars.h"
 

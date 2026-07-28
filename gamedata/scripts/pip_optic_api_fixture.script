@@ -146,13 +146,24 @@ end
 
 local function execute()
     local failures = 0
+    local cases = 0
+    local rejections = 0
     local active_token
-    local function check(name, condition)
+    local function record(name, condition, kind)
         local passed = condition == true
-        printf("[SVP-API-FIXTURE] case=%s pass=%s", name, tostring(passed))
+        cases = cases + 1
+        printf("[SVP-API-FIXTURE] case=%s kind=%s pass=%s",
+            name, kind, tostring(passed))
         if not passed then
             failures = failures + 1
         end
+    end
+    local function check(name, condition)
+        record(name, condition, "acceptance")
+    end
+    local function reject(name, condition)
+        rejections = rejections + 1
+        record(name, condition, "rejection")
     end
     local function invalid(name, mutate, keep_sources)
         local candidate = profile(1)
@@ -161,11 +172,14 @@ local function execute()
             rebuild_sources(candidate)
         end
         local result = svp_validate_optic_profile(candidate)
-        check(name, type(result) == "table" and result.ok == false)
+        reject(name, type(result) == "table" and result.ok == false)
     end
 
     local info = svp_optic_api_info()
+    local route_epoch = svp_optic_route_epoch()
     check("version", svp_optic_api_version() == 3)
+    check("route_epoch", type(route_epoch) == "number"
+        and route_epoch > 0 and route_epoch == math.floor(route_epoch))
     check("ranges", info.api_min == 3 and info.api_max == 3
         and info.schema_min == 3 and info.schema_max == 3)
     check("pair_count", type(info.supported_pairs) == "table"
@@ -183,7 +197,7 @@ local function execute()
         and info.capabilities.typed_transport == true
         and info.capabilities.hybrid_reflex == true
         and info.capabilities.profile_inspector == true)
-    check("unknown_capability",
+    reject("unknown_capability",
         svp_optic_api_has_capability("fixture_unknown") == false)
     info.supported_pairs[1].api = 99
     info.capabilities.api_info = false
@@ -207,12 +221,13 @@ local function execute()
     check("connect", connected.ok == true and connected.api == 3
         and connected.schema == 3)
     check("connect_hash", connected.schema_hash == info.schema_hash)
+    check("connect_route_stable", svp_optic_route_epoch() == route_epoch)
     local disconnected_state = svp_current_optic_profile()
     for index, pair in ipairs({
         { 2, 1 }, { 3, 1 }, { 2, 3 }, { 4, 4 }, { 0, 0 }, { 3.5, 3 },
     }) do
         local result = svp_optic_api_connect(pair[1], pair[2])
-        check("connect_reject_" .. tostring(index),
+        reject("connect_reject_" .. tostring(index),
             result.ok == false and result.code == "unsupported_version"
                 and #result.supported_pairs == 1)
     end
@@ -252,14 +267,14 @@ local function execute()
             end
         else
             local result = svp_validate_optic_fields({ [name] = full[name] })
-            check("private_" .. name,
+            reject("private_" .. name,
                 result.ok == false and result.code == "not_registrable")
         end
     end
     check("partial_physical_pair", svp_validate_optic_fields({
         physical_min = 1, physical_max = 6,
     }).ok == true)
-    check("partial_physical_one_sided", svp_validate_optic_fields({
+    reject("partial_physical_one_sided", svp_validate_optic_fields({
         physical_min = 1,
     }).ok == false)
     local detached_input = {
@@ -269,7 +284,7 @@ local function execute()
     }
     local partial = svp_validate_optic_fields(detached_input)
     check("partial_magnification_pair", partial.ok == true)
-    check("partial_magnification_one_sided", svp_validate_optic_fields({
+    reject("partial_magnification_one_sided", svp_validate_optic_fields({
         magnification_mode = "detent",
     }).ok == false)
     partial.normalized.magnifications[1] = 99
@@ -486,12 +501,14 @@ local function execute()
     active_token = begin_context("pip_api_fixture")
     fixture_token = active_token
     check("begin", active_token and active_token > 0)
+    check("begin_route_stable", svp_optic_route_epoch() == route_epoch)
     local valid = profile(active_token)
     local accepted = svp_apply_optic_profile(active_token, valid)
     check("apply", accepted.ok == true
         and accepted.context_token == active_token
         and type(accepted.config_generation) == "number"
         and type(accepted.profile_fingerprint) == "string")
+    check("apply_route_stable", svp_optic_route_epoch() == route_epoch)
 
     for index, ladder in ipairs(valid_ladders) do
         local candidate = profile(active_token)
@@ -535,16 +552,16 @@ local function execute()
 
     local rejected_connect = svp_optic_api_connect(3, 1)
     after = svp_current_optic_profile()
-    check("active_connect_reject", rejected_connect.ok == false
+    reject("active_connect_reject", rejected_connect.ok == false
         and rejected_connect.code == "unsupported_version")
     check("active_connect_preserves", deep_equal(before, after))
 
     local fractional = svp_apply_optic_profile(active_token + 0.5, valid)
     after = svp_current_optic_profile()
-    check("fractional_token_reject", fractional.ok == false
+    reject("fractional_token_reject", fractional.ok == false
         and fractional.code == "stale_token")
     check("fractional_token_preserves", deep_equal(before, after))
-    check("fractional_clear_reject",
+    reject("fractional_clear_reject",
         svp_clear_optic_profile(active_token + 0.5) == false)
     check("fractional_clear_preserves",
         deep_equal(before, svp_current_optic_profile()))
@@ -553,14 +570,14 @@ local function execute()
     malformed.convergence_limit_m = 1
     local rejected = svp_apply_optic_profile(active_token, malformed)
     after = svp_current_optic_profile()
-    check("malformed_reject", rejected.ok == false)
+    reject("malformed_reject", rejected.ok == false)
     check("malformed_preserves", deep_equal(before, after))
 
     local stale = copy_table(valid)
     stale.context_token = active_token + 1
     rejected = svp_apply_optic_profile(active_token + 1, stale)
     after = svp_current_optic_profile()
-    check("stale_reject",
+    reject("stale_reject",
         rejected.ok == false and rejected.code == "stale_token")
     check("stale_preserves", deep_equal(before, after))
 
@@ -568,7 +585,7 @@ local function execute()
     mismatch.weapon = "other"
     rejected = svp_apply_optic_profile(active_token, mismatch)
     after = svp_current_optic_profile()
-    check("identity_reject",
+    reject("identity_reject",
         rejected.ok == false and rejected.code == "identity_mismatch")
     check("identity_preserves", deep_equal(before, after))
 
@@ -580,7 +597,7 @@ local function execute()
     })
     rejected = svp_apply_optic_profile(active_token, throwing)
     after = svp_current_optic_profile()
-    check("throwing_input_reject", rejected.ok == false)
+    reject("throwing_input_reject", rejected.ok == false)
     check("throwing_input_preserves", deep_equal(before, after))
 
     local second_context = "pip_api_fixture_second"
@@ -599,6 +616,9 @@ local function execute()
     active_token = nil
     fixture_token = nil
     check("clear_invalid", svp_current_optic_profile().valid == false)
+    check("clear_route_stable", svp_optic_route_epoch() == route_epoch)
+    printf("[SVP-API-FIXTURE] totals cases=%d rejections=%d failures=%d",
+        cases, rejections, failures)
     return failures == 0
 end
 

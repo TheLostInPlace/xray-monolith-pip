@@ -1,3 +1,14 @@
+#if defined(SVP_TEST_CLIENT)
+#include "../xrCore/xrCore.h"
+#ifndef ENGINE_API
+#define ENGINE_API
+#endif
+#include "../xrEngine/svp_state.h"
+#include "svp_optic_config_script.h"
+#include <luabind/luabind.hpp>
+#include <luabind/object.hpp>
+#include <lua.hpp>
+#else
 #include "pch_script.h"
 #include "svp_optic_config_script.h"
 #include "../xrEngine/device.h"
@@ -5,11 +16,79 @@
 #include "../Layers/xrRender/svp_console.h"
 #include "ai_space.h"
 #include "script_engine.h"
+#endif
 
 #include <cmath>
 
+#if defined(SVP_TEST_CLIENT)
+namespace svp_test_detail
+{
+lua_State* lua = nullptr;
+CSecondVPParams viewport;
+int scope_mode = 0;
+}
+
+void svp_test_client_attach(lua_State* state)
+{
+	svp_test_detail::lua = state;
+}
+
+void svp_test_client_set_scope_mode(int mode)
+{
+	svp_test_detail::scope_mode = mode;
+	svp_test_detail::viewport.SetOpticScopeMode(static_cast<u8>(mode));
+}
+
+CSecondVPParams& svp_test_client_viewport()
+{
+	return svp_test_detail::viewport;
+}
+#endif
+
 namespace
 {
+#if defined(SVP_TEST_CLIENT)
+#define SVP_CONFIG_LOG(...) ((void)0)
+#else
+#define SVP_CONFIG_LOG(...) Msg(__VA_ARGS__)
+#endif
+
+lua_State* svp_lua_state()
+{
+#if defined(SVP_TEST_CLIENT)
+	return svp_test_detail::lua;
+#else
+	return ai().script_engine().lua();
+#endif
+}
+
+CSecondVPParams& svp_viewport()
+{
+#if defined(SVP_TEST_CLIENT)
+	return svp_test_detail::viewport;
+#else
+	return Device.m_SecondViewport;
+#endif
+}
+
+bool svp_transport_active()
+{
+#if defined(SVP_TEST_CLIENT)
+	return svp_viewport().IsOpticApiConnected();
+#else
+	return svp_optic_api_active();
+#endif
+}
+
+int svp_scope_mode()
+{
+#if defined(SVP_TEST_CLIENT)
+	return svp_test_detail::scope_mode;
+#else
+	return scope_svp_enabled;
+#endif
+}
+
 using EFieldType = CSecondVPParams::EOpticFieldType;
 using EFieldId = CSecondVPParams::EOpticFieldId;
 using SObjectMemberDescriptor = CSecondVPParams::OpticObjectMemberDescriptor;
@@ -859,7 +938,7 @@ LPCSTR svp_mode_name(CSecondVPParams::EOpticMagnificationMode mode)
 
 luabind::object svp_normalized_table(const SParsedConfig& parsed, bool partial)
 {
-	lua_State* state = ai().script_engine().lua();
+	lua_State* state = svp_lua_state();
 	luabind::object table = luabind::newtable(state);
 	const auto& config = parsed.config;
 	for (const SFieldDescriptor& field : s_fields)
@@ -915,7 +994,7 @@ luabind::object svp_normalized_table(const SParsedConfig& parsed, bool partial)
 
 luabind::object svp_result_error(const SParseError& error)
 {
-	lua_State* state = ai().script_engine().lua();
+	lua_State* state = svp_lua_state();
 	luabind::object result = luabind::newtable(state);
 	result["ok"] = false;
 	result["code"] = error.code;
@@ -937,7 +1016,7 @@ luabind::object svp_result_error(LPCSTR code, LPCSTR message, LPCSTR path = null
 
 luabind::object svp_result_success(const SParsedConfig& parsed, bool partial)
 {
-	lua_State* state = ai().script_engine().lua();
+	lua_State* state = svp_lua_state();
 	luabind::object result = luabind::newtable(state);
 	result["ok"] = true;
 	result["normalized"] = svp_normalized_table(parsed, partial);
@@ -946,7 +1025,7 @@ luabind::object svp_result_success(const SParsedConfig& parsed, bool partial)
 
 luabind::object svp_apply_success(const CSecondVPParams::OpticConfig& accepted)
 {
-	lua_State* state = ai().script_engine().lua();
+	lua_State* state = svp_lua_state();
 	luabind::object result = luabind::newtable(state);
 	string32 fingerprint = {};
 	xr_sprintf(fingerprint, "%016llx", accepted.fingerprint);
@@ -1033,7 +1112,7 @@ int svp_optic_api_version()
 
 luabind::object svp_optic_api_info()
 {
-	lua_State* state = ai().script_engine().lua();
+	lua_State* state = svp_lua_state();
 	luabind::object result = luabind::newtable(state);
 	result["api_min"] = static_cast<int>(CSecondVPParams::optic_api_min);
 	result["api_max"] = static_cast<int>(CSecondVPParams::optic_api_max);
@@ -1052,13 +1131,13 @@ bool svp_optic_api_has_capability(LPCSTR capability)
 
 luabind::object svp_optic_api_connect(double api, double schema)
 {
-	lua_State* state = ai().script_engine().lua();
+	lua_State* state = svp_lua_state();
 	luabind::object result = luabind::newtable(state);
 	if (std::isfinite(api) && std::floor(api) == api &&
 		std::isfinite(schema) && std::floor(schema) == schema &&
 		api == CSecondVPParams::optic_api_version &&
 		schema == CSecondVPParams::optic_schema_version &&
-		Device.m_SecondViewport.ConnectOpticApi(
+		svp_viewport().ConnectOpticApi(
 			static_cast<u32>(api), static_cast<u32>(schema)))
 	{
 		result["ok"] = true;
@@ -1080,7 +1159,7 @@ luabind::object svp_optic_api_connect(double api, double schema)
 
 luabind::object svp_optic_api_describe()
 {
-	lua_State* state = ai().script_engine().lua();
+	lua_State* state = svp_lua_state();
 	luabind::object result = luabind::newtable(state);
 	luabind::object fields = luabind::newtable(state);
 	for (const SFieldDescriptor& field : s_fields)
@@ -1200,13 +1279,13 @@ luabind::object svp_validate_optic_profile(const luabind::object& table)
 
 u32 svp_optic_route_epoch()
 {
-	return Device.m_SecondViewport.GetOpticRouteEpoch();
+	return svp_viewport().GetOpticRouteEpoch();
 }
 
 u32 svp_begin_optic_context(LPCSTR context, LPCSTR weapon, double weapon_id,
 	LPCSTR scope, double zoom_type, LPCSTR identity_source, LPCSTR diagnostic_scope)
 {
-	if (!svp_optic_api_active() || scope_svp_enabled <= 0 ||
+	if (!svp_transport_active() || svp_scope_mode() <= 0 ||
 		!std::isfinite(weapon_id) || std::floor(weapon_id) != weapon_id ||
 		weapon_id < 0 || weapon_id > u16(-1) ||
 		!std::isfinite(zoom_type) || std::floor(zoom_type) != zoom_type ||
@@ -1218,17 +1297,17 @@ u32 svp_begin_optic_context(LPCSTR context, LPCSTR weapon, double weapon_id,
 		!svp_bounded_text(diagnostic_scope, sizeof(string128), false))
 		return 0;
 
-	const u32 token = Device.m_SecondViewport.BeginOpticContext(context, weapon,
+	const u32 token = svp_viewport().BeginOpticContext(context, weapon,
 		static_cast<u32>(weapon_id), scope, static_cast<u8>(zoom_type),
 		identity_source, diagnostic_scope);
-	Msg("[SVP-CONFIG] begin token=%u context=%s weapon_id=%d scope=%s diagnostic_scope=%s",
+	SVP_CONFIG_LOG("[SVP-CONFIG] begin token=%u context=%s weapon_id=%d scope=%s diagnostic_scope=%s",
 		token, context, static_cast<int>(weapon_id), scope, diagnostic_scope);
 	return token;
 }
 
 luabind::object svp_apply_optic_profile(double context_token_value, const luabind::object& table)
 {
-	if (!svp_optic_api_active() || scope_svp_enabled <= 0)
+	if (!svp_transport_active() || svp_scope_mode() <= 0)
 		return svp_result_error("inactive", "typed optic transport is inactive");
 	if (!std::isfinite(context_token_value) ||
 		std::floor(context_token_value) != context_token_value ||
@@ -1250,7 +1329,7 @@ luabind::object svp_apply_optic_profile(double context_token_value, const luabin
 				"context_token");
 
 		CSecondVPParams::OpticConfig before;
-		Device.m_SecondViewport.ReadOpticConfig(before);
+		svp_viewport().ReadOpticConfig(before);
 		if (before.context_token != context_token)
 			return svp_result_error("stale_token", "context token is stale", "context_token");
 		if (xr_strcmp(parsed.config.context, before.context) ||
@@ -1261,7 +1340,7 @@ luabind::object svp_apply_optic_profile(double context_token_value, const luabin
 			xr_strcmp(parsed.config.diagnostic_scope, before.diagnostic_scope) ||
 			parsed.config.zoom_type != before.zoom_type)
 			return svp_result_error("identity_mismatch", "profile identity does not match the active context");
-		if (!Device.m_SecondViewport.PrepareOpticConfig(
+		if (!svp_viewport().PrepareOpticConfig(
 			context_token, parsed.config, publication))
 			return svp_result_error("publication_failed", "profile publication failed");
 		success = svp_apply_success(publication.accepted);
@@ -1270,20 +1349,20 @@ luabind::object svp_apply_optic_profile(double context_token_value, const luabin
 	}
 	catch (const std::exception& exception)
 	{
-		Msg("![SVP-CONFIG] apply exception token=%u detail=%s", context_token, exception.what());
+		SVP_CONFIG_LOG("![SVP-CONFIG] apply exception token=%u detail=%s", context_token, exception.what());
 		return svp_result_error("exception", "profile apply raised an exception");
 	}
 	catch (...)
 	{
-		Msg("![SVP-CONFIG] apply exception token=%u", context_token);
+		SVP_CONFIG_LOG("![SVP-CONFIG] apply exception token=%u", context_token);
 		return svp_result_error("exception", "profile apply raised an exception");
 	}
 
-	if (!Device.m_SecondViewport.PublishOpticConfig(context_token, publication))
+	if (!svp_viewport().PublishOpticConfig(context_token, publication))
 		return publication_failed;
 	const CSecondVPParams::OpticConfig& accepted = publication.accepted;
 	if (accepted.generation != publication.base_generation)
-		Msg("[SVP-CONFIG] publish token=%u gen=%u context=%s reticle=%u hybrid=%d/%d profile=%s spec=%s",
+		SVP_CONFIG_LOG("[SVP-CONFIG] publish token=%u gen=%u context=%s reticle=%u hybrid=%d/%d profile=%s spec=%s",
 			accepted.context_token, accepted.generation, accepted.context,
 			accepted.reticle_type, accepted.has_hybrid_reflex, accepted.hybrid_reflex,
 			accepted.profile_id, accepted.spec_section);
@@ -1296,14 +1375,14 @@ bool svp_clear_optic_profile(double context_token_value)
 		std::floor(context_token_value) != context_token_value ||
 		context_token_value < 1.0 || context_token_value > u32(-1))
 		return false;
-	return Device.m_SecondViewport.ClearOpticConfig(static_cast<u32>(context_token_value));
+	return svp_viewport().ClearOpticConfig(static_cast<u32>(context_token_value));
 }
 
 luabind::object svp_current_optic_profile()
 {
-	lua_State* state = ai().script_engine().lua();
+	lua_State* state = svp_lua_state();
 	CSecondVPParams::OpticConfig config;
-	if (!Device.m_SecondViewport.ReadOpticConfig(config))
+	if (!svp_viewport().ReadOpticConfig(config))
 	{
 		luabind::object result = luabind::newtable(state);
 		result["valid"] = false;
