@@ -350,14 +350,19 @@ static void svp_bind_aperture(float pupil_mm)
 		svp_make_response(ps_svp_tunnel_curve_low, ps_svp_tunnel_curve_high), g_pip_scope_magnification,
 		ps_svp_tunnel_scale, 0.f);
 	const auto& config = viewport.RenderOpticConfig();
-	const float tunnel_parallax = config.typed_route
-		? config.tunneling_parallax : ps_s3ds_tunneling_parallax;
-	const float tunnel_min = config.typed_route
-		? config.tunneling_min : ps_s3ds_tunneling_min;
-	const float tunnel_max = config.typed_route
-		? config.tunneling_max : ps_s3ds_tunneling_max;
+	extern Fvector4 ps_s3ds_param_3;
+	extern int ps_markswitch_current;
+	// a thermal sight shows a digital panel, eyepiece tunneling and parallax do not exist there
+	const bool digital_display = svp_thermal_active(ps_s3ds_param_3.x, ps_markswitch_current);
+	const float tunnel_parallax = digital_display ? 0.f
+		: (config.typed_route ? config.tunneling_parallax : ps_s3ds_tunneling_parallax);
+	const float tunnel_min = digital_display ? 0.f
+		: (config.typed_route ? config.tunneling_min : ps_s3ds_tunneling_min);
+	const float tunnel_max = digital_display ? 0.f
+		: (config.typed_route ? config.tunneling_max : ps_s3ds_tunneling_max);
 	RCache.set_c("svp_optic_profile", tunnel_parallax, tunnel_min, tunnel_max, tunnel_response);
-	RCache.set_c("svp_pupil_model", svp_pupil_field_scale(), exit_response, ps_svp_tunnel_offset, 0.f);
+	RCache.set_c("svp_pupil_model", svp_pupil_field_scale(), exit_response,
+		digital_display ? 0.f : ps_svp_tunnel_offset, 0.f);
 	RCache.set_c("svp_lens_center", eyepiece.m_W.c.x, eyepiece.m_W.c.y, eyepiece.m_W.c.z, inverse_lens_diameter);
 	RCache.set_c("svp_lens_right", lens_right.x, lens_right.y, lens_right.z, 0.f);
 	RCache.set_c("svp_lens_up", lens_up.x, lens_up.y, lens_up.z, 0.f);
