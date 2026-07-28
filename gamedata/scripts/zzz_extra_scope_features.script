@@ -934,6 +934,38 @@ function test_typed_api()
     return passed
 end
 
+-- gamma zoom sound script seeds its wheel memo with the console fov
+-- reseed with the live factor at zoom in so a clamped scroll stays silent
+local function seed_zoom_sound_memo()
+    if get_console():get_integer("r__svpscope") <= 0 then
+        return
+    end
+    local sounds = rawget(_G, "scope_zoom_sounds")
+    if type(sounds) ~= "table" or type(sounds.weapons) ~= "table"
+        or type(sounds.get_const_params) ~= "function" then
+        return
+    end
+    local item = db.actor and db.actor:active_item()
+    local weapon = item and item:cast_Weapon()
+    if not (item and weapon) then
+        return
+    end
+    local id = item:id()
+    local entry = sounds.weapons[id]
+    if not entry then
+        local ok, params = pcall(sounds.get_const_params, item:section())
+        if not ok or type(params) ~= "table" then
+            return
+        end
+        entry = params
+        sounds.weapons[id] = entry
+    end
+    entry.zoom = weapon:GetZoomFactor() or entry.zoom
+    if get_console():get_integer("r__svp_diag") > 0 then
+        printf("[SVP-SND] memo seed id=%d zoom=%.2f", id, entry.zoom)
+    end
+end
+
 function on_game_start()
     if not get_console():get_string("scope_objective_lens_offset") then
         printf("dev/svp exes not installed - extra scope features inert")
@@ -950,6 +982,7 @@ function on_game_start()
     end
     RegisterScriptCallback("actor_on_weapon_zoom_in", function()
         push_offset(false)
+        seed_zoom_sound_memo()
     end)
     RegisterScriptCallback("actor_on_weapon_zoom_type_changed", function()
         push_offset(false)
