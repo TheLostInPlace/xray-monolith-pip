@@ -87,6 +87,13 @@ public:
 	u32 svp_hud_axis_skip = 0; // bones excluded because the sight axis passes through their box
 	u32 svp_hud_min_frame = u32(-1);
 	u32 svp_hud_min_session = 0;
+
+	// pip near extent of the hybrid capture reflex (m), published by the objective reflex draw and
+	// read by the next frame's near derive, -1 = no capture candidate this frame
+	float svp_hybrid_front = -1.f;
+	u32 svp_hybrid_front_frame = u32(-1);
+	u32 svp_hybrid_front_session = 0;
+	u32 svp_hybrid_front_epoch = 0;
 	u32 svp_hud_min_epoch = 0;
 
 	u32 svp_optic_epoch = 0; // pip optic identity counter, bumps on a lens visual or radius change, subscribers reseed

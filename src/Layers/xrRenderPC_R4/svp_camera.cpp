@@ -461,6 +461,13 @@ static float svp_auto_near(CSecondVPParams& vp, float cap, float& out_min, bool&
 		target = (out_min < 0.f) ? cap
 			: (out_min > 0.f ? 0.5f * out_min : (float)R_VIEWPORT_NEAR);
 	}
+	// an engaged hybrid publishes its reflex near extent, the near plane never clips the capture
+	if (vp.svp_hybrid_front >= 0.f && vp.svp_hybrid_front_frame != u32(-1)
+		&& prev_build != u32(-1) && !gap
+		&& vp.svp_hybrid_front_frame >= prev_build
+		&& vp.svp_hybrid_front_session == vp.GetSVPSession()
+		&& vp.svp_hybrid_front_epoch == vp.svp_optic_epoch)
+		target = _min(target, _max(0.5f * vp.svp_hybrid_front, (float)R_VIEWPORT_NEAR));
 	clamp(target, (float)R_VIEWPORT_NEAR, cap);
 	const float dt = Device.fTimeDelta;
 	const float a = (dt > 0.f) ? (1.f - exp(-dt / 0.25f)) : 1.f;
@@ -849,11 +856,12 @@ bool svpCamera()
 			const float eye_axial = eye_to_eyepiece.dotproduct(ax);
 			Fvector eye_axis;
 			eye_axis.mad(eyeW0.c, ax, eye_axial);
-			PipMsg("[SVP-CAM] domain=%s front=%.1fcm near=%.1fcm nearMode=%s minAxial=%.4fm nearFresh=%d nearBones=%u nearSkip=%u objectiveLateral=%.1fcm eyeOff=%.1fcm raw=(%.1f,%.1f)mm entranceHeight=(%.1f,%.1f)mm principal=(%.5f,%.5f) limit=%.1fmm entranceScale=%.2f parity=%.2f enabled=%d clipped=%d mag=%.2f opticEpoch=%u cameraEpoch=%u",
+			PipMsg("[SVP-CAM] domain=%s front=%.1fcm near=%.1fcm nearMode=%s minAxial=%.4fm nearFresh=%d nearBones=%u nearSkip=%u hybridFront=%.4fm objectiveLateral=%.1fcm eyeOff=%.1fcm raw=(%.1f,%.1f)mm entranceHeight=(%.1f,%.1f)mm principal=(%.5f,%.5f) limit=%.1fmm entranceScale=%.2f parity=%.2f enabled=%d clipped=%d mag=%.2f opticEpoch=%u cameraEpoch=%u",
 				svp_camera_domain_name(params.svp_camera_domain),
 				params.svp_front_use_m * 100.f, near_plane * 100.f,
 				near_manual ? "manual" : "auto", near_min_axial, near_fresh ? 1 : 0,
 				params.svp_hud_min_bones, params.svp_hud_axis_skip,
+				params.svp_hybrid_front,
 				params.objective.m_W.c.distance_to(axis_center) * 100.f,
 				params.eyepiece.m_W.c.distance_to(eye_axis) * 100.f,
 				eye_sample.raw_mm.x, eye_sample.raw_mm.y,

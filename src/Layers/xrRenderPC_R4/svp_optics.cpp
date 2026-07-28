@@ -1013,6 +1013,7 @@ u32 CRenderTarget::draw_reflex(bool svp)
 	Fmatrix selected_world = {};
 	bool selected_frozen = false;
 	float selected_score = flt_max;
+	float hybrid_front = -1.f;
 	if (svp)
 	{
 		auto& vp = Device.m_SecondViewport;
@@ -1069,6 +1070,13 @@ u32 CRenderTarget::draw_reflex(bool svp)
 			const float world_scale = _max(boundsW.i.magnitude(),
 				_max(boundsW.j.magnitude(), boundsW.k.magnitude()));
 			const float world_radius = vis.sphere.R * world_scale;
+			// capture content ahead of the objective, its near extent bounds the near derive
+			if (bone_visible && related && _valid(view_center) && _valid(world_radius)
+				&& world_radius > EPS)
+			{
+				const float front = _max(view_center.z - world_radius, 0.f);
+				hybrid_front = (hybrid_front < 0.f) ? front : _min(hybrid_front, front);
+			}
 			const float near_plane = _max(vp.svp_near, EPS);
 			const float far_plane = _max(vp.svp_far, near_plane + EPS);
 
@@ -1127,6 +1135,12 @@ u32 CRenderTarget::draw_reflex(bool svp)
 				selected_score = score;
 			}
 		}
+
+		// published for the next camera build so the derived near never clips the capture
+		vp.svp_hybrid_front = hybrid_front;
+		vp.svp_hybrid_front_frame = Device.dwFrame;
+		vp.svp_hybrid_front_session = vp.GetSVPSession();
+		vp.svp_hybrid_front_epoch = vp.svp_optic_epoch;
 	}
 
 	u32 drawn = 0;
