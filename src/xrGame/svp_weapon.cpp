@@ -14,7 +14,11 @@ static const float SVP_SETTLED_ROT = 0.999f;
 static bool svp_config_matches_weapon(const CSecondVPParams::OpticConfig& config,
 	const CWeapon& weapon)
 {
-	if (!config.valid || xr_strcmp(config.weapon, weapon.cNameSect().c_str()) ||
+	const auto& viewport = Device.m_SecondViewport;
+	if (!config.valid || !config.typed_route ||
+		config.session != viewport.GetSVPSession() ||
+		config.route_epoch != viewport.GetOpticRouteEpoch() ||
+		xr_strcmp(config.weapon, weapon.cNameSect().c_str()) ||
 		config.weapon_id != weapon.ID() || config.zoom_type != weapon.GetZoomType())
 		return false;
 
@@ -41,7 +45,7 @@ static float svp_configured_zero(const CWeapon& weapon, const CSecondVPParams& v
 	pose.optic_context_token = config.context_token;
 	pose.optic_config_generation = config.generation;
 	pose.optic_route_epoch = config.route_epoch;
-	return svp_config_matches_weapon(config, weapon) ? config.zero_m : 0.f;
+	return svp_config_matches_weapon(config, weapon) ? config.convergence_limit_m : 0.f;
 }
 
 static bool svp_same_optic_config(const CSecondVPParams::WeaponPoseSnapshot& pose,
@@ -140,6 +144,8 @@ void CWeapon::ApplySvpSightAnchor(CActor* pActor, Fmatrix& trans)
 void CWeapon::UpdateSecondVP()
 {
 	SyncSvpZoomSeedMode();
+	if (m_zoomtype == 0)
+		RefreshSvpTypedMagnifications();
 	if (!(ParentIsActor() && (m_pInventory != NULL) && (m_pInventory->ActiveItem() == this)))
 		return;
 

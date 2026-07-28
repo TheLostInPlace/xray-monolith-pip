@@ -36,21 +36,26 @@ static void svp_dump_optic_record(LPCSTR name, const CSecondVPParams::OpticConfi
 	Msg("[SVP-CONFIG] %s valid=%d typed=%d token=%u gen=%u route=%u frame=%u session=%u",
 		name, config.valid, config.typed_route, config.context_token, config.generation,
 		config.route_epoch, config.frame, config.session);
-	Msg("[SVP-CONFIG] %s context=%s weapon=%s weapon_id=%u scope=%s diagnostic_scope=%s zoom=%u reticle=%u hybrid=%d/%d identity=%s",
+	Msg("[SVP-CONFIG] %s context=%s weapon=%s weapon_id=%u scope=%s diagnostic_scope=%s zoom=%u reticle=%u@%s hybrid=%d/%d@%s identity=%s",
 		name, config.context, config.weapon, config.weapon_id, config.scope,
 		config.diagnostic_scope, config.zoom_type, config.reticle_type,
-		config.has_hybrid_reflex, config.hybrid_reflex, config.identity_source);
-	Msg("[SVP-CONFIG] %s profile=%s spec=%s model=%s binding=%s binding_section=%s",
-		name, config.profile, config.spec, config.model, config.binding, config.binding_section);
-	Msg("[SVP-CONFIG] %s objective=%d %.4f,%.4f,%.4f,%.4f@%s mm=%.3f@%s",
+		svp_optic_source(config, CSecondVPParams::optic_reticle_type),
+		config.has_hybrid_reflex, config.hybrid_reflex,
+		svp_optic_source(config, CSecondVPParams::optic_hybrid_reflex),
+		config.identity_source);
+	Msg("[SVP-CONFIG] %s profile_id=%s spec_section=%s model=%s binding=%s binding_section=%s",
+		name, config.profile_id, config.spec_section, config.model, config.binding, config.binding_section);
+	Msg("[SVP-CONFIG] %s objective=%d %.4f,%.4f,%.4f,%.4f@%s mm=%d %.3f@%s",
 		name, config.has_objective_offset, config.objective_offset.x, config.objective_offset.y,
 		config.objective_offset.z, config.objective_offset.w,
-		svp_optic_source(config, CSecondVPParams::optic_objective_offset), config.objective_mm,
+		svp_optic_source(config, CSecondVPParams::optic_objective_offset),
+		config.has_objective_mm, config.objective_mm,
 		svp_optic_source(config, CSecondVPParams::optic_objective_mm));
-	Msg("[SVP-CONFIG] %s middle_grey=%.4f@%s adapt=%.4f@%s zero=%.3f@%s",
+	Msg("[SVP-CONFIG] %s middle_grey=%.4f@%s adapt=%.4f@%s convergence_limit_m=%.3f@%s",
 		name, config.middle_grey, svp_optic_source(config, CSecondVPParams::optic_middle_grey),
 		config.adapt_speed, svp_optic_source(config, CSecondVPParams::optic_adapt_speed),
-		config.zero_m, svp_optic_source(config, CSecondVPParams::optic_zero_m));
+		config.convergence_limit_m,
+		svp_optic_source(config, CSecondVPParams::optic_convergence_limit_m));
 	Msg("[SVP-CONFIG] %s tunnel=%.4f@%s %.4f@%s %.4f@%s",
 		name, config.tunneling_parallax,
 		svp_optic_source(config, CSecondVPParams::optic_tunneling_parallax),
@@ -72,10 +77,28 @@ static void svp_dump_optic_record(LPCSTR name, const CSecondVPParams::OpticConfi
 		config.pupil_field_high, svp_optic_source(config, CSecondVPParams::optic_pupil_field_high),
 		config.transmission, svp_optic_source(config, CSecondVPParams::optic_transmission),
 		config.twilight_strength, svp_optic_source(config, CSecondVPParams::optic_twilight_strength));
-	Msg("[SVP-CONFIG] %s physical=%.3f@%s %.3f@%s eye_coupling=%.3f@%s",
-		name, config.physical_min, svp_optic_source(config, CSecondVPParams::optic_physical_min),
+	Msg("[SVP-CONFIG] %s physical=%d %.3f@%s %.3f@%s eye_coupling=%d@%s reticle_illum=%.3f@%s",
+		name, config.has_physical_range, config.physical_min,
+		svp_optic_source(config, CSecondVPParams::optic_physical_min),
 		config.physical_max, svp_optic_source(config, CSecondVPParams::optic_physical_max),
-		config.eye_coupling, svp_optic_source(config, CSecondVPParams::optic_eye_coupling));
+		config.eye_coupling, svp_optic_source(config, CSecondVPParams::optic_eye_coupling),
+		config.reticle_illum, svp_optic_source(config, CSecondVPParams::optic_reticle_illum));
+	string256 magnifications = {};
+	for (u32 i = 0; i < config.magnifications.count &&
+		i < _countof(config.magnifications.values); ++i)
+	{
+		string32 value = {};
+		xr_sprintf(value, "%s%.3f", i ? "," : "", config.magnifications.values[i]);
+		xr_strcat(magnifications, value);
+	}
+	Msg("[SVP-CONFIG] %s magnification_mode=%u@%s count=%u values=%s@%s mod_lane=%d %.3f,%.3f,%.3f,%.3f@%s",
+		name, static_cast<u32>(config.magnifications.mode),
+		svp_optic_source(config, CSecondVPParams::optic_magnification_mode),
+		static_cast<u32>(config.magnifications.count), magnifications,
+		svp_optic_source(config, CSecondVPParams::optic_magnifications),
+		config.has_mod_lane, config.mod_lane.x, config.mod_lane.y,
+		config.mod_lane.z, config.mod_lane.w,
+		svp_optic_source(config, CSecondVPParams::optic_mod_lane));
 }
 
 class CCC_SvpDumpOptic final : public IConsole_Command

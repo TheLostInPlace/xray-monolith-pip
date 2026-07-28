@@ -438,7 +438,181 @@ local function profile_value_info(scope_section, weapon_section, scope_hint, key
     return defaults[key], "lua_default", "default"
 end
 
--- eye coupling, 1 an eyepiece image that follows the eye and 0 a rigid digital panel
+local function authored_line_source(section, key)
+    local file = section and ini_sys:section_exist(section)
+        and ini_sys:line_exist(section, key)
+        and ini_sys:dltx_get_filename_of_line(section, key)
+    return table.concat({ "ltx", section or "none", key, file or "merged" }, ":")
+end
+
+local function finite_positive(value)
+    return value and value == value and value > 0 and value < math.huge
+end
+
+local function trim(value)
+    return string.match(tostring(value or ""), "^%s*(.-)%s*$")
+end
+
+local function decimal_number(raw)
+    local text = trim(raw)
+    local base = text
+    local exponent
+    local marker = string.find(text, "[eE]")
+    if marker then
+        if string.find(text, "[eE]", marker + 1) then
+            return
+        end
+        base = string.sub(text, 1, marker - 1)
+        exponent = string.sub(text, marker + 1)
+        exponent = string.gsub(exponent, "^[%+%-]", "")
+        if not string.match(exponent, "^%d+$") then
+            return
+        end
+    end
+    base = string.gsub(base, "^[%+%-]", "")
+    local decimal = string.match(base, "^%d+$")
+        or string.match(base, "^%d+%.%d*$")
+        or string.match(base, "^%.%d+$")
+    if not decimal then
+        return
+    end
+    return tonumber(text)
+end
+
+local function parse_magnification_list(raw)
+    local text = trim(raw)
+    if text == "" then
+        return nil, "empty"
+    end
+    local fixed = decimal_number(text)
+    if fixed ~= nil then
+        if finite_positive(fixed) and fixed <= 200 then
+            return "fixed", { fixed }
+        end
+        return nil, "range"
+    end
+
+    if string.find(text, ",", 1, true) then
+        local values = {}
+        local cursor = 1
+        while true do
+            local separator = string.find(text, ",", cursor, true)
+            local part = trim(string.sub(text, cursor, separator and separator - 1 or #text))
+            local value = decimal_number(part)
+            if part == "" or not finite_positive(value) or value > 200 then
+                return nil, "detent_component"
+            end
+            if #values > 0 and value <= values[#values] then
+                return nil, "detent_order"
+            end
+            values[#values + 1] = value
+            if #values > 16 then
+                return nil, "detent_count"
+            end
+            if not separator then
+                break
+            end
+            cursor = separator + 1
+        end
+        if #values < 2 then
+            return nil, "detent_count"
+        end
+        return "detent", values
+    end
+
+    local separator
+    for index = 2, #text - 1 do
+        if string.sub(text, index, index) == "-" then
+            local previous = string.sub(text, index - 1, index - 1)
+            if previous ~= "e" and previous ~= "E" then
+                if separator then
+                    return nil, "mixed_delimiter"
+                end
+                separator = index
+            end
+        end
+    end
+    if not separator then
+        return nil, "syntax"
+    end
+    local low = decimal_number(string.sub(text, 1, separator - 1))
+    local high = decimal_number(string.sub(text, separator + 1))
+    if not finite_positive(low) or not finite_positive(high)
+        or low > 200 or high > 200 or low >= high then
+        return nil, "continuous_order"
+    end
+    return "continuous", { low, high }
+end
+
+local function magnification_parent_scope(section)
+    if not section or not ini_sys:section_exist(section) then
+        return
+    end
+    local parent = ini_sys:r_string_ex(section, "parent_section")
+    if not parent or parent == "" then
+        return
+    end
+    local prefix = parent .. "_"
+    if string.sub(section, 1, #prefix) ~= prefix then
+        return
+    end
+    local suffix = string.sub(section, #prefix + 1)
+    if suffix ~= "" and ini_sys:section_exist(suffix) then
+        return suffix
+    end
+end
+
+local function magnification_sections(scope_section, weapon_section, scope_hint)
+    local sections = {}
+    local modular = weapon_section and
+        ini_sys:r_bool_ex(weapon_section, "modular_attachments", false)
+    if scope_section and modular then
+        add_unique(sections, scope_section)
+        add_unique(sections, magnification_parent_scope(scope_section))
+        return sections
+    end
+    local candidates = { weapon_section, scope_section, scope_hint }
+    for index = 1, 3 do
+        local section = candidates[index]
+        if section and ini_sys:section_exist(section) then
+            add_unique(sections, section)
+            add_unique(sections, magnification_parent_scope(section))
+        end
+    end
+    return sections
+end
+
+local function magnification_info(scope_section, weapon_section, scope_hint)
+    local keys = { "svp_magnifications", "magnifications", "magnification" }
+    for _, section in ipairs(
+        magnification_sections(scope_section, weapon_section, scope_hint)) do
+        for _, key in ipairs(keys) do
+            local raw = ini_sys:r_string_ex(section, key)
+            if raw ~= nil then
+                local mode, values_or_error = parse_magnification_list(raw)
+                if not mode then
+                    return nil, nil, nil, key .. ":" .. values_or_error
+                end
+                local source = authored_line_source(section, key)
+                if key == "magnification" and mode == "fixed"
+                    and ini_sys:r_bool_ex(section, "scope_dynamic_zoom", false) then
+                    local minimum_raw = ini_sys:r_string_ex(section, "min_magnification")
+                    local minimum = decimal_number(minimum_raw)
+                    if not finite_positive(minimum) or minimum >= values_or_error[1] then
+                        return nil, nil, nil, "min_magnification:continuous_order"
+                    end
+                    mode = "continuous"
+                    values_or_error = { minimum, values_or_error[1] }
+                    source = source .. "+"
+                        .. authored_line_source(section, "scope_dynamic_zoom") .. "+"
+                        .. authored_line_source(section, "min_magnification")
+                end
+                return mode, values_or_error, source
+            end
+        end
+    end
+end
+
 local function eye_coupling_info(scope_section, weapon_section, scope_hint)
     local sections = {weapon_section, scope_section, scope_hint}
     for index = 1, 3 do
@@ -446,7 +620,12 @@ local function eye_coupling_info(scope_section, weapon_section, scope_hint)
         if section and profiles:section_exist(section) then
             local value = profiles:r_float_ex(section, "eye_coupling")
             if value ~= nil then
-                return value, "profile:" .. section
+                if value == 0 then
+                    return false, "profile:" .. section
+                elseif value == 1 then
+                    return true, "profile:" .. section
+                end
+                return nil, nil, "eye_coupling:" .. tostring(value)
             end
         end
     end
@@ -454,14 +633,19 @@ local function eye_coupling_info(scope_section, weapon_section, scope_hint)
     if spec and physical_specs:section_exist(spec) then
         local class = physical_specs:r_string_ex(spec, "optic_class")
         if class then
-            return class == "display" and 0 or 1, "class:" .. spec .. ":" .. class
+            return class ~= "display", "class:" .. spec .. ":" .. class
         end
     end
     local value = profiles:r_float_ex("default", "eye_coupling")
     if value ~= nil then
-        return value, "profile:default"
+        if value == 0 then
+            return false, "profile:default"
+        elseif value == 1 then
+            return true, "profile:default"
+        end
+        return nil, nil, "eye_coupling:" .. tostring(value)
     end
-    return 1, "lua_default"
+    return true, "lua_default"
 end
 
 function resolve(scope_section, weapon_section, scope_hint)
@@ -491,8 +675,32 @@ function resolve(scope_section, weapon_section, scope_hint)
     local physical_min, physical_min_source = spec_number_info(spec, "magnification_min")
     local physical_max, physical_max_source = spec_number_info(spec, "magnification_max")
     local objective, objective_source = spec_number_info(spec, "objective_mm")
-    local eye_coupling, eye_coupling_source =
+    local eye_coupling, eye_coupling_source, eye_coupling_error =
         eye_coupling_info(scope_section, weapon_section, scope_hint)
+    local reticle_illum, reticle_illum_source =
+        profile_value_info(scope_section, weapon_section, scope_hint, "reticle_illum")
+    local magnification_mode, magnifications, magnification_source, magnification_error =
+        magnification_info(scope_section, weapon_section, scope_hint)
+    local field_error = eye_coupling_error or magnification_error
+    if reticle_illum == nil or reticle_illum ~= reticle_illum
+        or reticle_illum < 0 or reticle_illum > 1 then
+        field_error = field_error or "reticle_illum:range"
+    end
+    if (physical_min == nil) ~= (physical_max == nil) then
+        field_error = field_error or "physical_magnification:endpoints"
+    elseif physical_min and (not finite_positive(physical_min)
+        or not finite_positive(physical_max)
+        or physical_min > 200 or physical_max > 200
+        or physical_min > physical_max) then
+        field_error = field_error or "physical_magnification:range"
+    end
+    if objective == 0 then
+        objective = nil
+        objective_source = nil
+    elseif objective ~= nil
+        and (not finite_positive(objective) or objective > 200) then
+        field_error = field_error or "objective_mm:range"
+    end
     return {
         profile = profile_section or "default",
         spec = spec,
@@ -507,6 +715,12 @@ function resolve(scope_section, weapon_section, scope_hint)
         physical_max_source = physical_max_source or "none",
         eye_coupling = eye_coupling,
         eye_coupling_source = eye_coupling_source,
+        reticle_illum = reticle_illum,
+        reticle_illum_source = reticle_illum_source,
+        magnification_mode = magnification_mode,
+        magnifications = magnifications,
+        magnification_source = magnification_source,
+        field_error = field_error,
         objective_mm = objective,
         objective_source = objective_source,
         exit_pupil_low_mm = values.s3ds_exit_pupil_low_mm,

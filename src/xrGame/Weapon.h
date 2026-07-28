@@ -402,8 +402,14 @@ protected:
 		float m_fZoomTargetFactor; // pip smooth-zoom target, the current factor eases toward this (dynamic scopes)
 		bool m_bScriptedZoom = false; // pip true when a script authored the live factor, those carry the user fov already
 		bool m_bSvpAuthoredMin = false; // pip authored magnifications set the floor directly, skip the optical-model cap
-		float m_fSvpMagMin = 0.f; // pip authored true magnifications, the dial detents step on these
-		float m_fSvpMagMax = 0.f;
+		int m_iSvpMagnificationMode = 0;
+		u8 m_uSvpMagnificationCount = 0;
+		float m_fSvpMagnifications[16] = {};
+		u64 m_uSvpMagnificationFingerprint = 0;
+		u32 m_uSvpMagnificationToken = 0;
+		u32 m_uSvpMagnificationGeneration = 0;
+		u32 m_uSvpMagnificationRouteEpoch = 0;
+		u32 m_uSvpMagnificationSession = 0;
 		float m_fZoomRotateTime;
 		float m_fBaseZoomFactor;
 		float m_fScopeZoomFactor;
@@ -430,13 +436,18 @@ protected:
 	shared_str m_svpZoomSeedIdentity;
 	bool m_svpZoomSeedValid;
 	xr_map<shared_str, float> m_svpZoomFactors;
+	xr_map<shared_str, float> m_svpTypedMagnifications;
 	int m_svpZoomSeedMode;
+	shared_str m_svpTypedMagnificationIdentity;
 	shared_str m_svpMainViewIdentity;
 	bool m_svpMainViewValid;
 	shared_str SvpZoomIdentity() const;
 	void InvalidateSvpZoomSeed();
 	void CaptureSvpZoomSeed();
 	void SyncSvpZoomSeedMode();
+	bool SyncSvpTypedMagnifications();
+	bool RefreshSvpTypedMagnifications();
+	float SvpTypedMagnification() const;
 
 private:
 	bool firstZoomDone;

@@ -376,6 +376,7 @@ void CWeapon::UpdateZoomParams() {
 	if (zoomFlags.test(SDS_ZOOM) && (SDS_Radius(m_zoomtype == 1) > 0.0)) {
 		zoom_multiple = scope_scrollpower;
 	}
+	float typed_zoom_multiple = zoom_multiple;
 
 	//////////
 
@@ -466,38 +467,48 @@ void CWeapon::UpdateZoomParams() {
 				m_zoom_params.m_fScopeZoomFactor);
 	}
 
-	// pip svp scopes may author true magnifications directly, engine derives the 75 base factors
 	m_zoom_params.m_bSvpAuthoredMin = false;
-	if (m_zoomtype == 0 && scope_svp_enabled >= 2 && g_svp_authored_mags && SvpMagsEligible())
+	m_zoom_params.m_iSvpMagnificationMode = svp_mag_none;
+	m_zoom_params.m_uSvpMagnificationCount = 0;
+	if (SyncSvpTypedMagnifications())
 	{
-		const bool scope_attached = (ALife::eAddonPermanent != m_eScopeStatus
-			&& 0 != (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonScope)
-			&& HasValidScopeIndex());
-		svp_mags_data mags;
-		if (scope_attached && m_modular_attachments)
-			mags = svp_mags_resolve(GetScopeName().c_str(), zoom_multiple);
-		else
+		const u32 last = m_zoom_params.m_uSvpMagnificationCount - 1;
+		const float power = SDS_Radius(false) > 0.f
+			? svp_magnification_scroll_multiplier(scope_scrollpower) : 1.f;
+		typed_zoom_multiple = power;
+		m_zoom_params.m_fScopeZoomFactor = svp_magnification_to_weapon_factor(
+			m_zoom_params.m_fSvpMagnifications[last], power);
+		m_zoom_params.m_fMinBaseZoomFactor = svp_magnification_to_runtime_factor(
+			m_zoom_params.m_fSvpMagnifications[0]);
+		m_zoom_params.m_bSvpAuthoredMin = true;
+		m_zoom_params.m_bUseDynamicZoom =
+			m_zoom_params.m_iSvpMagnificationMode != svp_mag_fixed;
+
+		float target = m_zoom_params.m_fSvpMagnifications[0];
+		const auto saved = m_svpTypedMagnifications.find(m_svpTypedMagnificationIdentity);
+		if (saved != m_svpTypedMagnifications.end())
 		{
-			mags = svp_mags_resolve(cNameSect_str(), zoom_multiple);
-			if (mags.mode == svp_mag_none && scope_attached)
-				mags = svp_mags_resolve(GetScopeName().c_str(), zoom_multiple);
-		}
-		if (mags.mode != svp_mag_none)
-		{
-			m_zoom_params.m_fScopeZoomFactor = mags.f_top;
-			if (mags.mode != svp_mag_fixed)
+			const float candidate = saved->second;
+			if (m_zoom_params.m_iSvpMagnificationMode == svp_mag_continuous &&
+				candidate >= m_zoom_params.m_fSvpMagnifications[0] &&
+				candidate <= m_zoom_params.m_fSvpMagnifications[last])
+				target = candidate;
+			else if (m_zoom_params.m_iSvpMagnificationMode == svp_mag_detent)
 			{
-				m_zoom_params.m_fMinBaseZoomFactor = mags.f_floor;
-				m_zoom_params.m_bUseDynamicZoom = TRUE;
-				m_zoom_params.m_bSvpAuthoredMin = true;
-				m_zoom_params.m_fSvpMagMin = mags.mag_min;
-				m_zoom_params.m_fSvpMagMax = mags.mag_max;
-				if (mags.mode == svp_mag_stepped)
-					m_zoom_params.m_fZoomStepCount = 1;
+				svp_mags_data ladder;
+				ladder.mode = svp_mag_detent;
+				ladder.count = m_zoom_params.m_uSvpMagnificationCount;
+				CopyMemory(ladder.values, m_zoom_params.m_fSvpMagnifications,
+					sizeof(ladder.values));
+				const int index = svp_magnification_exact_index(ladder, candidate);
+				if (index >= 0)
+					target = ladder.values[index];
 			}
-			else
-				m_zoom_params.m_bUseDynamicZoom = FALSE;
 		}
+		if (m_zoom_params.m_iSvpMagnificationMode == svp_mag_fixed)
+			target = m_zoom_params.m_fSvpMagnifications[0];
+		m_svpTypedMagnifications[m_svpTypedMagnificationIdentity] = target;
+		m_fRTZoomFactor = svp_magnification_to_runtime_factor(target);
 	}
 
 	if (IsZoomed()) {
@@ -510,7 +521,9 @@ void CWeapon::UpdateZoomParams() {
 
 
 		if (m_zoom_params.m_bUseDynamicZoom) {
-			SetZoomFactor(m_fRTZoomFactor / zoom_multiple);
+			SetZoomFactor(m_fRTZoomFactor /
+				(m_zoom_params.m_iSvpMagnificationMode != svp_mag_none
+					? typed_zoom_multiple : zoom_multiple));
 		} else {
 			SetZoomFactor(m_zoom_params.m_fScopeZoomFactor);
 		}
@@ -1180,27 +1193,6 @@ void NewGetZoomData(const float scope_factor, const float zoom_step_count, float
 		newGetZoomDelta(scope_factor, delta, min_zoom_factor, steps);
 
 	//Msg("min zoom factor %f, min zoom %f, loc min zoom factor %f, g_ironsights_factor %f, scope_radius %f, scope_scrollpower %f, zoom_step_count %f, n_zoom_step_count %f, steps %f, delta %f", min_zoom_factor, min_zoom, loc_min_zoom_factor, g_ironsights_factor, scope_radius, scope_scrollpower, zoom_step_count, n_zoom_step_count, steps, delta);
-}
-
-// pip a dial optic advances linear in magnification so the needle lands on the engraved numbers
-// an integer span marks every whole magnification, negative return means no dial ladder
-static float svp_dial_step(float base_factor, float top_factor, float mag_min, float mag_max,
-	float steps_cfg, int dir)
-{
-	const float span = mag_max - mag_min;
-	if (!(span > EPS) || !(top_factor > EPS) || !(base_factor > EPS))
-		return -1.f;
-	float count = steps_cfg > 0.f ? steps_cfg : (float)n_zoom_step_count;
-	const float whole = floorf(span + 0.5f);
-	if (whole >= 1.f && _abs(span - whole) < 0.01f)
-		count = whole;
-	const float mag_c = mag_max * top_factor;
-	const float cur_mag = mag_c / base_factor;
-	const float step_mag = span / count;
-	const float k = floorf((cur_mag - mag_min) / step_mag + 0.5f) + (dir > 0 ? 1.f : -1.f);
-	float mag = mag_min + k * step_mag;
-	clamp(mag, mag_min, mag_max);
-	return mag_c / mag;
 }
 
 BOOL CWeapon::net_Spawn(CSE_Abstract* DC)
@@ -2306,6 +2298,121 @@ shared_str CWeapon::SvpZoomIdentity() const
 	return cNameSect();
 }
 
+bool CWeapon::SyncSvpTypedMagnifications()
+{
+	auto clear = [this]()
+	{
+		m_zoom_params.m_iSvpMagnificationMode = svp_mag_none;
+		m_zoom_params.m_uSvpMagnificationCount = 0;
+		m_zoom_params.m_uSvpMagnificationFingerprint = 0;
+		m_zoom_params.m_uSvpMagnificationToken = 0;
+		m_zoom_params.m_uSvpMagnificationGeneration = 0;
+		m_zoom_params.m_uSvpMagnificationRouteEpoch = 0;
+		m_zoom_params.m_uSvpMagnificationSession = 0;
+		m_svpTypedMagnificationIdentity = nullptr;
+	};
+
+	CSecondVPParams::OpticConfig config;
+	auto& viewport = Device.m_SecondViewport;
+	if (scope_svp_enabled < 2 || m_zoomtype != 0 || !g_svp_authored_mags ||
+		!SvpMagsEligible() || !svp_optic_api_active() ||
+		!viewport.ReadOpticConfig(config) ||
+		!config.typed_route || !config.context_token || !config.generation ||
+		config.session != viewport.GetSVPSession() ||
+		config.route_epoch != viewport.GetOpticRouteEpoch() ||
+		config.weapon_id != ID() || config.zoom_type != m_zoomtype ||
+		xr_strcmp(config.weapon, cNameSect_str()) ||
+		!config.magnifications.count)
+	{
+		clear();
+		return false;
+	}
+
+	shared_str scope;
+	if (IsScopeAttached())
+		scope = GetScopeName();
+	const LPCSTR scope_name = scope.c_str() ? scope.c_str() : "";
+	if (xr_strcmp(config.scope, scope_name))
+	{
+		clear();
+		return false;
+	}
+
+	svp_mags_data ladder;
+	switch (config.magnifications.mode)
+	{
+	case CSecondVPParams::optic_magnification_fixed:
+		ladder.mode = svp_mag_fixed;
+		break;
+	case CSecondVPParams::optic_magnification_continuous:
+		ladder.mode = svp_mag_continuous;
+		break;
+	case CSecondVPParams::optic_magnification_detent:
+		ladder.mode = svp_mag_detent;
+		break;
+	default:
+		ladder.mode = svp_mag_none;
+		break;
+	}
+	ladder.count = config.magnifications.count;
+	CopyMemory(ladder.values, config.magnifications.values, sizeof(ladder.values));
+	if (!svp_magnification_ladder_valid(ladder))
+	{
+		clear();
+		return false;
+	}
+	ladder.fingerprint = svp_magnification_fingerprint(ladder);
+
+	string2048 identity = {};
+	xr_sprintf(identity, "%s|%s|%u|%s|%s|%s|%u|%s|%s|%s|%s|%s|%016llx",
+		config.context, config.weapon, config.weapon_id, config.scope,
+		config.diagnostic_scope, config.identity_source, config.zoom_type,
+		config.profile_id, config.spec_section, config.model, config.binding,
+		config.binding_section, ladder.fingerprint);
+	m_svpTypedMagnificationIdentity = identity;
+	m_zoom_params.m_iSvpMagnificationMode = ladder.mode;
+	m_zoom_params.m_uSvpMagnificationCount = ladder.count;
+	CopyMemory(m_zoom_params.m_fSvpMagnifications, ladder.values,
+		sizeof(m_zoom_params.m_fSvpMagnifications));
+	m_zoom_params.m_uSvpMagnificationFingerprint = ladder.fingerprint;
+	m_zoom_params.m_uSvpMagnificationToken = config.context_token;
+	m_zoom_params.m_uSvpMagnificationGeneration = config.generation;
+	m_zoom_params.m_uSvpMagnificationRouteEpoch = config.route_epoch;
+	m_zoom_params.m_uSvpMagnificationSession = config.session;
+	return true;
+}
+
+bool CWeapon::RefreshSvpTypedMagnifications()
+{
+	const u64 previous_fingerprint =
+		m_zoom_params.m_uSvpMagnificationFingerprint;
+	const u32 previous_token = m_zoom_params.m_uSvpMagnificationToken;
+	const u32 previous_generation = m_zoom_params.m_uSvpMagnificationGeneration;
+	const u32 previous_route = m_zoom_params.m_uSvpMagnificationRouteEpoch;
+	const u32 previous_session = m_zoom_params.m_uSvpMagnificationSession;
+	const shared_str previous_identity = m_svpTypedMagnificationIdentity;
+	const bool typed = SyncSvpTypedMagnifications();
+	if (m_zoom_params.m_uSvpMagnificationFingerprint != previous_fingerprint ||
+		m_zoom_params.m_uSvpMagnificationToken != previous_token ||
+		m_zoom_params.m_uSvpMagnificationGeneration != previous_generation ||
+		m_zoom_params.m_uSvpMagnificationRouteEpoch != previous_route ||
+		m_zoom_params.m_uSvpMagnificationSession != previous_session ||
+		m_svpTypedMagnificationIdentity != previous_identity)
+		UpdateZoomParams();
+	return typed;
+}
+
+float CWeapon::SvpTypedMagnification() const
+{
+	if (m_zoom_params.m_iSvpMagnificationMode == svp_mag_none)
+		return 0.f;
+	const float power = scope_radius > 0.f
+		? svp_magnification_scroll_multiplier(scope_scrollpower) : 1.f;
+	const float factor = g_zoom_smooth > 0.f
+		? m_zoom_params.m_fZoomTargetFactor : GetZoomFactor();
+	return svp_weapon_factor_to_magnification(factor, power);
+}
+
 void CWeapon::InvalidateSvpZoomSeed()
 {
 	m_svpZoomSeedValid = false;
@@ -2314,6 +2421,27 @@ void CWeapon::InvalidateSvpZoomSeed()
 
 void CWeapon::CaptureSvpZoomSeed()
 {
+	if (m_zoom_params.m_iSvpMagnificationMode != svp_mag_none &&
+		m_svpTypedMagnificationIdentity.size())
+	{
+		float magnification = SvpTypedMagnification();
+		if (m_zoom_params.m_iSvpMagnificationMode == svp_mag_fixed)
+			magnification = m_zoom_params.m_fSvpMagnifications[0];
+		else if (m_zoom_params.m_iSvpMagnificationMode == svp_mag_detent)
+		{
+			svp_mags_data ladder;
+			ladder.mode = svp_mag_detent;
+			ladder.count = m_zoom_params.m_uSvpMagnificationCount;
+			CopyMemory(ladder.values, m_zoom_params.m_fSvpMagnifications,
+				sizeof(ladder.values));
+			const int index = svp_magnification_nearest_index(ladder, magnification);
+			if (index >= 0)
+				magnification = ladder.values[index];
+		}
+		if (_valid(magnification) && magnification > EPS)
+			m_svpTypedMagnifications[m_svpTypedMagnificationIdentity] = magnification;
+		return;
+	}
 	if (scope_svp_enabled < 2 || m_zoomtype != 0 || !m_svpZoomSeedValid)
 		return;
 	if (SvpZoomIdentity() != m_svpZoomSeedIdentity)
@@ -2333,6 +2461,8 @@ void CWeapon::SyncSvpZoomSeedMode()
 void CWeapon::OnZoomIn()
 {
 	SyncSvpZoomSeedMode();
+	if (m_zoomtype == 0)
+		RefreshSvpTypedMagnifications();
     //////////
     scope_radius = SDS_Radius(m_zoomtype == 1);
 
@@ -2351,7 +2481,11 @@ void CWeapon::OnZoomIn()
 
 		if (m_zoom_params.m_bUseDynamicZoom) {
 			float delta, min_zoom_factor;
-			float power = scope_radius > 0.0 ? scope_scrollpower : 1;
+			float power = scope_radius > 0.0
+				? (m_zoom_params.m_iSvpMagnificationMode != svp_mag_none
+					? svp_magnification_scroll_multiplier(scope_scrollpower)
+					: scope_scrollpower)
+				: 1.f;
 			
 			if (zoomFlags.test(NEW_ZOOM)) {
 				NewGetZoomData(m_zoom_params.m_fScopeZoomFactor * power, m_zoom_params.m_fZoomStepCount, delta, min_zoom_factor, GetZoomFactor() * power, m_zoom_params.m_fMinBaseZoomFactor, SvpDetentBase(), m_zoom_params.m_bSvpAuthoredMin);
@@ -2365,7 +2499,19 @@ void CWeapon::OnZoomIn()
 
 	//Msg("m_fRTZoomFactor %f, scope_scrollpower %f", m_fRTZoomFactor, scope_scrollpower);
 
-	if (m_zoomtype == 0 && !m_zoom_params.m_bScriptedZoom && SvpDetentBase())
+	if (m_zoomtype == 0 && !m_zoom_params.m_bScriptedZoom &&
+		m_zoom_params.m_iSvpMagnificationMode != svp_mag_none)
+	{
+		float target = m_zoom_params.m_fSvpMagnifications[0];
+		const auto saved = m_svpTypedMagnifications.find(m_svpTypedMagnificationIdentity);
+		if (saved != m_svpTypedMagnifications.end())
+			target = saved->second;
+		m_fRTZoomFactor = svp_magnification_to_runtime_factor(target);
+		m_zoom_params.m_fZoomTargetFactor = svp_magnification_to_weapon_factor(target,
+			scope_radius > 0.f
+				? svp_magnification_scroll_multiplier(scope_scrollpower) : 1.f);
+	}
+	else if (m_zoomtype == 0 && !m_zoom_params.m_bScriptedZoom && SvpDetentBase())
 	{
 		float delta, min_zoom_factor;
 		float power = scope_radius > 0.0 ? scope_scrollpower : 1;
@@ -2397,7 +2543,13 @@ void CWeapon::OnZoomIn()
 	}
 
 	if (m_zoom_params.m_bUseDynamicZoom)
-		SetZoomFactor(scope_radius > 0.0 ? m_fRTZoomFactor / scope_scrollpower : m_fRTZoomFactor);
+	{
+		const float power = scope_radius > 0.f &&
+			m_zoom_params.m_iSvpMagnificationMode != svp_mag_none
+			? svp_magnification_scroll_multiplier(scope_scrollpower)
+			: (scope_radius > 0.f ? scope_scrollpower : 1.f);
+		SetZoomFactor(m_fRTZoomFactor / power);
+	}
 	else
 		SetZoomFactor(CurrentZoomFactor());
 
@@ -2435,7 +2587,11 @@ void CWeapon::OnZoomOut()
     {
         // store the dialed zoom, under smoothing the target (the current factor can be mid-glide)
         const float dialed = (g_zoom_smooth > 0.f) ? m_zoom_params.m_fZoomTargetFactor : GetZoomFactor();
-        m_fRTZoomFactor = scope_radius > 0.0 ? dialed * scope_scrollpower : dialed;
+		const float power = scope_radius > 0.f &&
+			m_zoom_params.m_iSvpMagnificationMode != svp_mag_none
+			? svp_magnification_scroll_multiplier(scope_scrollpower)
+			: (scope_radius > 0.f ? scope_scrollpower : 1.f);
+        m_fRTZoomFactor = dialed * power;
 		CaptureSvpZoomSeed();
     }
     
@@ -3563,7 +3719,11 @@ bool CWeapon::IsHudModeNow()
 float CWeapon::GetMinScopeZoomFactor() const
 {
 	float delta, min_zoom_factor;
-	float power = scope_radius > 0.0 ? scope_scrollpower : 1;
+	float power = scope_radius > 0.0
+		? (m_zoom_params.m_iSvpMagnificationMode != svp_mag_none
+			? svp_magnification_scroll_multiplier(scope_scrollpower)
+			: scope_scrollpower)
+		: 1.f;
 	if (zoomFlags.test(NEW_ZOOM)) {
 		NewGetZoomData(m_zoom_params.m_fScopeZoomFactor * power, m_zoom_params.m_fZoomStepCount, delta, min_zoom_factor, GetZoomFactor() * power, m_zoom_params.m_fMinBaseZoomFactor, SvpDetentBase(), m_zoom_params.m_bSvpAuthoredMin);
 	}
@@ -3589,6 +3749,8 @@ void CWeapon::SetZoomFactorScript(float f)
 
 void CWeapon::ZoomInc()
 {
+	if (m_zoomtype == 0)
+		RefreshSvpTypedMagnifications();
 	// pip no IsScopeAttached gate, integrated scopes report none, dynamic zoom is the real gate
 	if (!m_zoom_params.m_bUseDynamicZoom)
 	{
@@ -3597,22 +3759,46 @@ void CWeapon::ZoomInc()
 				cNameSect_str(), m_zoomtype);
 		return;
 	}
-	// pip an authored single-throw scope clicks between its two detents, no analog, no smoothing
-	const bool click = g_zoom_clicks && m_zoom_params.m_fZoomStepCount == 1.f;
+	// pip typed detents own wheel topology
+	const bool typed_detent =
+		m_zoom_params.m_iSvpMagnificationMode == svp_mag_detent;
+	const bool typed_magnifications =
+		m_zoom_params.m_iSvpMagnificationMode != svp_mag_none;
+	const bool click = m_zoom_params.m_iSvpMagnificationMode == svp_mag_none &&
+		g_zoom_clicks && m_zoom_params.m_fZoomStepCount == 1.f;
 	const bool smooth = g_zoom_smooth > 0.f && !click;
-	float delta, min_zoom_factor;
-	float power = scope_radius > 0.0 ? scope_scrollpower : 1;
+	float delta = 0.f;
+	float min_zoom_factor = 0.f;
+	float power = scope_radius > 0.0
+		? (typed_magnifications
+			? svp_magnification_scroll_multiplier(scope_scrollpower)
+			: scope_scrollpower)
+		: 1.f;
 	// pip when smoothing, advance from the TARGET (the current factor is mid-glide) so rapid scrolls accumulate
 	float base = smooth ? m_zoom_params.m_fZoomTargetFactor : GetZoomFactor();
 
-	if (zoomFlags.test(NEW_ZOOM)) {
+	if (typed_detent) {
+		min_zoom_factor = svp_magnification_to_runtime_factor(
+			m_zoom_params.m_fSvpMagnifications[0]);
+	} else if (zoomFlags.test(NEW_ZOOM)) {
 		NewGetZoomData(m_zoom_params.m_fScopeZoomFactor * power, m_zoom_params.m_fZoomStepCount, delta, min_zoom_factor, base * power, m_zoom_params.m_fMinBaseZoomFactor, SvpDetentBase(), m_zoom_params.m_bSvpAuthoredMin);
 	} else {
 		GetZoomData(m_zoom_params.m_fScopeZoomFactor * power, m_zoom_params.m_fZoomStepCount, m_zoom_params.m_fMinBaseZoomFactor, delta, min_zoom_factor);
 	}
 
 	float f;
-	if (click)
+	if (typed_detent)
+	{
+		svp_mags_data ladder;
+		ladder.mode = svp_mag_detent;
+		ladder.count = m_zoom_params.m_uSvpMagnificationCount;
+		CopyMemory(ladder.values, m_zoom_params.m_fSvpMagnifications,
+			sizeof(ladder.values));
+		const float current = svp_runtime_factor_to_magnification(base * power);
+		f = svp_magnification_to_runtime_factor(
+			svp_magnification_adjacent(ladder, current, 1));
+	}
+	else if (click)
 		// pip a lever optic wheel event lands the top detent absolutely, no relative step
 		f = m_zoom_params.m_fScopeZoomFactor * power;
 	else if (g_zoom_analog > 0.f)
@@ -3621,15 +3807,6 @@ void CWeapon::ZoomInc()
 		// count + delta algorithm) so any magnification in the scope's range is reachable
 		float fine = (min_zoom_factor - m_zoom_params.m_fScopeZoomFactor * power) / g_zoom_analog;
 		f = base * power - fine;
-	}
-	else if (m_zoom_params.m_bSvpAuthoredMin
-		&& m_zoom_params.m_fSvpMagMax > m_zoom_params.m_fSvpMagMin)
-	{
-		f = svp_dial_step(base * power, m_zoom_params.m_fScopeZoomFactor * power,
-			m_zoom_params.m_fSvpMagMin, m_zoom_params.m_fSvpMagMax,
-			m_zoom_params.m_fZoomStepCount, 1);
-		if (f < 0.f)
-			f = base * power - delta;
 	}
 	else
 	{
@@ -3643,8 +3820,8 @@ void CWeapon::ZoomInc()
 		PipMsg("[SVP-WHEEL] %s dir=%s base=%.2f f=%.2f range=[%.2f..%.2f] path=%s",
 			cNameSect().c_str(), "inc", base * power, f,
 			m_zoom_params.m_fScopeZoomFactor * power, min_zoom_factor,
-			click ? "click" : (g_zoom_analog > 0.f ? "analog"
-				: (m_zoom_params.m_bSvpAuthoredMin ? "dial" : "delta")));
+			typed_detent ? "typed_detent" : (click ? "click" :
+				(g_zoom_analog > 0.f ? "analog" : "delta")));
 
 	if (smooth)
 		m_zoom_params.m_fZoomTargetFactor = f / power; // pip target, UpdateCL eases the current toward it, the step inherits the base factor's author
@@ -3673,6 +3850,8 @@ void CWeapon::ZoomInc()
 
 void CWeapon::ZoomDec()
 {
+	if (m_zoomtype == 0)
+		RefreshSvpTypedMagnifications();
 	// pip no IsScopeAttached gate, integrated scopes report none, dynamic zoom is the real gate
 	if (!m_zoom_params.m_bUseDynamicZoom)
 	{
@@ -3681,22 +3860,46 @@ void CWeapon::ZoomDec()
 				cNameSect_str(), m_zoomtype);
 		return;
 	}
-	// pip an authored single-throw scope clicks between its two detents, no analog, no smoothing
-	const bool click = g_zoom_clicks && m_zoom_params.m_fZoomStepCount == 1.f;
+	// pip typed detents own wheel topology
+	const bool typed_detent =
+		m_zoom_params.m_iSvpMagnificationMode == svp_mag_detent;
+	const bool typed_magnifications =
+		m_zoom_params.m_iSvpMagnificationMode != svp_mag_none;
+	const bool click = m_zoom_params.m_iSvpMagnificationMode == svp_mag_none &&
+		g_zoom_clicks && m_zoom_params.m_fZoomStepCount == 1.f;
 	const bool smooth = g_zoom_smooth > 0.f && !click;
-	float delta, min_zoom_factor;
-	float power = scope_radius > 0.0 ? scope_scrollpower : 1;
+	float delta = 0.f;
+	float min_zoom_factor = 0.f;
+	float power = scope_radius > 0.0
+		? (typed_magnifications
+			? svp_magnification_scroll_multiplier(scope_scrollpower)
+			: scope_scrollpower)
+		: 1.f;
 	// pip when smoothing, advance from the TARGET (the current factor is mid-glide) so rapid scrolls accumulate
 	float base = smooth ? m_zoom_params.m_fZoomTargetFactor : GetZoomFactor();
 
-	if (zoomFlags.test(NEW_ZOOM)) {
+	if (typed_detent) {
+		min_zoom_factor = svp_magnification_to_runtime_factor(
+			m_zoom_params.m_fSvpMagnifications[0]);
+	} else if (zoomFlags.test(NEW_ZOOM)) {
 		NewGetZoomData(m_zoom_params.m_fScopeZoomFactor * power, m_zoom_params.m_fZoomStepCount, delta, min_zoom_factor, base * power, m_zoom_params.m_fMinBaseZoomFactor, SvpDetentBase(), m_zoom_params.m_bSvpAuthoredMin);
 	} else {
 		GetZoomData(m_zoom_params.m_fScopeZoomFactor * power, m_zoom_params.m_fZoomStepCount, m_zoom_params.m_fMinBaseZoomFactor, delta, min_zoom_factor);
 	}
 
 	float f;
-	if (click)
+	if (typed_detent)
+	{
+		svp_mags_data ladder;
+		ladder.mode = svp_mag_detent;
+		ladder.count = m_zoom_params.m_uSvpMagnificationCount;
+		CopyMemory(ladder.values, m_zoom_params.m_fSvpMagnifications,
+			sizeof(ladder.values));
+		const float current = svp_runtime_factor_to_magnification(base * power);
+		f = svp_magnification_to_runtime_factor(
+			svp_magnification_adjacent(ladder, current, -1));
+	}
+	else if (click)
 		// pip a lever optic wheel event lands the bottom detent absolutely, no relative step
 		f = min_zoom_factor;
 	else if (g_zoom_analog > 0.f)
@@ -3705,15 +3908,6 @@ void CWeapon::ZoomDec()
 		// count + delta algorithm) so any magnification in the scope's range is reachable
 		float fine = (min_zoom_factor - m_zoom_params.m_fScopeZoomFactor * power) / g_zoom_analog;
 		f = base * power + fine;
-	}
-	else if (m_zoom_params.m_bSvpAuthoredMin
-		&& m_zoom_params.m_fSvpMagMax > m_zoom_params.m_fSvpMagMin)
-	{
-		f = svp_dial_step(base * power, m_zoom_params.m_fScopeZoomFactor * power,
-			m_zoom_params.m_fSvpMagMin, m_zoom_params.m_fSvpMagMax,
-			m_zoom_params.m_fZoomStepCount, -1);
-		if (f < 0.f)
-			f = base * power + delta;
 	}
 	else
 	{
@@ -3727,8 +3921,8 @@ void CWeapon::ZoomDec()
 		PipMsg("[SVP-WHEEL] %s dir=%s base=%.2f f=%.2f range=[%.2f..%.2f] path=%s",
 			cNameSect().c_str(), "dec", base * power, f,
 			m_zoom_params.m_fScopeZoomFactor * power, min_zoom_factor,
-			click ? "click" : (g_zoom_analog > 0.f ? "analog"
-				: (m_zoom_params.m_bSvpAuthoredMin ? "dial" : "delta")));
+			typed_detent ? "typed_detent" : (click ? "click" :
+				(g_zoom_analog > 0.f ? "analog" : "delta")));
 
 	if (smooth)
 		m_zoom_params.m_fZoomTargetFactor = f / power; // pip target, UpdateCL eases the current toward it, the step inherits the base factor's author

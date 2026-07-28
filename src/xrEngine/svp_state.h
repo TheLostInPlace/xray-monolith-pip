@@ -154,13 +154,122 @@ public:
 
 	struct FireTrace { Fvector pos; Fvector dir; u32 time_ms; };
 
+	enum EOpticFieldType : u8
+	{
+		optic_type_integer,
+		optic_type_number,
+		optic_type_boolean,
+		optic_type_string,
+		optic_type_objective,
+		optic_type_mode,
+		optic_type_magnifications,
+		optic_type_lane,
+		optic_type_sources
+	};
+
+	enum EOpticFieldId : u8
+	{
+		optic_field_schema_version,
+		optic_field_context_token,
+		optic_field_context,
+		optic_field_weapon,
+		optic_field_weapon_id,
+		optic_field_scope,
+		optic_field_diagnostic_scope,
+		optic_field_identity_source,
+		optic_field_zoom_type,
+		optic_field_profile_id,
+		optic_field_spec_section,
+		optic_field_model,
+		optic_field_binding,
+		optic_field_binding_section,
+		optic_field_reticle_type,
+		optic_field_hybrid_reflex,
+		optic_field_objective_offset,
+		optic_field_objective_mm,
+		optic_field_middle_grey,
+		optic_field_adapt_speed,
+		optic_field_convergence_limit_m,
+		optic_field_tunneling_parallax,
+		optic_field_tunneling_min,
+		optic_field_tunneling_max,
+		optic_field_tracking_speed,
+		optic_field_tracking_accel,
+		optic_field_tracking_limit,
+		optic_field_eye_relief_low,
+		optic_field_eye_relief_high,
+		optic_field_exit_pupil_low,
+		optic_field_exit_pupil_high,
+		optic_field_pupil_parity,
+		optic_field_pupil_field_low,
+		optic_field_pupil_field_high,
+		optic_field_transmission,
+		optic_field_twilight_strength,
+		optic_field_physical_min,
+		optic_field_physical_max,
+		optic_field_eye_coupling,
+		optic_field_reticle_illum,
+		optic_field_magnification_mode,
+		optic_field_magnifications,
+		optic_field_mod_lane,
+		optic_field_sources,
+		optic_field_count
+	};
+
+	struct OpticObjectMemberDescriptor
+	{
+		LPCSTR name;
+		bool finite;
+		bool has_range;
+		double minimum;
+		double maximum;
+		bool minimum_exclusive;
+		bool maximum_exclusive;
+	};
+
+	struct OpticFieldDescriptor
+	{
+		EOpticFieldId id;
+		LPCSTR name;
+		EOpticFieldType type;
+		bool required;
+		bool registrable;
+		bool source_required;
+		double minimum;
+		double maximum;
+		u16 string_capacity;
+		u8 array_min;
+		u8 array_max;
+		bool finite;
+		bool ordered;
+		bool allow_zero;
+		bool minimum_exclusive;
+		bool maximum_exclusive;
+		bool non_empty;
+		const OpticObjectMemberDescriptor* members;
+		u8 member_count;
+		const LPCSTR* enum_values;
+		u8 enum_value_count;
+		LPCSTR element_type;
+		bool element_non_empty;
+		u16 element_string_capacity;
+		LPCSTR constraint;
+	};
+
+	using OpticFieldDescriptorArray = OpticFieldDescriptor[optic_field_count];
+	static const OpticFieldDescriptorArray& OpticFieldDescriptors();
+	static LPCSTR OpticFieldTypeName(EOpticFieldType type);
+	static LPCSTR OpticSchemaHash();
+
 	enum EOpticConfigValue : u8
 	{
+		optic_reticle_type,
+		optic_hybrid_reflex,
 		optic_objective_offset,
 		optic_objective_mm,
 		optic_middle_grey,
 		optic_adapt_speed,
-		optic_zero_m,
+		optic_convergence_limit_m,
 		optic_tunneling_parallax,
 		optic_tunneling_min,
 		optic_tunneling_max,
@@ -179,7 +288,26 @@ public:
 		optic_physical_min,
 		optic_physical_max,
 		optic_eye_coupling,
+		optic_reticle_illum,
+		optic_magnification_mode,
+		optic_magnifications,
+		optic_mod_lane,
 		optic_value_count
+	};
+
+	enum EOpticMagnificationMode : u8
+	{
+		optic_magnification_none,
+		optic_magnification_fixed,
+		optic_magnification_continuous,
+		optic_magnification_detent
+	};
+
+	struct OpticMagnifications
+	{
+		EOpticMagnificationMode mode = optic_magnification_none;
+		u8 count = 0;
+		float values[16] = {};
 	};
 
 	struct OpticConfig
@@ -187,8 +315,11 @@ public:
 		bool valid = false;
 		bool typed_route = false;
 		bool has_objective_offset = false;
+		bool has_objective_mm = false;
 		bool has_hybrid_reflex = false;
 		bool hybrid_reflex = false;
+		bool has_physical_range = false;
+		bool has_mod_lane = false;
 		u8 zoom_type = 0;
 		u8 reticle_type = 0;
 		u32 weapon_id = 0;
@@ -202,7 +333,7 @@ public:
 		float objective_mm = 0.f;
 		float middle_grey = 0.f;
 		float adapt_speed = 0.f;
-		float zero_m = 100.f;
+		float convergence_limit_m = 100.f;
 		float tunneling_parallax = 0.035f;
 		float tunneling_min = 0.04f;
 		float tunneling_max = 0.06f;
@@ -220,22 +351,36 @@ public:
 		float twilight_strength = 0.35f;
 		float physical_min = 0.f;
 		float physical_max = 0.f;
-		// 1 an eyepiece image that follows the eye, 0 a rigid digital panel
-		float eye_coupling = 1.f;
+		bool eye_coupling = true;
+		float reticle_illum = 1.f;
+		Fvector4 mod_lane = { 0.f, 0.f, 0.f, 0.f };
+		OpticMagnifications magnifications;
 		string256 context = {};
 		string128 weapon = {};
 		string128 scope = {};
 		string128 diagnostic_scope = {};
 		string64 identity_source = {};
-		string128 profile = {};
-		string128 spec = {};
+		string128 profile_id = {};
+		string128 spec_section = {};
 		string32 model = {};
 		string32 binding = {};
 		string128 binding_section = {};
 		string256 source[optic_value_count] = {};
 	};
 
-	static constexpr u32 optic_api_version = 2;
+	struct OpticPublication
+	{
+		OpticConfig accepted;
+		u32 base_generation = 0;
+		u64 base_fingerprint = 0;
+	};
+
+	static constexpr u32 optic_api_min = 3;
+	static constexpr u32 optic_api_max = 3;
+	static constexpr u32 optic_schema_min = 3;
+	static constexpr u32 optic_schema_max = 3;
+	static constexpr u32 optic_api_version = 3;
+	static constexpr u32 optic_schema_version = 3;
 	void PublishWeaponPose(const WeaponPoseSnapshot& pose);
 	bool ReadWeaponPose(WeaponPoseSnapshot& pose) const;
 	void ClearWeaponPose();
@@ -244,7 +389,7 @@ public:
 	void ClearSight();
 	void AppendFireTrace(const FireTrace& trace);
 	void ReadFireTraces(FireTrace (&traces)[16]) const;
-	bool ConnectOpticApi(u32 version);
+	bool ConnectOpticApi(u32 api, u32 schema);
 	void SetOpticScopeMode(u8 mode);
 	IC bool IsOpticApiConnected() const
 	{
@@ -258,8 +403,9 @@ public:
 	u32 BeginOpticContext(LPCSTR context, LPCSTR weapon, u32 weapon_id,
 		LPCSTR scope, u8 zoom_type,
 		LPCSTR identity_source, LPCSTR diagnostic_scope);
-	bool PublishOpticConfig(u32 context_token, const OpticConfig& config);
-	bool RejectOpticConfig(u32 context_token);
+	bool PrepareOpticConfig(u32 context_token, const OpticConfig& config,
+		OpticPublication& publication);
+	bool PublishOpticConfig(u32 context_token, const OpticPublication& publication);
 	bool ClearOpticConfig(u32 context_token);
 	void InvalidateOpticConfig();
 	bool ReadOpticConfig(OpticConfig& config) const;

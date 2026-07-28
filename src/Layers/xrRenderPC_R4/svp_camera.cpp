@@ -1436,7 +1436,9 @@ static void svp_optics_resolve(CSecondVPParams* p, float er)
 	else off.set(0.f, 0.f, 0.f, 0.f);
 	p->svp_opt_offset = off;
 	float mm = 0.f;
-	const float authored_mm = config.typed_route ? config.objective_mm : ps_s3ds_objective_mm;
+	const float authored_mm = config.typed_route
+		? (config.has_objective_mm ? config.objective_mm : 0.f)
+		: ps_s3ds_objective_mm;
 	if (authored_mm > EPS)
 		mm = authored_mm;
 	else if (off.w > EPS)

@@ -86,7 +86,7 @@ bool svp_optic_eye_coupled()
 {
 	const auto& config = Device.m_SecondViewport.RenderOpticConfig();
 	if (config.typed_route)
-		return config.eye_coupling >= 0.5f;
+		return config.eye_coupling;
 	extern Fvector4 ps_s3ds_param_3;
 	extern int ps_markswitch_current;
 	return !svp_thermal_active(ps_s3ds_param_3.x, ps_markswitch_current);
@@ -1363,7 +1363,8 @@ bool CRenderTarget::draw_hybrid_reflex()
 			camera_current ? 1 : 0, lens_current ? 1 : 0, target_current ? 1 : 0,
 			optic.typed_route ? 1 : 0, identity_current ? 1 : 0,
 			type_current ? 1 : 0,
-			optic_name, optic.spec[0] ? optic.spec : "none", optic.generation, drawn,
+			optic_name, optic.spec_section[0] ? optic.spec_section : "none",
+			optic.generation, drawn,
 			vp.GetSVPSession(), vp.svp_optic_epoch, Device.dwFrame);
 	}
 
