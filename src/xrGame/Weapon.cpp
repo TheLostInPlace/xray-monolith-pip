@@ -3639,6 +3639,13 @@ void CWeapon::ZoomInc()
 	}
 
 	clamp(f, m_zoom_params.m_fScopeZoomFactor * power, min_zoom_factor);
+	if (ps_r__svp_diag && scope_svp_enabled >= 2)
+		PipMsg("[SVP-WHEEL] %s dir=%s base=%.2f f=%.2f range=[%.2f..%.2f] path=%s",
+			cNameSect().c_str(), "inc", base * power, f,
+			m_zoom_params.m_fScopeZoomFactor * power, min_zoom_factor,
+			click ? "click" : (g_zoom_analog > 0.f ? "analog"
+				: (m_zoom_params.m_bSvpAuthoredMin ? "dial" : "delta")));
+
 	if (smooth)
 		m_zoom_params.m_fZoomTargetFactor = f / power; // pip target, UpdateCL eases the current toward it, the step inherits the base factor's author
 	else
@@ -3716,6 +3723,13 @@ void CWeapon::ZoomDec()
 	}
 
 	clamp(f, m_zoom_params.m_fScopeZoomFactor * power, min_zoom_factor);
+	if (ps_r__svp_diag && scope_svp_enabled >= 2)
+		PipMsg("[SVP-WHEEL] %s dir=%s base=%.2f f=%.2f range=[%.2f..%.2f] path=%s",
+			cNameSect().c_str(), "dec", base * power, f,
+			m_zoom_params.m_fScopeZoomFactor * power, min_zoom_factor,
+			click ? "click" : (g_zoom_analog > 0.f ? "analog"
+				: (m_zoom_params.m_bSvpAuthoredMin ? "dial" : "delta")));
+
 	if (smooth)
 		m_zoom_params.m_fZoomTargetFactor = f / power; // pip target, UpdateCL eases the current toward it, the step inherits the base factor's author
 	else
