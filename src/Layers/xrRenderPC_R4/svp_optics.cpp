@@ -1095,7 +1095,9 @@ u32 CRenderTarget::draw_reflex(bool svp)
 				&& view_center.z - world_radius < far_plane;
 			float ndc_x = 0.f;
 			float ndc_y = 0.f;
-			if (visible && view_center.z > EPS)
+			// a sphere straddling the camera plane projects to infinity, the depth test above
+			// already admits it so the screen bounds refine only a fully forward candidate
+			if (visible && view_center.z - world_radius > near_plane)
 			{
 				const Fmatrix& P = Device.matrices[1].mProject;
 				const float clip_x = view_center.x * P._11 + view_center.y * P._21
