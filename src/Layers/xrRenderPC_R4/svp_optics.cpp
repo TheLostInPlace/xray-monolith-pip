@@ -1191,9 +1191,14 @@ u32 CRenderTarget::draw_reflex(bool svp)
 		if (node_diag)
 		{
 			auto tx = N.pVisual->GetTexture();
-			PipMsg("[SVP-HYBRID] selected=%u tex=%s score=%.4f frozen=%d owner=%p",
+			Fvector draw_view;
+			Device.matrices[1].mView.transform_tiny(draw_view, refW.c);
+			PipMsg("[SVP-HYBRID] selected=%u tex=%s score=%.4f frozen=%d straddle=%d drawView=(%.3f %.3f %.3f) vp=%ux%u owner=%p",
 				node_index, tx ? tx->cName.c_str() : "?", selected_score,
-				frozen_reflex ? 1 : 0, sk ? sk->SVP_SkeletonOwner() : nullptr);
+				frozen_reflex ? 1 : 0, selected_straddle ? 1 : 0,
+				draw_view.x, draw_view.y, draw_view.z,
+				Device.dwWidth, Device.dwHeight,
+				sk ? sk->SVP_SkeletonOwner() : nullptr);
 		}
 		RCache.set_xform_world(refW);
 		RImplementation.apply_object(N.pObject);
