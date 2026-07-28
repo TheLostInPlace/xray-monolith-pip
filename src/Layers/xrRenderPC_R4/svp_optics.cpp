@@ -81,6 +81,17 @@ static bool svp_thermal_active(float param3x, int markswitch)
 	return (param3x >= 1.5f) && svp_overlay_active(param3x, markswitch);
 }
 
+// pip eye coupling from the typed profile, the legacy thermal read covers an untyped route
+bool svp_optic_eye_coupled()
+{
+	const auto& config = Device.m_SecondViewport.RenderOpticConfig();
+	if (config.typed_route)
+		return config.eye_coupling >= 0.5f;
+	extern Fvector4 ps_s3ds_param_3;
+	extern int ps_markswitch_current;
+	return !svp_thermal_active(ps_s3ds_param_3.x, ps_markswitch_current);
+}
+
 // pip physical aperture cvars, registered in svp_console.cpp, drive the exit-pupil model at r__svp_aperture 1
 extern int ps_r__svp_aperture;
 extern int ps_r__svp_photo_model;
@@ -341,8 +352,11 @@ static void svp_bind_aperture(float pupil_mm)
 	const Fvector2 eye_offset_mm = eye.residual_mm;
 	const float inverse_lens_diameter = eyepiece.radius > EPS ? 0.5f / eyepiece.radius : 0.f;
 
+	// a rigid display panel carries no eyepiece, its image ignores where the eye sits
+	const bool digital_display = !svp_optic_eye_coupled();
 	RCache.set_c("svp_aperture", ps_r__svp_aperture ? 1.f : 0.f, g_pip_scope_magnification, minimum_mag, maximum_mag);
-	RCache.set_c("svp_eyebox", eye_offset_mm.x, eye_offset_mm.y, exit_pupil_mm * 0.5f, pupil_mm * 0.5f);
+	RCache.set_c("svp_eyebox", digital_display ? 0.f : eye_offset_mm.x,
+		digital_display ? 0.f : eye_offset_mm.y, exit_pupil_mm * 0.5f, pupil_mm * 0.5f);
 	const float exit_response = SvpPhysicalOptics::ApplyMagnificationResponse(
 		svp_make_response(ps_svp_exit_curve_low, ps_svp_exit_curve_high), g_pip_scope_magnification,
 		ps_svp_exit_scale, ps_svp_exit_offset);
@@ -350,10 +364,6 @@ static void svp_bind_aperture(float pupil_mm)
 		svp_make_response(ps_svp_tunnel_curve_low, ps_svp_tunnel_curve_high), g_pip_scope_magnification,
 		ps_svp_tunnel_scale, 0.f);
 	const auto& config = viewport.RenderOpticConfig();
-	extern Fvector4 ps_s3ds_param_3;
-	extern int ps_markswitch_current;
-	// a thermal sight shows a digital panel, eyepiece tunneling and parallax do not exist there
-	const bool digital_display = svp_thermal_active(ps_s3ds_param_3.x, ps_markswitch_current);
 	const float tunnel_parallax = digital_display ? 0.f
 		: (config.typed_route ? config.tunneling_parallax : ps_s3ds_tunneling_parallax);
 	const float tunnel_min = digital_display ? 0.f

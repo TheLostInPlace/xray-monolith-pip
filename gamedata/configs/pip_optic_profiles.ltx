@@ -3,6 +3,10 @@
 ;
 ; Tunneling is the persistent inner tube visible around a centered sight picture.
 ; Exit-pupil vignetting is the separate image loss caused by eye misalignment.
+;
+; eye_coupling is 1 for an eyepiece image that follows the eye and 0 for a rigid
+; digital panel. The bound spec optic_class picks the default and any runtime
+; section overrides it with its own line, as in eye_coupling = 0.
 
 [default]
 s3ds_tunneling_parallax = 0.035
@@ -27,3 +31,8 @@ scope_zero_m = 100
 s3ds_eye_tracking_speed = 5.5
 s3ds_eye_tracking_accel_mm_s2 = 90.0
 s3ds_eye_tracking_limit_mm = 7.5
+
+; The 1PN23 is an intensifier tube viewed through a real ocular, its spec class is
+; display only as an alias so the coupling comes back with an authored line.
+[pn23]
+eye_coupling = 1

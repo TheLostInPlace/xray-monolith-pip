@@ -178,6 +178,7 @@ public:
 		optic_twilight_strength,
 		optic_physical_min,
 		optic_physical_max,
+		optic_eye_coupling,
 		optic_value_count
 	};
 
@@ -219,6 +220,8 @@ public:
 		float twilight_strength = 0.35f;
 		float physical_min = 0.f;
 		float physical_max = 0.f;
+		// 1 an eyepiece image that follows the eye, 0 a rigid digital panel
+		float eye_coupling = 1.f;
 		string256 context = {};
 		string128 weapon = {};
 		string128 scope = {};

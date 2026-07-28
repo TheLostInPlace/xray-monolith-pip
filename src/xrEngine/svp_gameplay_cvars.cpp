@@ -72,9 +72,10 @@ static void svp_dump_optic_record(LPCSTR name, const CSecondVPParams::OpticConfi
 		config.pupil_field_high, svp_optic_source(config, CSecondVPParams::optic_pupil_field_high),
 		config.transmission, svp_optic_source(config, CSecondVPParams::optic_transmission),
 		config.twilight_strength, svp_optic_source(config, CSecondVPParams::optic_twilight_strength));
-	Msg("[SVP-CONFIG] %s physical=%.3f@%s %.3f@%s",
+	Msg("[SVP-CONFIG] %s physical=%.3f@%s %.3f@%s eye_coupling=%.3f@%s",
 		name, config.physical_min, svp_optic_source(config, CSecondVPParams::optic_physical_min),
-		config.physical_max, svp_optic_source(config, CSecondVPParams::optic_physical_max));
+		config.physical_max, svp_optic_source(config, CSecondVPParams::optic_physical_max),
+		config.eye_coupling, svp_optic_source(config, CSecondVPParams::optic_eye_coupling));
 }
 
 class CCC_SvpDumpOptic final : public IConsole_Command

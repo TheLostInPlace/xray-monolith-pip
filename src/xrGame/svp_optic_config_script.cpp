@@ -89,6 +89,7 @@ constexpr LPCSTR s_top_keys[] =
 	"twilight_strength",
 	"physical_min",
 	"physical_max",
+	"eye_coupling",
 	"sources"
 };
 
@@ -115,7 +116,8 @@ constexpr LPCSTR s_source_keys[] =
 	"transmission",
 	"twilight_strength",
 	"physical_min",
-	"physical_max"
+	"physical_max",
+	"eye_coupling"
 };
 
 constexpr SFloatField s_float_fields[] =
@@ -140,7 +142,8 @@ constexpr SFloatField s_float_fields[] =
 	{ "transmission", &CSecondVPParams::OpticConfig::transmission, 0.f, 1.f },
 	{ "twilight_strength", &CSecondVPParams::OpticConfig::twilight_strength, 0.f, 1.f },
 	{ "physical_min", &CSecondVPParams::OpticConfig::physical_min, 0.f, 200.f },
-	{ "physical_max", &CSecondVPParams::OpticConfig::physical_max, 0.f, 200.f }
+	{ "physical_max", &CSecondVPParams::OpticConfig::physical_max, 0.f, 200.f },
+	{ "eye_coupling", &CSecondVPParams::OpticConfig::eye_coupling, 0.f, 1.f }
 };
 
 static_assert(_countof(s_source_keys) == CSecondVPParams::optic_value_count);
@@ -468,6 +471,7 @@ luabind::object svp_profile_table(const CSecondVPParams::OpticConfig& config,
 	table["twilight_strength"] = config.twilight_strength;
 	table["physical_min"] = config.physical_min;
 	table["physical_max"] = config.physical_max;
+	table["eye_coupling"] = config.eye_coupling;
 	luabind::object sources = luabind::newtable(state);
 	for (u32 i = 0; i < CSecondVPParams::optic_value_count; ++i)
 		sources[s_source_keys[i]] = config.source[i];

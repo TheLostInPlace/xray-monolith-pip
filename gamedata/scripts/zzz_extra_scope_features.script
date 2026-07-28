@@ -607,6 +607,7 @@ local function typed_table(token, key, item, weapon_id, scope_sec, diagnostic_sc
         twilight_strength = values.s3ds_twilight_strength,
         physical_min = optics.physical_min or 0,
         physical_max = optics.physical_max or 0,
+        eye_coupling = optics.eye_coupling or 1,
         sources = {
             objective_offset = lens and lens.offset_source or "none",
             objective_mm = lens and lens.objective_source or "none",
@@ -630,6 +631,7 @@ local function typed_table(token, key, item, weapon_id, scope_sec, diagnostic_sc
             twilight_strength = sources.s3ds_twilight_strength,
             physical_min = optics.physical_min_source or "none",
             physical_max = optics.physical_max_source or "none",
+            eye_coupling = optics.eye_coupling_source or "none",
         },
     }
     if api_hybrid_reflex and hybrid_authored then

@@ -699,7 +699,8 @@ bool svpCamera()
 			near_plane = svp_auto_near(params, fNearPlane, near_min_axial, near_manual, near_fresh);
 			params.svp_camera_domain = CSecondVPParams::camera_objective;
 
-			if (ps_r__svp_weapon_continuity && !flat_optic
+			// an uncoupled display panel holds its principal point, the image never rides the eye
+			if (ps_r__svp_weapon_continuity && !flat_optic && svp_optic_eye_coupled()
 				&& params.objective.radius > EPS)
 			{
 				Fmatrix eyepiece_inverse;
@@ -856,12 +857,13 @@ bool svpCamera()
 			const float eye_axial = eye_to_eyepiece.dotproduct(ax);
 			Fvector eye_axis;
 			eye_axis.mad(eyeW0.c, ax, eye_axial);
-			PipMsg("[SVP-CAM] domain=%s front=%.1fcm near=%.1fcm nearMode=%s minAxial=%.4fm nearFresh=%d nearBones=%u nearSkip=%u hybridFront=%.4fm objectiveLateral=%.1fcm eyeOff=%.1fcm raw=(%.1f,%.1f)mm entranceHeight=(%.1f,%.1f)mm principal=(%.5f,%.5f) limit=%.1fmm entranceScale=%.2f parity=%.2f enabled=%d clipped=%d mag=%.2f opticEpoch=%u cameraEpoch=%u",
+			PipMsg("[SVP-CAM] domain=%s front=%.1fcm near=%.1fcm nearMode=%s minAxial=%.4fm nearFresh=%d nearBones=%u nearSkip=%u hybridFront=%.4fm eyeCoupling=%d objectiveLateral=%.1fcm eyeOff=%.1fcm raw=(%.1f,%.1f)mm entranceHeight=(%.1f,%.1f)mm principal=(%.5f,%.5f) limit=%.1fmm entranceScale=%.2f parity=%.2f enabled=%d clipped=%d mag=%.2f opticEpoch=%u cameraEpoch=%u",
 				svp_camera_domain_name(params.svp_camera_domain),
 				params.svp_front_use_m * 100.f, near_plane * 100.f,
 				near_manual ? "manual" : "auto", near_min_axial, near_fresh ? 1 : 0,
 				params.svp_hud_min_bones, params.svp_hud_axis_skip,
 				params.svp_hybrid_front,
+				svp_optic_eye_coupled() ? 1 : 0,
 				params.objective.m_W.c.distance_to(axis_center) * 100.f,
 				params.eyepiece.m_W.c.distance_to(eye_axis) * 100.f,
 				eye_sample.raw_mm.x, eye_sample.raw_mm.y,

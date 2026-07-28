@@ -1065,6 +1065,7 @@ static u64 svp_hash_optic_config(const CSecondVPParams::OpticConfig& config)
 	svp_hash_bytes(hash, &config.twilight_strength, sizeof(config.twilight_strength));
 	svp_hash_bytes(hash, &config.physical_min, sizeof(config.physical_min));
 	svp_hash_bytes(hash, &config.physical_max, sizeof(config.physical_max));
+	svp_hash_bytes(hash, &config.eye_coupling, sizeof(config.eye_coupling));
 	svp_hash_bytes(hash, config.context, sizeof(config.context));
 	svp_hash_bytes(hash, config.weapon, sizeof(config.weapon));
 	svp_hash_bytes(hash, config.scope, sizeof(config.scope));

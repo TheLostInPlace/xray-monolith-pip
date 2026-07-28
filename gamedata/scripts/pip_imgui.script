@@ -101,6 +101,7 @@ local profile_fields = {
     { "twilight_strength", "Twilight Strength", "twilight_strength" },
     { "physical_min", "Physical Minimum Magnification", "physical_min" },
     { "physical_max", "Physical Maximum Magnification", "physical_max" },
+    { "eye_coupling", "Eye Coupling", "eye_coupling" },
 }
 
 local function get_console()
