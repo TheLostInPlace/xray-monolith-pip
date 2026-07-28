@@ -11,6 +11,8 @@ struct svp_mags_data
 	svp_mag_mode mode = svp_mag_none;
 	float f_top = 0.f;
 	float f_floor = 0.f;
+	float mag_min = 0.f; // authored true magnifications, the dial detents step on these
+	float mag_max = 0.f;
 };
 
 // svp_magnifications wins, then standard 3DSS fields, none keeps legacy zoom

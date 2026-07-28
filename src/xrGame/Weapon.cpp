@@ -490,6 +490,8 @@ void CWeapon::UpdateZoomParams() {
 				m_zoom_params.m_fMinBaseZoomFactor = mags.f_floor;
 				m_zoom_params.m_bUseDynamicZoom = TRUE;
 				m_zoom_params.m_bSvpAuthoredMin = true;
+				m_zoom_params.m_fSvpMagMin = mags.mag_min;
+				m_zoom_params.m_fSvpMagMax = mags.mag_max;
 				if (mags.mode == svp_mag_stepped)
 					m_zoom_params.m_fZoomStepCount = 1;
 			}
@@ -1178,6 +1180,27 @@ void NewGetZoomData(const float scope_factor, const float zoom_step_count, float
 		newGetZoomDelta(scope_factor, delta, min_zoom_factor, steps);
 
 	//Msg("min zoom factor %f, min zoom %f, loc min zoom factor %f, g_ironsights_factor %f, scope_radius %f, scope_scrollpower %f, zoom_step_count %f, n_zoom_step_count %f, steps %f, delta %f", min_zoom_factor, min_zoom, loc_min_zoom_factor, g_ironsights_factor, scope_radius, scope_scrollpower, zoom_step_count, n_zoom_step_count, steps, delta);
+}
+
+// pip a dial optic advances linear in magnification so the needle lands on the engraved numbers
+// an integer span marks every whole magnification, negative return means no dial ladder
+static float svp_dial_step(float base_factor, float top_factor, float mag_min, float mag_max,
+	float steps_cfg, int dir)
+{
+	const float span = mag_max - mag_min;
+	if (!(span > EPS) || !(top_factor > EPS) || !(base_factor > EPS))
+		return -1.f;
+	float count = steps_cfg > 0.f ? steps_cfg : (float)n_zoom_step_count;
+	const float whole = floorf(span + 0.5f);
+	if (whole >= 1.f && _abs(span - whole) < 0.01f)
+		count = whole;
+	const float mag_c = mag_max * top_factor;
+	const float cur_mag = mag_c / base_factor;
+	const float step_mag = span / count;
+	const float k = floorf((cur_mag - mag_min) / step_mag + 0.5f) + (dir > 0 ? 1.f : -1.f);
+	float mag = mag_min + k * step_mag;
+	clamp(mag, mag_min, mag_max);
+	return mag_c / mag;
 }
 
 BOOL CWeapon::net_Spawn(CSE_Abstract* DC)
@@ -3599,6 +3622,15 @@ void CWeapon::ZoomInc()
 		float fine = (min_zoom_factor - m_zoom_params.m_fScopeZoomFactor * power) / g_zoom_analog;
 		f = base * power - fine;
 	}
+	else if (m_zoom_params.m_bSvpAuthoredMin
+		&& m_zoom_params.m_fSvpMagMax > m_zoom_params.m_fSvpMagMin)
+	{
+		f = svp_dial_step(base * power, m_zoom_params.m_fScopeZoomFactor * power,
+			m_zoom_params.m_fSvpMagMin, m_zoom_params.m_fSvpMagMax,
+			m_zoom_params.m_fZoomStepCount, 1);
+		if (f < 0.f)
+			f = base * power - delta;
+	}
 	else
 	{
 		f = base * power - delta;
@@ -3666,6 +3698,15 @@ void CWeapon::ZoomDec()
 		// count + delta algorithm) so any magnification in the scope's range is reachable
 		float fine = (min_zoom_factor - m_zoom_params.m_fScopeZoomFactor * power) / g_zoom_analog;
 		f = base * power + fine;
+	}
+	else if (m_zoom_params.m_bSvpAuthoredMin
+		&& m_zoom_params.m_fSvpMagMax > m_zoom_params.m_fSvpMagMin)
+	{
+		f = svp_dial_step(base * power, m_zoom_params.m_fScopeZoomFactor * power,
+			m_zoom_params.m_fSvpMagMin, m_zoom_params.m_fSvpMagMax,
+			m_zoom_params.m_fZoomStepCount, -1);
+		if (f < 0.f)
+			f = base * power + delta;
 	}
 	else
 	{

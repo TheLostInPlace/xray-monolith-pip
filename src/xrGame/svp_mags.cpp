@@ -114,6 +114,8 @@ static bool resolve_from_section(LPCSTR sect, float zoom_multiple, svp_mags_data
 	out.mode = dyn ? (stepped ? svp_mag_stepped : svp_mag_dynamic) : svp_mag_fixed;
 	out.f_top = f_top;
 	out.f_floor = f_floor;
+	out.mag_min = min_mag;
+	out.mag_max = max_mag;
 	LPCSTR source = pSettings->DLTX_getFilenameOfLine(sect, source_key);
 	PipMsg("[SVP-MAGS] %s key=%s value='%s' src=%s mag=[%.2f..%.2f] f=[%.1f..%.1f]",
 		sect, source_key, raw ? raw : "", source ? source : "?", min_mag, max_mag, f_floor, f_top);

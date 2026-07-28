@@ -402,6 +402,8 @@ protected:
 		float m_fZoomTargetFactor; // pip smooth-zoom target, the current factor eases toward this (dynamic scopes)
 		bool m_bScriptedZoom = false; // pip true when a script authored the live factor, those carry the user fov already
 		bool m_bSvpAuthoredMin = false; // pip authored magnifications set the floor directly, skip the optical-model cap
+		float m_fSvpMagMin = 0.f; // pip authored true magnifications, the dial detents step on these
+		float m_fSvpMagMax = 0.f;
 		float m_fZoomRotateTime;
 		float m_fBaseZoomFactor;
 		float m_fScopeZoomFactor;
