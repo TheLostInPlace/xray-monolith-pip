@@ -76,17 +76,15 @@ static class svp_mas_binder : public R_constant_setup
 	}
 } binder_svp_mas;
 
-// glass optics tunables, x = illuminated reticle washout, y = field curvature edge softness, z = ACOG fiber sun mode
+// glass optics tunables, y = field curvature edge softness, w = auto reticle flip, x z retired
 static class svp_glass_binder : public R_constant_setup
 {
 	virtual void setup(R_constant* C)
 	{
-		extern float ps_r__svp_reticle_washout;
 		extern float ps_r__svp_field_curve;
-		extern int ps_r__svp_acog_fiber;
 		extern int ps_r__svp_autoflip_reticle;
 		if (Device.true_pip_on)
-			RCache.set_c(C, ps_r__svp_reticle_washout, ps_r__svp_field_curve, ps_r__svp_acog_fiber ? 1.f : 0.f, ps_r__svp_autoflip_reticle ? 1.f : 0.f);
+			RCache.set_c(C, 0.f, ps_r__svp_field_curve, 0.f, ps_r__svp_autoflip_reticle ? 1.f : 0.f);
 		else
 			RCache.set_c(C, 0.f, 0.f, 0.f, 0.f);
 	}

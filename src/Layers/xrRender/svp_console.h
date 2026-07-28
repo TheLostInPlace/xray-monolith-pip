@@ -116,7 +116,6 @@ extern ECORE_API float ps_s3ds_adapt_speed;
 
 // glass / reticle cosmetics
 extern ECORE_API int ps_r__svp_chroma;
-extern ECORE_API float ps_r__svp_reticle_washout;
 extern ECORE_API float ps_r__svp_field_curve;
 extern ECORE_API int ps_r__svp_field_stop;
 extern ECORE_API int ps_r__svp_aperture;
@@ -147,7 +146,6 @@ extern ECORE_API float ps_svp_tunnel_scale;
 extern ECORE_API float ps_svp_tunnel_offset;
 extern ECORE_API float ps_svp_dim_scale;
 extern ECORE_API float ps_svp_dim_offset;
-extern ECORE_API int ps_r__svp_acog_fiber;
 extern ECORE_API float ps_r__svp_veiling_glare;
 extern ECORE_API float ps_r__svp_rain_optic;
 extern ECORE_API float ps_r__svp_rain_debug;

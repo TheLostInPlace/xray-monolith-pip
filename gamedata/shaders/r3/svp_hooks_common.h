@@ -51,7 +51,7 @@ float svp_effective_mas(float authored)
 #endif
 #ifndef SVP_GLASS_DECLARED
 #define SVP_GLASS_DECLARED
-uniform float4 svp_glass; // engine glass tunables, x = reticle washout, y = field curvature, z = ACOG fiber sun mode
+uniform float4 svp_glass; // engine glass tunables, y = field curvature, w = auto reticle flip
 #endif
 #ifndef SVP_ENV_DECLARED
 #define SVP_ENV_DECLARED
