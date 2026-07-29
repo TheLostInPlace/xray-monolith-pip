@@ -1120,7 +1120,7 @@ float CActor::currentFOV(bool wantSVPFov)
 			return g_fov;
 		else if (svp_owns_main_view && wantSVPFov)
 			// pip the true through-scope fov, config factors ride the 75 base and rescale to the live fov
-			return pWeapon->GetZoomFactor() * 0.75f * (pWeapon->IsScriptedZoom() ? 1.f : g_fov / SVP_ZOOM_BASE_FOV);
+			return svp_factor_to_fov(pWeapon->GetZoomFactor(), pWeapon->IsScriptedZoom() ? 1.f : g_fov / SVP_ZOOM_BASE_FOV);
 		else
 			return pWeapon->GetZoomFactor() * (0.75f);
 	}

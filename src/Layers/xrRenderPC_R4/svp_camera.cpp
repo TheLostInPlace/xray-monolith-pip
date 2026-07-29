@@ -484,7 +484,7 @@ bool svpCamera()
 		? Device.m_SecondViewport.svp_zoom_pub
 		: g_pGamePersistent->m_pGShaderConstants->hud_params.y;
 	// the scale rides the live fov so the scope keeps its fov-75 look at any user fov
-	float svp_fov = zoom_src * 0.75f * Device.m_SecondViewport.svp_fov_scale;
+	float svp_fov = svp_factor_to_fov(zoom_src, Device.m_SecondViewport.svp_fov_scale);
 	float _, fov, fNearPlane, fFarPlane;
 	Device.matrices[0].mProject.decompose_projection(fov, _, fNearPlane, fFarPlane);
 	// the mag reads the steady wide aim fov (punch free from the weapon publish), the live decomposed
@@ -573,7 +573,7 @@ bool svpCamera()
 	{
 		const Fvector4& fovp_c = g_pGamePersistent->m_pGShaderConstants->hud_fov_params;
 		const float fscale_c = rad2deg(fov_aim) / 75.f;
-		const float cfg_max = (fovp_c.x > EPS) ? fov_aim / deg2rad(fovp_c.x * 0.75f * fscale_c) : 0.f;
+		const float cfg_max = (fovp_c.x > EPS) ? fov_aim / deg2rad(svp_factor_to_fov(fovp_c.x, fscale_c)) : 0.f;
 		static float s_mag_ceiling = 0.f;
 		static u32 s_ceiling_frame = 0;
 		if (Device.dwFrame != s_ceiling_frame + 1) s_mag_ceiling = 0.f; // session gap drops the hold
@@ -638,8 +638,8 @@ bool svpCamera()
 		}
 		else
 		{
-			g_pip_scope_max_mag = (fovp.x > EPS) ? fov_aim / deg2rad(fovp.x * 0.75f * fscale) : scope_magnification;
-			g_pip_scope_min_mag = (fovp.y > EPS) ? fov_aim / deg2rad(fovp.y * 0.75f * yscale) : scope_magnification;
+			g_pip_scope_max_mag = (fovp.x > EPS) ? fov_aim / deg2rad(svp_factor_to_fov(fovp.x, fscale)) : scope_magnification;
+			g_pip_scope_min_mag = (fovp.y > EPS) ? fov_aim / deg2rad(svp_factor_to_fov(fovp.y, yscale)) : scope_magnification;
 		}
 	}
 
