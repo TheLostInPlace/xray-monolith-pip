@@ -493,8 +493,10 @@ bool svpCamera()
 	const float fov_aim = (aim_fov_pub > 1.f) ? deg2rad(aim_fov_pub) : fov;
 
 	// a zoom-0 tube sight (1x thermal/nv) has no zoom fov and re-images at 1x, the near-0 value
-	// would also blow up the vFov/offset tan() math
-	if (svp_fov < 1.0f) svp_fov = rad2deg(fov_aim);
+	// would also blow up the vFov/offset tan() math, the floor sits under the highest ladder mag
+	const float floor_scale = _max(Device.m_SecondViewport.svp_fov_scale, 0.1f);
+	const float fov_floor = 0.5f * SVP_ZOOM_BASE_FOV * floor_scale / SVP_MAG_LIMIT;
+	if (svp_fov < fov_floor) svp_fov = rad2deg(fov_aim);
 
 
 	auto mm = Device.matrices[0];

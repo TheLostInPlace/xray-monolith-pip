@@ -21,6 +21,8 @@ extern bool svp_optic_api_active();
 
 // authored zoom factor convention base, a factor f renders mag (SVP_ZOOM_BASE_FOV / 0.75) / f
 constexpr float SVP_ZOOM_BASE_FOV = 75.f;
+// highest supported magnification, the ladder validation and the camera fov floor share it
+constexpr float SVP_MAG_LIMIT = 200.f;
 
 // registers the svp gameplay console commands, called once from CCC_Register
 extern void svp_gameplay_cvars_init();

@@ -51,7 +51,7 @@ bool svp_magnification_ladder_valid(const svp_mags_data& ladder)
 		return false;
 	for (u32 i = 0; i < ladder.count; ++i)
 		if (!_valid(ladder.values[i]) || ladder.values[i] <= 0.f ||
-			ladder.values[i] > 200.f ||
+			ladder.values[i] > SVP_MAG_LIMIT ||
 			svp_magnification_to_runtime_factor(ladder.values[i]) <= 0.f ||
 			(i && !(ladder.values[i] > ladder.values[i - 1])))
 			return false;
