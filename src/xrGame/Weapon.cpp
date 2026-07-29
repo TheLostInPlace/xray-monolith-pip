@@ -3807,10 +3807,13 @@ void CWeapon::ZoomInc()
 		f = m_zoom_params.m_fScopeZoomFactor * power;
 	else if (g_zoom_analog > 0.f)
 	{
-		// pip continuous/analog, step by a fine fraction of the FOV range (ignoring the config step
-		// count + delta algorithm) so any magnification in the scope's range is reachable
-		float fine = (min_zoom_factor - m_zoom_params.m_fScopeZoomFactor * power) / g_zoom_analog;
-		f = base * power - fine;
+		// pip continuous/analog, each notch multiplies by a fixed ratio so the
+		// magnification steps uniformly across the range
+		const float top = m_zoom_params.m_fScopeZoomFactor * power;
+		if (top > EPS && min_zoom_factor > top)
+			f = base * power / powf(min_zoom_factor / top, 1.f / g_zoom_analog);
+		else
+			f = base * power - (min_zoom_factor - top) / g_zoom_analog;
 	}
 	else
 	{
@@ -3908,10 +3911,13 @@ void CWeapon::ZoomDec()
 		f = min_zoom_factor;
 	else if (g_zoom_analog > 0.f)
 	{
-		// pip continuous/analog, step by a fine fraction of the FOV range (ignoring the config step
-		// count + delta algorithm) so any magnification in the scope's range is reachable
-		float fine = (min_zoom_factor - m_zoom_params.m_fScopeZoomFactor * power) / g_zoom_analog;
-		f = base * power + fine;
+		// pip continuous/analog, each notch multiplies by a fixed ratio so the
+		// magnification steps uniformly across the range
+		const float top = m_zoom_params.m_fScopeZoomFactor * power;
+		if (top > EPS && min_zoom_factor > top)
+			f = base * power * powf(min_zoom_factor / top, 1.f / g_zoom_analog);
+		else
+			f = base * power + (min_zoom_factor - top) / g_zoom_analog;
 	}
 	else
 	{
