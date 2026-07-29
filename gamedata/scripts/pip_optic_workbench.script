@@ -83,6 +83,7 @@ local user_values
 local user_cache
 local session
 local suspended = false
+local no_profile_ms
 local auto_apply = true
 local status_text = "idle"
 local field_error
@@ -151,7 +152,7 @@ local function bump(reason)
     epoch = epoch + 1
     pending_bump = nil
     next_bump_ms = time_global() + BUMP_MS
-    printf("[SVP-EDIT] epoch=%d reason=%s", epoch, tostring(reason))
+    printf("[SVP-EDIT] epoch=%s reason=%s", tostring(epoch), tostring(reason))
 end
 
 -- drags fire every frame so slide the republish into a short window
@@ -385,7 +386,7 @@ local function load_user_file()
     end
     handle:close()
     if skipped > 0 then
-        printf("![SVP-EDIT] user file malformed lines=%d first=%d path=%s",
+        printf("![SVP-EDIT] user file malformed lines=%s first=%s path=%s",
             skipped, first, path)
     end
 end
@@ -563,7 +564,7 @@ local function apply_draft()
         session.overlay[name] = copy_value(session.draft[name])
     end
     bump("apply")
-    printf("[SVP-EDIT] apply context=%s fields=%d", tostring(session.context), #names)
+    printf("[SVP-EDIT] apply context=%s fields=%s", tostring(session.context), tostring(#names))
     status_text = string.format("applied %d fields", #names)
 end
 
@@ -609,7 +610,6 @@ local function start_session(profile)
     suspended = false
     field_error = nil
     status_text = "session open"
-    bump("session start")
     printf("[SVP-EDIT] session start context=%s key=%s fingerprint=%s",
         tostring(profile.context), tostring(session.key),
         tostring(profile.profile_fingerprint))
@@ -621,10 +621,13 @@ local function stop_session(reason)
     end
     printf("[SVP-EDIT] session end context=%s reason=%s",
         tostring(session.context), tostring(reason))
+    local published = next(session.overlay) ~= nil
     session = nil
     suspended = false
     field_error = nil
-    bump("session end")
+    if published then
+        bump("session end")
+    end
     status_text = "session closed " .. tostring(reason)
 end
 
@@ -695,7 +698,7 @@ local function save_session()
     end
     load_user_file()
     bump("save")
-    printf("[SVP-EDIT] save section=%s fields=%d path=%s",
+    printf("[SVP-EDIT] save section=%s fields=%s path=%s",
         session.key, written, user_path())
     status_text = string.format("saved %d fields", written)
 end
@@ -749,7 +752,7 @@ local function emit_snippet(profile)
         handle:write("; no overlay fields set\n")
     end
     handle:close()
-    printf("[SVP-EDIT] snippet fields=%d path=%s", #names, path)
+    printf("[SVP-EDIT] snippet fields=%s path=%s", tostring(#names), path)
     status_text = "snippet appended"
 end
 
@@ -1070,12 +1073,12 @@ end
 
 local function draw_controls(profile)
     if not session then
-        if ImGui.Button("Start editing") then
+        if ImGui.Button("Start editing", vector2():set(170, 0)) then
             start_session(profile)
         end
         return
     end
-    if ImGui.Button("Stop editing") then
+    if ImGui.Button("Stop editing", vector2():set(170, 0)) then
         stop_session("user")
         return
     end
@@ -1155,13 +1158,21 @@ local function draw_body()
     end
     local profile = current_profile()
     if not profile or not profile.valid then
+        -- a republish briefly clears the profile, hold the session through the gap
         if session then
-            stop_session("no profile")
+            no_profile_ms = no_profile_ms or time_global()
+            if time_global() - no_profile_ms > 1500 then
+                stop_session("no profile")
+            else
+                ImGui.TextDisabled("Republishing the optic profile")
+                return
+            end
         end
         ImGui.TextDisabled("No active scope profile")
         ImGui.TextDisabled("Aim through a scope with picture in picture enabled")
         return
     end
+    no_profile_ms = nil
     if is_fixture(profile.context) then
         ImGui.TextDisabled("Fixture context active, editing is disabled")
         return
