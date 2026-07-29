@@ -317,6 +317,15 @@ local function draw_fixture()
     end
 end
 
+local function draw_workbench()
+    local workbench = rawget(_G, "pip_optic_workbench")
+    if type(workbench) == "table" and type(workbench.draw) == "function" then
+        workbench.draw()
+        return
+    end
+    ImGui.TextDisabled("Optics workbench module not installed")
+end
+
 local function render_window()
     ImGui.SetNextWindowSize(vector2():set(900, 760), ImGuiCond.FirstUseEver)
     local expanded, visible = ImGui.Begin(
@@ -338,6 +347,10 @@ local function render_window()
         if ImGui.BeginTabItem("Current Scope Profile", true, 0) then
             draw_profile()
             draw_fixture()
+            ImGui.EndTabItem()
+        end
+        if ImGui.BeginTabItem("Optics Workbench", true, 0) then
+            draw_workbench()
             ImGui.EndTabItem()
         end
         ImGui.EndTabBar()

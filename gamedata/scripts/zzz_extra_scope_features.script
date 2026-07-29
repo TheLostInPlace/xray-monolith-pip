@@ -19,6 +19,7 @@ local last_diag_key
 local last_mode
 local last_api
 local last_route_epoch
+local last_editor_epoch = 0
 local next_reconcile_ms = 0
 local identity_diag_key
 local api_checked = false
@@ -738,6 +739,25 @@ local function typed_table(token, key, item, weapon_id, scope_sec, diagnostic_sc
     return config
 end
 
+-- optional editor overlay, absent module leaves the composed table untouched
+local function workbench_overlay(config)
+    local workbench = rawget(_G, "pip_optic_workbench")
+    if type(workbench) ~= "table" or type(workbench.overlay_apply) ~= "function" then
+        return config
+    end
+    local ok, overlaid = pcall(workbench.overlay_apply, config)
+    return (ok and type(overlaid) == "table") and overlaid or config
+end
+
+local function workbench_epoch()
+    local workbench = rawget(_G, "pip_optic_workbench")
+    if type(workbench) ~= "table" or type(workbench.editor_epoch) ~= "function" then
+        return 0
+    end
+    local ok, value = pcall(workbench.editor_epoch)
+    return (ok and type(value) == "number") and value or 0
+end
+
 local function try_push(expected_key, expected_token, expected_route)
     local item, weapon, weapon_id, scope_sec, diagnostic_scope, scope_hint,
         weap_sec, zoom_type, key = aim_context()
@@ -784,6 +804,7 @@ local function try_push(expected_key, expected_token, expected_route)
         local config = typed_table(expected_token, key, item, weapon_id, scope_sec,
             diagnostic_scope, scope_hint, weap_sec, zoom_type, optics, aux, lens,
             objective_mm, objective_source, hybrid_reflex, hybrid_authored, hybrid_source)
+        config = workbench_overlay(config)
         local ok, accepted = pcall(api_apply, config.context_token, config)
         if not ok or type(accepted) ~= "table" or accepted.ok ~= true then
             printf("![SVP-CONFIG] apply failed route=%s token=%s context=%s call=%s code=%s message=%s",
@@ -912,19 +933,24 @@ local function route_update()
         local ok, value = pcall(api_route_epoch)
         epoch = ok and value or 0
     end
+    local editor = workbench_epoch()
     if last_mode == nil then
         last_mode = mode
         last_api = api
         last_route_epoch = epoch
+        last_editor_epoch = editor
     end
 
-    if mode ~= last_mode or api ~= last_api or epoch ~= last_route_epoch then
+    if mode ~= last_mode or api ~= last_api or epoch ~= last_route_epoch
+        or editor ~= last_editor_epoch then
         local previous_mode = last_mode
         local previous_api = last_api
         local previous_epoch = last_route_epoch
+        local previous_editor = last_editor_epoch
         last_mode = mode
         last_api = api
         last_route_epoch = epoch
+        last_editor_epoch = editor
         RemoveTimeEvent(RETRY_EV, "retry")
         clear_legacy_route(active_route)
         active_token = nil
@@ -933,9 +959,10 @@ local function route_update()
         active_key = nil
         active_route = nil
         last_diag_key = nil
-        printf("[SVP-CONFIG] route transition mode=%s>%s api=%s>%s epoch=%s>%s",
+        printf("[SVP-CONFIG] route transition mode=%s>%s api=%s>%s epoch=%s>%s editor=%s>%s",
             tostring(previous_mode), tostring(mode), tostring(previous_api), tostring(api),
-            tostring(previous_epoch), tostring(epoch))
+            tostring(previous_epoch), tostring(epoch),
+            tostring(previous_editor), tostring(editor))
         if mode > 0 then
             push_offset(true)
         end
@@ -1001,6 +1028,7 @@ function on_game_start()
     else
         last_route_epoch = 0
     end
+    last_editor_epoch = workbench_epoch()
     RegisterScriptCallback("actor_on_weapon_zoom_in", function()
         push_offset(false)
         seed_zoom_sound_memo()
