@@ -1566,7 +1566,11 @@ void CWeapon::UpdateCL()
 		{
 			float a = g_zoom_smooth * Device.fTimeDelta;
 			if (a > 1.f) a = 1.f;
-			cur += (tgt - cur) * a;
+			// geometric step, zoom feel is multiplicative so every doubling takes equal time
+			if (cur > EPS && tgt > EPS)
+				cur *= powf(tgt / cur, a);
+			else
+				cur += (tgt - cur) * a;
 		}
 	}
 
