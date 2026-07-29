@@ -84,6 +84,7 @@ local user_cache
 local session
 local suspended = false
 local no_profile_ms
+local last_profile
 local auto_apply = true
 local status_text = "idle"
 local field_error
@@ -1073,43 +1074,42 @@ end
 
 local function draw_controls(profile)
     if not session then
-        if ImGui.Button("Start editing", vector2():set(170, 0)) then
+        if ImGui.Button("Start editing", vector2():set(-1, 0)) then
             start_session(profile)
         end
         return
     end
-    if ImGui.Button("Stop editing", vector2():set(170, 0)) then
+    if ImGui.Button("Stop editing", vector2():set(-1, 0)) then
         stop_session("user")
         return
     end
-    ImGui.SameLine(0)
     local changed, value = ImGui.Checkbox("Auto apply", auto_apply)
     if changed then
         auto_apply = value == true
     end
     ImGui.SameLine(0)
-    if ImGui.Button("Apply") then
+    if ImGui.Button("Apply", vector2():set(100, 0)) then
         apply_draft()
     end
     ImGui.SameLine(0)
-    if ImGui.Button(suspended and "Resume overlay" or "A/B stock") then
+    if ImGui.Button(suspended and "Resume overlay" or "A/B stock", vector2():set(150, 0)) then
         suspended = not suspended
         bump(suspended and "suspend" or "resume")
         status_text = suspended and "overlay suspended" or "overlay resumed"
     end
-    if ImGui.Button("Save") then
+    if ImGui.Button("Save", vector2():set(100, 0)) then
         save_session()
     end
     ImGui.SameLine(0)
-    if ImGui.Button("Revert all") then
+    if ImGui.Button("Revert all", vector2():set(120, 0)) then
         revert_all()
     end
     ImGui.SameLine(0)
-    if ImGui.Button("Clear saved") then
+    if ImGui.Button("Clear saved", vector2():set(130, 0)) then
         clear_saved()
     end
     ImGui.SameLine(0)
-    if ImGui.Button("Emit snippet") then
+    if ImGui.Button("Emit snippet", vector2():set(140, 0)) then
         emit_snippet(profile)
     end
 end
@@ -1157,22 +1157,28 @@ local function draw_body()
         return
     end
     local profile = current_profile()
+    if profile and profile.valid then
+        no_profile_ms = nil
+        last_profile = profile
+    elseif session and last_profile and session.context == last_profile.context then
+        -- a republish briefly clears the profile, keep drawing from the cached one
+        no_profile_ms = no_profile_ms or time_global()
+        if time_global() - no_profile_ms > 1500 then
+            stop_session("no profile")
+            last_profile = nil
+            profile = nil
+        else
+            profile = last_profile
+        end
+    end
     if not profile or not profile.valid then
-        -- a republish briefly clears the profile, hold the session through the gap
         if session then
-            no_profile_ms = no_profile_ms or time_global()
-            if time_global() - no_profile_ms > 1500 then
-                stop_session("no profile")
-            else
-                ImGui.TextDisabled("Republishing the optic profile")
-                return
-            end
+            stop_session("no profile")
         end
         ImGui.TextDisabled("No active scope profile")
         ImGui.TextDisabled("Aim through a scope with picture in picture enabled")
         return
     end
-    no_profile_ms = nil
     if is_fixture(profile.context) then
         ImGui.TextDisabled("Fixture context active, editing is disabled")
         return

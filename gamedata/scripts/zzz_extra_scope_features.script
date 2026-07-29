@@ -941,8 +941,7 @@ local function route_update()
         last_editor_epoch = editor
     end
 
-    if mode ~= last_mode or api ~= last_api or epoch ~= last_route_epoch
-        or editor ~= last_editor_epoch then
+    if mode ~= last_mode or api ~= last_api or epoch ~= last_route_epoch then
         local previous_mode = last_mode
         local previous_api = last_api
         local previous_epoch = last_route_epoch
@@ -970,6 +969,15 @@ local function route_update()
     end
 
     if mode <= 0 then
+        return
+    end
+
+    -- an editor overlay change re applies on the live context, no teardown
+    if editor ~= last_editor_epoch then
+        last_editor_epoch = editor
+        if active_key then
+            push_offset(false)
+        end
         return
     end
 

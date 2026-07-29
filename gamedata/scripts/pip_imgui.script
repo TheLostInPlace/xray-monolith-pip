@@ -301,7 +301,7 @@ local fixture_status
 -- runs the packed api fixture, per case results land in the log as [SVP-API-FIXTURE] lines
 local function draw_fixture()
     ImGui.Separator()
-    if ImGui.Button("Run API Fixture") then
+    if ImGui.Button("Run API Fixture", vector2():set(160, 0)) then
         local fixture = rawget(_G, "pip_optic_api_fixture")
         if type(fixture) == "table" and type(fixture.run) == "function" then
             local ok, passed = pcall(fixture.run)
