@@ -296,6 +296,27 @@ local function draw_profile()
     end
 end
 
+local fixture_status
+
+-- runs the packed api fixture, per case results land in the log as [SVP-API-FIXTURE] lines
+local function draw_fixture()
+    ImGui.Separator()
+    if ImGui.Button("Run API Fixture") then
+        local fixture = rawget(_G, "pip_optic_api_fixture")
+        if type(fixture) == "table" and type(fixture.run) == "function" then
+            local ok, passed = pcall(fixture.run)
+            fixture_status = not ok and "error"
+                or (passed and "pass" or "refused or fail, see log")
+        else
+            fixture_status = "unavailable"
+        end
+    end
+    if fixture_status then
+        ImGui.SameLine(250)
+        ImGui.Text("fixture " .. fixture_status)
+    end
+end
+
 local function render_window()
     ImGui.SetNextWindowSize(vector2():set(900, 760), ImGuiCond.FirstUseEver)
     local expanded, visible = ImGui.Begin(
@@ -316,6 +337,7 @@ local function render_window()
         end
         if ImGui.BeginTabItem("Current Scope Profile", true, 0) then
             draw_profile()
+            draw_fixture()
             ImGui.EndTabItem()
         end
         ImGui.EndTabBar()
