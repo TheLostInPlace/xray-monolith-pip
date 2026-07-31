@@ -920,6 +920,7 @@ void CKinematicsAnimated::Load(const char* N, IReader* data, u32 dwFlags)
 		// an empty partition keeps every animation consumer a no-op until the teardown
 		static CPartition s_fatal_partition;
 		m_Partition = &s_fatal_partition;
+		IBlend_Startup();
 		return;
 	}
 
