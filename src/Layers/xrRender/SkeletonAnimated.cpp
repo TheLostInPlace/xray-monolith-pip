@@ -218,6 +218,8 @@ MotionID CKinematicsAnimated::ID_Cycle_Safe(LPCSTR N)
 MotionID CKinematicsAnimated::ID_Cycle(shared_str N)
 {
 	MotionID motion_ID = ID_Cycle_Safe(N);
+	// a bind failed model resolves no cycles without asserting
+	if (m_Motions.empty()) return motion_ID;
 	R_ASSERT2(motion_ID.valid(), make_string("! MODEL [%s]: can't find cycle: [%s]", dbg_name.c_str(), N.c_str()).c_str());
 	return motion_ID;
 }
@@ -241,6 +243,7 @@ MotionID CKinematicsAnimated::ID_Cycle_Safe(shared_str N)
 MotionID CKinematicsAnimated::ID_Cycle(LPCSTR N)
 {
 	MotionID motion_ID = ID_Cycle_Safe(N);
+	if (m_Motions.empty()) return motion_ID;
 	R_ASSERT2(motion_ID.valid(), make_string("! MODEL [%s]: can't find cycle: [%s]", dbg_name.c_str(), N).c_str());
 	return motion_ID;
 }
@@ -420,6 +423,7 @@ CBlend* CKinematicsAnimated::LL_PlayCycle(u16 part, MotionID motion_ID, BOOL bMi
                                           LPVOID CallbackParam, u8 channel /*=0*/)
 {
 	VERIFY(motion_ID.valid());
+	if (!motion_ID.valid()) return NULL;
 	CMotionDef* m_def = m_Motions[motion_ID.slot].motions.motion_def(motion_ID.idx);
 	VERIFY(m_def);
 	if (!m_def) return NULL;
@@ -433,11 +437,9 @@ CBlend* CKinematicsAnimated::PlayCycle(LPCSTR N, BOOL bMixIn, PlayCallback Callb
 {
 	MotionID motion_ID = ID_Cycle(N);
 	if (motion_ID.valid()) return PlayCycle(motion_ID, bMixIn, Callback, CallbackParam, channel);
-	else
-	{
-		Debug.fatal(DEBUG_INFO, "! MODEL [%s]: can't find cycle: [%s]", dbg_name.c_str(), N);
-		return 0;
-	}
+	if (m_Motions.empty()) return 0;
+	Debug.fatal(DEBUG_INFO, "! MODEL [%s]: can't find cycle: [%s]", dbg_name.c_str(), N);
+	return 0;
 }
 
 CBlend* CKinematicsAnimated::PlayCycle(MotionID motion_ID, BOOL bMixIn, PlayCallback Callback, LPVOID CallbackParam,
@@ -458,6 +460,7 @@ CBlend* CKinematicsAnimated::PlayCycle(u16 partition, MotionID motion_ID, BOOL b
                                        LPVOID CallbackParam, u8 channel, float speed)
 {
 	VERIFY(motion_ID.valid());
+	if (!motion_ID.valid()) return NULL;
 	CMotionDef* m_def = m_Motions[motion_ID.slot].motions.motion_def(motion_ID.idx);
 	VERIFY(m_def);
 	if (!m_def) return NULL;
@@ -486,6 +489,7 @@ MotionID CKinematicsAnimated::ID_FX_Safe(LPCSTR N)
 MotionID CKinematicsAnimated::ID_FX(LPCSTR N)
 {
 	MotionID motion_ID = ID_FX_Safe(N);
+	if (m_Motions.empty()) return motion_ID;
 	R_ASSERT3(motion_ID.valid(), "! MODEL: can't find FX: ", N);
 	return motion_ID;
 }
@@ -493,6 +497,7 @@ MotionID CKinematicsAnimated::ID_FX(LPCSTR N)
 CBlend* CKinematicsAnimated::PlayFX(MotionID motion_ID, float power_scale)
 {
 	VERIFY(motion_ID.valid());
+	if (!motion_ID.valid()) return NULL;
 	CMotionDef* m_def = m_Motions[motion_ID.slot].motions.motion_def(motion_ID.idx);
 	VERIFY(m_def);
 	if (!m_def) return NULL;
