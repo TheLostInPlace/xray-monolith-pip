@@ -7,6 +7,7 @@
 #include	"AnimationKeyCalculate.h"
 #include	"SkeletonX.h"
 #include	"../../xrEngine/fmesh.h"
+#include	"../../xrEngine/IGame_Persistent.h"
 #ifdef DEBUG
 #include	"../../xrcore/dump_string.h"
 #endif
@@ -397,6 +398,7 @@ CBlend* CKinematicsAnimated::LL_PlayCycle(u16 part, MotionID motion_ID, BOOL bMi
 		else LL_CloseCycle(part, 1 << channel);
 	}
 	CPartDef* P = (*m_Partition)[part];
+	if (!P) return 0;
 	CBlend* B = IBlend_Create();
 	if (!B) return 0;
 
@@ -905,7 +907,21 @@ void CKinematicsAnimated::Load(const char* N, IReader* data, u32 dwFlags)
 		m_Motions.back().motions.create(nm, data, bones);
 	}
 
-	R_ASSERT2(m_Motions.size(), make_string("section '%s'\nmodel '%s'", current_player_hud_sect.c_str(), N).c_str());
+	// pip a model whose motions never bound cannot animate, hand the session to the exit
+	// prompt, main menu or quit only, the stock fatal stays when no prompt can show
+	if (m_Motions.empty())
+	{
+		auto detail = make_string("section '%s'\nmodel '%s'", current_player_hud_sect.c_str(), N);
+		if (g_motions_bind_fail_reason[0])
+			detail += make_string("\n\n%s", g_motions_bind_fail_reason);
+		Msg("! [MODEL-FATAL] no motions bound, %s", detail.c_str());
+		if (!g_pGamePersistent || !g_pGamePersistent->OnModelLoadFatal(detail.c_str()))
+			R_ASSERT2(false, detail.c_str());
+		// an empty partition keeps every animation consumer a no-op until the teardown
+		static CPartition s_fatal_partition;
+		m_Partition = &s_fatal_partition;
+		return;
+	}
 
 	m_Partition = m_Motions[0].motions.partition();
 	m_Partition->load(this, N);
