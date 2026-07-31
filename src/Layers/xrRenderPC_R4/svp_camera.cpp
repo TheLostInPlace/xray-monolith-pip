@@ -713,11 +713,12 @@ bool svpCamera()
 					eyepiece_inverse.transform_tiny(registration_eye_local, eyeW0.c);
 					eyepiece_inverse.transform_tiny(
 						registration_objective_local, params.objective.m_W.c);
+					// a design offset objective folds back to the eyepiece axis, only the
+					// eye residual decenters the projection
 					objective_registration = SvpPhysicalOptics::MapObjectiveAxisToEyepiece(
 						{ registration_eye_local.x, registration_eye_local.y,
 							registration_eye_local.z },
-						{ registration_objective_local.x, registration_objective_local.y,
-							registration_objective_local.z },
+						{ 0.f, 0.f, registration_objective_local.z },
 						{ params.eyepiece.radius, params.eyepiece.radius });
 					if (objective_registration.valid)
 					{
