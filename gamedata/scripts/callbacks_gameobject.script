@@ -789,8 +789,10 @@ end
 
 function ModelLoadFatalUI:InitControls()
 	self.message_box:InitMessageBox("message_box_model_load_fatal")
-	self.message_box:SetText(
-		strformat(game.translate_string("st_model_load_fatal_error"), self.offender))
+	-- the ui text breaker only splits on the literal backslash n pair
+	local text = strformat(game.translate_string("st_model_load_fatal_error"), self.offender)
+	text = text:gsub("\n", "\\n")
+	self.message_box:SetText(text)
 end
 
 function ModelLoadFatalUI:Show()
