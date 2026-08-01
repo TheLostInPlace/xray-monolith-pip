@@ -1125,6 +1125,26 @@ local function draw_banner()
     ImGui.Separator()
 end
 
+-- global lens knobs ride cvars, the per scope overlay does not carry them yet
+local function draw_global_optics()
+    if not ImGui.CollapsingHeader("Global lens") then
+        return
+    end
+    local ok, value = pcall(function() return get_console():get_float("r__svp_field_curve") end)
+    if not ok or not value then
+        ImGui.TextDisabled("field curve cvar not available on this build")
+        return
+    end
+    ImGui.Text("field curve")
+    show_tooltip("edge blur strength, the outer eyepiece field defocuses like a real non flat field scope, 0 is flat")
+    ImGui.SameLine(220)
+    ImGui.SetNextItemWidth(-1)
+    local changed, result = ImGui.SliderFloat("##global_field_curve", value, 0.0, 3.0, "%.2f", CLAMP_SLIDER)
+    if changed then
+        get_console():execute(string.format("r__svp_field_curve %.3f", result))
+    end
+end
+
 local function grouped_names()
     local seen = {}
     local result = {}
@@ -1152,6 +1172,7 @@ end
 
 local function draw_body()
     draw_banner()
+    draw_global_optics()
     if #ensure_descriptors() == 0 then
         ImGui.TextDisabled("Typed optic API not available on this build")
         return
