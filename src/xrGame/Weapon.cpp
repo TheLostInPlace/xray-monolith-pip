@@ -2360,6 +2360,32 @@ bool CWeapon::SyncSvpTypedMagnifications()
 	}
 	ladder.count = config.magnifications.count;
 	CopyMemory(ladder.values, config.magnifications.values, sizeof(ladder.values));
+	// a rotating number ring reads true only on its engraved stops, a continuous
+	// range becomes integer detents so every stop parks the mark on a glyph
+	extern Fvector4 ps_s3ds_param_3;
+	if (ladder.mode == svp_mag_continuous && (int)ps_s3ds_param_3.y == 5)
+	{
+		const float lo = ladder.values[0];
+		const float hi = ladder.values[1];
+		const float first = ceilf(lo - EPS);
+		const float last = floorf(hi + EPS);
+		const u32 need = (last >= first ? u32(last - first) + 1 : 0)
+			+ (lo + EPS < first ? 1 : 0) + (hi - EPS > last ? 1 : 0);
+		if (need >= 2 && need <= _countof(ladder.values))
+		{
+			float stops[_countof(ladder.values)] = {};
+			u32 n = 0;
+			if (lo + EPS < first)
+				stops[n++] = lo;
+			for (float m = first; m <= last + EPS; m += 1.f)
+				stops[n++] = m;
+			if (hi - EPS > last)
+				stops[n++] = hi;
+			ladder.mode = svp_mag_detent;
+			ladder.count = n;
+			CopyMemory(ladder.values, stops, sizeof(stops));
+		}
+	}
 	if (!svp_magnification_ladder_valid(ladder))
 	{
 		clear();
