@@ -16,18 +16,25 @@ float svp_reticle_acog_fiber(float lum)
 	return lum;
 }
 
-// Sight reticle. true PiP (w < -1.5) swaps the eye-coupled field for a centered one whose
-// slope follows the stock zoom projection plus a true-scale parallax term (svp_optics.y)
+// the pip tangent substitutes the eye-coupled field with a centered one of the same rim
+// magnitude, svp_optics.z carries the sine-exact slope and zero falls back to the tan in x
+float2 svp_reticle_tangent(Scope S, float2 V_tangent)
+{
+	if (shader_scope_params.w < -1.5)
+	{
+		float slope = (svp_optics.z > 0.0001) ? svp_optics.z : svp_optics.x;
+		return -(S.tc0 - 0.5) * slope;
+	}
+	return V_tangent.xy;
+}
+
+// Sight reticle. true PiP adds a true-scale parallax term (svp_optics.y) on the pip tangent
 float2 svp_reticle_t_field(Scope S, float2 V_tangent)
 {
 	float mas = svp_effective_mas(mas_scale());
-	float2 t_field = V_tangent.xy * mas;
+	float2 t_field = svp_reticle_tangent(S, V_tangent) * mas;
 	if (shader_scope_params.w < -1.5)
-	{
-		// z is the zoom-projected slope, zero from an older exe falls back to the raw term
-		float slope = (svp_optics.z > 0.0001) ? svp_optics.z : svp_optics.x;
-		t_field = -(S.tc0 - 0.5) * (mas * slope) + V_tangent.xy * (mas * svp_optics.y);
-	}
+		t_field += V_tangent.xy * (mas * svp_optics.y);
 	return t_field;
 }
 

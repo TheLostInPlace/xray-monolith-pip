@@ -766,27 +766,16 @@ void CRenderTarget::draw_scope(ref_shader se, std::function<void()> bind)
 				const float hfov = deg2rad(_max(Device.fFOV, 1.f));
 				par = ps_r__svp_parallax * 0.00075f * kg * eff_mag / hfov;
 			}
-			// z is the reticle slope through the stock zoom projection anchored at the scope
-			// base zoom, ffp growth stays the dial ratio and a fixed reticle never resizes
+			// z is the sine exact rim slope 2R/sqrt(RR+LL) on the axial depth, the stock
+			// per pixel tangent saturates at the rim where kg in x stays the linear tan
 			extern int ps_r__svp_reticle_fit;
 			float zslope = 0.f;
-			if (ps_r__svp_reticle_fit && g_pGamePersistent)
+			if (ps_r__svp_reticle_fit)
 			{
-				const Fvector4& fovp = g_pGamePersistent->m_pGShaderConstants->hud_fov_params;
-				float base_y = fovp.y;
-				// authored 75-base mins rescale to the live fov, same rule as the mag bounds
-				if (base_y > 0.01f && (_abs(fovp.y - fovp.x) < 0.01f || Device.m_SecondViewport.svp_min_75base))
-					base_y *= _max(Device.fFOV, 1.f) / 75.f;
-				const float hudy = (base_y > 0.01f) ? base_y
-					: g_pGamePersistent->m_pGShaderConstants->hud_params.y;
-				float hf, ha, hn, hff;
-				Device.mProjectHud.decompose_projection(hf, ha, hn, hff);
-				if (hudy > 0.01f && hf > EPS)
-				{
-					float f = tanf(deg2rad(hudy * 0.75f) * 0.5f) / _max(tanf(hf * 0.5f), EPS);
-					clamp(f, 0.02f, 1.f);
-					zslope = kg * f;
-				}
+				const float R = Device.m_SecondViewport.eyepiece.radius;
+				const float L = _max(ed.dotproduct(Device.vCameraDirection), 0.02f);
+				zslope = 2.f * R / sqrtf(R * R + L * L);
+				clamp(zslope, 0.02f, 3.f);
 			}
 			RCache.set_c("svp_optics", kg, par, zslope, _max(g_pip_scope_ratio, 1.f));
 		}
