@@ -1397,12 +1397,18 @@ void CRenderTarget::phase_3DSSReticle()
 			extern Fvector4 ps_s3ds_param_1;
 			extern Fvector4 ps_s3ds_param_3;
 			extern Fvector4 ps_shader_scope_params;
-			PipMsg("[SVP-RET] path=%s svp=%d lens=%d scope=%u reflex=%u obj=%u rsize=%.2f rtype=%.0f mag=%.2f/%.2f/%.2f w=%.1f hudy=%.1f",
+			extern float g_pip_scope_magnification;
+			extern float g_pip_scope_min_mag;
+			extern float g_pip_scope_max_mag;
+			extern float g_pip_scope_ratio;
+			// the lua triplet stays zero under pip, the pip fields carry the live engine mags
+			PipMsg("[SVP-RET] path=%s svp=%d lens=%d scope=%u reflex=%u obj=%u rsize=%.2f rtype=%.0f lua=%.2f/%.2f/%.2f w=%.1f pip=%.2f/%.2f/%.2f ratio=%.2f hudy=%.1f",
 				(Device.true_pip_on && (svp || has_lens)) ? "pip" : "stock",
 				(int)svp, (int)has_lens,
 				(u32)G.mapScopeHUDSorted.size(), (u32)G.mapReflexHUDSorted.size(), (u32)G.mapScopeHUDObjective.size(),
 				ps_s3ds_param_1.x, ps_s3ds_param_3.y,
 				ps_shader_scope_params.x, ps_shader_scope_params.y, ps_shader_scope_params.z, ps_shader_scope_params.w,
+				g_pip_scope_magnification, g_pip_scope_min_mag, g_pip_scope_max_mag, g_pip_scope_ratio,
 				g_pGamePersistent ? g_pGamePersistent->m_pGShaderConstants->hud_params.y : 0.f);
 			auto dump = [&](const char* tag, auto& map) {
 				u32 i = 0;

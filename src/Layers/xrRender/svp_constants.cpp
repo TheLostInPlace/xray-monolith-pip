@@ -151,6 +151,27 @@ extern float g_pip_scope_magnification;
 extern float g_pip_scope_min_mag;
 extern float g_pip_scope_max_mag;
 extern float g_pip_scope_ratio;
+
+// pip [SVP-RETBIND] logs the values the reticle shader actually receives at bind time
+static void retbind_diag(const char* lane, float cur, float mn, float mx, float w)
+{
+	extern int ps_r__svp_diag;
+	if (!ps_r__svp_diag) return;
+	static u32 s_ms = 0;
+	if (Device.dwTimeGlobal - s_ms < 1000) return;
+	s_ms = Device.dwTimeGlobal;
+	extern Fvector4 ps_s3ds_param_1;
+	extern Fvector4 ps_s3ds_param_3;
+	PipMsg("[SVP-RETBIND] lane=%s cur=%.3f min=%.3f max=%.3f w=%.1f mag=%.3f ratio=%.3f eng_min=%.3f eng_max=%.3f rsize=%.2f rtype=%.0f lua=(%.2f,%.2f,%.2f,%.2f) hudy=%.2f fovp=(%.2f,%.2f)",
+		lane, cur, mn, mx, w, g_pip_scope_magnification, g_pip_scope_ratio,
+		g_pip_scope_min_mag, g_pip_scope_max_mag,
+		ps_s3ds_param_1.x, ps_s3ds_param_3.y,
+		ps_shader_scope_params.x, ps_shader_scope_params.y, ps_shader_scope_params.z, ps_shader_scope_params.w,
+		g_pGamePersistent ? g_pGamePersistent->m_pGShaderConstants->hud_params.y : 0.f,
+		g_pGamePersistent ? g_pGamePersistent->m_pGShaderConstants->hud_fov_params.x : 0.f,
+		g_pGamePersistent ? g_pGamePersistent->m_pGShaderConstants->hud_fov_params.y : 0.f);
+}
+
 static class shader_scope_params : public R_constant_setup
 {
 	virtual void setup(R_constant* C)
@@ -172,18 +193,24 @@ static class shader_scope_params : public R_constant_setup
 			const float mx = k * r * ((g_pip_scope_max_mag > 0.01f) ? g_pip_scope_max_mag : g_pip_scope_magnification);
 			// w = -2 is the true-PiP sentinel, the legacy Lua writes -1 so patched shaders gate on
 			// w < -1.5 and stay inert at svpscope 0
-			RCache.set_c(C, cur, mn, mx, Device.m_SecondViewport.IsSVPActive() ? -2.f : ps_shader_scope_params.w);
+			const float w = Device.m_SecondViewport.IsSVPActive() ? -2.f : ps_shader_scope_params.w;
+			retbind_diag("pip", cur, mn, mx, w);
+			RCache.set_c(C, cur, mn, mx, w);
 		}
 		else
 #endif
 		if (ps_shader_scope_params.y > 0.f)
+		{
+			retbind_diag("lua", ps_shader_scope_params.x, ps_shader_scope_params.y, ps_shader_scope_params.z, ps_shader_scope_params.w);
 			RCache.set_c(C, ps_shader_scope_params.x, ps_shader_scope_params.y, ps_shader_scope_params.z, ps_shader_scope_params.w);
+		}
 		else if (Device.true_pip_on)
 		{
 			// engine fallback for a scope with no Lua data, only meaningful while PiP drives the mags
 			const float cur = g_pip_scope_magnification;
 			const float mn = (g_pip_scope_min_mag > 0.f) ? g_pip_scope_min_mag : cur;
 			const float mx = (g_pip_scope_max_mag > 0.f) ? g_pip_scope_max_mag : cur;
+			retbind_diag("fallback", cur, mn, mx, 0.f);
 			RCache.set_c(C, cur, mn, mx, 0.0f);
 		}
 		else
