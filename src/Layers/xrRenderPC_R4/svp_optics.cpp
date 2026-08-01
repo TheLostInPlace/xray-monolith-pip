@@ -777,6 +777,19 @@ void CRenderTarget::draw_scope(ref_shader se, std::function<void()> bind)
 				zslope = 2.f * R / sqrtf(R * R + L * L);
 				clamp(zslope, 0.02f, 3.f);
 			}
+			// runtime proof the slope publish executes with these exact values
+			{
+				extern int ps_r__svp_diag;
+				static u32 s_retz_ms = 0;
+				if (ps_r__svp_diag && Device.dwTimeGlobal - s_retz_ms > 1000)
+				{
+					s_retz_ms = Device.dwTimeGlobal;
+					PipMsg("[SVP-RETZ] z=%.4f kg=%.4f R=%.4fcm L=%.4fcm fit=%d",
+						zslope, kg, Device.m_SecondViewport.eyepiece.radius * 100.f,
+						_max(ed.dotproduct(Device.vCameraDirection), 0.02f) * 100.f,
+						ps_r__svp_reticle_fit);
+				}
+			}
 			RCache.set_c("svp_optics", kg, par, zslope, _max(g_pip_scope_ratio, 1.f));
 		}
 		// pip scope-local exposure, x = 0 off else 2^bias
