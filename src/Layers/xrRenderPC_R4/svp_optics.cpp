@@ -766,13 +766,19 @@ void CRenderTarget::draw_scope(ref_shader se, std::function<void()> bind)
 				const float hfov = deg2rad(_max(Device.fFOV, 1.f));
 				par = ps_r__svp_parallax * 0.00075f * kg * eff_mag / hfov;
 			}
-			// z carries the reticle slope seen through the stock zoom projection, authored
-			// reticle sizes were tuned on the zoomed hud so the pip field matches that geometry
+			// z is the reticle slope through the stock zoom projection anchored at the scope
+			// base zoom, ffp growth stays the dial ratio and a fixed reticle never resizes
 			extern int ps_r__svp_reticle_fit;
 			float zslope = 0.f;
 			if (ps_r__svp_reticle_fit && g_pGamePersistent)
 			{
-				const float hudy = g_pGamePersistent->m_pGShaderConstants->hud_params.y;
+				const Fvector4& fovp = g_pGamePersistent->m_pGShaderConstants->hud_fov_params;
+				float base_y = fovp.y;
+				// authored 75-base mins rescale to the live fov, same rule as the mag bounds
+				if (base_y > 0.01f && (_abs(fovp.y - fovp.x) < 0.01f || Device.m_SecondViewport.svp_min_75base))
+					base_y *= _max(Device.fFOV, 1.f) / 75.f;
+				const float hudy = (base_y > 0.01f) ? base_y
+					: g_pGamePersistent->m_pGShaderConstants->hud_params.y;
 				float hf, ha, hn, hff;
 				Device.mProjectHud.decompose_projection(hf, ha, hn, hff);
 				if (hudy > 0.01f && hf > EPS)
