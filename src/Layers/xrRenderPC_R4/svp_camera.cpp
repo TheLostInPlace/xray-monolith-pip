@@ -619,8 +619,10 @@ bool svpCamera()
 	extern float g_pip_scope_min_mag;
 	extern float g_pip_scope_max_mag;
 	extern float g_pip_scope_ratio;
-	// eyepiece-fit factor, rated on-screen magnification = ratio * scope, clamped for degenerate geometry
-	const float ratio_use = (ratio_magnification > 0.5f) ? ((ratio_magnification < 8.f) ? ratio_magnification : 8.f) : 1.f;
+	// eyepiece-fit factor, rated on-screen magnification = ratio * scope, a small clip-on window
+	// legitimately fits past 8 so the cap bounds the total on-screen mag by the shared limit
+	const float ratio_cap = (scope_magnification > EPS) ? _max(1.f, SVP_MAG_LIMIT / scope_magnification) : 1.f;
+	const float ratio_use = (ratio_magnification > 0.5f) ? _min(ratio_magnification, ratio_cap) : 1.f;
 	if (svp_fov > EPS)
 	{
 		g_pip_scope_magnification = scope_magnification;
@@ -953,7 +955,7 @@ bool svpCamera()
 	// eye, settled frames only (ADS transitions blow up ratio_magnification)
 	extern int ps_r__svp_cop_diag;
 	if (ps_r__svp_cop_diag && params.eyepiece.radius > EPS
-		&& ratio_magnification > 1.0f && ratio_magnification < 8.0f)
+		&& ratio_magnification > 1.0f && ratio_magnification < ratio_cap)
 	{
 		static u32 s_last_ms = 0;
 		static float s_last_mag = 0.f;
