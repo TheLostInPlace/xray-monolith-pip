@@ -766,8 +766,23 @@ void CRenderTarget::draw_scope(ref_shader se, std::function<void()> bind)
 				const float hfov = deg2rad(_max(Device.fFOV, 1.f));
 				par = ps_r__svp_parallax * 0.00075f * kg * eff_mag / hfov;
 			}
-			// z stays clear for legacy depth effects and w carries the eyepiece fit ratio
-			RCache.set_c("svp_optics", kg, par, 0.f, _max(g_pip_scope_ratio, 1.f));
+			// z carries the reticle slope seen through the stock zoom projection, authored
+			// reticle sizes were tuned on the zoomed hud so the pip field matches that geometry
+			extern int ps_r__svp_reticle_fit;
+			float zslope = 0.f;
+			if (ps_r__svp_reticle_fit && g_pGamePersistent)
+			{
+				const float hudy = g_pGamePersistent->m_pGShaderConstants->hud_params.y;
+				float hf, ha, hn, hff;
+				Device.mProjectHud.decompose_projection(hf, ha, hn, hff);
+				if (hudy > 0.01f && hf > EPS)
+				{
+					float f = tanf(deg2rad(hudy * 0.75f) * 0.5f) / _max(tanf(hf * 0.5f), EPS);
+					clamp(f, 0.02f, 1.f);
+					zslope = kg * f;
+				}
+			}
+			RCache.set_c("svp_optics", kg, par, zslope, _max(g_pip_scope_ratio, 1.f));
 		}
 		// pip scope-local exposure, x = 0 off else 2^bias
 		{

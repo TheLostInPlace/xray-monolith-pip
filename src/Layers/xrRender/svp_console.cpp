@@ -78,6 +78,7 @@ int ps_r__svp_npc_detail = 1; // svp keep dynamic parts the main view discards a
 int ps_r__svp_thermal_sim = 1; // svp digital-sensor sim on thermal displays: sensor cell grid + per-cell noise (0 = clean optical image)
 float ps_r__svp_twilight = 1.0f; // svp exit-pupil twilight dimming: zooming shrinks the exit pupil below the dark-adapted eye and the image dims, day scenes unaffected (0 = off)
 float ps_r__svp_parallax = 0.0f; // svp reticle parallax, 0 = pinned center (default), 1 = the real eye deflection response
+int ps_r__svp_reticle_fit = 1; // svp reticle field slope follows the stock zoom projection so authored sizes fill the rim (0 = legacy wide-view slope)
 float ps_r__svp_near_blur = 1.0f; // svp near-field defocus strength on the scope image (svpscope 2, 0 = off)
 int ps_r__svp_nearblur_scatter = 0; // svp near-blur composite, 0 = gather default look, 1 = scatter accumulator
 float ps_r__svp_focus_m = 100.0f; // svp parallax focus distance in meters, objects off this plane defocus by the thin lens law
@@ -265,6 +266,7 @@ void svp_console_init()
 	CMD4(CCC_Integer, "r__svp_thermal_sim", &ps_r__svp_thermal_sim, 0, 1); // svp thermal digital-sensor sim (0 = clean)
 	CMD4(CCC_Float, "r__svp_twilight", &ps_r__svp_twilight, 0.0f, 1.0f); // svp exit-pupil twilight dimming strength (0 = off)
 	CMD4(CCC_SvpInternalFloat, "r__svp_parallax", &ps_r__svp_parallax, 0.0f, 10.0f);
+	CMD4(CCC_SvpInternalInteger, "r__svp_reticle_fit", &ps_r__svp_reticle_fit, 0, 1);
 	CMD4(CCC_Float, "r__svp_near_blur", &ps_r__svp_near_blur, 0.0f, 3.0f); // svp near-field defocus strength (0 = off)
 	CMD4(CCC_SvpInternalInteger, "r__svp_nearblur_scatter", &ps_r__svp_nearblur_scatter, 0, 1);
 	CMD4(CCC_SvpInternalFloat, "r__svp_focus_m", &ps_r__svp_focus_m, 10.0f, 1000.0f);
