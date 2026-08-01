@@ -266,7 +266,7 @@ void svp_console_init()
 	CMD4(CCC_Integer, "r__svp_thermal_sim", &ps_r__svp_thermal_sim, 0, 1); // svp thermal digital-sensor sim (0 = clean)
 	CMD4(CCC_Float, "r__svp_twilight", &ps_r__svp_twilight, 0.0f, 1.0f); // svp exit-pupil twilight dimming strength (0 = off)
 	CMD4(CCC_SvpInternalFloat, "r__svp_parallax", &ps_r__svp_parallax, 0.0f, 10.0f);
-	CMD4(CCC_SvpInternalInteger, "r__svp_reticle_fit", &ps_r__svp_reticle_fit, 0, 1);
+	CMD4(CCC_Integer, "r__svp_reticle_fit", &ps_r__svp_reticle_fit, 0, 1); // svp reticle slope fix kill-switch
 	CMD4(CCC_Float, "r__svp_near_blur", &ps_r__svp_near_blur, 0.0f, 3.0f); // svp near-field defocus strength (0 = off)
 	CMD4(CCC_SvpInternalInteger, "r__svp_nearblur_scatter", &ps_r__svp_nearblur_scatter, 0, 1);
 	CMD4(CCC_SvpInternalFloat, "r__svp_focus_m", &ps_r__svp_focus_m, 10.0f, 1000.0f);
@@ -277,9 +277,10 @@ void svp_console_init()
 	CMD4(CCC_SvpProfileFloat, "s3ds_middle_grey", &ps_s3ds_middle_grey, 0.0f, 2.0f);
 	CMD4(CCC_SvpProfileFloat, "s3ds_adapt_speed", &ps_s3ds_adapt_speed, 0.0f, 20.0f);
 	CMD4(CCC_Integer, "r__svp_chroma", &ps_r__svp_chroma, 0, 1); // svp keep authored chromatic aberration on glass, zoom scaled (0 = stripped)
-	CMD4(CCC_SvpInternalFloat, "r__svp_field_curve", &ps_r__svp_field_curve, 0.0f, 3.0f);
+	// user knob, the workbench global lens slider writes it live
+	CMD4(CCC_Float, "r__svp_field_curve", &ps_r__svp_field_curve, 0.0f, 3.0f);
 	CMD4(CCC_Integer, "r__svp_field_stop", &ps_r__svp_field_stop, 0, 1); // svp ocular field stop rim vignette (0 = off)
-	CMD4(CCC_SvpFixedInteger, "r__svp_aperture", &ps_r__svp_aperture, 0, 1);
+	CMD4(CCC_Integer, "r__svp_aperture", &ps_r__svp_aperture, 0, 1); // svp exit-pupil transmission, 0 = pre-port look
 	CMD4(CCC_SvpProfileFloat, "s3ds_tunneling_parallax", &ps_s3ds_tunneling_parallax, 0.0f, 0.15f);
 	CMD4(CCC_SvpProfileFloat, "s3ds_tunneling_min", &ps_s3ds_tunneling_min, 0.0f, 1.0f);
 	CMD4(CCC_SvpProfileFloat, "s3ds_tunneling_max", &ps_s3ds_tunneling_max, 0.0f, 1.0f);
