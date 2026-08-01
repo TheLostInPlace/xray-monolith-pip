@@ -126,9 +126,9 @@ void svp_gameplay_cvars_init()
 {
 	CMD4(CCC_Float, "g_zoom_smooth", &g_zoom_smooth, 0.f, 60.f);
 	CMD4(CCC_Float, "g_zoom_analog", &g_zoom_analog, 0.f, 200.f);
-	CMD4(CCC_SvpFixedInteger, "g_zoom_clicks", &g_zoom_clicks, 0, 1);
-	CMD4(CCC_SvpFixedInteger, "g_svp_zoom_base", &g_svp_zoom_base, 0, 1);
-	CMD4(CCC_SvpFixedInteger, "g_svp_authored_mags", &g_svp_authored_mags, 0, 1);
+	CMD4(CCC_Integer, "g_zoom_clicks", &g_zoom_clicks, 0, 1);
+	CMD4(CCC_Integer, "g_svp_zoom_base", &g_svp_zoom_base, 0, 1);
+	CMD4(CCC_Integer, "g_svp_authored_mags", &g_svp_authored_mags, 0, 1);
 	CMD4(CCC_SvpFixedInteger, "g_svp_optic_api", &s_svp_optic_api, 0, 1);
 	CMD4(CCC_SvpProfileFloat, "g_svp_zero", &g_svp_zero, 0.f, 1000.f);
 	CMD4(CCC_SvpFixedInteger, "g_svp_unify_cam_fx", &g_svp_unify_cam_fx, 0, 1);

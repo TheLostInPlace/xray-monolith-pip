@@ -256,22 +256,22 @@ void svp_console_init()
 	CMD4(CCC_SvpFixedInteger, "r__svp_clean_optics", &ps_r__svp_clean_optics, 0, 1);
 	CMD4(CCC_SvpFixedInteger, "r__svp_distort_guard", &ps_r__svp_distort_guard, 0, 1);
 	CMD4(CCC_SvpInternalInteger, "r__svp_jitterfix", &ps_r__svp_jitterfix, 0, 1);
-	CMD4(CCC_SvpFixedInteger, "r__svp_taa_mask", &ps_r__svp_taa_mask, 0, 1);
+	CMD4(CCC_Integer, "r__svp_taa_mask", &ps_r__svp_taa_mask, 0, 1);
 	CMD4(CCC_SvpFixedInteger, "r__svp_hud_fov_match", &s_svp_compat_hud_fov_match, 0, 2);
 	CMD4(CCC_Integer, "r__svp_bloom", &ps_r__svp_bloom, 0, 1); // svp bloom on the scope pass
 	CMD4(CCC_Integer, "r__svp_local_exposure", &ps_r__svp_local_exposure, 0, 1); // svp scope-local eye adaptation
 	CMD4(CCC_SvpInternalFloat, "r__svp_exposure_bias", &ps_r__svp_exposure_bias, -3.0f, 3.0f);
 	CMD4(CCC_Integer, "r__svp_light_capture", &ps_r__svp_light_capture, 0, 1); // svp scope-cone light capture
-	CMD4(CCC_SvpFixedInteger, "r__svp_npc_detail", &ps_r__svp_npc_detail, 0, 1);
+	CMD4(CCC_Integer, "r__svp_npc_detail", &ps_r__svp_npc_detail, 0, 1);
 	CMD4(CCC_Integer, "r__svp_thermal_sim", &ps_r__svp_thermal_sim, 0, 1); // svp thermal digital-sensor sim (0 = clean)
 	CMD4(CCC_Float, "r__svp_twilight", &ps_r__svp_twilight, 0.0f, 1.0f); // svp exit-pupil twilight dimming strength (0 = off)
-	CMD4(CCC_SvpInternalFloat, "r__svp_parallax", &ps_r__svp_parallax, 0.0f, 10.0f);
+	CMD4(CCC_Float, "r__svp_parallax", &ps_r__svp_parallax, 0.0f, 10.0f);
 	CMD4(CCC_Integer, "r__svp_reticle_fit", &ps_r__svp_reticle_fit, 0, 1); // svp reticle slope fix kill-switch
 	CMD4(CCC_Float, "r__svp_near_blur", &ps_r__svp_near_blur, 0.0f, 3.0f); // svp near-field defocus strength (0 = off)
-	CMD4(CCC_SvpInternalInteger, "r__svp_nearblur_scatter", &ps_r__svp_nearblur_scatter, 0, 1);
+	CMD4(CCC_Integer, "r__svp_nearblur_scatter", &ps_r__svp_nearblur_scatter, 0, 1);
 	CMD4(CCC_SvpInternalFloat, "r__svp_focus_m", &ps_r__svp_focus_m, 10.0f, 1000.0f);
-	CMD4(CCC_SvpFixedInteger, "r__svp_authored_optics", &ps_r__svp_authored_optics, 0, 1);
-	CMD4(CCC_SvpFixedInteger, "r__svp_measured_optics", &ps_r__svp_measured_optics, 0, 1);
+	CMD4(CCC_Integer, "r__svp_authored_optics", &ps_r__svp_authored_optics, 0, 1);
+	CMD4(CCC_Integer, "r__svp_measured_optics", &ps_r__svp_measured_optics, 0, 1);
 	CMD4(CCC_Integer, "r__svp_reflex_capture", &ps_r__svp_reflex_capture, 0, 1); // svp hybrid reflex through the objective camera
 	CMD4(CCC_SvpProfileFloat, "s3ds_objective_mm", &ps_s3ds_objective_mm, 0.0f, 200.0f);
 	CMD4(CCC_SvpProfileFloat, "s3ds_middle_grey", &ps_s3ds_middle_grey, 0.0f, 2.0f);
@@ -324,7 +324,7 @@ void svp_console_init()
 	CMD4(CCC_SvpInternalFloat, "r__svp_sharpen_inner", &ps_r__svp_sharpen_inner, 0.0f, 1.0f);
 	CMD4(CCC_SvpInternalFloat, "r__svp_nvg_bleach", &ps_r__svp_nvg_bleach, 0.0f, 1.0f);
 	CMD4(CCC_SvpInternalFloat, "r__svp_nvg_sensitivity", &ps_r__svp_nvg_sensitivity, 0.1f, 4.0f);
-	CMD4(CCC_SvpFixedInteger, "r__svp_nvg_objective", &ps_r__svp_nvg_objective, 0, 1);
+	CMD4(CCC_Integer, "r__svp_nvg_objective", &ps_r__svp_nvg_objective, 0, 1);
 	CMD4(CCC_SvpFixedInteger, "r__svp_hud_full", &s_svp_compat_hud_full, 0, 2);
 	CMD4(CCC_SvpFixedInteger, "r__svp_weapon_continuity", &ps_r__svp_weapon_continuity, 0, 1);
 	CMD4(CCC_SvpFixedInteger, "r__svp_ray_transfer", &s_svp_compat_ray_transfer, 0, 2);
