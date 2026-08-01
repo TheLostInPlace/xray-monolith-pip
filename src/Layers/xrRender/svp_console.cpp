@@ -64,7 +64,7 @@ static int s_svp_compat_settle_derive = 1;
 static int s_svp_compat_ratio_derive = 1;
 static int s_svp_compat_lens_reject = 0;
 static int s_svp_compat_recoil_hold = 1;
-int ps_r__svp_roll_stabilize = 0; // svp level the scope world on lean/cant (0 = realistic image tilts with the cant, default; 1 = leveled)
+int ps_r__svp_roll_stabilize = 0; // svp scope tilt stabilize reserve, the world image is always level (real optics never roll the image with mount cant)
 int ps_r__svp_clean_optics = 1; // svp strip the 3DSS fake cosmetics (parallax shadow, chromatism, nvg blur, fisheye) for a clean scope (1 = stripped, default; 0 = full 3DSS look)
 int ps_r__svp_distort_guard = 1; // svp stamp the distort mask neutral over the composited lens so the combine warp is identity there (0 = let the lens warp with the main view)
 int ps_r__svp_jitterfix = 1; // svp lens edge jitter pre-pass, likely superseded by the sentinel jitter, 0 skips it for the a/b

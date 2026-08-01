@@ -781,10 +781,8 @@ bool svpCamera()
 		}
 	}
 
-	// pip roll_stabilize aligns the SVP camera up to the view up, dropping mount cant/flip
-	// (0 = raw mesh tilt)
-	extern int ps_r__svp_roll_stabilize;
-	if (ps_r__svp_roll_stabilize)
+	// the world image through rotationally symmetric optics never rolls with mount cant,
+	// the svp camera up always follows the view up, cant lives in the tube and reticle
 	{
 		Fvector fwd, wup, right, up;
 		fwd.set(m_W_svpcam.k.x, m_W_svpcam.k.y, m_W_svpcam.k.z);
@@ -805,6 +803,7 @@ bool svpCamera()
 	// pip lens flip diagnostic ([SVP-ORIENT]), the mesh basis vs the final svp camera basis
 	{
 		extern int ps_r__svp_cop_diag;
+		extern int ps_r__svp_roll_stabilize;
 		if (ps_r__svp_cop_diag && params.eyepiece.radius > EPS)
 		{
 			static u32 s_orient_ms = 0;
