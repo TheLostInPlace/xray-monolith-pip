@@ -322,6 +322,9 @@ void CRender::render_sun_cascade(u32 cascade_ind)
         cascade.GMCascade.traverse(pOutdoorSector, cascade.cull_frustum, cascade.cull_COP, cascade.cull_xform);
         cascade.GMCascade.r_dsgraph_capture(false, true);
         if (timed) svp_stats_capture_cascade_ms[cascade_ind] = capture_timer.GetElapsed_ms_f();
+        // cascade graphs never draw lods so this list only ever grows
+        if (ps_r__svp_stats >= 2 && (Device.dwFrame & 255) == 0)
+            Msg("[SUN-LOD] c%u lod %u", cascade_ind, (u32)cascade.GMCascade.RGraph.mapLOD.size());
     }
 
     // Finalize & Cleanup
