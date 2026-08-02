@@ -1227,6 +1227,9 @@
     <ProjectReference Include="..\3rd party\optick\optick.vcxproj">
       <Project>{4ddc8f7a-3b57-4250-9404-d2ee1991be78}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\3rd party\moc\moc.vcxproj">
+      <Project>{44d6edb9-1ee8-4622-a874-0ac965958c2c}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Verified|x64'">
     <ProjectReference Include="$(SolutionDir)Layers\xrRenderPC_R4\xrRender_R4.vcxproj">
