@@ -517,6 +517,14 @@ public:
 		m_smapsize_w = w;
 		m_smapsize_h = h;
 	}
+
+	// arms the depth only substitution for the sun cascade opaque caster raster
+	IC void arm_smap_null_ps(bool on)
+	{
+		m_smap_null_ps = on;
+		if (on && !m_smap_null_ps_name)
+			m_smap_null_ps_name = "dumb";
+	}
 #endif
 
 	CBackend() { Invalidate(); };
@@ -561,6 +569,10 @@ private:
 	ID3DDepthStencilView* m_smapsize_zb;
 	u32 m_smapsize_w;
 	u32 m_smapsize_h;
+
+	// set while the sun cascade rasters opaque casters, with the interned shadow shader name
+	bool m_smap_null_ps;
+	shared_str m_smap_null_ps_name;
 
 	bool m_bChangedRTorZB;
 #endif	//	USE_DX10

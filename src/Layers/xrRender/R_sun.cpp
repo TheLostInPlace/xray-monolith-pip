@@ -73,6 +73,13 @@ static void sun_sub_begin(u32) {}
 static void sun_sub_end(u32) {}
 #endif
 
+#if defined(USE_DX10) || defined(USE_DX11)
+// depth only caster raster arming, the dx9 backend has no null shader path
+static void smap_null_arm(bool on) { RCache.arm_smap_null_ps(on); }
+#else
+static void smap_null_arm(bool) {}
+#endif
+
 void CRender::render_sun_cascades()
 {
 	bool b_need_to_render_sunshafts = Target->need_to_render_sunshafts();
@@ -335,7 +342,9 @@ void CRender::render_sun_cascade(u32 cascade_ind)
                 RCache.set_xform_world(Fidentity);
                 RCache.set_xform_view(Fidentity);
                 RCache.set_xform_project(fuckingsun->X.D.combine);
+                smap_null_arm(ps_r__smap_null_ps != 0);
                 cascade.GMCascade.r_dsgraph_render_graph(0);
+                smap_null_arm(false);
                 sun_sub_end(SUN_SUB_SMAP);
 
                 if (psDeviceFlags2.test(rsGrassShadow) && cascade_ind <= ps_ssfx_grass_shadows.x)

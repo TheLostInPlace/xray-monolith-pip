@@ -402,6 +402,8 @@ extern ECORE_API int ps_r__swapchain_buffers;
 extern ECORE_API int ps_r__max_frame_latency;
 // 0 generates the sun minmax shadow map on every cascade like today, 1 skips the cascades no consumer reads
 extern ECORE_API int ps_r__sun_minmax_lean;
+// 0 binds the shared return zero shader in the sun shadow raster like today, 1 binds none at all
+extern ECORE_API int ps_r__smap_null_ps;
 // 0 sorts every render queue on every pass like today, 1 skips a queue that nothing appended to since its last sort
 extern ECORE_API int ps_r__dsgraph_sort_memo;
 // 0 walks the declaration layout map on every draw like today, 1 reuses the layout while the decl and signature hold
