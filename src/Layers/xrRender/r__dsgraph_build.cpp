@@ -723,7 +723,9 @@ void CDSGraphManager::add_Static(IRenderVisual* piVisual, CFrustum& frustum, u32
 			if (ssa < r_ssaDISCARD)
 				return;
 
-			RGraph.mapLOD.emplace_back(D, ssa, nullptr, pVisual, nullptr, nullptr, false);
+			// shadow graphs never draw lods so the entry would only grow the vector
+			if (!(ps_r__sun_lod_skip && i_mask[CDSGraphManager::fl_shmap]))
+				RGraph.mapLOD.emplace_back(D, ssa, nullptr, pVisual, nullptr, nullptr, false);
 		}
 
 #if RENDER!=R_R1
@@ -835,7 +837,9 @@ void CDSGraphManager::add_Static_MultiFrustum(IRenderVisual* piVisual, const xr_
 			if (ssa < r_ssaDISCARD)
 				return;
 
-			RGraph.mapLOD.emplace_back(D, ssa, nullptr, pVisual, nullptr, nullptr, false);
+			// shadow graphs never draw lods so the entry would only grow the vector
+			if (!(ps_r__sun_lod_skip && i_mask[CDSGraphManager::fl_shmap]))
+				RGraph.mapLOD.emplace_back(D, ssa, nullptr, pVisual, nullptr, nullptr, false);
 		}
 
 #if RENDER!=R_R1
@@ -885,7 +889,9 @@ void CDSGraphManager::add_leaf_Static(dxRender_Visual* pVisual)
 			if (ssa < r_ssaDISCARD)
 				break;
 
-			RGraph.mapLOD.emplace_back(D, ssa, nullptr, pVisual, nullptr, nullptr, false);
+			// shadow graphs never draw lods so the entry would only grow the vector
+			if (!(ps_r__sun_lod_skip && i_mask[CDSGraphManager::fl_shmap]))
+				RGraph.mapLOD.emplace_back(D, ssa, nullptr, pVisual, nullptr, nullptr, false);
 		}
 
 #if RENDER!=R_R1

@@ -522,6 +522,7 @@ int ps_r__light_scissor = 0;
 int ps_r__light_lean = 0;
 int ps_r__device_state_interval = 1;
 int ps_r__smap_null_ps = 0;
+int ps_r__sun_lod_skip = 0;
 int ps_r__cb_dirty_list = 0;
 
 //AVO: detail draw radius
@@ -1677,6 +1678,7 @@ void xrRender_initconsole()
 	CMD4(CCC_Integer, "r__light_lean", &ps_r__light_lean, 0, 1);
 	CMD4(CCC_Integer, "r__device_state_interval", &ps_r__device_state_interval, 1, 30);
 	CMD4(CCC_Integer, "r__smap_null_ps", &ps_r__smap_null_ps, 0, 1);
+	CMD4(CCC_Integer, "r__sun_lod_skip", &ps_r__sun_lod_skip, 0, 1);
 	CMD4(CCC_Integer, "r__cb_dirty_list", &ps_r__cb_dirty_list, 0, 2);
 	CMD3(CCC_Mask, "r__use_precompiled_shaders", &psDeviceFlags2, rsPrecompiledShaders); //Alundaio
 	CMD3(CCC_Mask, "r__enable_grass_shadow", &psDeviceFlags2, rsGrassShadow); //Alundaio
