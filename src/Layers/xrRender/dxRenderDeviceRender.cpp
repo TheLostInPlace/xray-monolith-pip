@@ -4,7 +4,7 @@
 #include "ResourceManager.h"
 
 dxRenderDeviceRender::dxRenderDeviceRender()
-	: Resources(0)
+	: Resources(0), m_device_state_poll_countdown(0), m_device_state_cached(dsOK)
 {
 	;
 }
@@ -59,6 +59,9 @@ void dxRenderDeviceRender::Reset(HWND hWnd, u32& dwWidth, u32& dwHeight, float& 
 #ifdef DEBUG
     _SHOW_REF("*ref -CRenderDevice::ResetTotal: DeviceREF:",HW.pDevice);
 #endif // DEBUG
+
+	// a reset or a resize invalidates the cached device state, poll for real next call
+	m_device_state_poll_countdown = 0;
 
 	Resources->reset_begin();
 	Memory.mem_compact();
@@ -301,6 +304,19 @@ void dxRenderDeviceRender::ResourcesDumpMemoryUsage()
 }
 
 dxRenderDeviceRender::DeviceState dxRenderDeviceRender::GetDeviceState()
+{
+	if (ps_r__device_state_interval > 1 && m_device_state_poll_countdown > 0)
+	{
+		--m_device_state_poll_countdown;
+		return m_device_state_cached;
+	}
+
+	m_device_state_cached = PollDeviceState();
+	m_device_state_poll_countdown = ps_r__device_state_interval > 1 ? ps_r__device_state_interval - 1 : 0;
+	return m_device_state_cached;
+}
+
+dxRenderDeviceRender::DeviceState dxRenderDeviceRender::PollDeviceState()
 {
 	HW.Validate();
 #if defined(USE_DX10) || defined(USE_DX11)

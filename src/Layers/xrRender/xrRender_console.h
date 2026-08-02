@@ -411,6 +411,8 @@ extern ECORE_API int ps_r__light_scissor;
 // 0 rebinds the volumetric smap texture and rebuilds the accum_direct_cascade RT every call like today,
 // 1 caches the smap resolve after the first hit and skips a provably redundant phase_accumulator rebind
 extern ECORE_API int ps_r__light_lean;
+// test-Present device loss poll interval in frames, 1 polls every frame like today
+extern ECORE_API int ps_r__device_state_interval;
 
 extern void xrRender_initconsole();
 extern BOOL xrRender_test_hw();
