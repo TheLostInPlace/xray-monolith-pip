@@ -298,47 +298,21 @@ SSvpEyeSample svp_update_eye_sample(const Fmatrix& eye_view)
 	if (eyepiece.radius <= EPS)
 		return sample;
 
-	Fvector optical_axis;
-	optical_axis.sub(objective.m_W.c, eyepiece.m_W.c);
-	if (objective.radius <= EPS || optical_axis.square_magnitude() <= EPS)
-		optical_axis.set(eyepiece.m_W.k);
-	optical_axis.normalize_safe();
-	// screen facing lens frame from the view up, a rolled lens bone must not rotate screen effects
-	Fvector lens_right, lens_up;
-	lens_right.crossproduct(Device.vCameraTop, optical_axis);
-	if (lens_right.square_magnitude() > EPS_S)
-	{
-		lens_right.normalize();
-		lens_up.crossproduct(optical_axis, lens_right);
-		lens_up.normalize_safe();
-	}
-	else
-	{
-		lens_right.set(eyepiece.m_W.i);
-		lens_up.set(eyepiece.m_W.j);
-		lens_right.normalize_safe();
-		lens_up.normalize_safe();
-	}
-
-	Fvector lens_center_view, lens_right_view, lens_up_view, axis_view;
+	// the exit pupil rides the ocular presentation axis, the gaze axis in view space, so a
+	// folded prism objective chord must not tilt the rest zero
+	Fvector lens_center_view;
 	eye_view.transform_tiny(lens_center_view, eyepiece.m_W.c);
-	eye_view.transform_dir(lens_right_view, lens_right);
-	eye_view.transform_dir(lens_up_view, lens_up);
-	eye_view.transform_dir(axis_view, optical_axis);
-	lens_right_view.normalize_safe();
-	lens_up_view.normalize_safe();
-	axis_view.normalize_safe();
 
 	Fvector eye_ray = lens_center_view;
 	eye_ray.normalize_safe();
-	const float forward = eye_ray.dotproduct(axis_view);
+	const float forward = eye_ray.z;
 	if (_abs(forward) <= 0.001f)
 		return sample;
 
 	const float eye_relief_mm = svp_eye_relief_mm();
 	const float inverse_forward = 1.f / forward;
-	sample.raw_mm.set(-eye_ray.dotproduct(lens_right_view) * inverse_forward * eye_relief_mm,
-		-eye_ray.dotproduct(lens_up_view) * inverse_forward * eye_relief_mm);
+	sample.raw_mm.set(-eye_ray.x * inverse_forward * eye_relief_mm,
+		-eye_ray.y * inverse_forward * eye_relief_mm);
 	sample.eye_relief_mm = eye_relief_mm;
 	const SvpPhysicalOptics::Vec2 raw = { sample.raw_mm.x, sample.raw_mm.y };
 	const auto& config = viewport.RenderOpticConfig();
@@ -377,27 +351,13 @@ static void svp_bind_aperture(float pupil_mm)
 	const float exit_pupil_mm = svp_calc_exit_pupil_mm(svp_objective_mm());
 	auto& viewport = Device.m_SecondViewport;
 	const auto& eyepiece = viewport.eyepiece;
-	Fvector bind_axis;
-	bind_axis.sub(viewport.objective.m_W.c, eyepiece.m_W.c);
-	if (viewport.objective.radius <= EPS || bind_axis.square_magnitude() <= EPS)
-		bind_axis.set(eyepiece.m_W.k);
-	bind_axis.normalize_safe();
-	// published lens axes stay level with the view so shader lens space matches the image
+	// published lens axes are the view basis, the screen consumes lens space and neither a
+	// rolled lens bone nor a folded prism chord may skew it
 	Fvector lens_right, lens_up;
-	lens_right.crossproduct(Device.vCameraTop, bind_axis);
-	if (lens_right.square_magnitude() > EPS_S)
-	{
-		lens_right.normalize();
-		lens_up.crossproduct(bind_axis, lens_right);
-		lens_up.normalize_safe();
-	}
-	else
-	{
-		lens_right.set(eyepiece.m_W.i);
-		lens_up.set(eyepiece.m_W.j);
-		lens_right.normalize_safe();
-		lens_up.normalize_safe();
-	}
+	lens_right.set(Device.vCameraRight);
+	lens_up.set(Device.vCameraTop);
+	lens_right.normalize_safe();
+	lens_up.normalize_safe();
 
 	const SSvpEyeSample eye = svp_update_eye_sample(Device.matrices[0].mView);
 	const Fvector2 raw_eye_offset_mm = eye.raw_mm;
