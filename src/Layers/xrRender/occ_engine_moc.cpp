@@ -11,13 +11,13 @@ static_assert(sizeof(Fvector) == 12, "moc vertex layout expects a packed 3 float
 
 namespace
 {
-	const u32 s_preset_w[3] = { 256, 384, 512 };
-	const u32 s_preset_h[3] = { 144, 216, 288 };
+	const u32 s_preset_w[4] = { 256, 384, 512, 768 };
+	const u32 s_preset_h[4] = { 144, 216, 288, 432 };
 
 	ICF int clamp_preset(int preset)
 	{
 		if (preset < 0) return 0;
-		if (preset > 2) return 2;
+		if (preset > 3) return 3;
 		return preset;
 	}
 

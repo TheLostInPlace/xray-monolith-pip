@@ -213,7 +213,8 @@ void CHOM::Render_DB(CFrustum& base)
 
 	Fvector COP = Device.vCameraPosition;
 	// only an engine driven by per-tri pixel feedback carries the skip cadence
-	const bool skip_filter = m_occ_query->wants_skip_filter();
+	// the shadow compare feeds both engines the full set so the tally stays honest
+	const bool skip_filter = m_occ_query->wants_skip_filter() && !m_occ_masked;
 	if (skip_filter)
 		end = std::remove_if(it, end, pred_fb(m_pTris));
 	std::sort(it, end, pred_fb(m_pTris, COP));
