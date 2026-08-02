@@ -74,7 +74,18 @@ public:
 
 	enum
 	{
-		MaxCBuffers = 14
+		MaxCBuffers = 14,
+		MaxCBStages = 6
+	};
+
+	enum CBStage
+	{
+		CBStage_Vertex = 0,
+		CBStage_Pixel,
+		CBStage_Geometry,
+		CBStage_Hull,
+		CBStage_Domain,
+		CBStage_Compute
 	};
 #else	//	USE_DX10
 	enum MaxTextures
@@ -108,6 +119,11 @@ public:
 	ref_cbuffer m_aDomainConstants[MaxCBuffers];
 	ref_cbuffer m_aComputeConstants[MaxCBuffers];
 #	endif
+
+	// which constant buffer slots the current table left bound per stage
+	u8 m_cb_slots[MaxCBStages][MaxCBuffers];
+	u8 m_cb_slot_count[MaxCBStages];
+
 	D3D_PRIMITIVE_TOPOLOGY m_PrimitiveTopology;
 	ID3DInputLayout* m_pInputLayout;
 	DWORD dummy0; //	Padding to avoid warning	
@@ -525,6 +541,13 @@ private:
 	void ApplyRTandZB();
 	void ApplyPrimitieTopology(D3D_PRIMITIVE_TOPOLOGY Topology);
 	bool CBuffersNeedUpdate(ref_cbuffer buf1[MaxCBuffers], ref_cbuffer buf2[MaxCBuffers], u32& uiMin, u32& uiMax);
+
+	// records a slot the current table bound at this stage
+	IC void cb_slot_push(u32 stage, u32 slot)
+	{
+		VERIFY(m_cb_slot_count[stage] < MaxCBuffers);
+		m_cb_slots[stage][m_cb_slot_count[stage]++] = (u8)slot;
+	}
 
 private:
 	ID3DBlob* m_pInputSignature;

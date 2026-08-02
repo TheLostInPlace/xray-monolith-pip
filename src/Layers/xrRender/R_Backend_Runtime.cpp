@@ -134,6 +134,9 @@ void CBackend::Invalidate()
 		m_aComputeConstants[i] = 0;
 #endif
 	}
+	for (int s = 0; s < MaxCBStages; ++s)
+		m_cb_slot_count[s] = 0;
+
 	StateManager.Reset();
 	//	Redundant call. Just no note that we need to unmap const
 	//	if we create dedicated class.

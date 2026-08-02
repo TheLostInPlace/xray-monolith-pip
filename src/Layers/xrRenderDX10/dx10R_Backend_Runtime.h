@@ -629,6 +629,9 @@ IC void CBackend::set_Constants(R_constant_table* C)
 			m_aComputeConstants[i] = 0;
 #endif
 		}
+		for (int s = 0; s < MaxCBStages; ++s)
+			m_cb_slot_count[s] = 0;
+
 		R_constant_table::cb_table::iterator it = C->m_CBTable.begin();
 		R_constant_table::cb_table::iterator end = C->m_CBTable.end();
 		for (; it != end; ++it)
@@ -640,32 +643,38 @@ IC void CBackend::set_Constants(R_constant_table* C)
 			{
 				VERIFY((uiBufferIndex&CB_BufferIndexMask)<MaxCBuffers);
 				m_aPixelConstants[uiBufferIndex & CB_BufferIndexMask] = it->second;
+				cb_slot_push(CBStage_Pixel, uiBufferIndex & CB_BufferIndexMask);
 			}
 			else if ((uiBufferIndex & CB_BufferTypeMask) == CB_BufferVertexShader)
 			{
 				VERIFY((uiBufferIndex&CB_BufferIndexMask)<MaxCBuffers);
 				m_aVertexConstants[uiBufferIndex & CB_BufferIndexMask] = it->second;
+				cb_slot_push(CBStage_Vertex, uiBufferIndex & CB_BufferIndexMask);
 			}
 			else if ((uiBufferIndex & CB_BufferTypeMask) == CB_BufferGeometryShader)
 			{
 				VERIFY((uiBufferIndex&CB_BufferIndexMask)<MaxCBuffers);
 				m_aGeometryConstants[uiBufferIndex & CB_BufferIndexMask] = it->second;
+				cb_slot_push(CBStage_Geometry, uiBufferIndex & CB_BufferIndexMask);
 			}
 #ifdef USE_DX11
 			else if ( (uiBufferIndex&CB_BufferTypeMask) == CB_BufferHullShader)
 			{
 				VERIFY((uiBufferIndex&CB_BufferIndexMask)<MaxCBuffers);
 				m_aHullConstants[uiBufferIndex&CB_BufferIndexMask] = it->second;
+				cb_slot_push(CBStage_Hull, uiBufferIndex&CB_BufferIndexMask);
 			}
 			else if ( (uiBufferIndex&CB_BufferTypeMask) == CB_BufferDomainShader)
 			{
 				VERIFY((uiBufferIndex&CB_BufferIndexMask)<MaxCBuffers);
 				m_aDomainConstants[uiBufferIndex&CB_BufferIndexMask] = it->second;
+				cb_slot_push(CBStage_Domain, uiBufferIndex&CB_BufferIndexMask);
 			}
 			else if ( (uiBufferIndex&CB_BufferTypeMask) == CB_BufferComputeShader)
 			{
 				VERIFY((uiBufferIndex&CB_BufferIndexMask)<MaxCBuffers);
 				m_aComputeConstants[uiBufferIndex&CB_BufferIndexMask] = it->second;
+				cb_slot_push(CBStage_Compute, uiBufferIndex&CB_BufferIndexMask);
 			}
 #endif
 			else

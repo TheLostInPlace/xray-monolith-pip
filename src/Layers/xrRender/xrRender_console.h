@@ -413,6 +413,8 @@ extern ECORE_API int ps_r__light_scissor;
 extern ECORE_API int ps_r__light_lean;
 // test-Present device loss poll interval in frames, 1 polls every frame like today
 extern ECORE_API int ps_r__device_state_interval;
+// 0 scans every constant buffer slot on every draw like today, 1 walks only the bound slots, 2 also runs the full scan and reports misses
+extern ECORE_API int ps_r__cb_dirty_list;
 
 extern void xrRender_initconsole();
 extern BOOL xrRender_test_hw();
