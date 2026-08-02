@@ -109,6 +109,11 @@ public:
 	Fmatrix mProject_saved;
 	Fmatrix mFullTransform_saved;
 
+	// the bones thread's own camera snapshot, written once per frame before it's dispatched
+	// so a same-frame SVP/main SetActive flip can't rewrite it out from under that thread
+	Fvector vCameraPosition_bones;
+	Fmatrix mFullTransform_bones;
+
 	float fFOV;
 	float fASPECT;
 	float ViewportNear = 0.2f;
