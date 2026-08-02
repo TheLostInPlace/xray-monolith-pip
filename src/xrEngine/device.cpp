@@ -546,7 +546,16 @@ void CRenderDevice::on_idle()
 #endif 
 	Device.isRendering = false;
 
-	secondary_tasks.wait();
+	// pip wall time of the secondary task join, read by the fps audit overlay
+	{
+		extern int ps_r__svp_stats;
+		extern float svp_stats_join_ms;
+		const bool timed = ps_r__svp_stats != 0;
+		CTimer join_timer;
+		if (timed) join_timer.Start();
+		secondary_tasks.wait();
+		if (timed) svp_stats_join_ms = join_timer.GetElapsed_ms_f();
+	}
 
 	if (psLua_ParallelGC_debug && psLua_ParallelGC && Device.LuaGCDebug)
 	{

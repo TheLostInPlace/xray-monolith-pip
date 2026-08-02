@@ -34,6 +34,8 @@ extern u32 svp_stats_cull_reject;
 extern u32 svp_stats_lod_scale;
 extern u32 svp_ledger_ssa_culled;
 extern u32 svp_ledger_lod_scale;
+extern u32 svp_stats_sort_calls;
+extern u32 svp_stats_sort_packets;
 
 ICF float calcLOD(float ssa/*fDistSq*/, float R)
 {
@@ -220,6 +222,11 @@ void CDSGraphManager::r_dsgraph_render_graph(RenderQueueArray& queues, u32 _prio
 			continue;
 
 		// 1. Sort by generated sort key to replicate previous fixed map behaviour
+		if (ps_r__svp_stats)
+		{
+			++svp_stats_sort_calls;
+			svp_stats_sort_packets += (u32)queue.size();
+		}
 		if (queue.size() < 4096)
             std::sort(queue.begin(), queue.end());
 		else

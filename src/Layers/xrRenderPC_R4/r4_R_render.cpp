@@ -221,9 +221,16 @@ void CRender::Render()
 		HW.pContext->ClearDepthStencilView(HW.pBaseZB, D3D_CLEAR_DEPTH, 1.0f, 0);
 	}*/
 
-    GMBase.traverse(RImplementation.pLastSector, ViewBase, Device.vCameraPosition, Device.mFullTransform);
-    GMBase.r_dsgraph_capture_static();
-    GMBase.r_dsgraph_capture_dynamic();
+    // pip cpu cost of the main graph traverse plus capture, read by the fps audit overlay
+    {
+        const bool timed = ps_r__svp_stats != 0;
+        CTimer capture_timer;
+        if (timed) capture_timer.Start();
+        GMBase.traverse(RImplementation.pLastSector, ViewBase, Device.vCameraPosition, Device.mFullTransform);
+        GMBase.r_dsgraph_capture_static();
+        GMBase.r_dsgraph_capture_dynamic();
+        if (timed) svp_stats_capture_base_ms = capture_timer.GetElapsed_ms_f();
+    }
 
 	// pip reset the per-frame lens, it is re-derived each frame so an un-scoped frame leaves radius 0
 	// the debug overlays hold the last radii while the svp stays active so a culled weapon keeps its lines

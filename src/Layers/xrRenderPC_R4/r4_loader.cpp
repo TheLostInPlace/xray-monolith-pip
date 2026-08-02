@@ -102,6 +102,16 @@ void CRender::level_Load(IReader* fs)
 	// HOM
 	HOM.Load();
 
+	// pip fps-audit summary, one line per level load so testers can diff runs against it
+	{
+		extern u32 svp_stats_detail_main_thread;
+		extern u32 svp_stats_hom_main_thread;
+		extern u32 svp_stats_hom_tested;
+		extern u32 svp_stats_hom_rejected;
+		PipMsg("[SVP-AUDIT] detail_main_thread=%u hom_main_thread=%u hom_tested=%u hom_rejected=%u",
+			svp_stats_detail_main_thread, svp_stats_hom_main_thread, svp_stats_hom_tested, svp_stats_hom_rejected);
+	}
+
 	// Lights
 	// pApp->LoadTitle			("Loading lights...");
 	LoadLights(fs);

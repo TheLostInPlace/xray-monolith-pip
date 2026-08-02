@@ -188,6 +188,22 @@ void svp_copy_end(u32 cat)
 		return;
 	svp_copy_timer_hook(cat, false);
 }
+
+// engine-wide render cost tallies for the fps audit overlay, defined here per the cross-module counter style
+u32 svp_stats_state_apply = 0;
+u32 svp_stats_sampler_set = 0;
+u32 svp_stats_cb_flush = 0;
+u32 svp_stats_cb_flush_map = 0;
+float svp_stats_join_ms = 0.f;
+float svp_stats_capture_base_ms = 0.f;
+float svp_stats_capture_cascade_ms[3] = { 0.f, 0.f, 0.f };
+u32 svp_stats_sort_calls = 0;
+u32 svp_stats_sort_packets = 0;
+u32 svp_stats_detail_main_thread = 0;
+u32 svp_stats_hom_main_thread = 0;
+u32 svp_stats_hom_tested = 0;
+u32 svp_stats_hom_rejected = 0;
+
 int scope_debug = 0;
 
 class CCC_SvpScopeMode final : public CCC_Integer

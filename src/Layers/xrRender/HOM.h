@@ -26,6 +26,7 @@ private:
 
 	xr_atomic_u32 MT_frame_rendered;
 	xrCriticalSection m_mt_render_guard;
+	u32 m_mt_render_registration_tid; // thread that queued MT_RENDER, a same-thread run means it fell back inline
 
 	void Render_DB(CFrustum& base);
 public:

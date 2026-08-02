@@ -34,6 +34,20 @@ extern u32 svp_stats_copy_kb_cat[3];
 extern void (*svp_copy_timer_hook)(u32 cat, bool begin);
 extern u32 svp_stats_tiny;
 extern u32 svp_stats_shadow;
+// fps audit tallies, all defined in svp_console.cpp alongside the counters above
+extern u32 svp_stats_state_apply;
+extern u32 svp_stats_sampler_set;
+extern u32 svp_stats_cb_flush;
+extern u32 svp_stats_cb_flush_map;
+extern float svp_stats_join_ms;
+extern float svp_stats_capture_base_ms;
+extern float svp_stats_capture_cascade_ms[3];
+extern u32 svp_stats_sort_calls;
+extern u32 svp_stats_sort_packets;
+extern u32 svp_stats_detail_main_thread;
+extern u32 svp_stats_hom_main_thread;
+extern u32 svp_stats_hom_tested;
+extern u32 svp_stats_hom_rejected;
 // live screen-space pass configuration, defined in xrRender_console.cpp
 extern Fvector4 ps_ssfx_ao;
 extern Fvector4 ps_ssfx_il;
@@ -94,6 +108,10 @@ namespace
 		bool lean_on;
 		u32 copies, copy_kb, rtsw, shadow, tiny, smap;
 		u32 copy_kb_cat[3];
+		u32 state_apply, sampler_set, cb_flush, cb_flush_map;
+		float join_ms, capture_base_ms, capture_cascade_ms[3];
+		u32 sort_calls, sort_packets;
+		u32 detail_main_thread, hom_main_thread, hom_tested, hom_rejected;
 	};
 
 	// pipe-panel quantities that carry a rolling average, order matches the rows
@@ -356,6 +374,16 @@ namespace svp_stats
 		svp_stats_copy_kb_cat[0] = svp_stats_copy_kb_cat[1] = svp_stats_copy_kb_cat[2] = 0;
 		svp_stats_tiny = 0;
 		svp_stats_shadow = 0;
+		// fps audit per-frame tallies, the thread-fallback and hom-reject totals are session-lifetime so stay out
+		svp_stats_state_apply = 0;
+		svp_stats_sampler_set = 0;
+		svp_stats_cb_flush = 0;
+		svp_stats_cb_flush_map = 0;
+		svp_stats_join_ms = 0.f;
+		svp_stats_capture_base_ms = 0.f;
+		svp_stats_capture_cascade_ms[0] = svp_stats_capture_cascade_ms[1] = svp_stats_capture_cascade_ms[2] = 0.f;
+		svp_stats_sort_calls = 0;
+		svp_stats_sort_packets = 0;
 		// feed the rolling ~1s window for the spike readout, skip the first frame's null delta
 		if (fms > 0.0)
 		{
@@ -467,6 +495,20 @@ namespace svp_stats
 			d.copy_kb_cat[i] = svp_stats_copy_kb_cat[i];
 		d.tiny = svp_stats_tiny;
 		d.shadow = svp_stats_shadow;
+		d.state_apply = svp_stats_state_apply;
+		d.sampler_set = svp_stats_sampler_set;
+		d.cb_flush = svp_stats_cb_flush;
+		d.cb_flush_map = svp_stats_cb_flush_map;
+		d.join_ms = svp_stats_join_ms;
+		d.capture_base_ms = svp_stats_capture_base_ms;
+		for (u32 i = 0; i < 3; ++i)
+			d.capture_cascade_ms[i] = svp_stats_capture_cascade_ms[i];
+		d.sort_calls = svp_stats_sort_calls;
+		d.sort_packets = svp_stats_sort_packets;
+		d.detail_main_thread = svp_stats_detail_main_thread;
+		d.hom_main_thread = svp_stats_hom_main_thread;
+		d.hom_tested = svp_stats_hom_tested;
+		d.hom_rejected = svp_stats_hom_rejected;
 		// the backend zeroes stat once per frame in OnFrameBegin so this is already a per-frame count
 		d.rtsw = RCache.stat.target_rt;
 		d.smap = RImplementation.o.smapsize;
@@ -764,7 +806,7 @@ namespace svp_stats
 			const double untracked = d.sec[SEC_FRAME].gpu_ms - tracked;
 			const double untracked_avg = s_sec_avg[SEC_FRAME] - tracked_avg;
 
-			char ptail[3][96];
+			char ptail[12][96];
 			u32 pt = 0;
 			xr_sprintf(ptail[pt++], "smap %u", d.smap);
 			xr_sprintf(ptail[pt++], "ao %.1f q%d  il %.1f q%d  ssr %.1f q%d",
@@ -774,6 +816,21 @@ namespace svp_stats
 			const dof_state dn = dof_now();
 			xr_sprintf(ptail[pt++], "dof w %.2f z %.2f p %.2f nvg %d %s",
 				dn.w, dn.z, dn.p, dn.nvg ? 1 : 0, dn.heavy ? "HEAVY" : "cheap");
+			// fps audit rows, engine-wide state/sampler/cb/join/capture/sort cost plus the thread and hom tallies
+			if (full)
+			{
+				xr_sprintf(ptail[pt++], "apply %u", d.state_apply);
+				xr_sprintf(ptail[pt++], "samplers %u", d.sampler_set);
+				xr_sprintf(ptail[pt++], "cbflush %u/%u", d.cb_flush, d.cb_flush_map);
+				xr_sprintf(ptail[pt++], "join %.2f ms", d.join_ms);
+				xr_sprintf(ptail[pt++], "capture base %.2f c0 %.2f c1 %.2f c2 %.2f ms",
+					d.capture_base_ms, d.capture_cascade_ms[0], d.capture_cascade_ms[1], d.capture_cascade_ms[2]);
+				xr_sprintf(ptail[pt++], "sort %u/%u", d.sort_calls, d.sort_packets);
+				xr_sprintf(ptail[pt++], "dtmt main dm %u hom %u", d.detail_main_thread, d.hom_main_thread);
+				xr_sprintf(ptail[pt++], "hom rej %u/%u", d.hom_rejected, d.hom_tested);
+				xr_sprintf(ptail[pt++], "sun gpu c0 %.2f c1 %.2f c2 %.2f ms",
+					d.sec[SEC_SUN_C0].gpu_ms, d.sec[SEC_SUN_C1].gpu_ms, d.sec[SEC_SUN_C2].gpu_ms);
+			}
 
 			// the per-category megabytes ride in the label so the row keeps the two data columns
 			char cplab[3][32];
@@ -873,4 +930,17 @@ namespace svp_stats
 		s_snap_valid = false;
 		s_frame_timer_started = false;
 	}
+}
+
+// plain wrappers so the shared (non-r4) R_sun.cpp can bracket a cascade without the section_e type
+void svp_stats_sun_cascade_begin(u32 idx)
+{
+	if (idx < 3)
+		svp_stats::section_begin(svp_stats::section_e(svp_stats::SEC_SUN_C0 + idx));
+}
+
+void svp_stats_sun_cascade_end(u32 idx)
+{
+	if (idx < 3)
+		svp_stats::section_end(svp_stats::section_e(svp_stats::SEC_SUN_C0 + idx));
 }

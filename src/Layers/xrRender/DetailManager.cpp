@@ -94,6 +94,7 @@ CDetailManager::CDetailManager()
 
     m_frame_calc = 0;
     m_frame_rendered.store(0, std::memory_order_relaxed);
+    m_mt_calc_registration_tid = 0;
 
 #ifdef DETAIL_RADIUS
 	// KD: variable detail radius
@@ -262,6 +263,7 @@ void CDetailManager::Load()
 	{
 		// MT-details (@front)
 		Device.seqParallelRender.push_back(xr_make_delegate(this, &CDetailManager::MT_CALC));
+		m_mt_calc_registration_tid = GetCurrentThreadId(); // the thread that queues the worker call
 	}
 }
 #endif
@@ -358,9 +360,16 @@ void CDetailManager::UpdateVisibleM()
 					}
 				}
 #ifndef _EDITOR
-				if (!RImplementation.HOM.visible(S.vis))
 				{
-					continue; // invisible-occlusion
+					extern int ps_r__svp_stats;
+					extern u32 svp_stats_hom_tested;
+					extern u32 svp_stats_hom_rejected;
+					if (ps_r__svp_stats) ++svp_stats_hom_tested;
+					if (!RImplementation.HOM.visible(S.vis))
+					{
+						if (ps_r__svp_stats) ++svp_stats_hom_rejected;
+						continue; // invisible-occlusion
+					}
 				}
 #endif
 				// Add to visibility structures
@@ -533,6 +542,11 @@ void __stdcall CDetailManager::MT_CALC()
 
 	if (frame_calc != current_frame && (frame_rendered + 1) == current_frame)
 	{
+		extern int ps_r__svp_stats;
+		extern u32 svp_stats_detail_main_thread;
+		if (ps_r__svp_stats && GetCurrentThreadId() == m_mt_calc_registration_tid)
+			++svp_stats_detail_main_thread; // ran on the queuing thread, the worker task never picked it up
+
 		Fvector EYE = RDEVICE.vCameraPosition_saved;
 
 		int s_x = iFloor(EYE.x / dm_slot_size + .5f);

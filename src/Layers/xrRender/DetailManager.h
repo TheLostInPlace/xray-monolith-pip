@@ -271,6 +271,7 @@ public:
 	u32 m_frame_calc;
 	xr_atomic_u32 m_frame_rendered;
 	xrCriticalSection m_mt_calc_guard;
+	u32 m_mt_calc_registration_tid; // thread that queued MT_CALC, a same-thread calc run means it fell back inline
 	void __stdcall MT_CALC();
 
 	CDetailManager();

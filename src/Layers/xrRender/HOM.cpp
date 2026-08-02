@@ -29,6 +29,11 @@ void __stdcall CHOM::MT_RENDER()
 
 	if (MT_frame_rendered.load(std::memory_order_acquire) != current_frame)
 	{
+		extern int ps_r__svp_stats;
+		extern u32 svp_stats_hom_main_thread;
+		if (ps_r__svp_stats && GetCurrentThreadId() == m_mt_render_registration_tid)
+			++svp_stats_hom_main_thread; // ran on the queuing thread, the worker task never picked it up
+
 		CFrustum ViewBase;
 		ViewBase.CreateFromMatrix(Device.mFullTransform, FRUSTUM_P_LRTB + FRUSTUM_P_FAR);
 		Enable();
@@ -46,6 +51,7 @@ CHOM::CHOM()
 	m_pModel = 0;
 	m_pTris = 0;
     MT_frame_rendered.store(0, std::memory_order_relaxed);
+    m_mt_render_registration_tid = 0;
 #ifdef DEBUG
 	Device.seqRender.Add(this,REG_PRIORITY_LOW-1000);
 #endif
@@ -142,6 +148,7 @@ void CHOM::Load()
 	{
 		// MT-HOM (@front)
 		Device.seqParallelRender.push_back(xr_make_delegate(this, &CHOM::MT_RENDER));
+		m_mt_render_registration_tid = GetCurrentThreadId(); // the thread that queues the worker call
 	}
 }
 

@@ -72,7 +72,18 @@ void CRender::render_sun_cascades()
 		m_sun_cascades[m_sun_cascades.size() - 1].reset_chain = true;
 
 	for (u32 i = 0; i < m_sun_cascades.size(); ++i)
+	{
+#if RENDER == R_R4
+		// pip per-cascade gpu cost, read by the fps audit overlay
+		extern void svp_stats_sun_cascade_begin(u32 idx);
+		extern void svp_stats_sun_cascade_end(u32 idx);
+		svp_stats_sun_cascade_begin(i);
 		render_sun_cascade(i);
+		svp_stats_sun_cascade_end(i);
+#else
+		render_sun_cascade(i);
+#endif
+	}
 
 	if (b_need_to_render_sunshafts)
 		m_sun_cascades[m_sun_cascades.size() - 1].reset_chain = last_cascade_chain_mode;
@@ -288,8 +299,13 @@ void CRender::render_sun_cascade(u32 cascade_ind)
     {
         PROF_EVENT("Render Cascade: SMAP traverse");
         phase = PHASE_SMAP;
+        // pip cpu cost of this cascade's traverse plus capture, read by the fps audit overlay
+        const bool timed = ps_r__svp_stats != 0 && cascade_ind < 3;
+        CTimer capture_timer;
+        if (timed) capture_timer.Start();
         cascade.GMCascade.traverse(pOutdoorSector, cascade.cull_frustum, cascade.cull_COP, cascade.cull_xform);
         cascade.GMCascade.r_dsgraph_capture(false, true);
+        if (timed) svp_stats_capture_cascade_ms[cascade_ind] = capture_timer.GetElapsed_ms_f();
     }
 
     // Finalize & Cleanup

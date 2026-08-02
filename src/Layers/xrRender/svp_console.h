@@ -82,6 +82,22 @@ extern ECORE_API void svp_copy_end(u32 cat);
 // gpu timer hook, the r4 stats module installs it, null on the renderers without a query pool
 extern ECORE_API void (*svp_copy_timer_hook)(u32 cat, bool begin);
 
+// engine-wide render cost tallies for the fps audit overlay, reset per frame like the counters above
+extern ECORE_API u32 svp_stats_state_apply;   // dx10State::Apply calls this frame
+extern ECORE_API u32 svp_stats_sampler_set;   // XXSetSamplers issues this frame, every shader stage combined
+extern ECORE_API u32 svp_stats_cb_flush;      // constant buffer Flush calls this frame
+extern ECORE_API u32 svp_stats_cb_flush_map;  // of those, how many actually mapped and copied
+extern ECORE_API float svp_stats_join_ms;         // secondary task join wait, ms, this frame
+extern ECORE_API float svp_stats_capture_base_ms; // main graph traverse plus capture, cpu ms, this frame
+extern ECORE_API float svp_stats_capture_cascade_ms[3]; // per sun cascade traverse plus capture, cpu ms
+extern ECORE_API u32 svp_stats_sort_calls;    // render queue sort invocations this frame
+extern ECORE_API u32 svp_stats_sort_packets;  // total packets sorted across those invocations
+// session-lifetime running totals, never reset, read by the level-load audit summary
+extern ECORE_API u32 svp_stats_detail_main_thread; // grass MT_CALC runs that fell back to the calling thread
+extern ECORE_API u32 svp_stats_hom_main_thread;    // HOM MT_RENDER runs that fell back to the calling thread
+extern ECORE_API u32 svp_stats_hom_tested;         // detail slots tested against HOM
+extern ECORE_API u32 svp_stats_hom_rejected;       // of those, how many HOM rejected
+
 // optics derivation
 extern ECORE_API float ps_r__svp_obj_dist;
 extern ECORE_API float ps_r__svp_obj_size;
