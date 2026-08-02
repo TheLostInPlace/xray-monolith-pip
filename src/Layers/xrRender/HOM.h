@@ -6,6 +6,7 @@
 #include "../../xrEngine/IGame_Persistent.h"
 
 class occTri;
+class IOccEngine;
 
 class CHOM
 #ifdef DEBUG
@@ -17,10 +18,7 @@ private:
 	CDB::MODEL* m_pModel;
 	occTri* m_pTris;
 	BOOL bEnabled;
-	Fmatrix m_xform;
-	Fmatrix m_xform_01;
 #ifdef DEBUG
-	u32						tris_in_frame_visible	;
 	u32						tris_in_frame			;
 #endif
 
@@ -28,6 +26,13 @@ private:
 	xrCriticalSection m_mt_render_guard;
 	u32 m_mt_render_registration_tid; // thread that queued MT_RENDER, a same-thread run means it fell back inline
 
+	// latched once per frame under the render guard, queries never re-read the request
+	int m_occ_mode;
+	IOccEngine* m_occ_query;  // the engine every visible() answers from
+	IOccEngine* m_occ_raster; // legacy raster when this frame renders it, null otherwise
+	IOccEngine* m_occ_masked; // masked rasterizer when this frame renders it, null otherwise
+
+	void latch_engine();
 	void Render_DB(CFrustum& base);
 public:
 	void Load();

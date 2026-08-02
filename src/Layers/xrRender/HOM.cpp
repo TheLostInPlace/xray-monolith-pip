@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "HOM.h"
 #include "occRasterizer.h"
+#include "occ_engine.h"
 #include "../../xrEngine/GameFont.h"
 
 #include "../../xrCore/profiler.h"
@@ -52,6 +53,10 @@ CHOM::CHOM()
 	m_pTris = 0;
     MT_frame_rendered.store(0, std::memory_order_relaxed);
     m_mt_render_registration_tid = 0;
+	m_occ_mode = 0;
+	m_occ_raster = &occ_engine_legacy();
+	m_occ_masked = nullptr;
+	m_occ_query = m_occ_raster;
 #ifdef DEBUG
 	Device.seqRender.Add(this,REG_PRIORITY_LOW-1000);
 #endif
@@ -146,8 +151,8 @@ void CHOM::Load()
 
 	if (ps_r2_ls_flags.test(R2FLAG_EXP_MT_CALC))
 	{
-		// MT-HOM (@front)
-		Device.seqParallelRender.push_back(xr_make_delegate(this, &CHOM::MT_RENDER));
+		// MT-HOM (@front), ahead of the grass MT_CALC so every occlusion query reads a finished frame
+		Device.seqParallelRender.insert(Device.seqParallelRender.begin(), xr_make_delegate(this, &CHOM::MT_RENDER));
 		m_mt_render_registration_tid = GetCurrentThreadId(); // the thread that queues the worker call
 	}
 }
@@ -193,23 +198,6 @@ public:
 
 void CHOM::Render_DB(CFrustum& base)
 {
-	//Update projection matrices on every frame to ensure valid HOM culling
-	float view_dim = occ_dim_0;
-	Fmatrix m_viewport = {
-		view_dim / 2.f, 0.0f, 0.0f, 0.0f,
-		0.0f, -view_dim / 2.f, 0.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f,
-		view_dim / 2.f + 0 + 0, view_dim / 2.f + 0 + 0, 0.0f, 1.0f
-	};
-	Fmatrix m_viewport_01 = {
-		1.f / 2.f, 0.0f, 0.0f, 0.0f,
-		0.0f, -1.f / 2.f, 0.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f,
-		1.f / 2.f + 0 + 0, 1.f / 2.f + 0 + 0, 0.0f, 1.0f
-	};
-	m_xform.mul(m_viewport, Device.mFullTransform);
-	m_xform_01.mul(m_viewport_01, Device.mFullTransform);
-
 	// Query DB
 	xrc.frustum_options(0);
 	xrc.frustum_query(m_pModel, base);
@@ -220,17 +208,15 @@ void CHOM::Render_DB(CFrustum& base)
 	CDB::RESULT* end = xrc.r_end();
 
 	Fvector COP = Device.vCameraPosition;
-	end = std::remove_if(it, end, pred_fb(m_pTris));
+	// only an engine driven by per-tri pixel feedback carries the skip cadence
+	const bool skip_filter = m_occ_query->wants_skip_filter();
+	if (skip_filter)
+		end = std::remove_if(it, end, pred_fb(m_pTris));
 	std::sort(it, end, pred_fb(m_pTris, COP));
 
-	// Build frustum with near plane only
-	CFrustum clip;
-	clip.CreateFromMatrix(Device.mFullTransform,FRUSTUM_P_NEAR);
-	sPoly src, dst;
 	u32 _frame = Device.dwFrame;
 #ifdef DEBUG
 	tris_in_frame				= xrc.r_count();
-	tris_in_frame_visible		= 0;
 #endif
 
 	// Perfrom selection, sorting, culling
@@ -243,107 +229,61 @@ void CHOM::Render_DB(CFrustum& base)
 		// Test for good occluder - should be improved :)
 		if (!(T.flags || (T.plane.classify(COP) > 0)))
 		{
-			T.skip = next;
+			if (skip_filter)
+				T.skip = next;
 			continue;
 		}
 
 		// Access to triangle vertices
 		CDB::TRI& t = m_pModel->get_tris()[it->id];
 		Fvector* v = m_pModel->get_verts();
-		src.clear();
-		dst.clear();
-		src.push_back(v[t.verts[0]]);
-		src.push_back(v[t.verts[1]]);
-		src.push_back(v[t.verts[2]]);
-		sPoly* P = clip.ClipPoly(src, dst);
-		if (0 == P)
-		{
-			T.skip = next;
-			continue;
-		}
+		const Fvector tri[3] = { v[t.verts[0]], v[t.verts[1]], v[t.verts[2]] };
 
-		// XForm and Rasterize
-#ifdef DEBUG
-		tris_in_frame_visible	++;
-#endif
-		u32 pixels = 0;
-		int limit = int(P->size()) - 1;
-		for (int v = 1; v < limit; v++)
+		// the masked engine takes every facing tri, the legacy clip and pixel tests never gate it
+		if (m_occ_masked)
+			m_occ_masked->emit(T, tri);
+
+		if (m_occ_raster && !m_occ_raster->emit(T, tri))
 		{
-			m_xform.transform(T.raster[0], (*P)[0]);
-			m_xform.transform(T.raster[1], (*P)[v + 0]);
-			m_xform.transform(T.raster[2], (*P)[v + 1]);
-			pixels += Raster.rasterize(&T);
-		}
-		if (0 == pixels)
-		{
-			T.skip = next;
-			continue;
+			if (skip_filter)
+				T.skip = next;
 		}
 	}
+}
+
+// picks this frame's engines once, no query ever reads the request
+void CHOM::latch_engine()
+{
+	m_occ_mode = 0;
+	m_occ_raster = &occ_engine_legacy();
+	m_occ_masked = nullptr;
+	m_occ_query = m_occ_raster;
 }
 
 void CHOM::Render(CFrustum& base)
 {
 	if (!bEnabled) return;
 
+	latch_engine();
+
 	Device.Statistic->RenderCALC_HOM.Begin();
-	Raster.clear();
+	// clip space near from the projection, w carries view z under it
+	const float pz = -Device.mProject._33;
+	const float near_w = (_abs(pz) > EPS) ? (Device.mProject._43 / pz) : 0.f;
+	if (m_occ_raster) m_occ_raster->begin_frame(Device.mFullTransform, Device.vCameraPosition, near_w);
+	if (m_occ_masked) m_occ_masked->begin_frame(Device.mFullTransform, Device.vCameraPosition, near_w);
 	Render_DB(base);
-	Raster.propagade();
+	if (m_occ_raster) m_occ_raster->end_frame();
+	if (m_occ_masked) m_occ_masked->end_frame();
 	MT_frame_rendered.store(Device.dwFrame, std::memory_order_release);
 	Device.Statistic->RenderCALC_HOM.End();
-}
-
-ICF BOOL xform_b0(Fvector2& min, Fvector2& max, float& minz, Fmatrix& X, float _x, float _y, float _z)
-{
-	float z = _x * X._13 + _y * X._23 + _z * X._33 + X._43;
-	if (z < EPS) return TRUE;
-	float iw = 1.f / (_x * X._14 + _y * X._24 + _z * X._34 + X._44);
-	min.x = max.x = (_x * X._11 + _y * X._21 + _z * X._31 + X._41) * iw;
-	min.y = max.y = (_x * X._12 + _y * X._22 + _z * X._32 + X._42) * iw;
-	minz = 0.f + z * iw;
-	return FALSE;
-}
-
-ICF BOOL xform_b1(Fvector2& min, Fvector2& max, float& minz, Fmatrix& X, float _x, float _y, float _z)
-{
-	float t;
-	float z = _x * X._13 + _y * X._23 + _z * X._33 + X._43;
-	if (z < EPS) return TRUE;
-	float iw = 1.f / (_x * X._14 + _y * X._24 + _z * X._34 + X._44);
-	t = (_x * X._11 + _y * X._21 + _z * X._31 + X._41) * iw;
-	if (t < min.x) min.x = t;
-	else if (t > max.x) max.x = t;
-	t = (_x * X._12 + _y * X._22 + _z * X._32 + X._42) * iw;
-	if (t < min.y) min.y = t;
-	else if (t > max.y) max.y = t;
-	t = 0.f + z * iw;
-	if (t < minz) minz = t;
-	return FALSE;
-}
-
-IC BOOL _visible(Fbox& B, Fmatrix& m_xform_01)
-{
-	// Find min/max points of xformed-box
-	Fvector2 min, max;
-	float z;
-	if (xform_b0(min, max, z, m_xform_01, B.min.x, B.min.y, B.min.z)) return TRUE;
-	if (xform_b1(min, max, z, m_xform_01, B.min.x, B.min.y, B.max.z)) return TRUE;
-	if (xform_b1(min, max, z, m_xform_01, B.max.x, B.min.y, B.max.z)) return TRUE;
-	if (xform_b1(min, max, z, m_xform_01, B.max.x, B.min.y, B.min.z)) return TRUE;
-	if (xform_b1(min, max, z, m_xform_01, B.min.x, B.max.y, B.min.z)) return TRUE;
-	if (xform_b1(min, max, z, m_xform_01, B.min.x, B.max.y, B.max.z)) return TRUE;
-	if (xform_b1(min, max, z, m_xform_01, B.max.x, B.max.y, B.max.z)) return TRUE;
-	if (xform_b1(min, max, z, m_xform_01, B.max.x, B.max.y, B.min.z)) return TRUE;
-	return Raster.test(min.x, min.y, max.x, max.y, z);
 }
 
 BOOL CHOM::visible(Fbox3& B)
 {
 	if (!bEnabled) return TRUE;
 	if (B.contains(Device.vCameraPosition)) return TRUE;
-	return _visible(B, m_xform_01);
+	return m_occ_query->test_box(B);
 }
 
 BOOL CHOM::visible(Fbox2& B, float depth)
@@ -374,12 +314,16 @@ BOOL CHOM::visible(vis_data& vis)
 #ifdef DEBUG
 	Device.Statistic->RenderCALC_HOM.Begin	();
 #endif
-	BOOL result = _visible(vis.box, m_xform_01);
+	BOOL result = m_occ_query->test_box(vis.box);
 	u32 delay = 1;
 	if (result)
 	{
-		// visible	- delay next test
-		delay = ::Random.randI(5 * 2, 5 * 5);
+		// visible	- delay next test, hashed per object and frame so worker and main queries never share a draw
+		u32 h = u32(uintptr_t(&vis) >> 4) ^ (frame_current * 2654435761u);
+		h ^= h >> 15; h *= 2246822519u;
+		h ^= h >> 13; h *= 3266489917u;
+		h ^= h >> 16;
+		delay = 10 + (h % 15);
 	}
 	else
 	{
@@ -397,15 +341,7 @@ BOOL CHOM::visible(vis_data& vis)
 BOOL CHOM::visible(sPoly& P)
 {
 	if (!bEnabled) return TRUE;
-
-	// Find min/max points of xformed-box
-	Fvector2 min, max;
-	float z;
-
-	if (xform_b0(min, max, z, m_xform_01, P.front().x, P.front().y, P.front().z)) return TRUE;
-	for (u32 it = 1; it < P.size(); it++)
-		if (xform_b1(min, max, z, m_xform_01, P[it].x, P[it].y, P[it].z)) return TRUE;
-	return Raster.test(min.x, min.y, max.x, max.y, z);
+	return m_occ_query->test_poly(&P.front(), P.size());
 }
 
 void CHOM::Disable()
@@ -421,7 +357,9 @@ void CHOM::Enable()
 #ifdef DEBUG
 void CHOM::OnRender	()
 {
-	Raster.on_dbg_render();
+	// the pixel dump reads the legacy buffer, it is stale under any other engine
+	if (0 == m_occ_mode)
+		Raster.on_dbg_render();
 
 	if (psDeviceFlags.is(rsOcclusionDraw)){
 		if (m_pModel){
@@ -468,7 +406,10 @@ void CHOM::stats()
 	if (m_pModel){
 		CGameFont& F		= *Device.Statistic->Font();
 		F.OutNext			(" **** HOM-occ ****");
-		F.OutNext			("  visible:  %2d", tris_in_frame_visible);
+		if (0 == m_occ_mode)
+			F.OutNext		("  visible:  %2d", occ_legacy_dbg_visible());
+		else
+			F.OutNext		("  occ moc");
 		F.OutNext			("  frustum:  %2d", tris_in_frame);
 		F.OutNext			("    total:  %2d", m_pModel->get_tris_count());
 	}
