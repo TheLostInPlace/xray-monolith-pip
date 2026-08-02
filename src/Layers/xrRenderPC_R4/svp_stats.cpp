@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "r4.h"
 #include "svp_stats.h"
+#include <cstdarg>
 
 #include "../../xrEngine/igame_persistent.h"
 #include "../../xrEngine/environment.h"
@@ -98,7 +99,8 @@ namespace
 
 	const u32 RING = 4;         // frames of query latency, readback is non-blocking on the oldest
 	const u32 MAX_PAIRS = 128;  // timestamp pairs per frame, past this the frame flags overflow
-	const u32 FOOT_MAX = 10;    // free-form footer lines the panel sizes its width to
+	const u32 FOOT_MAX = 14;    // free-form footer lines the panel sizes its width to
+	const u32 PTAIL_MAX = 20;   // free-form pipe-panel footer lines
 
 	struct sec_data
 	{
@@ -334,6 +336,19 @@ namespace
 		else if (v >= 10000) xr_sprintf(out, n, "%uk", v / 1000);
 		else xr_sprintf(out, n, "%u", v);
 	}
+
+	// bounds checked footer write, past capacity the write is dropped not placed past the array
+	template <int N, int cap>
+	void foot_emit(char (&arr)[cap][N], u32& idx, LPCSTR fmt, ...)
+	{
+		if (idx >= cap)
+			return;
+		va_list args;
+		va_start(args, fmt);
+		vsprintf_s(arr[idx], N, fmt, args);
+		va_end(args);
+		++idx;
+	}
 }
 
 namespace svp_stats
@@ -568,6 +583,7 @@ namespace svp_stats
 
 		const stats_frame& d = s_snap;
 		const bool full = (ps_r__svp_stats >= 2);
+		const bool lean = (ps_r__svp_stats == 3);
 
 		// section totals per viewport, svp mirrors nest inside the main lighting so its column is the
 		// scope-only slice while the main column carries the whole pass
@@ -630,19 +646,22 @@ namespace svp_stats
 		// free-form footer lines, built first so the panel sizes its width to the widest of them
 		char foot[FOOT_MAX][96];
 		u32 nf = 0;
-		xr_sprintf(foot[nf++], "frame %.2f ms  %.0f fps", d.frame_ms, d.frame_ms > 0.01 ? 1000.0 / d.frame_ms : 0.0);
-		xr_sprintf(foot[nf++], "cpu %.2f  gpu %.2f ms", fcpu, fgpu);
+		foot_emit(foot, nf, "frame %.2f ms  %.0f fps", d.frame_ms, d.frame_ms > 0.01 ? 1000.0 / d.frame_ms : 0.0);
+		foot_emit(foot, nf, "cpu %.2f  gpu %.2f ms", fcpu, fgpu);
 		// bound verdict on its own row so it stays legible against the moving numbers
-		xr_sprintf(foot[nf++], "%s", bound);
-		xr_sprintf(foot[nf++], "1s min %.2f avg %.2f max %.2f", ft_min, ft_avg, ft_max);
-		xr_sprintf(foot[nf++], "present %.2f ms", d.present_ms);
-		xr_sprintf(foot[nf++], "svp %ux%u mag %.1fx epoch %u res %u", d.svp_w, d.svp_h, d.svp_mag, d.svp_epoch, d.optic_resolve);
-		xr_sprintf(foot[nf++], "res learn %.0f apply %.0f side %u grow %s", d.svp_disc_learned, d.svp_disc, d.svp_w, d.svp_grow ? "on" : "off");
-		xr_sprintf(foot[nf++], "cull ssa %u rej %u i%u hud %u  lights m%u s%u", d.ssa_culled, d.cull_reject, d.cull_reject_ident, d.hud_cull_reject, d.lights_mirrored, d.lights_skipped);
-		if (full)
+		foot_emit(foot, nf, "%s", bound);
+		foot_emit(foot, nf, "1s min %.2f avg %.2f max %.2f", ft_min, ft_avg, ft_max);
+		foot_emit(foot, nf, "present %.2f ms", d.present_ms);
+		if (!lean)
 		{
-			xr_sprintf(foot[nf++], "stamp taa %u nvg %u distort %u nvgsky %u", d.taa_stamp, d.nvg_split, d.distort_guard, d.nvg_sky);
-			xr_sprintf(foot[nf++], "fire lod %u reflex %u disc %u fwd %u", d.lod_scale, d.reflex_capture, d.disc_latch, d.fwd_keep);
+			foot_emit(foot, nf, "svp %ux%u mag %.1fx epoch %u res %u", d.svp_w, d.svp_h, d.svp_mag, d.svp_epoch, d.optic_resolve);
+			foot_emit(foot, nf, "res learn %.0f apply %.0f side %u grow %s", d.svp_disc_learned, d.svp_disc, d.svp_w, d.svp_grow ? "on" : "off");
+			foot_emit(foot, nf, "cull ssa %u rej %u i%u hud %u  lights m%u s%u", d.ssa_culled, d.cull_reject, d.cull_reject_ident, d.hud_cull_reject, d.lights_mirrored, d.lights_skipped);
+			if (full)
+			{
+				foot_emit(foot, nf, "stamp taa %u nvg %u distort %u nvgsky %u", d.taa_stamp, d.nvg_split, d.distort_guard, d.nvg_sky);
+				foot_emit(foot, nf, "fire lod %u reflex %u disc %u fwd %u", d.lod_scale, d.reflex_capture, d.disc_latch, d.fwd_keep);
+			}
 		}
 
 		const u32 lines = 1u + (full ? 4u : 0u) + 7u + nf; // header + section gpu + fixed columns + footer
@@ -677,43 +696,44 @@ namespace svp_stats
 		const u32 c_dim = color_rgba(120, 130, 130, 255);
 		float y = top + pad;
 
-		auto row = [&](u32 lc, LPCSTR label, u32 sc, LPCSTR sv, u32 mc, LPCSTR mv, bool has_m)
+		auto row = [&](u32 lc, LPCSTR label, u32 sc, LPCSTR sv, u32 mc, LPCSTR mv, bool has_m, bool has_s = true)
 		{
 			F.SetAligment(CGameFont::alLeft); F.SetColor(lc); F.Out(label_l, y, "%s", label);
-			F.SetAligment(CGameFont::alRight); F.SetColor(sc); F.Out(svp_r, y, "%s", sv);
+			F.SetAligment(CGameFont::alRight);
+			if (has_s) { F.SetColor(sc); F.Out(svp_r, y, "%s", sv); }
 			if (has_m) { F.SetColor(mc); F.Out(main_r, y, "%s", mv); }
 			y += step;
 		};
 
-		row(c_hdr, "svp stats", c_hdr, "SVP", c_hdr, "MAIN", true);
+		row(c_hdr, "svp stats", c_hdr, "SVP", c_hdr, "MAIN", true, !lean);
 
 		char sb[24], mb[24];
 		if (full)
 		{
 			xr_sprintf(sb, "%.2f", d.sec[SEC_SVP_GBUFFER].gpu_ms); xr_sprintf(mb, "%.2f", d.sec[SEC_MAIN_GBUFFER].gpu_ms);
-			row(c_txt, "gbuffer", gpu_color(d.sec[SEC_SVP_GBUFFER].gpu_ms), sb, gpu_color(d.sec[SEC_MAIN_GBUFFER].gpu_ms), mb, true);
+			row(c_txt, "gbuffer", gpu_color(d.sec[SEC_SVP_GBUFFER].gpu_ms), sb, gpu_color(d.sec[SEC_MAIN_GBUFFER].gpu_ms), mb, true, !lean);
 			xr_sprintf(sb, "%.2f", d.sec[SEC_SVP_LIGHTS].gpu_ms); xr_sprintf(mb, "%.2f", d.sec[SEC_MAIN_LIGHTS].gpu_ms);
-			row(c_txt, "lights", gpu_color(d.sec[SEC_SVP_LIGHTS].gpu_ms), sb, gpu_color(d.sec[SEC_MAIN_LIGHTS].gpu_ms), mb, true);
+			row(c_txt, "lights", gpu_color(d.sec[SEC_SVP_LIGHTS].gpu_ms), sb, gpu_color(d.sec[SEC_MAIN_LIGHTS].gpu_ms), mb, true, !lean);
 			xr_sprintf(sb, "%.2f", d.sec[SEC_SVP_EMISSIVE].gpu_ms); xr_sprintf(mb, "%.2f", d.sec[SEC_MAIN_EMISSIVE].gpu_ms);
-			row(c_txt, "emissive", gpu_color(d.sec[SEC_SVP_EMISSIVE].gpu_ms), sb, gpu_color(d.sec[SEC_MAIN_EMISSIVE].gpu_ms), mb, true);
+			row(c_txt, "emissive", gpu_color(d.sec[SEC_SVP_EMISSIVE].gpu_ms), sb, gpu_color(d.sec[SEC_MAIN_EMISSIVE].gpu_ms), mb, true, !lean);
 			xr_sprintf(sb, "%.2f", d.sec[SEC_SVP_COMBINE].gpu_ms); xr_sprintf(mb, "%.2f", d.sec[SEC_MAIN_COMBINE].gpu_ms);
-			row(c_txt, "combine", gpu_color(d.sec[SEC_SVP_COMBINE].gpu_ms), sb, gpu_color(d.sec[SEC_MAIN_COMBINE].gpu_ms), mb, true);
+			row(c_txt, "combine", gpu_color(d.sec[SEC_SVP_COMBINE].gpu_ms), sb, gpu_color(d.sec[SEC_MAIN_COMBINE].gpu_ms), mb, true, !lean);
 		}
 
 		xr_sprintf(sb, "%.2f", svp_gpu); xr_sprintf(mb, "%.2f", main_gpu);
-		row(c_txt, "gpu ms", gpu_color(svp_gpu), sb, gpu_color(main_gpu), mb, true);
+		row(c_txt, "gpu ms", gpu_color(svp_gpu), sb, gpu_color(main_gpu), mb, true, !lean);
 		xr_sprintf(sb, "%.2f", svp_cpu); xr_sprintf(mb, "%.2f", main_cpu);
-		row(c_txt, "cpu ms", c_txt, sb, c_txt, mb, true);
+		row(c_txt, "cpu ms", c_txt, sb, c_txt, mb, true, !lean);
 		fmt_count(sb, sizeof(sb), svp_calls); fmt_count(mb, sizeof(mb), main_calls);
-		row(c_txt, "draws", c_txt, sb, c_txt, mb, true);
+		row(c_txt, "draws", c_txt, sb, c_txt, mb, true, !lean);
 		fmt_count(sb, sizeof(sb), svp_verts); fmt_count(mb, sizeof(mb), main_verts);
-		row(c_txt, "verts", c_txt, sb, c_txt, mb, true);
+		row(c_txt, "verts", c_txt, sb, c_txt, mb, true, !lean);
 		fmt_count(sb, sizeof(sb), svp_polys); fmt_count(mb, sizeof(mb), main_polys);
-		row(c_txt, "polys", c_txt, sb, c_txt, mb, true);
+		row(c_txt, "polys", c_txt, sb, c_txt, mb, true, !lean);
 		xr_sprintf(sb, "%u", d.svp_blends); xr_sprintf(mb, "%u", d.main_lights);
-		row(c_txt, "lights", c_txt, sb, c_txt, mb, true);
+		row(c_txt, "lights", c_txt, sb, c_txt, mb, true, !lean);
 		xr_sprintf(mb, "%u", d.main_shadowed);
-		row(c_txt, "shadow", c_dim, "-", c_txt, mb, true);
+		row(c_txt, "shadow", c_dim, "-", c_txt, mb, true, !lean);
 
 		// footer, the free-form lines built above, first line highlighted
 		F.SetAligment(CGameFont::alLeft);
@@ -850,38 +870,44 @@ namespace svp_stats
 			const double untracked = d.sec[SEC_FRAME].gpu_ms - tracked;
 			const double untracked_avg = s_sec_avg[SEC_FRAME] - tracked_avg;
 
-			char ptail[16][96];
+			char ptail[PTAIL_MAX][96];
 			u32 pt = 0;
-			xr_sprintf(ptail[pt++], "smap %u", d.smap);
-			xr_sprintf(ptail[pt++], "ao %.1f q%d  il %.1f q%d  ssr %.1f q%d",
-				ps_ssfx_ao.x, ps_ssfx_ao_quality, ps_ssfx_il.x, ps_ssfx_il_quality,
-				ps_ssfx_ssr.x, ps_ssfx_ssr_quality);
-			// w gates the 16 tap loop, p widens it over the periphery, nvg forces the beefs spiral
-			const dof_state dn = dof_now();
-			xr_sprintf(ptail[pt++], "dof w %.2f z %.2f p %.2f nvg %d %s",
-				dn.w, dn.z, dn.p, dn.nvg ? 1 : 0, dn.heavy ? "HEAVY" : "cheap");
+			foot_emit(ptail, pt, "smap %u", d.smap);
+			if (!lean)
+			{
+				foot_emit(ptail, pt, "ao %.1f q%d  il %.1f q%d  ssr %.1f q%d",
+					ps_ssfx_ao.x, ps_ssfx_ao_quality, ps_ssfx_il.x, ps_ssfx_il_quality,
+					ps_ssfx_ssr.x, ps_ssfx_ssr_quality);
+				// w gates the 16 tap loop, p widens it over the periphery, nvg forces the beefs spiral
+				const dof_state dn = dof_now();
+				foot_emit(ptail, pt, "dof w %.2f z %.2f p %.2f nvg %d %s",
+					dn.w, dn.z, dn.p, dn.nvg ? 1 : 0, dn.heavy ? "HEAVY" : "cheap");
+			}
 			// fps audit rows, engine-wide state/sampler/cb/join/capture/sort cost plus the thread and hom tallies
 			if (full)
 			{
-				xr_sprintf(ptail[pt++], "apply %u", d.state_apply);
-				xr_sprintf(ptail[pt++], "samplers %u", d.sampler_set);
-				xr_sprintf(ptail[pt++], "cbflush %u/%u", d.cb_flush, d.cb_flush_map);
-				xr_sprintf(ptail[pt++], "join %.2f ms", d.join_ms);
-				xr_sprintf(ptail[pt++], "capture base %.2f c0 %.2f c1 %.2f c2 %.2f ms",
-					d.capture_base_ms, d.capture_cascade_ms[0], d.capture_cascade_ms[1], d.capture_cascade_ms[2]);
-				xr_sprintf(ptail[pt++], "sort %u/%u", d.sort_calls, d.sort_packets);
+				foot_emit(ptail, pt, "apply %u", d.state_apply);
+				foot_emit(ptail, pt, "samplers %u", d.sampler_set);
+				foot_emit(ptail, pt, "cbflush %u/%u", d.cb_flush, d.cb_flush_map);
+				if (!lean)
+				{
+					foot_emit(ptail, pt, "join %.2f ms", d.join_ms);
+					foot_emit(ptail, pt, "capture base %.2f c0 %.2f c1 %.2f c2 %.2f ms",
+						d.capture_base_ms, d.capture_cascade_ms[0], d.capture_cascade_ms[1], d.capture_cascade_ms[2]);
+				}
+				foot_emit(ptail, pt, "sort %u/%u", d.sort_calls, d.sort_packets);
 				// hits over total, the ratio the layout memo would save
-				xr_sprintf(ptail[pt++], "layout %u/%u", d.layout_hit, d.layout_hit + d.layout_miss);
-				xr_sprintf(ptail[pt++], "dtmt main dm %u hom %u", d.detail_main_thread, d.hom_main_thread);
-				xr_sprintf(ptail[pt++], "hom rej %u/%u", d.hom_rejected, d.hom_tested);
+				foot_emit(ptail, pt, "layout %u/%u", d.layout_hit, d.layout_hit + d.layout_miss);
+				foot_emit(ptail, pt, "dtmt main dm %u hom %u", d.detail_main_thread, d.hom_main_thread);
+				foot_emit(ptail, pt, "hom rej %u/%u", d.hom_rejected, d.hom_tested);
 				// dis splits by direction, k = legacy culls what the masked engine keeps
-				xr_sprintf(ptail[pt++], "occ e%u tris %u/%u rnd %uus tst %uus dis %u k%u/%u",
+				foot_emit(ptail, pt, "occ e%u tris %u/%u rnd %uus tst %uus dis %u k%u/%u",
 					d.hom_engine, d.hom_tris_emitted, d.hom_tris_in, d.hom_render_us, d.hom_test_us,
 					d.hom_disagree, d.hom_dis_keep, d.hom_shadow_queries);
 				// terr counts the emitted ground tris over the cap hit flag
-				xr_sprintf(ptail[pt++], "moc ret %u fill %u%% terr %u/%u cells %u",
+				foot_emit(ptail, pt, "moc ret %u fill %u%% terr %u/%u cells %u",
 					d.moc_ret, d.moc_fill_pct, d.hom_terr_emitted, d.hom_terr_capped, d.hom_terr_cells);
-				xr_sprintf(ptail[pt++], "sun gpu c0 %.2f c1 %.2f c2 %.2f ms",
+				foot_emit(ptail, pt, "sun gpu c0 %.2f c1 %.2f c2 %.2f ms",
 					d.sec[SEC_SUN_C0].gpu_ms, d.sec[SEC_SUN_C1].gpu_ms, d.sec[SEC_SUN_C2].gpu_ms);
 			}
 
@@ -890,13 +916,15 @@ namespace svp_stats
 			const section_e cpsec[3] = { SEC_CP_HIST, SEC_CP_TAIL, SEC_CP_SCENE };
 			const u32 cpavg[3] = { PIPE_CP_HIST_KB, PIPE_CP_TAIL_KB, PIPE_CP_SCENE_KB };
 			LPCSTR cpname[3] = { "cp hist", "cp tail", "cp scene" };
-			for (u32 i = 0; i < 3; ++i)
-				xr_sprintf(cplab[i], "%s %.0fmb", cpname[i], s_pipe_avg[cpavg[i]] / 1024.0);
+			if (!lean)
+				for (u32 i = 0; i < 3; ++i)
+					xr_sprintf(cplab[i], "%s %.0fmb", cpname[i], s_pipe_avg[cpavg[i]] / 1024.0);
 
-			const u32 prows = 9;
+			const u32 prows = lean ? 6u : 9u;
 			float plabel_w = F.SizeOf_("untracked") + digit;
-			for (u32 i = 0; i < 3; ++i)
-				plabel_w = _max(plabel_w, F.SizeOf_(cplab[i]) + digit);
+			if (!lean)
+				for (u32 i = 0; i < 3; ++i)
+					plabel_w = _max(plabel_w, F.SizeOf_(cplab[i]) + digit);
 			float pcontent_w = plabel_w + cell + gap + cell;
 			for (u32 i = 0; i < pt; ++i)
 				pcontent_w = _max(pcontent_w, F.SizeOf_(ptail[i]));
@@ -945,13 +973,14 @@ namespace svp_stats
 			prow(c_txt, "shadow", c_txt, pb, c_txt, pa);
 			fmt_count(pb, sizeof(pb), d.tiny); xr_sprintf(pa, "%.0f", s_pipe_avg[PIPE_TINY]);
 			prow(c_txt, "tiny", c_txt, pb, c_txt, pa);
-			for (u32 i = 0; i < 3; ++i)
-			{
-				const double ms = d.sec[cpsec[i]].gpu_ms;
-				const double avg = s_sec_avg[cpsec[i]];
-				xr_sprintf(pb, "%.2f", ms); xr_sprintf(pa, "%.2f", avg);
-				prow(c_txt, cplab[i], gpu_color(ms), pb, gpu_color(avg), pa);
-			}
+			if (!lean)
+				for (u32 i = 0; i < 3; ++i)
+				{
+					const double ms = d.sec[cpsec[i]].gpu_ms;
+					const double avg = s_sec_avg[cpsec[i]];
+					xr_sprintf(pb, "%.2f", ms); xr_sprintf(pa, "%.2f", avg);
+					prow(c_txt, cplab[i], gpu_color(ms), pb, gpu_color(avg), pa);
+				}
 
 			F.SetAligment(CGameFont::alLeft);
 			F.SetColor(c_dim);

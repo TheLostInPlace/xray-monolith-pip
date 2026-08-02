@@ -15,7 +15,7 @@ extern ECORE_API float ps_r__svp_supersample;
 extern ECORE_API int ps_r__svp_diag;
 extern ECORE_API int ps_r__svp_cop_diag;
 extern ECORE_API int ps_r__svp_report;
-extern ECORE_API int ps_r__svp_stats; // per-viewport render stats overlay (0 off, 1 compact, 2 breakdown)
+extern ECORE_API int ps_r__svp_stats; // per-viewport render stats overlay (0 off, 1 compact, 2 breakdown, 3 lean main view)
 extern ECORE_API u32 svp_stats_ssa_culled; // svp small-object cull tally read by the overlay, incremented in r__dsgraph_render
 extern ECORE_API u32 svp_stats_cull_reject; // svp off-cone frustum-reject tally read by the overlay, incremented in r__dsgraph_render
 extern ECORE_API u32 svp_stats_cull_reject_ident; // svp identity-matrix sorted world statics the cone rejects, incremented in svp_cull_reject

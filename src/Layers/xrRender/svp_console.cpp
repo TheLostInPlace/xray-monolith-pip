@@ -14,7 +14,7 @@ float ps_r__svp_supersample = 1.0f; // SVP supersample: render the SVP square la
 int ps_r__svp_diag = 0; // SVP perf diagnostics: throttled log of [SVP-RES] over-render ratio + [SVP-ALLOC] target size while scoped, 0 = off
 int ps_r__svp_cop_diag = 0; // svp optics diagnostics, 1 = throttled [SVPCOP]/[SVP-HUD]/[SVP-BARREL], 2 = adds the per-frame [SVP-AIM] reticle-vs-screen-center delta
 int ps_r__svp_report = 0; // svp one-shot report, 1 re-dumps [SVP-CFG] + [SVP-FILES] on the next scoped frame then clears itself
-int ps_r__svp_stats = 0; // per-viewport render stats overlay, 0 off, 1 compact table, 2 adds the per-section breakdown
+int ps_r__svp_stats = 0; // per-viewport render stats overlay, 0 off, 1 compact table, 2 adds the per-section breakdown, 3 lean main view
 u32 svp_stats_ssa_culled = 0; // svp small-object cull tally the overlay reads, incremented in r__dsgraph_render while the overlay is on
 u32 svp_stats_cull_reject = 0; // svp off-cone frustum-reject tally the overlay reads, incremented in r__dsgraph_render
 u32 svp_stats_cull_reject_ident = 0; // svp identity-matrix sorted world statics the cone rejects, incremented in svp_cull_reject
@@ -271,7 +271,7 @@ void svp_console_init()
 	CMD4(CCC_Integer, "r__svp_diag", &ps_r__svp_diag, 0, 1); // SVP perf diagnostics log (0 = off)
 	CMD4(CCC_Integer, "r__svp_cop_diag", &ps_r__svp_cop_diag, 0, 2); // svp optics log (1 = throttled, 2 = + per-frame [SVP-AIM])
 	CMD4(CCC_Integer, "r__svp_report", &ps_r__svp_report, 0, 1); // svp one-shot [SVP-CFG]+[SVP-FILES] re-dump, self-clearing
-	CMD4(CCC_Integer, "r__svp_stats", &ps_r__svp_stats, 0, 2); // per-viewport render stats overlay (1 = compact, 2 = per-section breakdown)
+	CMD4(CCC_Integer, "r__svp_stats", &ps_r__svp_stats, 0, 3); // per-viewport render stats overlay (1 = compact, 2 = per-section breakdown, 3 = lean main view)
 	CMD4(CCC_Integer, "r__3db_debug", &ps_r__3db_debug, 0, 3); // 3db overlay (1 = markers + axes, 2 = + zeroed ray, 3 = + tracers)
 	CMD4(CCC_Float, "r__svp_adaptive_res", &ps_r__svp_adaptive_res, 0.0f, 2.0f); // size SVP render to the eyepiece disc * margin (0 = off, 1.2 recommended)
 	CMD4(CCC_Float, "r__svp_lod", &ps_r__svp_lod, 0.0f, 1.0f); // SVP LOD reduction strength (0 = off)
