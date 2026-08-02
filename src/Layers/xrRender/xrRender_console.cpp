@@ -143,6 +143,8 @@ float ps_r__Tree_w_speed = 1.00f;
 float ps_r__Tree_w_amp = 0.005f;
 Fvector ps_r__Tree_Wave = {.1f, .01f, .11f};
 float ps_r__Tree_SBC = 1.5f; // scale bias correct
+// vertex cache plus overdraw reorder of the tree index ranges, read once at level load
+int ps_r__tree_ib_reorder = 0;
 
 float ps_r__WallmarkTTL = 50.f;
 float ps_r__WallmarkSHIFT = 0.0001f;
@@ -1192,6 +1194,7 @@ void xrRender_initconsole()
 	CMD4(CCC_Float, "r__detail_density_knee", &ps_r__Detail_density_knee, 0.0f, 1.0f);
 	CMD4(CCC_Float, "r__detail_density_curve", &ps_r__Detail_density_curve, 0.25f, 12.0f);
 	CMD4(CCC_Integer, "r__detail_instancing", &ps_r__detail_instancing, 0, 1);
+	CMD4(CCC_Integer, "r__tree_ib_reorder", &ps_r__tree_ib_reorder, 0, 1);
 
 #ifdef DEBUG
 	CMD4(CCC_Float,		"r__detail_l_ambient",	&ps_r__Detail_l_ambient,	.5f,	.95f	);

@@ -718,6 +718,12 @@
     <ClCompile Include="..\xrRender\svp_lens_detect_math.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\..\3rd party\meshoptimizer\vcacheoptimizer.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\3rd party\meshoptimizer\overdrawoptimizer.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\xrRender\svp_lens_detect.cpp" />
     <ClCompile Include="..\xrRender\svp_dsgraph_cull.cpp" />
     <ClCompile Include="..\xrRender\r__dsgraph_render_lods.cpp" />

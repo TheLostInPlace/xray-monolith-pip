@@ -888,6 +888,12 @@
     <ClCompile Include="..\xrRender\svp_lens_detect_math.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\3rd party\meshoptimizer\vcacheoptimizer.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\3rd party\meshoptimizer\overdrawoptimizer.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="..\xrRender\svp_lens_detect.cpp">
       <Filter>Core</Filter>
     </ClCompile>

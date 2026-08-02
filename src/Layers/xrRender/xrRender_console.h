@@ -84,6 +84,8 @@ extern ECORE_API float ps_r__Tree_w_speed;
 extern ECORE_API float ps_r__Tree_w_amp;
 extern ECORE_API float ps_r__Tree_SBC; // scale bias correct
 extern ECORE_API Fvector ps_r__Tree_Wave;
+// vertex cache plus overdraw reorder of the tree index ranges, read once at level load
+extern ECORE_API int ps_r__tree_ib_reorder;
 
 extern ECORE_API float ps_r__WallmarkTTL;
 extern ECORE_API float ps_r__WallmarkSHIFT;
