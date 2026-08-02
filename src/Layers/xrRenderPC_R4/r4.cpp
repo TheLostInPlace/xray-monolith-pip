@@ -1851,6 +1851,21 @@ HRESULT CRender::shader_compile(
 	sh_name[len] = '1';
 	++len;
 
+	// grass instancing rides the shader cache name so both states keep their own compiled files
+	if (ps_r__detail_instancing)
+	{
+		defines[def_it].Name = "DETAILS_INSTANCING";
+		defines[def_it].Definition = "1";
+		def_it++;
+		sh_name[len] = '1';
+		++len;
+	}
+	else
+	{
+		sh_name[len] = '0';
+		++len;
+	}
+
 	//Be carefull!!!!! this should be at the end to correctly generate
 	//compiled shader name;
 	// add a #define for DX10_1 MSAA support

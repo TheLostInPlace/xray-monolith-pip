@@ -130,6 +130,12 @@ float ps_r__Detail_l_ambient = 0.9f;
 float ps_r__Detail_l_aniso = 0.25f;
 float ps_r__Detail_density = 0.3f;
 float ps_r__Detail_height = 1.0f;
+// radius-relative grass density falloff, full density inside 'knee' then a power curve to zero at
+// the radius edge, knee >= 1 disables it
+float ps_r__Detail_density_knee = 1.00f;
+float ps_r__Detail_density_curve = 2.00f;
+// dx11 hardware instancing for grass, read once at level load, 0 keeps the baked-copies path
+int ps_r__detail_instancing = 1;
 float ps_r__Detail_rainbow_hemi = 0.75f;
 
 float ps_r__Tree_w_rot = 10.0f;
@@ -1177,6 +1183,9 @@ void xrRender_initconsole()
 	CMD4(CCC_Float, "r__detail_density", &ps_current_detail_density/*&ps_r__Detail_density*/, 0.04f/*.2f*/, 1.f);
 	//AVO: extended from 0.2 to 0.04 and replaced variable
 	CMD4(CCC_Float, "r__detail_height", &ps_current_detail_height, 0.5f, 2.0f);
+	CMD4(CCC_Float, "r__detail_density_knee", &ps_r__Detail_density_knee, 0.0f, 1.0f);
+	CMD4(CCC_Float, "r__detail_density_curve", &ps_r__Detail_density_curve, 0.25f, 12.0f);
+	CMD4(CCC_Integer, "r__detail_instancing", &ps_r__detail_instancing, 0, 1);
 
 #ifdef DEBUG
 	CMD4(CCC_Float,		"r__detail_l_ambient",	&ps_r__Detail_l_ambient,	.5f,	.95f	);
