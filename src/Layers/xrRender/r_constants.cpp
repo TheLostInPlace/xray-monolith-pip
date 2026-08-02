@@ -35,6 +35,7 @@ void R_constant_table::_copy(const R_constant_table& Other)
 	table = Other.table;
 #if defined(USE_DX10) || defined(USE_DX11)
 	m_CBTable = Other.m_CBTable;
+	dt_instance_size = Other.dt_instance_size;
 #endif
 }
 
@@ -267,6 +268,10 @@ void R_constant_table::merge(R_constant_table* T)
 	m_CBTable.reserve(m_CBTable.size() + T->m_CBTable.size());
 	for (u32 i = 0; i < T->m_CBTable.size(); ++i)
 		m_CBTable.push_back(T->m_CBTable[i]);
+
+	// only the stage that declares the record carries a size, the null stages leave it alone
+	if (T->dt_instance_size)
+		dt_instance_size = T->dt_instance_size;
 #endif	//	USE_DX10
 }
 
@@ -278,7 +283,8 @@ void R_constant_table::clear()
 	table.clear();
 #if defined(USE_DX10) || defined(USE_DX11)
 	m_CBTable.clear();
-#endif	//	
+	dt_instance_size = 0;
+#endif	//
 }
 
 BOOL R_constant_table::equal(R_constant_table& C)

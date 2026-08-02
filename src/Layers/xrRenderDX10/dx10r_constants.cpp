@@ -385,7 +385,12 @@ BOOL R_constant_table::parse(void* _desc, u32 destination)
 				D3D_SHADER_BUFFER_DESC BufDesc;
 				pTable->GetDesc(&BufDesc);
 				if (BufDesc.Type != D3D_CT_CBUFFER)
+				{
+					// reflection drops after parse so keep the declared detail record size now
+					if (BufDesc.Name && 0 == xr_strcmp(BufDesc.Name, "dt_instances"))
+						dt_instance_size = u16(BufDesc.Size);
 					continue;
+				}
 
 				//	Encode buffer index into destination
 				u32 updatedDest = destination;

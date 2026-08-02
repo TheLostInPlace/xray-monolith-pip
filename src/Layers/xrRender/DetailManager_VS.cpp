@@ -49,8 +49,8 @@ void CDetailManager::hw_Load()
 }
 
 #ifdef USE_DX11
-// true when every element the instanced path draws declares the instance record index
-bool CDetailManager::hw_Probe_Instance_Shaders()
+// checks every element the instanced path draws for the instance record index and its record size
+u32 CDetailManager::hw_Probe_Instance_Shaders()
 {
 	static shared_str strInstBase("dt_instance_base");
 
@@ -71,15 +71,19 @@ bool CDetailManager::hw_Probe_Instance_Shaders()
 			{
 				R_constant_table* T = E->passes[p]->constants._get();
 				if (!T)
-					return false;
+					return hw_probe_no_decode;
 
 				R_constant* C = T->get(strInstBase);
 				if (!C || 0 == (C->destination & RC_dest_vertex))
-					return false;
+					return hw_probe_no_decode;
+
+				// a stale shader keeps the name while decoding an older record layout
+				if (T->dt_instance_size != u16(hw_InstanceStride))
+					return hw_probe_bad_record;
 			}
 		}
 	}
-	return true;
+	return hw_probe_ok;
 }
 #endif
 
@@ -93,11 +97,20 @@ void CDetailManager::hw_Load_Geom()
 #ifdef USE_DX11
 	// latch the instancing path for this level, an instanced draw needs one mesh copy not the baked batch
 	hw_instancing = (ps_r__detail_instancing != 0);
-	if (hw_instancing && !hw_Probe_Instance_Shaders())
+	if (hw_instancing)
 	{
-		// resolved shaders carry no instance decode, the whole level stays on the legacy loop
-		hw_instancing = false;
-		Msg("! [DETAILS] instancing shaders missing, legacy path");
+		// the whole level stays on the legacy loop when any element fails the probe
+		const u32 probe = hw_Probe_Instance_Shaders();
+		if (probe == hw_probe_no_decode)
+		{
+			hw_instancing = false;
+			Msg("! [DETAILS] instancing shaders missing, legacy path");
+		}
+		else if (probe == hw_probe_bad_record)
+		{
+			hw_instancing = false;
+			Msg("! [DETAILS] instance record mismatch, legacy path");
+		}
 	}
 	hw_overflow_logged = false;
 	const u32 dwCopies = hw_instancing ? 1 : hw_BatchSize;

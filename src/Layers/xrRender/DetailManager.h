@@ -242,7 +242,8 @@ public:
 	bool hw_instancing; // latched from r__detail_instancing at level load
 	bool hw_overflow_logged;
 	void hw_Fill_Instances();
-	bool hw_Probe_Instance_Shaders();
+	enum { hw_probe_ok = 0, hw_probe_no_decode, hw_probe_bad_record };
+	u32 hw_Probe_Instance_Shaders();
 #endif
 	ref_constant hwc_consts;
 	ref_constant hwc_wave;
