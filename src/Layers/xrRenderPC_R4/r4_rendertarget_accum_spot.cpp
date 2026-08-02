@@ -35,12 +35,20 @@ void CRenderTarget::accum_spot(light* L)
 		}
 	}
 
+	Irect scissor_rect;
+	BOOL scissored = FALSE;
 	{
 		// setup xform
 		RCache.set_xform_world(L->m_xform);
 		RCache.set_xform_view(Device.mView);
 		RCache.set_xform_project(Device.mProject);
-		enable_scissor(L);
+		const BOOL near_intersect = enable_scissor(L);
+		// built per call so the svp replay of this light clips to its own viewport
+		if (ps_r__light_scissor && compute_light_scissor(L, near_intersect, scissor_rect))
+		{
+			RCache.set_Scissor(&scissor_rect);
+			scissored = TRUE;
+		}
 
 		// *** similar to "Carmack's reverse", but assumes convex, non intersecting objects,
 		// *** thus can cope without stencil clear with 127 lights
@@ -265,6 +273,10 @@ void CRenderTarget::accum_spot(light* L)
 	}
 
 	//CHK_DX		(HW.pDevice->SetRenderState(D3DRS_SCISSORTESTENABLE,FALSE));
+	// later passes must not inherit this light's rect
+	if (scissored)
+		RCache.set_Scissor(nullptr);
+
 	//dwLightMarkerID					+=	2;	// keep lowest bit always setted up
 	increment_light_marker();
 }

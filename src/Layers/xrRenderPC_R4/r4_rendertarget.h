@@ -527,6 +527,8 @@ public:
 	bool use_minmax_sm_this_frame();
 
 	BOOL enable_scissor(light* L); // true if intersects near plane
+	// conservative screen rect for the light volume, false leaves the draw unscissored
+	BOOL compute_light_scissor(light* L, BOOL near_intersect, Irect& R);
 
 	void disable_aniso();
 

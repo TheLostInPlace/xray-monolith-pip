@@ -406,6 +406,8 @@ extern ECORE_API int ps_r__sun_minmax_lean;
 extern ECORE_API int ps_r__dsgraph_sort_memo;
 // 0 walks the declaration layout map on every draw like today, 1 reuses the layout while the decl and signature hold
 extern ECORE_API int ps_r__dx11_layout_memo;
+// 0 draws every non-sun light over the whole frame like today, 1 clips its draws to the projected volume rect
+extern ECORE_API int ps_r__light_scissor;
 
 extern void xrRender_initconsole();
 extern BOOL xrRender_test_hw();
