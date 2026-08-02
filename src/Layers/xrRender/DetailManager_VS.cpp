@@ -48,6 +48,41 @@ void CDetailManager::hw_Load()
 	hw_Load_Shaders();
 }
 
+#ifdef USE_DX11
+// true when every element the instanced path draws declares the instance record index
+bool CDetailManager::hw_Probe_Instance_Shaders()
+{
+	static shared_str strInstBase("dt_instance_base");
+
+	for (u32 o = 0; o < objects.size(); o++)
+	{
+		Shader* S = objects[o]->shader._get();
+		if (!S)
+			continue;
+
+		// lod 0 draws the wave variants and lod 1 the still one, both go through instanced draws
+		for (u32 lod_id = 0; lod_id < 2; lod_id++)
+		{
+			ShaderElement* E = S->E[lod_id]._get();
+			if (!E)
+				continue;
+
+			for (u32 p = 0; p < E->passes.size(); p++)
+			{
+				R_constant_table* T = E->passes[p]->constants._get();
+				if (!T)
+					return false;
+
+				R_constant* C = T->get(strInstBase);
+				if (!C || 0 == (C->destination & RC_dest_vertex))
+					return false;
+			}
+		}
+	}
+	return true;
+}
+#endif
+
 void CDetailManager::hw_Load_Geom()
 {
 	// Analyze batch-size
@@ -58,6 +93,12 @@ void CDetailManager::hw_Load_Geom()
 #ifdef USE_DX11
 	// latch the instancing path for this level, an instanced draw needs one mesh copy not the baked batch
 	hw_instancing = (ps_r__detail_instancing != 0);
+	if (hw_instancing && !hw_Probe_Instance_Shaders())
+	{
+		// resolved shaders carry no instance decode, the whole level stays on the legacy loop
+		hw_instancing = false;
+		Msg("! [DETAILS] instancing shaders missing, legacy path");
+	}
 	hw_overflow_logged = false;
 	const u32 dwCopies = hw_instancing ? 1 : hw_BatchSize;
 #else
@@ -213,7 +254,7 @@ void CDetailManager::hw_Load_Geom()
 		R_CHK(HW.pDevice->CreateShaderResourceView(hw_instanceVB, &sdesc, &hw_instanceSRV));
 
 		hw_frame_filled = u32(-1);
-		Msg("* [DETAILS] InstanceVB(%dK), stride(%d), cap(%d), slot_avg(%.1f), slots(%d)",
+		Msg("* [DETAILS] InstanceVB(%dK), stride(%d), cap(%d), slot_avg(%.1f), slots(%d), shaders(ok)",
 		    (hw_instance_cap * hw_InstanceStride) / 1024, u32(hw_InstanceStride), hw_instance_cap, per_slot,
 		    slots_used);
 	}
