@@ -220,6 +220,8 @@ void CDetailManager::hw_Load_Geom()
 	{
 		hw_inst_base.assign(3 * objects.size(), 0);
 		hw_inst_count.assign(3 * objects.size(), 0);
+		hw_run_base.assign(3 * objects.size(), 0);
+		hw_run_count.assign(3 * objects.size(), 0);
 
 		// expected instances per populated slot from the packed palette coverage over the decompress grid
 		const u32 grid = u32(iCeil(dm_slot_size / ps_r__Detail_density)) + 1;
@@ -289,6 +291,10 @@ void CDetailManager::hw_Unload()
 	_RELEASE(hw_instanceVB);
 	hw_inst_base.clear();
 	hw_inst_count.clear();
+	hw_run_base.clear();
+	hw_run_count.clear();
+	hw_run_slots.clear();
+	hw_run_frustum = nullptr;
 	hw_instance_cap = 0;
 	hw_frame_filled = u32(-1);
 #endif

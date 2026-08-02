@@ -255,12 +255,17 @@ void CDetailManager::hw_Fill_Instances()
 	const u32 nObj = (u32)objects.size();
 	u32 instTotal = 0;
 	BOOL bOverflow = FALSE;
+	const bool runs = (ps_r__sun_grass_runs != 0);
+	if (runs)
+		hw_run_slots.clear();
 	for (u32 vid = 0; vid < 3; vid++)
 	{
 		vis_list& list = m_visibles[vid];
 		for (u32 O = 0; O < nObj; O++)
 		{
 			hw_inst_base[vid * nObj + O] = instTotal;
+			if (runs)
+				hw_run_base[vid * nObj + O] = (u32)hw_run_slots.size();
 
 			xr_vector<SlotItemVec*>& vis = list[O];
 			xr_vector<SlotItemVec*>::iterator _vI = vis.begin();
@@ -268,6 +273,14 @@ void CDetailManager::hw_Fill_Instances()
 			for (; _vI != _vE; _vI++)
 			{
 				SlotItemVec* items = *_vI;
+				// every item of a vec belongs to one slot so the head names that slot's sphere
+				if (runs && !items->empty())
+				{
+					SlotSphere sph;
+					sph.center = items->front()->position;
+					sph.radius = items->front()->radius;
+					hw_run_slots.push_back(sph);
+				}
 				SlotItemVecIt _iI = items->begin();
 				SlotItemVecIt _iE = items->end();
 				for (; _iI != _iE; _iI++)
@@ -304,6 +317,8 @@ void CDetailManager::hw_Fill_Instances()
 					break;
 			}
 			hw_inst_count[vid * nObj + O] = instTotal - hw_inst_base[vid * nObj + O];
+			if (runs)
+				hw_run_count[vid * nObj + O] = (u32)hw_run_slots.size() - hw_run_base[vid * nObj + O];
 
 			// UpdateVisibleM rebuilds the lists on the next frame
 			if (!vis.empty())
@@ -320,6 +335,35 @@ void CDetailManager::hw_Fill_Instances()
 	}
 
 	hw_frame_filled = Device.dwFrame;
+}
+
+void CDetailManager::hw_Run_Begin(const CFrustum* F, u32 cascade)
+{
+	if (!ps_r__sun_grass_runs || !hw_instancing)
+		return;
+	hw_run_frustum = F;
+	hw_run_cascade = cascade;
+	hw_run_tested = hw_run_kept = hw_run_runs = hw_run_max = 0;
+}
+
+void CDetailManager::hw_Run_End()
+{
+	if (!hw_run_frustum)
+		return;
+	hw_run_frustum = nullptr;
+
+	if (ps_r__svp_stats)
+	{
+		svp_stats_grass_slots += hw_run_tested;
+		svp_stats_grass_keep += hw_run_kept;
+		svp_stats_grass_runs += hw_run_runs;
+		if (hw_run_max > svp_stats_grass_run_max)
+			svp_stats_grass_run_max = hw_run_max;
+	}
+
+	if ((Device.dwFrame & 255) == 0)
+		Msg("[SUN-RUNS] c%u slots %u keep %u runs %u max %u",
+		    hw_run_cascade, hw_run_tested, hw_run_kept, hw_run_runs, hw_run_max);
 }
 #endif
 
@@ -380,6 +424,32 @@ void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave
 			total += hw_inst_count[rbase + obj];
 		if (total == 0)
 			return;
+
+		// slot spheres against the cascade frustum, stretches of consecutive keeps only
+		if (hw_run_frustum && var_id != 0)
+		{
+			for (u32 O = 0; O < nObj; O++)
+			{
+				const u32 first = hw_run_base[rbase + O];
+				const u32 last = first + hw_run_count[rbase + O];
+				u32 run = 0;
+				for (u32 s = first; s < last; s++)
+				{
+					SlotSphere& sph = hw_run_slots[s];
+					++hw_run_tested;
+					if (hw_run_frustum->testSphere_dirty(sph.center, sph.radius))
+					{
+						++hw_run_kept;
+						if (++run == 1)
+							++hw_run_runs;
+						if (run > hw_run_max)
+							hw_run_max = run;
+					}
+					else
+						run = 0;
+				}
+			}
+		}
 
 		Fvector4 fade_params;
 		if (fade_distance <= -1)

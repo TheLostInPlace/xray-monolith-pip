@@ -62,6 +62,8 @@ const float		dm_fade = float(2 * dm_size) - .5f;
 #endif
 
 
+class CFrustum;
+
 class ECORE_API CDetailManager
 {
 public:
@@ -82,6 +84,7 @@ public:
 		float c_sun;
 		float distance;
 		Fvector position;
+		float radius; // slot sphere radius, position holds the same sphere's centre
 		Fvector normal;
 		float alpha;
 		float alpha_target;
@@ -244,6 +247,26 @@ public:
 	void hw_Fill_Instances();
 	enum { hw_probe_ok = 0, hw_probe_no_decode, hw_probe_bad_record };
 	u32 hw_Probe_Instance_Shaders();
+
+	// one slot sphere per visible slot behind the instance ranges, filled in the same walk order
+	struct SlotSphere
+	{
+		Fvector center;
+		float radius;
+	};
+	xr_vector<SlotSphere> hw_run_slots;
+	// where each var_id and object range sits in hw_run_slots, indexed like hw_inst_base
+	xr_vector<u32> hw_run_base;
+	xr_vector<u32> hw_run_count;
+	// cascade frustum the grass draw measures against, null everywhere else
+	const CFrustum* hw_run_frustum;
+	u32 hw_run_cascade;
+	u32 hw_run_tested;
+	u32 hw_run_kept;
+	u32 hw_run_runs;
+	u32 hw_run_max;
+	void hw_Run_Begin(const CFrustum* F, u32 cascade);
+	void hw_Run_End();
 #endif
 	ref_constant hwc_consts;
 	ref_constant hwc_wave;

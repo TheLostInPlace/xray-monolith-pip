@@ -132,6 +132,7 @@ namespace
 		float join_ms, capture_base_ms, capture_cascade_ms[3], present_ms;
 		u32 sort_calls, sort_packets;
 		u32 layout_hit, layout_miss;
+		u32 grass_slots, grass_keep, grass_runs, grass_run_max;
 		u32 detail_main_thread, hom_main_thread, hom_tested, hom_rejected;
 		u32 hom_engine, hom_res_w, hom_res_h, hom_tris_in, hom_tris_emitted;
 		u32 hom_render_us, hom_test_us, hom_disagree, hom_shadow_queries;
@@ -441,6 +442,10 @@ namespace svp_stats
 		svp_stats_sort_packets = 0;
 		svp_stats_layout_hit = 0;
 		svp_stats_layout_miss = 0;
+		svp_stats_grass_slots = 0;
+		svp_stats_grass_keep = 0;
+		svp_stats_grass_runs = 0;
+		svp_stats_grass_run_max = 0;
 		// the occlusion counters reset inside CHOM::Render, the worker can beat this call to them
 		// feed the rolling ~1s window for the spike readout, skip the first frame's null delta
 		if (fms > 0.0)
@@ -565,6 +570,10 @@ namespace svp_stats
 		d.sort_packets = svp_stats_sort_packets;
 		d.layout_hit = svp_stats_layout_hit;
 		d.layout_miss = svp_stats_layout_miss;
+		d.grass_slots = svp_stats_grass_slots;
+		d.grass_keep = svp_stats_grass_keep;
+		d.grass_runs = svp_stats_grass_runs;
+		d.grass_run_max = svp_stats_grass_run_max;
 		d.detail_main_thread = svp_stats_detail_main_thread;
 		d.hom_main_thread = svp_stats_hom_main_thread;
 		d.hom_tested = svp_stats_hom_tested;
@@ -933,6 +942,9 @@ namespace svp_stats
 				foot_emit(ptail, pt, "sun sub avg smap %.2f grass %.2f mm %.2f acc %.2f (vol %.2f) svp %.2f ms",
 					s_sec_avg[SEC_SUN_SMAP], s_sec_avg[SEC_SUN_GRASS], s_sec_avg[SEC_SUN_MINMAX],
 					s_sec_avg[SEC_SUN_ACCUM], s_sec_avg[SEC_SUN_VOL], s_sec_avg[SEC_SUN_SVP]);
+				// every cascade of the frame summed, runs near keep means one draw per slot
+				foot_emit(ptail, pt, "sun runs slots %u keep %u runs %u max %u",
+					d.grass_slots, d.grass_keep, d.grass_runs, d.grass_run_max);
 			}
 
 			// the per-category megabytes ride in the label so the row keeps the two data columns

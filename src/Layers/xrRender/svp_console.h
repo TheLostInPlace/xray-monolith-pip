@@ -96,6 +96,11 @@ extern ECORE_API u32 svp_stats_sort_calls;    // render queue sort invocations t
 extern ECORE_API u32 svp_stats_sort_packets;  // total packets sorted across those invocations
 extern ECORE_API u32 svp_stats_layout_hit;    // ApplyVertexLayout calls the layout memo can serve
 extern ECORE_API u32 svp_stats_layout_miss;   // of those, the ones that still walk the declaration map
+// grass slot spheres measured against the sun cascade frustums, summed over the cascades of one frame
+extern ECORE_API u32 svp_stats_grass_slots;   // slots tested
+extern ECORE_API u32 svp_stats_grass_keep;    // of those, the ones the frustum keeps
+extern ECORE_API u32 svp_stats_grass_runs;    // stretches of consecutive kept slots
+extern ECORE_API u32 svp_stats_grass_run_max; // longest single stretch
 // session-lifetime running totals, never reset, read by the level-load audit summary
 extern ECORE_API u32 svp_stats_detail_main_thread; // grass MT_CALC runs that fell back to the calling thread
 extern ECORE_API u32 svp_stats_hom_main_thread;    // HOM MT_RENDER runs that fell back to the calling thread

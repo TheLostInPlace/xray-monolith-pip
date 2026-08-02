@@ -106,6 +106,9 @@ CDetailManager::CDetailManager()
 	hw_instance_cap = 0;
 	hw_instancing = false;
 	hw_overflow_logged = false;
+	hw_run_frustum = nullptr;
+	hw_run_cascade = 0;
+	hw_run_tested = hw_run_kept = hw_run_runs = hw_run_max = 0;
 #endif
 	m_time_rot_1 = 0;
 	m_time_rot_2 = 0;
@@ -500,6 +503,10 @@ void CDetailManager::UpdateVisibleM()
 							Item.alpha_target = 1;
 							Item.distance = dist_sq;
 							Item.position = S.vis.sphere.P;
+#ifdef USE_DX11
+							if (ps_r__sun_grass_runs)
+								Item.radius = S.vis.sphere.R;
+#endif
 							//2							visible[vis_id][sp.id].push_back(&Item);
 						}
 					}

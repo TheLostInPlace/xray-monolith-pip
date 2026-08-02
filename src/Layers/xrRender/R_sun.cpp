@@ -354,7 +354,13 @@ void CRender::render_sun_cascade(u32 cascade_ind)
                 {
                     sun_sub_begin(SUN_SUB_GRASS);
                     Details->fade_distance = dm_fade * dm_fade * ps_ssfx_grass_shadows.y;
+#ifdef USE_DX11
+                    Details->hw_Run_Begin(&cascade.cull_frustum, cascade_ind);
+#endif
                     Details->Render();
+#ifdef USE_DX11
+                    Details->hw_Run_End();
+#endif
                     sun_sub_end(SUN_SUB_GRASS);
                 }
 
