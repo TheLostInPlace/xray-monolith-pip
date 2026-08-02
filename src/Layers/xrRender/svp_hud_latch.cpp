@@ -566,10 +566,13 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 		ax.sub(vp.objective.m_W.c, vp.eyepiece.m_W.c);
 		const float len2 = ax.square_magnitude();
 		const float tube = _sqrt(len2);
+		// the near measure runs from the live camera plane, a clip-on front sits past the objective
+		const float measure_front = _max(tube, vp.svp_front_use_m);
 		const bool objective_filter = svp_objective_hud_filter_ready();
 		u32 admit_candidates = 0;
 		u32 admit_suppressed = 0;
 		u32 admit_clipon_unresolved = 0;
+		float clipon_axial = -1.f;
 		extern int ps_r__svp_cop_diag;
 		static u32 s_hud_diag_ms = 0;
 		const bool diag = ps_r__svp_cop_diag && (Device.dwTimeGlobal - s_hud_diag_ms > 3000);
@@ -616,14 +619,14 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 			s_neardump_ms = Device.dwTimeGlobal;
 		auto fold_near = [&](const Fvector* corners, float lo, float hi)
 		{
-			if (hi <= tube)
+			if (hi <= measure_front)
 				return -1.f;
-			const float ahead = _max(lo - tube, 0.f);
+			const float ahead = _max(lo - measure_front, 0.f);
 			// a negative entry means no forward part of the box is visible, it constrains nothing
-			const float entry = svp_cone_entry(cone, corners, cone_origin, cone_axis, tube);
+			const float entry = svp_cone_entry(cone, corners, cone_origin, cone_axis, measure_front);
 			if (entry < 0.f)
 				return -1.f;
-			const float v = _max(ahead, entry - tube);
+			const float v = _max(ahead, entry - measure_front);
 			if (!_valid(v))
 				return -1.f;
 			min_axial = (min_axial < 0.f) ? v : _min(min_axial, v);
@@ -645,7 +648,7 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 			Fvector o, d;
 			inv.transform_tiny(o, cone_origin);
 			inv.transform_dir(d, cone_axis);
-			float t0 = tube, t1 = flt_max;
+			float t0 = measure_front, t1 = flt_max;
 			for (u32 i = 0; i < 3; ++i)
 			{
 				const float oc = (&o.x)[i];
@@ -857,7 +860,11 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 				if (objective_admission.reject)
 					++admit_suppressed;
 				if (objective_admission.forward)
+				{
 					++admit_clipon_unresolved;
+					if (objective_admission.axial_hi > clipon_axial)
+						clipon_axial = objective_admission.axial_hi;
+				}
 			}
 			if (diag)
 			{
@@ -971,6 +978,7 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 		{
 			auto& bus = Device.m_SecondViewport;
 			bus.svp_hud_min_axial = min_axial;
+			bus.svp_clipon_axial = clipon_axial;
 			bus.svp_hud_min_bones = measured_bones;
 			bus.svp_hud_axis_skip = axis_bones;
 			bus.svp_hud_min_frame = Device.dwFrame;
@@ -1073,8 +1081,9 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 			}
 		}
 		if (diag && objective_filter)
-			PipMsg("[SVP-ADMIT] summary candidates=%u suppressed=%u clipon-unresolved=%u front=%.1fcm frame=%u session=%u",
+			PipMsg("[SVP-ADMIT] summary candidates=%u suppressed=%u clipon=%u cliponExtent=%.1fcm front=%.1fcm frame=%u session=%u",
 				admit_candidates, admit_suppressed, admit_clipon_unresolved,
+				clipon_axial * 100.f,
 				vp.svp_front_use_m * 100.f, vp.svp_camera_frame, vp.svp_camera_session);
 		graph.clear();
 	}

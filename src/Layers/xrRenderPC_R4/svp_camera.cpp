@@ -695,11 +695,25 @@ bool svpCamera()
 		ax.normalize_safe();
 		Fvector objective_delta;
 		objective_delta.sub(params.objective.m_W.c, params.eyepiece.m_W.c);
-		const float front_use = objective_delta.dotproduct(ax);
+		const float front_use_lens = objective_delta.dotproduct(ax);
+		float front_use = front_use_lens;
+		// a clip-on ahead of the objective owns the entrance, the camera clears its far face
+		extern int ps_r__svp_clipon;
+		if (ps_r__svp_clipon && _valid(params.svp_clipon_axial)
+			&& params.svp_clipon_axial > front_use
+			&& params.svp_hud_min_frame != u32(-1)
+			&& Device.dwFrame >= params.svp_hud_min_frame
+			&& Device.dwFrame - params.svp_hud_min_frame <= 8
+			&& params.svp_hud_min_session == params.GetSVPSession()
+			&& params.svp_hud_min_epoch == params.svp_optic_epoch)
+			front_use = params.svp_clipon_axial + R_VIEWPORT_NEAR;
 		params.svp_front_use_m = (_valid(front_use) && front_use > EPS) ? front_use : 0.f;
 		if (params.svp_front_use_m > EPS)
 		{
 			m_W_svpcam.c.set(params.objective.m_W.c);
+			// the camera slides up the axis when the entrance sits past the objective lens
+			if (front_use > front_use_lens + EPS)
+				m_W_svpcam.c.mad(ax, front_use - front_use_lens);
 			near_plane = svp_auto_near(params, fNearPlane, near_min_axial, near_manual, near_fresh);
 			params.svp_camera_domain = CSecondVPParams::camera_objective;
 

@@ -83,6 +83,7 @@ public:
 	// pip nearest drawn weapon extent ahead of the objective (m), published by the svp hud drain and
 	// read by the next frame's objective camera, -1 = nothing ahead, 0 = geometry reaches the plane
 	float svp_hud_min_axial = -1.f;
+	float svp_clipon_axial = -1.f; // far extent of a body ahead of the objective (m), -1 = none
 	u32 svp_hud_min_bones = 0; // bones the derive actually measured, 0 = whole-visual box path
 	u32 svp_hud_axis_skip = 0; // bones excluded because the sight axis passes through their box
 	u32 svp_hud_min_frame = u32(-1);

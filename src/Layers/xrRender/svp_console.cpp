@@ -137,6 +137,7 @@ float ps_r__svp_nvg_sensitivity = 1.0f; // svp NVG bleach onset sensitivity, hig
 int ps_r__svp_nvg_objective = 1; // svp lens draws the centered tube class so wearer mask furniture stays off the glass
 static int s_svp_compat_hud_full = 2;
 int ps_r__svp_weapon_continuity = 1; // svp same frame weapon pose and entrance pupil camera
+int ps_r__svp_clipon = 1; // svp a clip-on ahead of the objective owns the entrance (0 = lens pair front)
 static int s_svp_compat_ray_transfer = 2;
 int ps_r__svp_optic_body_suppress = 1; // svp omit the housing that contains the objective plane
 static int s_svp_compat_near_pupil = 0;
@@ -327,6 +328,7 @@ void svp_console_init()
 	CMD4(CCC_Integer, "r__svp_nvg_objective", &ps_r__svp_nvg_objective, 0, 1);
 	CMD4(CCC_SvpFixedInteger, "r__svp_hud_full", &s_svp_compat_hud_full, 0, 2);
 	CMD4(CCC_Integer, "r__svp_weapon_continuity", &ps_r__svp_weapon_continuity, 0, 1);
+	CMD4(CCC_Integer, "r__svp_clipon", &ps_r__svp_clipon, 0, 1);
 	CMD4(CCC_SvpFixedInteger, "r__svp_ray_transfer", &s_svp_compat_ray_transfer, 0, 2);
 	CMD4(CCC_SvpFixedInteger, "r__svp_optic_body_suppress", &ps_r__svp_optic_body_suppress, 0, 1);
 	CMD4(CCC_SvpFixedInteger, "r__svp_near_pupil", &s_svp_compat_near_pupil, 0, 1);
