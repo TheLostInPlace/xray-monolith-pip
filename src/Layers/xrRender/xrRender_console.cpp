@@ -1659,7 +1659,7 @@ void xrRender_initconsole()
 	CMD3(CCC_Token, "r3_msaa_alphatest", &ps_r3_msaa_atest, qmsaa__atest_token);
 	CMD3(CCC_Token, "r3_minmax_sm", &ps_r3_minmax_sm, qminmax_sm_token);
 
-	CMD3(CCC_Mask, "r__fast_details_update" ,&ps_r2_ls_flags, R2FLAG_FAST_DETAILS_UPDATE);
+	CMD3(CCC_Mask, "r__fast_details_update", &ps_r2_ls_flags_ext, R2FLAGEXT_FAST_DETAILS_UPDATE);
 
 #ifdef DETAIL_RADIUS
 	CMD4(CCC_detail_radius, "r__detail_radius", &ps_r__detail_radius, 0, 250);

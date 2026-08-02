@@ -422,7 +422,7 @@ void CDetailManager::UpdateVisibleM()
 						}
 					}
 
-					if(ps_r2_ls_flags.test(R2FLAG_FAST_DETAILS_UPDATE))
+					if(ps_r2_ls_flags_ext.test(R2FLAGEXT_FAST_DETAILS_UPDATE))
 						S.frame			= RDEVICE.dwFrame+1;
 					else
 						S.frame			= RDEVICE.dwFrame+Random.randI(15,30);
