@@ -380,8 +380,18 @@ Accepted controller bounds are:
 | `s3ds_pupil_field_low`, `s3ds_pupil_field_high` | `0`-`6` |
 | `s3ds_transmission`, `s3ds_twilight_strength` | `0`-`1` |
 | `scope_zero_m` | `0`-`1000` |
+| `eye_coupling` | `0` or `1` |
 
 An out-of-range value rejects the complete typed profile, so do not depend on silent clamping.
+
+`eye_coupling` classifies the viewing model: `1` for an eyepiece image that follows the eye and
+`0` for a rigid digital panel such as a thermal or sensor display. The bound physical record's
+`optic_class` selects the default, and a runtime-section line overrides it. A rigid panel keeps
+eyepiece parallax and tunneling off while its overlay owns the image; a true ocular in front of a
+tube, such as the 1PN23, should carry an authored `eye_coupling = 1`. An optic that resolves no
+record and no authored line falls back to the `[default]` profile, so a display-type optic from a
+weapon pack needs either a `display` physical record or its own `eye_coupling = 0` line to stop
+its panel swimming with the eye.
 
 ### Hybrid magnifiers
 
@@ -474,7 +484,9 @@ With `r__svp_diag 1`, an engaged state should report
 `[SVP-HYBRID] state=drawn`. An off or flipped state should report
 `hybrid=false authored=true` and must not produce a successful hybrid draw. Depending on whether
 that state still activates an objective viewport, its renderer state may be `not_hybrid`,
-`inactive`, or `wrong_domain`. `empty` means the scope or reflex capture map has no candidates.
+`inactive`, or `wrong_domain`. A live thermal display reports `thermal`: the reflex capture is
+skipped by design while the sensor overlay owns the image. `empty` means the scope or reflex
+capture map has no candidates.
 `no_draw` means candidates existed but none passed the visibility, ownership, relation, projection,
 or draw checks. `stale_identity` or `stale_type` points to a runtime identity or reticle-state
 mismatch. Use `svp_dump_optic` to inspect the accepted scope, reticle type, physical profile, and
@@ -486,6 +498,11 @@ The engine API and the published profile table have separate versions:
 
 - typed API version `2`;
 - profile table schema version `1`.
+
+API version `3` with profile table schema `3` is in development as a clean break. The exact-version
+handshake below is the protection: a version-`2` publisher declines the handshake on a version-`3`
+engine and stays inert instead of misparsing. Target version `2` until a published build ships the
+new contract.
 
 Probe global functions with `rawget`, require an exact API version, and use `pcall`. Never infer
 support from a console variable or call fork-only exports unconditionally.
@@ -576,6 +593,25 @@ Enable `print_dltx_warnings 1` while authoring. Then use `r__svp_diag 1` and `sv
 confirm the active identity, canonical spec, resolved values, and the winning DLTX source. The
 runtime also writes `[PIP-OPTIC]`, `[PIP-OPTIC-ZOOM]`, `[PIP-OPTIC-GEOM]`, and `[SVP-CONFIG]`
 lines for concrete bug reports.
+
+### Feature status
+
+Everything above describes the current published build. The table below marks the edges of the
+implementation so an integration does not depend on behavior that is still moving. In development
+means the work exists in the development branch and ships with a future build; designed means the
+behavior is specified but not yet built.
+
+| Area | Status |
+| --- | --- |
+| DLTX roots, physical records, aliases, controller tuning, hybrid states | Stable and documented above |
+| Typed Lua API version `2`, profile table schema `1` | Stable contract of the published build |
+| Typed API version `3`, profile table schema `3` | In development as a clean break: a field-descriptor table with introspection (`svp_optic_api_info`, `svp_optic_api_describe`), structured apply results, two-phase publish, and magnification ladders owned by the optic context in physical magnification units |
+| Ring-dial magnification stops | In development: a variable optic with a rotating ring dial steps on integer magnifications so the needle lands on the engraved digits |
+| Scopeless optics on the typed route | In development: binoculars and other section-only identities resolve through the weapon section to the `[default]` profile |
+| In-game profile editor | In development: a schema-driven live editor that writes a loose user override file instead of mod data |
+| `r__svp_roll_stabilize` | Reserved and currently inert; reticle cant leveling is the planned behavior |
+| Lens-physics effects | Designed, not implemented: field-dependent distortion, eyepiece sun glare, and per-scope field-curvature authoring |
+| Activation without a typed config | Known limitation: on an API-enabled build an optic that never resolves a typed config does not activate the second viewport; give every optic a resolvable identity, and note the `[default]` tier covers section-only optics |
 
 ## Reporting problems
 
