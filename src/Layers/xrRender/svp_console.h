@@ -98,6 +98,19 @@ extern ECORE_API u32 svp_stats_hom_main_thread;    // HOM MT_RENDER runs that fe
 extern ECORE_API u32 svp_stats_hom_tested;         // detail slots tested against HOM
 extern ECORE_API u32 svp_stats_hom_rejected;       // of those, how many HOM rejected
 
+// occlusion engine selection, latched once per frame at the top of CHOM::Render
+extern ECORE_API int ps_r__hom_engine;   // 0 legacy raster, 1 masked rasterizer, 2 both with legacy answering
+extern ECORE_API int ps_r__hom_moc_res;  // masked buffer preset, 0 256x144, 1 384x216, 2 512x288
+extern ECORE_API u32 svp_stats_hom_engine;         // engine id the last latch picked
+extern ECORE_API u32 svp_stats_hom_res_w;          // masked buffer width, zero while the engine is off
+extern ECORE_API u32 svp_stats_hom_res_h;
+extern ECORE_API u32 svp_stats_hom_tris_in;        // occluders reaching the emit loop this frame
+extern ECORE_API u32 svp_stats_hom_tris_emitted;   // of those, the ones that passed the facing test
+extern ECORE_API u32 svp_stats_hom_render_us;      // occluder render span, both engines under shadow compare
+extern ECORE_API u64 svp_stats_hom_test_ticks;     // query time, sampled only while the breakdown panel is up
+extern ECORE_API u32 svp_stats_hom_disagree;       // session total of shadow compare mismatches
+extern ECORE_API u32 svp_stats_hom_shadow_queries; // session total of shadow compare queries
+
 // optics derivation
 extern ECORE_API float ps_r__svp_obj_dist;
 extern ECORE_API float ps_r__svp_obj_size;

@@ -801,6 +801,9 @@
     <ClCompile Include="..\xrRender\occ_engine_legacy.cpp">
       <Filter>Visibility\HOM Occlusion</Filter>
     </ClCompile>
+    <ClCompile Include="..\xrRender\occ_engine_moc.cpp">
+      <Filter>Visibility\HOM Occlusion</Filter>
+    </ClCompile>
     <ClCompile Include="..\xrRender\occRasterizer_core.cpp">
       <Filter>Visibility\HOM Occlusion</Filter>
     </ClCompile>

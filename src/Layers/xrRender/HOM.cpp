@@ -6,6 +6,7 @@
 #include "HOM.h"
 #include "occRasterizer.h"
 #include "occ_engine.h"
+#include "svp_console.h"
 #include "../../xrEngine/GameFont.h"
 
 #include "../../xrCore/profiler.h"
@@ -30,8 +31,6 @@ void __stdcall CHOM::MT_RENDER()
 
 	if (MT_frame_rendered.load(std::memory_order_acquire) != current_frame)
 	{
-		extern int ps_r__svp_stats;
-		extern u32 svp_stats_hom_main_thread;
 		if (ps_r__svp_stats && GetCurrentThreadId() == m_mt_render_registration_tid)
 			++svp_stats_hom_main_thread; // ran on the queuing thread, the worker task never picked it up
 
@@ -54,6 +53,9 @@ CHOM::CHOM()
     MT_frame_rendered.store(0, std::memory_order_relaxed);
     m_mt_render_registration_tid = 0;
 	m_occ_mode = 0;
+	m_occ_mode_logged = -1;
+	m_occ_res_logged = -1;
+	m_occ_time_queries = false;
 	m_occ_raster = &occ_engine_legacy();
 	m_occ_masked = nullptr;
 	m_occ_query = m_occ_raster;
@@ -146,6 +148,7 @@ void CHOM::Load()
 	m_pModel = xr_new<CDB::MODEL>();
 	m_pModel->build(CL.getV(), int(CL.getVS()), CL.getT(), int(CL.getTS()));
 	bEnabled = TRUE;
+	occ_engine_moc_reserve(u32(CL.getTS()));
 	S->close();
 	FS.r_close(fs);
 
@@ -162,6 +165,7 @@ void CHOM::Unload()
 	xr_delete(m_pModel);
 	xr_free(m_pTris);
 	bEnabled = FALSE;
+	occ_engine_moc_release();
 
 	auto I = std::find(Device.seqParallelRender.begin(), Device.seqParallelRender.end(), xr_make_delegate(this, &CHOM::MT_RENDER));
 	if (I != Device.seqParallelRender.end())
@@ -215,6 +219,12 @@ void CHOM::Render_DB(CFrustum& base)
 	std::sort(it, end, pred_fb(m_pTris, COP));
 
 	u32 _frame = Device.dwFrame;
+	const bool tally = (ps_r__svp_stats != 0);
+	if (tally)
+	{
+		svp_stats_hom_tris_in = u32(end - it);
+		svp_stats_hom_tris_emitted = 0;
+	}
 #ifdef DEBUG
 	tris_in_frame				= xrc.r_count();
 #endif
@@ -233,6 +243,8 @@ void CHOM::Render_DB(CFrustum& base)
 				T.skip = next;
 			continue;
 		}
+		if (tally)
+			++svp_stats_hom_tris_emitted;
 
 		// Access to triangle vertices
 		CDB::TRI& t = m_pModel->get_tris()[it->id];
@@ -252,38 +264,91 @@ void CHOM::Render_DB(CFrustum& base)
 }
 
 // picks this frame's engines once, no query ever reads the request
-void CHOM::latch_engine()
+void CHOM::latch_engine(float near_w)
 {
-	m_occ_mode = 0;
-	m_occ_raster = &occ_engine_legacy();
-	m_occ_masked = nullptr;
-	m_occ_query = m_occ_raster;
+	const int mode = (ps_r__hom_engine < 0) ? 0 : ((ps_r__hom_engine > 2) ? 2 : ps_r__hom_engine);
+	const int res = (ps_r__hom_moc_res < 0) ? 0 : ((ps_r__hom_moc_res > 2) ? 2 : ps_r__hom_moc_res);
+
+	m_occ_mode = mode;
+	m_occ_time_queries = (ps_r__svp_stats >= 2);
+	m_occ_raster = (1 == mode) ? nullptr : &occ_engine_legacy();
+	m_occ_masked = (0 == mode) ? nullptr : &occ_engine_moc();
+	m_occ_query = (1 == mode) ? m_occ_masked : m_occ_raster;
+
+	u32 rw = 0, rh = 0;
+	if (m_occ_masked)
+	{
+		occ_engine_moc_set_res(res);
+		occ_engine_moc_preset_size(res, rw, rh);
+	}
+	svp_stats_hom_engine = u32(mode);
+	svp_stats_hom_res_w = rw;
+	svp_stats_hom_res_h = rh;
+
+	if (mode != m_occ_mode_logged || res != m_occ_res_logged)
+	{
+		m_occ_mode_logged = mode;
+		m_occ_res_logged = res;
+		Msg("* [MOC] engine %d res %ux%u near %.3f", mode, rw, rh, near_w);
+	}
 }
 
 void CHOM::Render(CFrustum& base)
 {
 	if (!bEnabled) return;
 
-	latch_engine();
-
-	Device.Statistic->RenderCALC_HOM.Begin();
 	// clip space near from the projection, w carries view z under it
 	const float pz = -Device.mProject._33;
 	const float near_w = (_abs(pz) > EPS) ? (Device.mProject._43 / pz) : 0.f;
+	latch_engine(near_w);
+
+	Device.Statistic->RenderCALC_HOM.Begin();
+	const u64 t0 = CPU::QPC();
 	if (m_occ_raster) m_occ_raster->begin_frame(Device.mFullTransform, Device.vCameraPosition, near_w);
 	if (m_occ_masked) m_occ_masked->begin_frame(Device.mFullTransform, Device.vCameraPosition, near_w);
 	Render_DB(base);
 	if (m_occ_raster) m_occ_raster->end_frame();
 	if (m_occ_masked) m_occ_masked->end_frame();
+	svp_stats_hom_render_us = u32((CPU::QPC() - t0) * 1000000ull / CPU::qpc_freq);
 	MT_frame_rendered.store(Device.dwFrame, std::memory_order_release);
 	Device.Statistic->RenderCALC_HOM.End();
+}
+
+// shadow compare bookkeeping, legacy answers and the masked result only feeds the divergence tally
+ICF void hom_shadow_note(BOOL primary, BOOL other)
+{
+	++svp_stats_hom_shadow_queries;
+	if (!!primary != !!other)
+		++svp_stats_hom_disagree;
+}
+
+BOOL CHOM::query_box(const Fbox& B)
+{
+	const u64 t0 = m_occ_time_queries ? CPU::QPC() : 0;
+	BOOL result = m_occ_query->test_box(B);
+	if (2 == m_occ_mode)
+		hom_shadow_note(result, m_occ_masked->test_box(B));
+	if (m_occ_time_queries)
+		svp_stats_hom_test_ticks += CPU::QPC() - t0;
+	return result;
+}
+
+BOOL CHOM::query_poly(const Fvector* v, u32 n)
+{
+	const u64 t0 = m_occ_time_queries ? CPU::QPC() : 0;
+	BOOL result = m_occ_query->test_poly(v, n);
+	if (2 == m_occ_mode)
+		hom_shadow_note(result, m_occ_masked->test_poly(v, n));
+	if (m_occ_time_queries)
+		svp_stats_hom_test_ticks += CPU::QPC() - t0;
+	return result;
 }
 
 BOOL CHOM::visible(Fbox3& B)
 {
 	if (!bEnabled) return TRUE;
 	if (B.contains(Device.vCameraPosition)) return TRUE;
-	return m_occ_query->test_box(B);
+	return query_box(B);
 }
 
 BOOL CHOM::visible(Fbox2& B, float depth)
@@ -314,7 +379,7 @@ BOOL CHOM::visible(vis_data& vis)
 #ifdef DEBUG
 	Device.Statistic->RenderCALC_HOM.Begin	();
 #endif
-	BOOL result = m_occ_query->test_box(vis.box);
+	BOOL result = query_box(vis.box);
 	u32 delay = 1;
 	if (result)
 	{
@@ -341,7 +406,7 @@ BOOL CHOM::visible(vis_data& vis)
 BOOL CHOM::visible(sPoly& P)
 {
 	if (!bEnabled) return TRUE;
-	return m_occ_query->test_poly(&P.front(), P.size());
+	return query_poly(&P.front(), P.size());
 }
 
 void CHOM::Disable()

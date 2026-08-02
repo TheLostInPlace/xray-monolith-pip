@@ -50,6 +50,15 @@ extern u32 svp_stats_detail_main_thread;
 extern u32 svp_stats_hom_main_thread;
 extern u32 svp_stats_hom_tested;
 extern u32 svp_stats_hom_rejected;
+// occlusion engine readout, the id and buffer size come from the per-frame latch
+extern u32 svp_stats_hom_engine;
+extern u32 svp_stats_hom_res_w;
+extern u32 svp_stats_hom_res_h;
+extern u32 svp_stats_hom_tris_in;
+extern u32 svp_stats_hom_tris_emitted;
+extern u32 svp_stats_hom_render_us;
+extern u64 svp_stats_hom_test_ticks;
+extern u32 svp_stats_hom_disagree;
 // live screen-space pass configuration, defined in xrRender_console.cpp
 extern Fvector4 ps_ssfx_ao;
 extern Fvector4 ps_ssfx_il;
@@ -115,6 +124,8 @@ namespace
 		u32 sort_calls, sort_packets;
 		u32 layout_hit, layout_miss;
 		u32 detail_main_thread, hom_main_thread, hom_tested, hom_rejected;
+		u32 hom_engine, hom_res_w, hom_res_h, hom_tris_in, hom_tris_emitted;
+		u32 hom_render_us, hom_test_us, hom_disagree;
 	};
 
 	// pipe-panel quantities that carry a rolling average, order matches the rows
@@ -389,6 +400,13 @@ namespace svp_stats
 		svp_stats_sort_packets = 0;
 		svp_stats_layout_hit = 0;
 		svp_stats_layout_miss = 0;
+		svp_stats_hom_engine = 0;
+		svp_stats_hom_res_w = 0;
+		svp_stats_hom_res_h = 0;
+		svp_stats_hom_tris_in = 0;
+		svp_stats_hom_tris_emitted = 0;
+		svp_stats_hom_render_us = 0;
+		svp_stats_hom_test_ticks = 0;
 		// feed the rolling ~1s window for the spike readout, skip the first frame's null delta
 		if (fms > 0.0)
 		{
@@ -516,6 +534,14 @@ namespace svp_stats
 		d.hom_main_thread = svp_stats_hom_main_thread;
 		d.hom_tested = svp_stats_hom_tested;
 		d.hom_rejected = svp_stats_hom_rejected;
+		d.hom_engine = svp_stats_hom_engine;
+		d.hom_res_w = svp_stats_hom_res_w;
+		d.hom_res_h = svp_stats_hom_res_h;
+		d.hom_tris_in = svp_stats_hom_tris_in;
+		d.hom_tris_emitted = svp_stats_hom_tris_emitted;
+		d.hom_render_us = svp_stats_hom_render_us;
+		d.hom_test_us = u32(svp_stats_hom_test_ticks * 1000000ull / CPU::qpc_freq);
+		d.hom_disagree = svp_stats_hom_disagree;
 		// the backend zeroes stat once per frame in OnFrameBegin so this is already a per-frame count
 		d.rtsw = RCache.stat.target_rt;
 		d.smap = RImplementation.o.smapsize;
@@ -814,7 +840,7 @@ namespace svp_stats
 			const double untracked = d.sec[SEC_FRAME].gpu_ms - tracked;
 			const double untracked_avg = s_sec_avg[SEC_FRAME] - tracked_avg;
 
-			char ptail[14][96];
+			char ptail[16][96];
 			u32 pt = 0;
 			xr_sprintf(ptail[pt++], "smap %u", d.smap);
 			xr_sprintf(ptail[pt++], "ao %.1f q%d  il %.1f q%d  ssr %.1f q%d",
@@ -838,6 +864,8 @@ namespace svp_stats
 				xr_sprintf(ptail[pt++], "layout %u/%u", d.layout_hit, d.layout_hit + d.layout_miss);
 				xr_sprintf(ptail[pt++], "dtmt main dm %u hom %u", d.detail_main_thread, d.hom_main_thread);
 				xr_sprintf(ptail[pt++], "hom rej %u/%u", d.hom_rejected, d.hom_tested);
+				xr_sprintf(ptail[pt++], "occ e%u tris %u/%u rnd %uus tst %uus dis %u",
+					d.hom_engine, d.hom_tris_emitted, d.hom_tris_in, d.hom_render_us, d.hom_test_us, d.hom_disagree);
 				xr_sprintf(ptail[pt++], "sun gpu c0 %.2f c1 %.2f c2 %.2f ms",
 					d.sec[SEC_SUN_C0].gpu_ms, d.sec[SEC_SUN_C1].gpu_ms, d.sec[SEC_SUN_C2].gpu_ms);
 			}

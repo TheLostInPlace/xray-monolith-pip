@@ -14,6 +14,7 @@
 #include "../xrRenderDX10/3DFluid/dx103DFluidVolume.h"
 
 #include "../xrRender/FHierrarhyVisual.h"
+#include "../xrRender/occ_engine.h"
 
 #pragma warning(push)
 #pragma warning(disable:4995)
@@ -383,8 +384,13 @@ void CRender::level_Load(IReader* fs)
 		extern u32 svp_stats_hom_main_thread;
 		extern u32 svp_stats_hom_tested;
 		extern u32 svp_stats_hom_rejected;
-		PipMsg("[SVP-AUDIT] detail_main_thread=%u hom_main_thread=%u hom_tested=%u hom_rejected=%u",
-			svp_stats_detail_main_thread, svp_stats_hom_main_thread, svp_stats_hom_tested, svp_stats_hom_rejected);
+		extern int ps_r__hom_engine;
+		extern int ps_r__hom_moc_res;
+		u32 occ_w = 0, occ_h = 0;
+		occ_engine_moc_preset_size(ps_r__hom_moc_res, occ_w, occ_h);
+		PipMsg("[SVP-AUDIT] detail_main_thread=%u hom_main_thread=%u hom_tested=%u hom_rejected=%u hom_engine=%d hom_res=%ux%u",
+			svp_stats_detail_main_thread, svp_stats_hom_main_thread, svp_stats_hom_tested, svp_stats_hom_rejected,
+			ps_r__hom_engine, occ_w, occ_h);
 	}
 
 	// Lights

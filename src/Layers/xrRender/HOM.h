@@ -28,11 +28,16 @@ private:
 
 	// latched once per frame under the render guard, queries never re-read the request
 	int m_occ_mode;
+	int m_occ_mode_logged;
+	int m_occ_res_logged;
+	bool m_occ_time_queries;  // query timing costs a clock read so the breakdown panel arms it
 	IOccEngine* m_occ_query;  // the engine every visible() answers from
 	IOccEngine* m_occ_raster; // legacy raster when this frame renders it, null otherwise
 	IOccEngine* m_occ_masked; // masked rasterizer when this frame renders it, null otherwise
 
-	void latch_engine();
+	void latch_engine(float near_w);
+	BOOL query_box(const Fbox& B);
+	BOOL query_poly(const Fvector* v, u32 n);
 	void Render_DB(CFrustum& base);
 public:
 	void Load();
