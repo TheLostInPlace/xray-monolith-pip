@@ -228,6 +228,20 @@ public:
 	u32 hw_BatchSize;
 	ID3DVertexBuffer* hw_VB;
 	ID3DIndexBuffer* hw_IB;
+#ifdef USE_DX11
+	// one instance record is 3x4 transform rows plus half4 terrain normal + alpha and half4 sun + hemi
+	enum { hw_InstanceStride = 64 };
+	ID3DBuffer* hw_instanceVB;
+	ID3DShaderResourceView* hw_instanceSRV;
+	// per var_id per object ranges into the instance buffer, indexed vid * objects.size() + O
+	xr_vector<u32> hw_inst_base;
+	xr_vector<u32> hw_inst_count;
+	u32 hw_frame_filled;
+	u32 hw_instance_cap;
+	bool hw_instancing; // latched from r__detail_instancing at level load
+	bool hw_overflow_logged;
+	void hw_Fill_Instances();
+#endif
 	ref_constant hwc_consts;
 	ref_constant hwc_wave;
 	ref_constant hwc_wind;
