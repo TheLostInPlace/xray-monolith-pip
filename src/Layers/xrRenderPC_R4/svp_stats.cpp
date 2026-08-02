@@ -41,6 +41,7 @@ extern u32 svp_stats_cb_flush_map;
 extern float svp_stats_join_ms;
 extern float svp_stats_capture_base_ms;
 extern float svp_stats_capture_cascade_ms[3];
+extern float svp_stats_present_ms;
 extern u32 svp_stats_sort_calls;
 extern u32 svp_stats_sort_packets;
 extern u32 svp_stats_detail_main_thread;
@@ -108,7 +109,7 @@ namespace
 		u32 copies, copy_kb, rtsw, shadow, tiny, smap;
 		u32 copy_kb_cat[3];
 		u32 state_apply, sampler_set, cb_flush, cb_flush_map;
-		float join_ms, capture_base_ms, capture_cascade_ms[3];
+		float join_ms, capture_base_ms, capture_cascade_ms[3], present_ms;
 		u32 sort_calls, sort_packets;
 		u32 detail_main_thread, hom_main_thread, hom_tested, hom_rejected;
 	};
@@ -380,6 +381,7 @@ namespace svp_stats
 		svp_stats_join_ms = 0.f;
 		svp_stats_capture_base_ms = 0.f;
 		svp_stats_capture_cascade_ms[0] = svp_stats_capture_cascade_ms[1] = svp_stats_capture_cascade_ms[2] = 0.f;
+		svp_stats_present_ms = 0.f;
 		svp_stats_sort_calls = 0;
 		svp_stats_sort_packets = 0;
 		// feed the rolling ~1s window for the spike readout, skip the first frame's null delta
@@ -500,6 +502,7 @@ namespace svp_stats
 		d.capture_base_ms = svp_stats_capture_base_ms;
 		for (u32 i = 0; i < 3; ++i)
 			d.capture_cascade_ms[i] = svp_stats_capture_cascade_ms[i];
+		d.present_ms = svp_stats_present_ms;
 		d.sort_calls = svp_stats_sort_calls;
 		d.sort_packets = svp_stats_sort_packets;
 		d.detail_main_thread = svp_stats_detail_main_thread;
@@ -589,6 +592,7 @@ namespace svp_stats
 		// bound verdict on its own row so it stays legible against the moving numbers
 		xr_sprintf(foot[nf++], "%s", bound);
 		xr_sprintf(foot[nf++], "1s min %.2f avg %.2f max %.2f", ft_min, ft_avg, ft_max);
+		xr_sprintf(foot[nf++], "present %.2f ms", d.present_ms);
 		xr_sprintf(foot[nf++], "svp %ux%u mag %.1fx epoch %u res %u", d.svp_w, d.svp_h, d.svp_mag, d.svp_epoch, d.optic_resolve);
 		xr_sprintf(foot[nf++], "res learn %.0f apply %.0f side %u grow %s", d.svp_disc_learned, d.svp_disc, d.svp_w, d.svp_grow ? "on" : "off");
 		xr_sprintf(foot[nf++], "cull ssa %u rej %u i%u hud %u  lights m%u s%u", d.ssa_culled, d.cull_reject, d.cull_reject_ident, d.hud_cull_reject, d.lights_mirrored, d.lights_skipped);

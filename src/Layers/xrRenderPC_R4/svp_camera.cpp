@@ -1168,6 +1168,11 @@ bool svpCamera()
 				};
 				st_of("ssfx_taa", a_taa); st_of("r2_aa", a_aa); st_of("r2_aa_kernel", a_ker);
 				PipMsg("[SVP-CFG] aa ssfx_taa=%s r2_aa=%s r2_aa_kernel=%s", a_taa, a_aa, a_ker);
+				// present pipeline isn't an r__svp_/g_svp_/s3ds_ cvar so the walk above never prints it
+				extern int ps_framelimiter;
+				extern int ps_r__swapchain_buffers;
+				PipMsg("[SVP-CFG] swapchain_buffers=%d present_interval=%d framelimit=%d",
+					ps_r__swapchain_buffers, psDeviceFlags.test(rsVSync) ? 1 : 0, ps_framelimiter);
 			}
 
 			// pip [SVP-FILES] shader source truth: where each scope file resolves from (loose or which

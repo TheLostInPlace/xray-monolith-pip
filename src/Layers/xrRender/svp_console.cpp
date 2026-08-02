@@ -194,6 +194,7 @@ u32 svp_stats_cb_flush_map = 0;
 float svp_stats_join_ms = 0.f;
 float svp_stats_capture_base_ms = 0.f;
 float svp_stats_capture_cascade_ms[3] = { 0.f, 0.f, 0.f };
+float svp_stats_present_ms = 0.f;
 u32 svp_stats_sort_calls = 0;
 u32 svp_stats_sort_packets = 0;
 u32 svp_stats_detail_main_thread = 0;

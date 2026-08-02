@@ -87,6 +87,7 @@ extern ECORE_API u32 svp_stats_cb_flush_map;  // of those, how many actually map
 extern ECORE_API float svp_stats_join_ms;         // secondary task join wait, ms, this frame
 extern ECORE_API float svp_stats_capture_base_ms; // main graph traverse plus capture, cpu ms, this frame
 extern ECORE_API float svp_stats_capture_cascade_ms[3]; // per sun cascade traverse plus capture, cpu ms
+extern ECORE_API float svp_stats_present_ms;  // swapchain Present wall clock, ms, this frame
 extern ECORE_API u32 svp_stats_sort_calls;    // render queue sort invocations this frame
 extern ECORE_API u32 svp_stats_sort_packets;  // total packets sorted across those invocations
 // session-lifetime running totals, never reset, read by the level-load audit summary
