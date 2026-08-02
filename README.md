@@ -253,7 +253,7 @@ already works through the normal engine, then layer PiP data onto it:
 
 MAS-specific tables, addon registries, scope groups, and base-section names remain MAS concerns;
 traditional indexed attachments should keep their own `scopes`, `scope_name`, and derived weapon
-sections. PiP consumes the final runtime identity and visible HUD geometry—it does not manufacture
+sections. PiP consumes the final runtime identity and visible HUD geometry; it does not manufacture
 either from an LTX name.
 
 Before publishing, verify that each runtime state has a valid `hud` section, that the HUD has an
@@ -392,6 +392,12 @@ tube, such as the 1PN23, should carry an authored `eye_coupling = 1`. An optic t
 record and no authored line falls back to the `[default]` profile, so a display-type optic from a
 weapon pack needs either a `display` physical record or its own `eye_coupling = 0` line to stop
 its panel swimming with the eye.
+
+The classification follows the optic the eye actually looks through, not the sensor. A clip-on
+thermal mounted ahead of a host scope projects its image through the host's objective and
+eyepiece, so the assembly keeps `eye_coupling = 1` and its parallax shadow; only a sight whose
+display is viewed directly with no ocular behind it is a rigid panel. Do not author
+`eye_coupling = 0` on a clip-on.
 
 ### Hybrid magnifiers
 
