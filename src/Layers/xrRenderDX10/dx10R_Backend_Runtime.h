@@ -583,6 +583,7 @@ IC void CBackend::set_Constants(R_constant_table* C)
 	// caching
 	if (ctable == C) return;
 	ctable = C;
+	m_sbase_known = false;
 	xforms.unmap();
 	hemi.unmap();
 	tree.unmap();

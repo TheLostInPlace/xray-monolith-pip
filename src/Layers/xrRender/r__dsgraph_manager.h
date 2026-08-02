@@ -24,7 +24,8 @@ public:
 	xrCriticalSection						P_CS;
 	xrSRWLock								S_LC;
 
-	FixedMAP<CSector*, std::pair<xr_vector<CFrustum>, FixedSet<CPortal*>>>		m_sector_frustums;
+	using sector_frustums_t = FixedMAP<CSector*, std::pair<xr_vector<CFrustum>, FixedSet<CPortal*>>>;
+	sector_frustums_t						m_sector_frustums;
 	xr_unordered_flat_set<dxRender_Visual*>				m_static_seen;
 	xr_vector<ISpatialShared>				lstRenderables, lstLights;
 	xr_vector<int>							lstLODgroups; // r_dsgraph_render_lods scratch, cleared each call
@@ -40,16 +41,23 @@ public:
 	void initialize();
 	void destroy();
 	void traverse(CSector* start, CFrustum& F, Fvector& vBase, Fmatrix& mXFORM);
-	IC bool is_sector_visible(CSector* sector)
+	// node hands back the frustum entry the lookup already found, so a caller that needs the
+	// frustums does not repeat the find, it stays null on the i_start early-out
+	IC bool is_sector_visible(CSector* sector, sector_frustums_t::TNode** node = nullptr)
 	{
+		if (node) *node = nullptr;
+
 		if (sector == i_start) return true;
 
 		{
 			xrSRWLockGuard guard(&S_LC, true);
 			if(m_sector_frustums.size())
 			{
-				if (auto node = m_sector_frustums.find(sector))
-					return !node->val.first.empty();
+				if (auto found = m_sector_frustums.find(sector))
+				{
+					if (node) *node = found;
+					return !found->val.first.empty();
+				}
 			}
 		}
 

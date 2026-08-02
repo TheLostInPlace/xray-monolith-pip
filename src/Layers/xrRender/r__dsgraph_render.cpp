@@ -538,6 +538,10 @@ void CDSGraphManager::r_dsgraph_render_water_ssr()
 #ifdef USE_DX11
 	PROF_EVENT("r_dsgraph_render_water_ssr");
 	std::sort(RGraph.mapWater.begin(), RGraph.mapWater.end());
+	// docked once, the LPCSTR overload builds a shared_str per name per item
+	static shared_str c_cam_pos = "cam_pos";
+	static shared_str c_m_current = "m_current";
+	static shared_str c_m_previous = "m_previous";
 	for (auto& N : RGraph.mapWater)
 	{
 		dxRender_Visual* V = N.pVisual;
@@ -549,11 +553,11 @@ void CDSGraphManager::r_dsgraph_render_water_ssr()
 		RImplementation.apply_object(N.pObject);
 		RImplementation.apply_lmaterial();
 
-		RCache.set_c("cam_pos", RImplementation.Target->Position_previous.x, RImplementation.Target->Position_previous.y, RImplementation.Target->Position_previous.z, 0.0f);
+		RCache.set_c(c_cam_pos, RImplementation.Target->Position_previous.x, RImplementation.Target->Position_previous.y, RImplementation.Target->Position_previous.z, 0.0f);
 
 		// Previous matrix data
-		RCache.set_c("m_current", RImplementation.Target->Matrix_current);
-		RCache.set_c("m_previous", RImplementation.Target->Matrix_previous);
+		RCache.set_c(c_m_current, RImplementation.Target->Matrix_current);
+		RCache.set_c(c_m_previous, RImplementation.Target->Matrix_previous);
 
 		V->Render(calcLOD(N.ssa, V->vis.sphere.R));
 	}
@@ -564,6 +568,10 @@ void CDSGraphManager::r_dsgraph_render_water(bool clearGraph)
 {
 	PROF_EVENT("r_dsgraph_render_water_ssr");
     std::sort(RGraph.mapWater.begin(), RGraph.mapWater.end());
+	// docked once, and the wind is frame constant so the whole setup is loop invariant
+	static shared_str c_wind_setup = "wind_setup";
+	const float WindDir = g_pGamePersistent->Environment().CurrentEnv->wind_direction;
+	const float WindVel = g_pGamePersistent->Environment().CurrentEnv->wind_velocity;
     for (auto& N : RGraph.mapWater)
 	{
 		dxRender_Visual* V = N.pVisual;
@@ -581,9 +589,7 @@ void CDSGraphManager::r_dsgraph_render_water(bool clearGraph)
 		RImplementation.apply_lmaterial();
 
 		// Wind settings
-		float WindDir = g_pGamePersistent->Environment().CurrentEnv->wind_direction;
-		float WindVel = g_pGamePersistent->Environment().CurrentEnv->wind_velocity;
-		RCache.set_c("wind_setup", WindDir, WindVel, 0, 0);
+		RCache.set_c(c_wind_setup, WindDir, WindVel, 0, 0);
 
 		V->Render(calcLOD(N.ssa, V->vis.sphere.R));
 	}
@@ -903,10 +909,13 @@ void CDSGraphManager::r_dsgraph_capture_dynamic(CObject* O)
 
 				if(!(spatial->spatial.type & STYPE_RENDERABLE) && !(spatial->spatial.type & STYPE_PARTICLE) && !(spatial->spatial.type & STYPE_RENDERABLESHADOW))
 					continue;
-				if (!is_sector_visible(sector))
+				sector_frustums_t::TNode* snode = nullptr;
+				if (!is_sector_visible(sector, &snode))
 					continue;
+				if (!snode) // i_start is visible without a lookup, everything else came back with its node
+					snode = m_sector_frustums.find(sector);
 
-				for (CFrustum& frustum : m_sector_frustums.find(sector)->val.first)
+				for (CFrustum& frustum : snode->val.first)
 				{
 					if (dbg)
 					{

@@ -132,6 +132,9 @@ private:
 	// Pixel/Vertex constants
 	ALIGN(16) R_constants constants;
 	R_constant_table* ctable;
+	// s_base resolved for the active ctable, known says the lookup already ran and the result stands
+	R_constant* m_sbase_c;
+	bool m_sbase_known;
 
 	// Shaders/State
 	ID3DState* state;
@@ -363,6 +366,17 @@ public:
 	{
 		if (ctable) return ctable->get(n);
 		else return nullptr;
+	}
+
+	// s_base is asked for on every draw and only moves with the constant table, so resolve it once
+	ICF R_constant* get_c_sbase(shared_str& n)
+	{
+		if (!m_sbase_known)
+		{
+			m_sbase_c = get_c(n);
+			m_sbase_known = true;
+		}
+		return m_sbase_c;
 	}
 
 	// constants - direct (fast)

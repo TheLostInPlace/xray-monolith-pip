@@ -86,6 +86,8 @@ void CBackend::Invalidate()
 	cs = 0;
 #endif
 	ctable = NULL;
+	m_sbase_c = NULL;
+	m_sbase_known = false;
 
 	T = NULL;
 	M = NULL;

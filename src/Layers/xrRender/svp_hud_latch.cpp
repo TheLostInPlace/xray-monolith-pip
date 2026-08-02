@@ -257,6 +257,8 @@ void CDSGraphManager::svp_latch_hud_poses()
 // the latched pose while this frame's latch is live, else the caller's pointer unchanged
 Fmatrix* CDSGraphManager::svp_pose_of(Fmatrix* p)
 {
+	if (!p || p == &Fidentity) // world statics all push identity, none of them can be a latch source
+		return p;
 	if (m_svp_pose_frame == Device.dwFrame)
 		for (auto& pose : m_svp_pose)
 			if (pose.source == p)
