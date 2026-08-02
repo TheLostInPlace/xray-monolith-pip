@@ -469,6 +469,11 @@ public:
 	void dbg_DrawLINE				(Fmatrix& T, Fvector& p1, Fvector& p2, u32 C);
 	void dbg_DrawEllipse			(Fmatrix& T, u32 C);
 
+#if defined(USE_DX10) || defined(USE_DX11)
+	// drops the input layout memo, for when a declaration or a vertex shader layout is released
+	IC void invalidate_layout_memo() { m_layout_cached = false; }
+#endif
+
 	CBackend() { Invalidate(); };
 
 private:
@@ -494,6 +499,11 @@ private:
 
 private:
 	ID3DBlob* m_pInputSignature;
+
+	// the declaration and signature pair ApplyVertexLayout last resolved, valid while m_layout_cached
+	SDeclaration* m_layout_decl;
+	ID3DBlob* m_layout_sig;
+	bool m_layout_cached;
 
 	bool m_bChangedRTorZB;
 #endif	//	USE_DX10

@@ -115,6 +115,9 @@ void CBackend::Invalidate()
 	m_PrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
 	m_bChangedRTorZB = false;
 	m_pInputSignature = NULL;
+	m_layout_decl = NULL;
+	m_layout_sig = NULL;
+	m_layout_cached = false;
 	for (int i = 0; i < MaxCBuffers; ++i)
 	{
 		m_aPixelConstants[i] = 0;

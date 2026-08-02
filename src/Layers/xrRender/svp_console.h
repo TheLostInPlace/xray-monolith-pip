@@ -90,6 +90,8 @@ extern ECORE_API float svp_stats_capture_cascade_ms[3]; // per sun cascade trave
 extern ECORE_API float svp_stats_present_ms;  // swapchain Present wall clock, ms, this frame
 extern ECORE_API u32 svp_stats_sort_calls;    // render queue sort invocations this frame
 extern ECORE_API u32 svp_stats_sort_packets;  // total packets sorted across those invocations
+extern ECORE_API u32 svp_stats_layout_hit;    // ApplyVertexLayout calls the layout memo can serve
+extern ECORE_API u32 svp_stats_layout_miss;   // of those, the ones that still walk the declaration map
 // session-lifetime running totals, never reset, read by the level-load audit summary
 extern ECORE_API u32 svp_stats_detail_main_thread; // grass MT_CALC runs that fell back to the calling thread
 extern ECORE_API u32 svp_stats_hom_main_thread;    // HOM MT_RENDER runs that fell back to the calling thread

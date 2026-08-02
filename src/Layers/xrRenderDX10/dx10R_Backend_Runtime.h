@@ -497,6 +497,21 @@ IC void CBackend::ApplyVertexLayout()
 	VERIFY(decl);
 	VERIFY(m_pInputSignature);
 
+	extern int ps_r__dx11_layout_memo;
+	extern int ps_r__svp_stats;
+	extern u32 svp_stats_layout_hit;
+	extern u32 svp_stats_layout_miss;
+
+	// the pair only moves at a packet boundary, so an unchanged one already has its layout bound
+	const bool memo_hit = m_layout_cached && m_layout_decl == decl && m_layout_sig == m_pInputSignature;
+	if (ps_r__svp_stats)
+	{
+		if (memo_hit) ++svp_stats_layout_hit;
+		else ++svp_stats_layout_miss;
+	}
+	if (memo_hit && ps_r__dx11_layout_memo)
+		return;
+
 	xr_map<ID3DBlob*, ID3DInputLayout*>::iterator it;
 
 	it = decl->vs_to_layout.find(m_pInputSignature);
@@ -522,6 +537,10 @@ IC void CBackend::ApplyVertexLayout()
 		m_pInputLayout = it->second;
 		HW.pContext->IASetInputLayout(m_pInputLayout);
 	}
+
+	m_layout_decl = decl;
+	m_layout_sig = m_pInputSignature;
+	m_layout_cached = true;
 }
 
 ICF void CBackend::set_VS(ref_vs& _vs)

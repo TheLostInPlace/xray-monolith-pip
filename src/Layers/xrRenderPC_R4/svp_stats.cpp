@@ -44,6 +44,8 @@ extern float svp_stats_capture_cascade_ms[3];
 extern float svp_stats_present_ms;
 extern u32 svp_stats_sort_calls;
 extern u32 svp_stats_sort_packets;
+extern u32 svp_stats_layout_hit;
+extern u32 svp_stats_layout_miss;
 extern u32 svp_stats_detail_main_thread;
 extern u32 svp_stats_hom_main_thread;
 extern u32 svp_stats_hom_tested;
@@ -111,6 +113,7 @@ namespace
 		u32 state_apply, sampler_set, cb_flush, cb_flush_map;
 		float join_ms, capture_base_ms, capture_cascade_ms[3], present_ms;
 		u32 sort_calls, sort_packets;
+		u32 layout_hit, layout_miss;
 		u32 detail_main_thread, hom_main_thread, hom_tested, hom_rejected;
 	};
 
@@ -384,6 +387,8 @@ namespace svp_stats
 		svp_stats_present_ms = 0.f;
 		svp_stats_sort_calls = 0;
 		svp_stats_sort_packets = 0;
+		svp_stats_layout_hit = 0;
+		svp_stats_layout_miss = 0;
 		// feed the rolling ~1s window for the spike readout, skip the first frame's null delta
 		if (fms > 0.0)
 		{
@@ -505,6 +510,8 @@ namespace svp_stats
 		d.present_ms = svp_stats_present_ms;
 		d.sort_calls = svp_stats_sort_calls;
 		d.sort_packets = svp_stats_sort_packets;
+		d.layout_hit = svp_stats_layout_hit;
+		d.layout_miss = svp_stats_layout_miss;
 		d.detail_main_thread = svp_stats_detail_main_thread;
 		d.hom_main_thread = svp_stats_hom_main_thread;
 		d.hom_tested = svp_stats_hom_tested;
@@ -807,7 +814,7 @@ namespace svp_stats
 			const double untracked = d.sec[SEC_FRAME].gpu_ms - tracked;
 			const double untracked_avg = s_sec_avg[SEC_FRAME] - tracked_avg;
 
-			char ptail[12][96];
+			char ptail[14][96];
 			u32 pt = 0;
 			xr_sprintf(ptail[pt++], "smap %u", d.smap);
 			xr_sprintf(ptail[pt++], "ao %.1f q%d  il %.1f q%d  ssr %.1f q%d",
@@ -827,6 +834,8 @@ namespace svp_stats
 				xr_sprintf(ptail[pt++], "capture base %.2f c0 %.2f c1 %.2f c2 %.2f ms",
 					d.capture_base_ms, d.capture_cascade_ms[0], d.capture_cascade_ms[1], d.capture_cascade_ms[2]);
 				xr_sprintf(ptail[pt++], "sort %u/%u", d.sort_calls, d.sort_packets);
+				// hits over total, the ratio the layout memo would save
+				xr_sprintf(ptail[pt++], "layout %u/%u", d.layout_hit, d.layout_hit + d.layout_miss);
 				xr_sprintf(ptail[pt++], "dtmt main dm %u hom %u", d.detail_main_thread, d.hom_main_thread);
 				xr_sprintf(ptail[pt++], "hom rej %u/%u", d.hom_rejected, d.hom_tested);
 				xr_sprintf(ptail[pt++], "sun gpu c0 %.2f c1 %.2f c2 %.2f ms",
