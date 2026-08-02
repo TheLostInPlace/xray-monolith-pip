@@ -144,7 +144,7 @@ float ps_r__Tree_w_amp = 0.005f;
 Fvector ps_r__Tree_Wave = {.1f, .01f, .11f};
 float ps_r__Tree_SBC = 1.5f; // scale bias correct
 // vertex cache plus overdraw reorder of the tree index ranges, read once at level load
-int ps_r__tree_ib_reorder = 0;
+int ps_r__tree_ib_reorder = 1;
 
 float ps_r__WallmarkTTL = 50.f;
 float ps_r__WallmarkSHIFT = 0.0001f;
@@ -516,8 +516,8 @@ int ps_r__tex_evict_interval   = 600;
 int ps_r__swapchain_buffers = 2;
 int ps_r__max_frame_latency = 0;
 int ps_r__sun_minmax_lean = 0;
-int ps_r__dsgraph_sort_memo = 0;
-int ps_r__dx11_layout_memo = 0;
+int ps_r__dsgraph_sort_memo = 1;
+int ps_r__dx11_layout_memo = 1;
 int ps_r__light_scissor = 0;
 int ps_r__light_lean = 0;
 int ps_r__device_state_interval = 1;

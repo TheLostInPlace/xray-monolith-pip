@@ -204,7 +204,7 @@ u32 svp_stats_hom_main_thread = 0;
 u32 svp_stats_hom_tested = 0;
 u32 svp_stats_hom_rejected = 0;
 
-int ps_r__hom_engine = 0; // occlusion engine, 0 legacy raster, 1 masked rasterizer, 2 both with legacy answering
+int ps_r__hom_engine = 1; // occlusion engine, 0 legacy raster, 1 masked rasterizer, 2 both with legacy answering
 int ps_r__hom_moc_res = 1; // masked buffer preset, 0 256x144, 1 384x216, 2 512x288, 3 768x432
 u32 svp_stats_hom_engine = 0;
 u32 svp_stats_hom_res_w = 0;
@@ -219,7 +219,7 @@ u32 svp_stats_hom_dis_keep = 0;
 u32 svp_stats_moc_ret = 0;
 u32 svp_stats_moc_fill_pct = 0;
 
-int ps_r__hom_terrain = 0; // cform ground occluders, 0 skips the load scan and every per frame cost
+int ps_r__hom_terrain = 1; // cform ground occluders, 0 skips the load scan and every per frame cost
 u32 svp_stats_hom_terr_cells = 0;
 u32 svp_stats_hom_terr_emitted = 0;
 u32 svp_stats_hom_terr_capped = 0;
@@ -387,7 +387,7 @@ void svp_console_init()
 	CMD4(CCC_Integer, "r__ssfx_bloom_hud", &ps_r__ssfx_bloom_hud, 0, 1); // hud glass in the bloom emissive buffer (0 = fixed)
 	CMD4(CCC_Integer, "r__hom_engine", &ps_r__hom_engine, 0, 2); // occlusion engine (0 legacy, 1 masked, 2 shadow compare)
 	CMD4(CCC_Integer, "r__hom_moc_res", &ps_r__hom_moc_res, 0, 3); // masked buffer preset (0 256x144, 1 384x216, 2 512x288, 3 768x432)
-	CMD4(CCC_Integer, "r__hom_terrain", &ps_r__hom_terrain, 0, 1); // cform ground as masked occluders, reload the level to build the grid
+	CMD4(CCC_Integer, "r__hom_terrain", &ps_r__hom_terrain, 0, 1); // cform ground as masked occluders, scans lazily when flipped on
 	CMD4(CCC_Integer, "r__scope_debug", &scope_debug, 0, 4);
 #endif
 }
