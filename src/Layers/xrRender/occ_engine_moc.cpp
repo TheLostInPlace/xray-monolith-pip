@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "occ_engine.h"
 #include "occRasterizer.h"
+#include "svp_console.h"
 #include "../../3rd party/MaskedOcclusionCulling/MaskedOcclusionCulling.h"
 
 // the batch is packed Fvector, the vertex layout below depends on it
@@ -45,8 +46,10 @@ namespace
 		int m_res_want = 1;
 		int m_res_applied = -1;
 		bool m_ready = false; // an end_frame has filled the buffer since the level loaded
+		u32 m_probe_countdown = 0;
 		xr_vector<Fvector> m_batch;
 		xr_vector<u32> m_index;
+		xr_vector<float> m_probe;
 	};
 
 	occ_moc& instance()
@@ -130,13 +133,35 @@ namespace
 		if (nverts >= 3)
 		{
 			grow_index(nverts);
-			m_moc->RenderTriangles((const float*)&m_batch[0], &m_index[0], int(nverts / 3),
-				(const float*)&m_full,
-				MaskedOcclusionCulling::BACKFACE_NONE,
-				MaskedOcclusionCulling::CLIP_PLANE_ALL,
-				MaskedOcclusionCulling::VertexLayout(12, 4, 8));
+			const MaskedOcclusionCulling::CullingResult ret =
+				m_moc->RenderTriangles((const float*)&m_batch[0], &m_index[0], int(nverts / 3),
+					(const float*)&m_full,
+					MaskedOcclusionCulling::BACKFACE_NONE,
+					MaskedOcclusionCulling::CLIP_PLANE_ALL,
+					MaskedOcclusionCulling::VertexLayout(12, 4, 8));
+			svp_stats_moc_ret = u32(ret) + 1;
 		}
 		m_ready = true;
+
+		// throttled occupancy probe, answers whether the occluders ever reach the buffer
+		if (ps_r__svp_stats >= 2 && nverts >= 3)
+		{
+			if (0 == m_probe_countdown)
+			{
+				m_probe_countdown = 300;
+				const u32 w = s_preset_w[m_res_applied];
+				const u32 h = s_preset_h[m_res_applied];
+				m_probe.resize(size_t(w) * h);
+				m_moc->ComputePixelDepthBuffer(&m_probe[0], false);
+				u32 filled = 0;
+				for (size_t i = 0; i < m_probe.size(); ++i)
+					if (m_probe[i] > 0.f) ++filled;
+				svp_stats_moc_fill_pct = u32(filled * 100ull / m_probe.size());
+				Msg("* [MOC] ret %u tris %u filled %u of %u px", svp_stats_moc_ret - 1, nverts / 3, filled, u32(m_probe.size()));
+			}
+			else
+				--m_probe_countdown;
+		}
 	}
 
 	BOOL occ_moc::test_box(const Fbox& world)

@@ -60,6 +60,9 @@ extern u32 svp_stats_hom_render_us;
 extern u64 svp_stats_hom_test_ticks;
 extern u32 svp_stats_hom_disagree;
 extern u32 svp_stats_hom_shadow_queries;
+extern u32 svp_stats_hom_dis_keep;
+extern u32 svp_stats_moc_ret;
+extern u32 svp_stats_moc_fill_pct;
 // live screen-space pass configuration, defined in xrRender_console.cpp
 extern Fvector4 ps_ssfx_ao;
 extern Fvector4 ps_ssfx_il;
@@ -127,6 +130,7 @@ namespace
 		u32 detail_main_thread, hom_main_thread, hom_tested, hom_rejected;
 		u32 hom_engine, hom_res_w, hom_res_h, hom_tris_in, hom_tris_emitted;
 		u32 hom_render_us, hom_test_us, hom_disagree, hom_shadow_queries;
+		u32 hom_dis_keep, moc_ret, moc_fill_pct;
 	};
 
 	// pipe-panel quantities that carry a rolling average, order matches the rows
@@ -538,6 +542,9 @@ namespace svp_stats
 		d.hom_test_us = u32(svp_stats_hom_test_ticks * 1000000ull / CPU::qpc_freq);
 		d.hom_disagree = svp_stats_hom_disagree;
 		d.hom_shadow_queries = svp_stats_hom_shadow_queries;
+		d.hom_dis_keep = svp_stats_hom_dis_keep;
+		d.moc_ret = svp_stats_moc_ret;
+		d.moc_fill_pct = svp_stats_moc_fill_pct;
 		// the backend zeroes stat once per frame in OnFrameBegin so this is already a per-frame count
 		d.rtsw = RCache.stat.target_rt;
 		d.smap = RImplementation.o.smapsize;
@@ -860,10 +867,11 @@ namespace svp_stats
 				xr_sprintf(ptail[pt++], "layout %u/%u", d.layout_hit, d.layout_hit + d.layout_miss);
 				xr_sprintf(ptail[pt++], "dtmt main dm %u hom %u", d.detail_main_thread, d.hom_main_thread);
 				xr_sprintf(ptail[pt++], "hom rej %u/%u", d.hom_rejected, d.hom_tested);
-				// dis is the shadow compare mismatch over the compare queries that produced it
-				xr_sprintf(ptail[pt++], "occ e%u tris %u/%u rnd %uus tst %uus dis %u/%u",
+				// dis splits by direction, k = legacy culls what the masked engine keeps
+				xr_sprintf(ptail[pt++], "occ e%u tris %u/%u rnd %uus tst %uus dis %u k%u/%u",
 					d.hom_engine, d.hom_tris_emitted, d.hom_tris_in, d.hom_render_us, d.hom_test_us,
-					d.hom_disagree, d.hom_shadow_queries);
+					d.hom_disagree, d.hom_dis_keep, d.hom_shadow_queries);
+				xr_sprintf(ptail[pt++], "moc ret %u fill %u%%", d.moc_ret, d.moc_fill_pct);
 				xr_sprintf(ptail[pt++], "sun gpu c0 %.2f c1 %.2f c2 %.2f ms",
 					d.sec[SEC_SUN_C0].gpu_ms, d.sec[SEC_SUN_C1].gpu_ms, d.sec[SEC_SUN_C2].gpu_ms);
 			}

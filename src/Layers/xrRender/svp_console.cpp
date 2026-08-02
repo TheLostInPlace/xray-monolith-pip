@@ -215,6 +215,9 @@ u32 svp_stats_hom_render_us = 0;
 u64 svp_stats_hom_test_ticks = 0;
 u32 svp_stats_hom_disagree = 0;
 u32 svp_stats_hom_shadow_queries = 0;
+u32 svp_stats_hom_dis_keep = 0;
+u32 svp_stats_moc_ret = 0;
+u32 svp_stats_moc_fill_pct = 0;
 
 int scope_debug = 0;
 

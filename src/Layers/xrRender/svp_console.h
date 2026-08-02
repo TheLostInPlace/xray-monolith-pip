@@ -110,6 +110,9 @@ extern ECORE_API u32 svp_stats_hom_render_us;      // occluder render span, both
 extern ECORE_API u64 svp_stats_hom_test_ticks;     // query time, sampled only while the breakdown panel is up
 extern ECORE_API u32 svp_stats_hom_disagree;       // session total of shadow compare mismatches
 extern ECORE_API u32 svp_stats_hom_shadow_queries; // session total of shadow compare queries
+extern ECORE_API u32 svp_stats_hom_dis_keep;       // mismatches where legacy culls and the masked engine keeps
+extern ECORE_API u32 svp_stats_moc_ret;            // last masked RenderTriangles result plus one, 0 = never ran
+extern ECORE_API u32 svp_stats_moc_fill_pct;       // masked buffer occupancy percent from the throttled probe
 
 // optics derivation
 extern ECORE_API float ps_r__svp_obj_dist;

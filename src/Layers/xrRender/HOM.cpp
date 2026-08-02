@@ -330,7 +330,12 @@ ICF void hom_shadow_note(BOOL primary, BOOL other)
 {
 	++svp_stats_hom_shadow_queries;
 	if (!!primary != !!other)
+	{
 		++svp_stats_hom_disagree;
+		// legacy culling what the masked engine keeps is the blur artifact direction
+		if (!primary)
+			++svp_stats_hom_dis_keep;
+	}
 }
 
 BOOL CHOM::query_box(const Fbox& B)
