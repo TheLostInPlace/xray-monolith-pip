@@ -27,6 +27,7 @@ public:
 	FixedMAP<CSector*, std::pair<xr_vector<CFrustum>, FixedSet<CPortal*>>>		m_sector_frustums;
 	xr_unordered_flat_set<dxRender_Visual*>				m_static_seen;
 	xr_vector<ISpatialShared>				lstRenderables, lstLights;
+	xr_vector<int>							lstLODgroups; // r_dsgraph_render_lods scratch, cleared each call
 	FixedMAP<CPortal*, float>				f_portals;
 	sPoly S, D;
 	ref_shader								f_shader;
@@ -54,7 +55,6 @@ public:
 
 		return false;
 	};
-	CDSGraphManager& get_traverser_safed() { xrSRWLockGuard guard(&S_LC, false); return *this; };
 	void fade_portal(CPortal* _p, float ssa);
 	void fade_render();
 

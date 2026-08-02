@@ -161,6 +161,8 @@ void CRender::render_lights(light_Package& LP)
 
 			for (u16 smap_ID = 0; refactored.size() != total; smap_ID++)
 			{
+				// one light placed per pass is the worst case, past total passes something never fits
+				R_ASSERT2(smap_ID <= total, "shadow atlas layout spin, a light's shadow map exceeds o.smapsize");
 				LP_smap_pool.initialize(o.smapsize);
 				std::sort(source.begin(), source.end(), [](light* _1, light* _2) {return _1->X.S.size > _2->X.S.size; });
 				source.erase(std::remove_if(source.begin(), source.end(), [smap_ID](light* L)

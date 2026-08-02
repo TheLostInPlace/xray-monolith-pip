@@ -35,14 +35,12 @@ void CRenderTarget::accum_spot(light* L)
 		}
 	}
 
-	BOOL bIntersect = FALSE; //enable_scissor(L);
 	{
 		// setup xform
 		RCache.set_xform_world(L->m_xform);
 		RCache.set_xform_view(Device.mView);
 		RCache.set_xform_project(Device.mProject);
-		bIntersect = enable_scissor(L);
-		enable_dbt_bounds(L);
+		enable_scissor(L);
 
 		// *** similar to "Carmack's reverse", but assumes convex, non intersecting objects,
 		// *** thus can cope without stencil clear with 127 lights
@@ -266,12 +264,9 @@ void CRenderTarget::accum_spot(light* L)
 		}
 	}
 
-	RCache.set_Scissor(0);
 	//CHK_DX		(HW.pDevice->SetRenderState(D3DRS_SCISSORTESTENABLE,FALSE));
 	//dwLightMarkerID					+=	2;	// keep lowest bit always setted up
 	increment_light_marker();
-
-	u_DBT_disable();
 }
 
 void CRenderTarget::accum_volumetric_lv(light* L)
@@ -429,13 +424,12 @@ void CRenderTarget::accum_volumetric(light* L)
 	*/
 	// *** assume accumulator setted up ***
 	// *****************************	Mask by stencil		*************************************
-	BOOL bIntersect = FALSE; //enable_scissor(L);
 	{
 		// setup xform
 		RCache.set_xform_world(L->m_xform);
 		RCache.set_xform_view(Device.mView);
 		RCache.set_xform_project(Device.mProject);
-		bIntersect = enable_scissor(L);
+		enable_scissor(L);
 
 		//enable_dbt_bounds				(L);
 	}
@@ -788,7 +782,6 @@ void CRenderTarget::accum_volumetric(light* L)
 		}
 	*/
 	//CHK_DX		(HW.pDevice->SetRenderState(D3DRS_SCISSORTESTENABLE,FALSE));
-	RCache.set_Scissor(0);
 
 	/*if (RImplementation.o.ssfx_volumetric)
 		set_viewport_size(HW.pContext, w, h);*/

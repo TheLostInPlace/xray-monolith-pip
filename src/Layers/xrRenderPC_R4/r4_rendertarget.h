@@ -455,8 +455,6 @@ public:
 	void u_calc_tc_duality_ss(Fvector2& r0, Fvector2& r1, Fvector2& l0, Fvector2& l1);
 	BOOL u_need_PP();
 	bool u_need_CM();
-	BOOL u_DBT_enable(float zMin, float zMax);
-	void u_DBT_disable();
 	void phase_sunshafts();
 	void phase_blur();
 	void phase_pp_bloom();
@@ -529,7 +527,6 @@ public:
 	bool use_minmax_sm_this_frame();
 
 	BOOL enable_scissor(light* L); // true if intersects near plane
-	void enable_dbt_bounds(light* L);
 
 	void disable_aniso();
 
