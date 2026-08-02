@@ -250,45 +250,38 @@ void CDSGraphManager::r_dsgraph_render_graph(RenderQueueArray& queues, u32 _prio
 		ID3DState* pState = nullptr;
 		STextureList* pTextures = nullptr;
 
-        u64 high = 0;
-
         for (auto& packet : queue)
         {
             if (svp_cull_reject(packet.item.pVisual, packet.item.pMatrix)) { if (ps_r__svp_stats) ++svp_stats_cull_reject; continue; } // pip skip off-cone SVP geometry
             if (s_svp_ssa_cull > 0.f && !packet.item.pMatrix && packet.item.ssa < s_svp_ssa_cull) { if (ps_r__svp_stats) ++svp_stats_ssa_culled; if (!svp_ledger_ssa_culled) svp_ledger_ssa_culled = 1; continue; } // pip skip tiny STATIC clutter only (null matrix), never dynamic NPCs/items (matrix carriers)
             if (ps_r__svp_stats && !Device.m_SecondViewport.m_render_pass_is_svp && packet.item.ssa < r_ssaLOD_A) ++svp_stats_tiny; // overlay count only, main view
-            auto& currentKey = packet.sortKey;
-            if (currentKey.high != high)
-            {
-                high = currentKey.high;
 
-                if (packet.pState != pState)
-                {
-                    pState = packet.pState;
-                    RCache.set_States(pState);
-                }
+            if (packet.pState != pState)
+            {
+                pState = packet.pState;
+                RCache.set_States(pState);
+            }
 
 #if defined(USE_DX10) || defined(USE_DX11)
-                if (packet.pGS != pGS)
-                {
-                    pGS = packet.pGS;
-                    RCache.set_GS(pGS);
-                }
+            if (packet.pGS != pGS)
+            {
+                pGS = packet.pGS;
+                RCache.set_GS(pGS);
+            }
 #endif
 
 #ifdef USE_DX11
-                if (packet.pHS != pHS)
-                {
-                    pHS = packet.pHS;
-                    RCache.set_HS(pHS);
-                }
-                if (packet.pDS != pDS)
-                {
-                    pDS = packet.pDS;
-                    RCache.set_DS(pDS);
-                }
-#endif
+            if (packet.pHS != pHS)
+            {
+                pHS = packet.pHS;
+                RCache.set_HS(pHS);
             }
+            if (packet.pDS != pDS)
+            {
+                pDS = packet.pDS;
+                RCache.set_DS(pDS);
+            }
+#endif
 
             // Compare low key stuff regardless, too high collision probability
             if (packet.pVS != pVS)
