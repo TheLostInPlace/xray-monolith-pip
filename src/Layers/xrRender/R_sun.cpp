@@ -369,9 +369,12 @@ void CRender::render_sun_cascade(u32 cascade_ind)
 	if (ps_r__sun_minmax_lean)
 	{
 		const u32 last = m_sun_cascades.size() - 1;
-		need_minmax_sm = cascade_ind == 0 || (cascade_ind == last && RImplementation.o.advancedpp &&
-			(ps_sunshafts_mode == R2SS_VOLUMETRIC || ps_sunshafts_mode == R2SS_COMBINE_SUNSHAFTS) &&
-			Target->need_to_render_sunshafts());
+		// both terms read the same source of truth the two minmax consumers read
+		need_minmax_sm = (cascade_ind == 0)
+			? Target->use_minmax_sm_this_frame()
+			: (cascade_ind == last && RImplementation.o.advancedpp
+				&& (ps_sunshafts_mode == R2SS_VOLUMETRIC || ps_sunshafts_mode == R2SS_COMBINE_SUNSHAFTS)
+				&& Target->use_minmax_sm_this_frame());
 	}
 	if (need_minmax_sm)
 	{
