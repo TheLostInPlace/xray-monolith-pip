@@ -408,6 +408,9 @@ extern ECORE_API int ps_r__dsgraph_sort_memo;
 extern ECORE_API int ps_r__dx11_layout_memo;
 // 0 draws every non-sun light over the whole frame like today, 1 clips its draws to the projected volume rect
 extern ECORE_API int ps_r__light_scissor;
+// 0 rebinds the volumetric smap texture and rebuilds the accum_direct_cascade RT every call like today,
+// 1 caches the smap resolve after the first hit and skips a provably redundant phase_accumulator rebind
+extern ECORE_API int ps_r__light_lean;
 
 extern void xrRender_initconsole();
 extern BOOL xrRender_test_hw();

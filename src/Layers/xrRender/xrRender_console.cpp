@@ -519,6 +519,7 @@ int ps_r__sun_minmax_lean = 0;
 int ps_r__dsgraph_sort_memo = 0;
 int ps_r__dx11_layout_memo = 0;
 int ps_r__light_scissor = 0;
+int ps_r__light_lean = 0;
 
 //AVO: detail draw radius
 Flags32 ps_common_flags = {0}; // r1-only
@@ -1670,6 +1671,7 @@ void xrRender_initconsole()
 	CMD4(CCC_Integer, "r__dsgraph_sort_memo", &ps_r__dsgraph_sort_memo, 0, 1);
 	CMD4(CCC_Integer, "r__dx11_layout_memo", &ps_r__dx11_layout_memo, 0, 1);
 	CMD4(CCC_Integer, "r__light_scissor", &ps_r__light_scissor, 0, 1);
+	CMD4(CCC_Integer, "r__light_lean", &ps_r__light_lean, 0, 1);
 	CMD3(CCC_Mask, "r__use_precompiled_shaders", &psDeviceFlags2, rsPrecompiledShaders); //Alundaio
 	CMD3(CCC_Mask, "r__enable_grass_shadow", &psDeviceFlags2, rsGrassShadow); //Alundaio
 	CMD3(CCC_Mask, "r__no_scale_on_fade", &psDeviceFlags2, rsNoScale); //Alundaio

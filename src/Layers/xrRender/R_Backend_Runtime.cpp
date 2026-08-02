@@ -120,6 +120,9 @@ void CBackend::Invalidate()
 	m_layout_decl = NULL;
 	m_layout_sig = NULL;
 	m_layout_cached = false;
+	m_smapsize_zb = NULL;
+	m_smapsize_w = 0;
+	m_smapsize_h = 0;
 	for (int i = 0; i < MaxCBuffers; ++i)
 	{
 		m_aPixelConstants[i] = 0;

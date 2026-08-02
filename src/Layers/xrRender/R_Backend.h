@@ -486,6 +486,21 @@ public:
 #if defined(USE_DX10) || defined(USE_DX11)
 	// drops the input layout memo, for when a declaration or a vertex shader layout is released
 	IC void invalidate_layout_memo() { m_layout_cached = false; }
+
+	// looks up the dims u_setrt's zb-only overload last recovered via GetDesc for this view
+	IC bool get_smapsize_memo(ID3DDepthStencilView* zb, u32& w, u32& h)
+	{
+		if (!zb || zb != m_smapsize_zb) return false;
+		w = m_smapsize_w;
+		h = m_smapsize_h;
+		return true;
+	}
+	IC void set_smapsize_memo(ID3DDepthStencilView* zb, u32 w, u32 h)
+	{
+		m_smapsize_zb = zb;
+		m_smapsize_w = w;
+		m_smapsize_h = h;
+	}
 #endif
 
 	CBackend() { Invalidate(); };
@@ -518,6 +533,11 @@ private:
 	SDeclaration* m_layout_decl;
 	ID3DBlob* m_layout_sig;
 	bool m_layout_cached;
+
+	// the depth-stencil view and dims u_setrt's zb-only overload last recovered via GetDesc
+	ID3DDepthStencilView* m_smapsize_zb;
+	u32 m_smapsize_w;
+	u32 m_smapsize_h;
 
 	bool m_bChangedRTorZB;
 #endif	//	USE_DX10

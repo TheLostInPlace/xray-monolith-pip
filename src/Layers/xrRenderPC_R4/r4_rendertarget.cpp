@@ -94,7 +94,7 @@ void CRenderTarget::u_setrt(const ref_rt& _1, const ref_rt& _2, const ref_rt& _3
 		dwWidth = _1->dwWidth;
 		dwHeight = _1->dwHeight;
 	}
-	else
+	else if (!ps_r__light_lean || !RCache.get_smapsize_memo(zb, dwWidth, dwHeight))
 	{
 		D3D_DEPTH_STENCIL_VIEW_DESC desc;
 		zb->GetDesc(&desc);
@@ -115,6 +115,9 @@ void CRenderTarget::u_setrt(const ref_rt& _1, const ref_rt& _2, const ref_rt& _3
 		dwWidth = TexDesc.Width;
 		dwHeight = TexDesc.Height;
 		_RELEASE(pRes);
+
+		if (ps_r__light_lean)
+			RCache.set_smapsize_memo(zb, dwWidth, dwHeight);
 	}
 
 	if (_1) RCache.set_RT(_1->pRT, 0);
