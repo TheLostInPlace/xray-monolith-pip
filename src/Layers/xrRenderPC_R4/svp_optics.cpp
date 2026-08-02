@@ -81,9 +81,33 @@ static bool svp_thermal_active(float param3x, int markswitch)
 	return (param3x >= 1.5f) && svp_overlay_active(param3x, markswitch);
 }
 
+// pip the thermal overlay state for callers outside this file
+bool svp_thermal_overlay_active()
+{
+	extern Fvector4 ps_s3ds_param_3;
+	extern int ps_markswitch_current;
+	return svp_thermal_active(ps_s3ds_param_3.x, ps_markswitch_current);
+}
+
+// pip a fresh forward body ahead of the objective, published by the hud drain
+bool svp_clipon_resolved()
+{
+	extern int ps_r__svp_clipon;
+	auto& vp = Device.m_SecondViewport;
+	return ps_r__svp_clipon && _valid(vp.svp_clipon_axial) && vp.svp_clipon_axial > 0.f
+		&& vp.svp_hud_min_frame != u32(-1)
+		&& Device.dwFrame >= vp.svp_hud_min_frame
+		&& Device.dwFrame - vp.svp_hud_min_frame <= 8
+		&& vp.svp_hud_min_session == vp.GetSVPSession()
+		&& vp.svp_hud_min_epoch == vp.svp_optic_epoch;
+}
+
 // pip eye coupling from the typed profile, the legacy thermal read covers an untyped route
 bool svp_optic_eye_coupled()
 {
+	// a clip-on presents through the host eyepiece so the display exemption never applies
+	if (svp_clipon_resolved())
+		return true;
 	const auto& config = Device.m_SecondViewport.RenderOpticConfig();
 	if (config.typed_route)
 		return config.eye_coupling;

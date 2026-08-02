@@ -20,9 +20,10 @@ static float svp_objective_mm()
 bool CRenderTarget::svp_nearblur_pass()
 {
 	// pip near-field defocus replaces the plain copy in the realism mode, an uncoupled display
-	// keeps full depth of field so it takes the plain copy
+	// and a live thermal sensor keep full depth of field so they take the plain copy
 	extern float ps_r__svp_near_blur;
 	if (ps_r__svp_near_blur > 0.01f && scope_svp_enabled >= 2 && svp_optic_eye_coupled()
+		&& !svp_thermal_overlay_active()
 		&& rt_Position && rt_secondVP->pRT)
 	{
 		EnsureScopeShaders();
