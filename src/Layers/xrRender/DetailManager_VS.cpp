@@ -381,7 +381,11 @@ void CDetailManager::hw_Render_dump(ref_constant x_array, u32 var_id, u32 lod_id
 					u32 base = dwBatch * 4;
 
 					// Build matrix ( 3x4 matrix, last row - color )
-					Fmatrix& M = Instance.mRotY_calculated;
+					Fmatrix M = Instance.mRotY;
+					const float sc = Instance.scale_calculated;
+					M._11 *= sc; M._21 *= sc; M._31 *= sc;
+					M._12 *= sc; M._22 *= sc; M._32 *= sc;
+					M._13 *= sc; M._23 *= sc; M._33 *= sc;
 					c_storage[base+0].set(M._11, M._21, M._31, M._41);
 					c_storage[base+1].set(M._12, M._22, M._32, M._42);
 					c_storage[base+2].set(M._13, M._23, M._33, M._43);

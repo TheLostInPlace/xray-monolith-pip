@@ -76,7 +76,7 @@ public:
 		// один кустик
 		float scale;
 		Fmatrix mRotY;
-		Fmatrix mRotY_calculated;
+		float scale_calculated; // draw scale for this frame, mRotY stays unscaled
 		u32 vis_ID; // индекс в visibility списке он же тип [не качается, качается1, качается2]
 		float c_hemi;
 		float c_sun;
