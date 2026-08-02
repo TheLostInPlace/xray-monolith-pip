@@ -56,27 +56,90 @@ float GoToValue(float& current, float go_to)
 // reserved vs resource slot for the instance records, the grass vs itself only binds s_waves at t0
 enum { DETAIL_INSTANCE_SRV_SLOT = 3 };
 
-// f32 -> f16 round to nearest, inputs are tame normals and unit scalars
-ICF u16 dm_f32tof16(float v)
+ICF u16 dm_unorm16(float v) { return u16(iFloor(clampr(v, 0.f, 1.f) * 65535.f + .5f)); }
+ICF u8 dm_unorm8(float v) { return u8(iFloor(clampr(v, 0.f, 1.f) * 255.f + .5f)); }
+
+// unit vector to an octahedral unorm16 pair
+ICF void dm_oct_encode(const Fvector& n, u16& ox, u16& oy)
 {
-	union { float f; u32 u; } c;
-	c.f = v;
-	u32 sign = (c.u >> 16) & 0x8000u;
-	s32 exp = s32((c.u >> 23) & 0xFFu) - 127 + 15;
-	u32 mant = c.u & 0x7FFFFFu;
-	if (exp <= 0) return u16(sign);            // underflow -> signed zero
-	if (exp >= 31) return u16(sign | 0x7BFFu); // overflow -> max finite half
-	u32 h = sign | (u32(exp) << 10) | (mant >> 13);
-	h += (mant >> 12) & 1u;                    // round up
-	return u16(h);
+	const float inv = 1.f / (_abs(n.x) + _abs(n.y) + _abs(n.z));
+	float px = n.x * inv;
+	float py = n.y * inv;
+	if (n.z <= 0.f)
+	{
+		const float fx = 1.f - _abs(py);
+		const float fy = 1.f - _abs(px);
+		px = px >= 0.f ? fx : -fx;
+		py = py >= 0.f ? fy : -fy;
+	}
+	ox = dm_unorm16(px * .5f + .5f);
+	oy = dm_unorm16(py * .5f + .5f);
+}
+
+// orthonormal basis to a smallest three quaternion, three snorm16 plus the dropped index
+ICF void dm_quat_encode(const Fmatrix& M, s16* qs, u16& qidx)
+{
+	float t, q[4];
+	if (M._33 < 0.f)
+	{
+		if (M._11 > M._22)
+		{
+			t = 1.f + M._11 - M._22 - M._33;
+			q[0] = t; q[1] = M._12 + M._21; q[2] = M._31 + M._13; q[3] = M._23 - M._32;
+		}
+		else
+		{
+			t = 1.f - M._11 + M._22 - M._33;
+			q[0] = M._12 + M._21; q[1] = t; q[2] = M._23 + M._32; q[3] = M._31 - M._13;
+		}
+	}
+	else
+	{
+		if (M._11 < -M._22)
+		{
+			t = 1.f - M._11 - M._22 + M._33;
+			q[0] = M._31 + M._13; q[1] = M._23 + M._32; q[2] = t; q[3] = M._12 - M._21;
+		}
+		else
+		{
+			t = 1.f + M._11 + M._22 + M._33;
+			q[0] = M._23 - M._32; q[1] = M._31 - M._13; q[2] = M._12 - M._21; q[3] = t;
+		}
+	}
+
+	const float mag = _sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+	const float inv = mag > 0.f ? 1.f / mag : 0.f;
+
+	u32 idx = 0;
+	float best = _abs(q[0]);
+	for (u32 c = 1; c < 4; c++)
+	{
+		const float a = _abs(q[c]);
+		if (a > best) { best = a; idx = c; }
+	}
+
+	// the dropped component is forced positive so the shader can rebuild it from a square root
+	const float enc = (q[idx] < 0.f ? -inv : inv) * 46340.95f;
+	u32 w = 0;
+	for (u32 c = 0; c < 4; c++)
+	{
+		if (c == idx) continue;
+		qs[w++] = s16(clampr(iFloor(q[c] * enc + .5f), -32767, 32767));
+	}
+	qidx = u16(idx);
 }
 
 #pragma pack(push, 1)
 struct InstanceHW
 {
-	Fvector4 m0, m1, m2;
-	u16 na[4]; // terrain normal xyz + alpha
-	u16 sh[4]; // sun, hemi, spare, spare
+	float px, py, pz; // world position
+	s16 q[3];         // rotation, smallest three
+	u16 qidx;         // dropped rotation component
+	u16 nx, ny;       // terrain normal, octahedral
+	u16 alpha;        // unorm
+	u8 c_sun;         // unorm
+	u8 c_hemi;        // unorm
+	float scale;      // uniform draw scale
 };
 #pragma pack(pop)
 static_assert(sizeof(InstanceHW) == CDetailManager::hw_InstanceStride, "InstanceHW must match hw_InstanceStride");
@@ -223,24 +286,18 @@ void CDetailManager::hw_Fill_Instances()
 						break;
 					}
 
-					// 3x4 transform rows with the draw scale folded in plus packed shading
-					Fmatrix M = Instance.mRotY;
-					const float sc = Instance.scale_calculated;
-					M._11 *= sc; M._21 *= sc; M._31 *= sc;
-					M._12 *= sc; M._22 *= sc; M._32 *= sc;
-					M._13 *= sc; M._23 *= sc; M._33 *= sc;
+					// position and scale stay exact, the vs rebuilds the rows from the quaternion
+					const Fmatrix& M = Instance.mRotY;
 					InstanceHW& R = pInst[instTotal];
-					R.m0.set(M._11, M._21, M._31, M._41);
-					R.m1.set(M._12, M._22, M._32, M._42);
-					R.m2.set(M._13, M._23, M._33, M._43);
-					R.na[0] = dm_f32tof16(Instance.normal.x);
-					R.na[1] = dm_f32tof16(Instance.normal.y);
-					R.na[2] = dm_f32tof16(Instance.normal.z);
-					R.na[3] = dm_f32tof16(Instance.alpha);
-					R.sh[0] = dm_f32tof16(Instance.c_sun);
-					R.sh[1] = dm_f32tof16(Instance.c_hemi);
-					R.sh[2] = 0;
-					R.sh[3] = 0;
+					R.px = M._41;
+					R.py = M._42;
+					R.pz = M._43;
+					dm_quat_encode(M, R.q, R.qidx);
+					dm_oct_encode(Instance.normal, R.nx, R.ny);
+					R.alpha = dm_unorm16(Instance.alpha);
+					R.c_sun = dm_unorm8(Instance.c_sun);
+					R.c_hemi = dm_unorm8(Instance.c_hemi);
+					R.scale = Instance.scale_calculated;
 					instTotal++;
 				}
 				if (instTotal >= hw_instance_cap)

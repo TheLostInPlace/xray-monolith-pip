@@ -229,8 +229,9 @@ public:
 	ID3DVertexBuffer* hw_VB;
 	ID3DIndexBuffer* hw_IB;
 #ifdef USE_DX11
-	// one instance record is 3x4 transform rows plus half4 terrain normal + alpha and half4 sun + hemi
-	enum { hw_InstanceStride = 64 };
+	// one instance record is f32 position and scale, a packed rotation quaternion and octahedral
+	// terrain normal, then unorm alpha, sun and hemi
+	enum { hw_InstanceStride = 32 };
 	ID3DBuffer* hw_instanceVB;
 	ID3DShaderResourceView* hw_instanceSRV;
 	// per var_id per object ranges into the instance buffer, indexed vid * objects.size() + O

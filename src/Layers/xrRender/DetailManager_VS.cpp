@@ -213,8 +213,9 @@ void CDetailManager::hw_Load_Geom()
 		R_CHK(HW.pDevice->CreateShaderResourceView(hw_instanceVB, &sdesc, &hw_instanceSRV));
 
 		hw_frame_filled = u32(-1);
-		Msg("* [DETAILS] InstanceVB(%dK), cap(%d), slot_avg(%.1f), slots(%d)",
-		    (hw_instance_cap * hw_InstanceStride) / 1024, hw_instance_cap, per_slot, slots_used);
+		Msg("* [DETAILS] InstanceVB(%dK), stride(%d), cap(%d), slot_avg(%.1f), slots(%d)",
+		    (hw_instance_cap * hw_InstanceStride) / 1024, u32(hw_InstanceStride), hw_instance_cap, per_slot,
+		    slots_used);
 	}
 #endif
 }
