@@ -532,7 +532,9 @@ local function aim_context()
     end
     local item = db.actor and db.actor:active_item()
     local weapon = item and item:cast_Weapon()
-    if not (item and weapon and weapon:IsZoomed()) or IsBinoc(item:section()) then
+    -- binoculars publish on the typed route only, the legacy route has no scopeless lane
+    if not (item and weapon and weapon:IsZoomed())
+        or (IsBinoc(item:section()) and select_route() ~= "typed") then
         return
     end
 
