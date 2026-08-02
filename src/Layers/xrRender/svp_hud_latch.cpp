@@ -491,6 +491,22 @@ void CDSGraphManager::svp_classify_objective_hud(dxRender_Visual* visual, Fmatri
 	on_axis.mad(origin, axis, admission.axial);
 	admission.radial = on_axis.distance_to(center);
 	admission.radius = visual->vis.sphere.R;
+	// screen frame lateral offsets name each candidate clock direction in the dump
+	{
+		Fvector sr;
+		sr.crossproduct(Device.vCameraTop, axis);
+		if (sr.square_magnitude() > EPS_S)
+		{
+			sr.normalize();
+			Fvector su;
+			su.crossproduct(axis, sr);
+			su.normalize_safe();
+			Fvector lat;
+			lat.sub(center, on_axis);
+			admission.dir_right = lat.dotproduct(sr);
+			admission.dir_up = lat.dotproduct(su);
+		}
+	}
 
 	const bool role_ok = role == IDSGraphManager::hud_primary_item
 		|| role == IDSGraphManager::hud_optic;
@@ -847,9 +863,11 @@ void CDSGraphManager::r_dsgraph_render_hud_svp()
 			{
 				auto tx = V->GetTexture();
 				if (objective_filter)
-					PipMsg("[SVP-ADMIT] %s role=%s t=%.2f rad=%.1fcm R=%.1fcm axial=[%.1f,%.1f]cm objective=%.1fcm reason=%s visual=%p root=%p lensVisual=%p lensRoot=%p %s",
+					PipMsg("[SVP-ADMIT] %s role=%s t=%.2f rad=%.1fcm dir=(%.1f,%.1f)cm R=%.1fcm axial=[%.1f,%.1f]cm objective=%.1fcm reason=%s visual=%p root=%p lensVisual=%p lensRoot=%p %s",
 						drop ? "SUPPRESS" : "retain", svp_hud_role_name(item.hud_role), t,
-						rad * 100.f, V->vis.sphere.R * 100.f, axial_lo * 100.f, axial_hi * 100.f,
+						rad * 100.f, objective_admission.dir_right * 100.f,
+						objective_admission.dir_up * 100.f,
+						V->vis.sphere.R * 100.f, axial_lo * 100.f, axial_hi * 100.f,
 						tube * 100.f, admission, (void*)V, (void*)item.pMatrix,
 						vp.svp_lens_visual, vp.svp_lens_root,
 						tx ? tx->cName.c_str() : "?");

@@ -274,15 +274,27 @@ SSvpEyeSample svp_update_eye_sample(const Fmatrix& eye_view)
 	if (eyepiece.radius <= EPS)
 		return sample;
 
-	Fvector lens_right = eyepiece.m_W.i;
-	Fvector lens_up = eyepiece.m_W.j;
 	Fvector optical_axis;
 	optical_axis.sub(objective.m_W.c, eyepiece.m_W.c);
 	if (objective.radius <= EPS || optical_axis.square_magnitude() <= EPS)
 		optical_axis.set(eyepiece.m_W.k);
-	lens_right.normalize_safe();
-	lens_up.normalize_safe();
 	optical_axis.normalize_safe();
+	// screen facing lens frame from the view up, a rolled lens bone must not rotate screen effects
+	Fvector lens_right, lens_up;
+	lens_right.crossproduct(Device.vCameraTop, optical_axis);
+	if (lens_right.square_magnitude() > EPS_S)
+	{
+		lens_right.normalize();
+		lens_up.crossproduct(optical_axis, lens_right);
+		lens_up.normalize_safe();
+	}
+	else
+	{
+		lens_right.set(eyepiece.m_W.i);
+		lens_up.set(eyepiece.m_W.j);
+		lens_right.normalize_safe();
+		lens_up.normalize_safe();
+	}
 
 	Fvector lens_center_view, lens_right_view, lens_up_view, axis_view;
 	eye_view.transform_tiny(lens_center_view, eyepiece.m_W.c);
@@ -341,10 +353,27 @@ static void svp_bind_aperture(float pupil_mm)
 	const float exit_pupil_mm = svp_calc_exit_pupil_mm(svp_objective_mm());
 	auto& viewport = Device.m_SecondViewport;
 	const auto& eyepiece = viewport.eyepiece;
-	Fvector lens_right = eyepiece.m_W.i;
-	Fvector lens_up = eyepiece.m_W.j;
-	lens_right.normalize_safe();
-	lens_up.normalize_safe();
+	Fvector bind_axis;
+	bind_axis.sub(viewport.objective.m_W.c, eyepiece.m_W.c);
+	if (viewport.objective.radius <= EPS || bind_axis.square_magnitude() <= EPS)
+		bind_axis.set(eyepiece.m_W.k);
+	bind_axis.normalize_safe();
+	// published lens axes stay level with the view so shader lens space matches the image
+	Fvector lens_right, lens_up;
+	lens_right.crossproduct(Device.vCameraTop, bind_axis);
+	if (lens_right.square_magnitude() > EPS_S)
+	{
+		lens_right.normalize();
+		lens_up.crossproduct(bind_axis, lens_right);
+		lens_up.normalize_safe();
+	}
+	else
+	{
+		lens_right.set(eyepiece.m_W.i);
+		lens_up.set(eyepiece.m_W.j);
+		lens_right.normalize_safe();
+		lens_up.normalize_safe();
+	}
 
 	const SSvpEyeSample eye = svp_update_eye_sample(Device.matrices[0].mView);
 	const Fvector2 raw_eye_offset_mm = eye.raw_mm;

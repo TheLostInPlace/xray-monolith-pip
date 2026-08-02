@@ -130,6 +130,8 @@ public:
 		float axial = 0.f;
 		float radial = -1.f;
 		float radius = 0.f;
+		float dir_right = 0.f;
+		float dir_up = 0.f;
 		float axial_lo = 0.f;
 		float axial_hi = 0.f;
 		float objective = 0.f;

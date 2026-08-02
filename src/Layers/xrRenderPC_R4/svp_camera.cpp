@@ -707,10 +707,35 @@ bool svpCamera()
 			if (ps_r__svp_weapon_continuity && !flat_optic && svp_optic_eye_coupled()
 				&& params.objective.radius > EPS)
 			{
+				// registration frame rides the view up so the principal shift stays screen true
+				Fmatrix lens_frame;
+				bool lens_frame_ok = false;
+				if (_valid(params.eyepiece.m_W.c) && _valid(params.objective.m_W.c))
+				{
+					Fvector fr_axis;
+					fr_axis.sub(params.objective.m_W.c, params.eyepiece.m_W.c);
+					if (fr_axis.square_magnitude() > EPS)
+					{
+						fr_axis.normalize();
+						Fvector fr_right;
+						fr_right.crossproduct(Device.vCameraTop, fr_axis);
+						if (fr_right.square_magnitude() > EPS_S)
+						{
+							fr_right.normalize();
+							Fvector fr_up;
+							fr_up.crossproduct(fr_axis, fr_right);
+							fr_up.normalize_safe();
+							lens_frame.identity();
+							lens_frame.i.set(fr_right);
+							lens_frame.j.set(fr_up);
+							lens_frame.k.set(fr_axis);
+							lens_frame.c.set(params.eyepiece.m_W.c);
+							lens_frame_ok = true;
+						}
+					}
+				}
 				Fmatrix eyepiece_inverse;
-				if (_valid(params.eyepiece.m_W.i) && _valid(params.eyepiece.m_W.j)
-					&& _valid(params.eyepiece.m_W.k) && _valid(params.eyepiece.m_W.c)
-					&& eyepiece_inverse.invert_b(params.eyepiece.m_W))
+				if (lens_frame_ok && eyepiece_inverse.invert_b(lens_frame))
 				{
 					eyepiece_inverse.transform_tiny(registration_eye_local, eyeW0.c);
 					eyepiece_inverse.transform_tiny(
