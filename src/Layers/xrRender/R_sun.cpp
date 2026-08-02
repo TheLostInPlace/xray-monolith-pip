@@ -64,6 +64,15 @@ void CRender::init_cacades()
 	/// 	m_sun_cascades[m_sun_cascades.size()-1].size = 80;
 }
 
+#if RENDER == R_R4
+// sun sub timer brackets, only the r4 stats module defines the wrappers
+static void sun_sub_begin(u32 s) { svp_stats_sun_sub_begin(s); }
+static void sun_sub_end(u32 s) { svp_stats_sun_sub_end(s); }
+#else
+static void sun_sub_begin(u32) {}
+static void sun_sub_end(u32) {}
+#endif
+
 void CRender::render_sun_cascades()
 {
 	bool b_need_to_render_sunshafts = Target->need_to_render_sunshafts();
@@ -321,16 +330,20 @@ void CRender::render_sun_cascade(u32 cascade_ind)
             bool bForward_Shadows = cascade.GMCascade.RGraph.mapStaticPasses[1][0].size() || cascade.GMCascade.RGraph.mapDynamicPasses[1][0].size() || cascade.GMCascade.RGraph.mapStaticSorted.Sorted.size() || cascade.GMCascade.RGraph.mapDynamicSorted.Sorted.size();
             if (bDeffered_Shadows || bForward_Shadows)
             {
+                sun_sub_begin(SUN_SUB_SMAP);
                 Target->phase_smap_direct(fuckingsun, SE_SUN_FAR);
                 RCache.set_xform_world(Fidentity);
                 RCache.set_xform_view(Fidentity);
                 RCache.set_xform_project(fuckingsun->X.D.combine);
                 cascade.GMCascade.r_dsgraph_render_graph(0);
+                sun_sub_end(SUN_SUB_SMAP);
 
                 if (psDeviceFlags2.test(rsGrassShadow) && cascade_ind <= ps_ssfx_grass_shadows.x)
                 {
+                    sun_sub_begin(SUN_SUB_GRASS);
                     Details->fade_distance = dm_fade * dm_fade * ps_ssfx_grass_shadows.y;
                     Details->Render();
+                    sun_sub_end(SUN_SUB_GRASS);
                 }
 
                 fuckingsun->X.D.transluent = FALSE;
@@ -362,10 +375,12 @@ void CRender::render_sun_cascade(u32 cascade_ind)
 	}
 	if (need_minmax_sm)
 	{
+		sun_sub_begin(SUN_SUB_MINMAX);
 #if defined(USE_DX10) || defined(USE_DX11)
 		PIX_EVENT(SE_SUN_NEAR_MINMAX_GENERATE);
 #endif
 		Target->create_minmax_SM();
+		sun_sub_end(SUN_SUB_MINMAX);
 	}
 #endif
 
@@ -373,6 +388,7 @@ void CRender::render_sun_cascade(u32 cascade_ind)
 	PIX_EVENT(SE_SUN_NEAR);
 #endif
 
+	sun_sub_begin(SUN_SUB_ACCUM);
 	if (cascade_ind == 0)
 		Target->accum_direct_cascade(SE_SUN_NEAR, cascade.xform, cascade.xform,
 		                             cascade.bias);
@@ -382,10 +398,12 @@ void CRender::render_sun_cascade(u32 cascade_ind)
 	else
 		Target->accum_direct_cascade(SE_SUN_FAR, cascade.xform,
 		                             m_sun_cascades[cascade_ind - 1].xform, cascade.bias);
+	sun_sub_end(SUN_SUB_ACCUM);
 
 	// pip shared-shadow, the cascade smap was just built on the main atlas, re-accumulate it into the
 	// SVP (the hook re-points the atlas at the main maps so this reads them, no second smap render),
 	// the minmax SM above is generation and is skipped, the SVP reads the shared minmax
+	sun_sub_begin(SUN_SUB_SVP);
 	if (Device.m_SecondViewport.dual_accum)
 	{
 		auto svp_accum = [&]
@@ -403,6 +421,7 @@ void CRender::render_sun_cascade(u32 cascade_ind)
 		};
 		Device.m_SecondViewport.dual_accum(svp_accum);
 	}
+	sun_sub_end(SUN_SUB_SVP);
 
 	// Restore XForms
 	RCache.set_xform_world(Fidentity);

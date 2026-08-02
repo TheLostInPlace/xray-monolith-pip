@@ -137,6 +137,7 @@ namespace
 		u32 hom_render_us, hom_test_us, hom_disagree, hom_shadow_queries;
 		u32 hom_dis_keep, moc_ret, moc_fill_pct;
 		u32 hom_terr_cells, hom_terr_emitted, hom_terr_capped;
+		bool overflow;
 	};
 
 	// pipe-panel quantities that carry a rolling average, order matches the rows
@@ -155,6 +156,8 @@ namespace
 	};
 
 	bool s_created = false;
+	// one shot latch for the sun path config line, re-arms with the query pool
+	bool s_sun_cfg_logged = false;
 	frame_slot s_frames[RING];
 	u32 s_frame_no = 0;
 	frame_slot* s_cur = nullptr;
@@ -295,6 +298,7 @@ namespace
 			if (t1 > t0)
 				s.data.sec[s.sec_of_pair[p]].gpu_ms += double(t1 - t0) * 1000.0 / double(dj.Frequency);
 		}
+		s.data.overflow = s.overflow;
 		s_snap = s.data;
 		s_snap_valid = true;
 
@@ -365,6 +369,18 @@ namespace svp_stats
 		if (!ensure_created())
 			return;
 
+		if (!s_sun_cfg_logged)
+		{
+			s_sun_cfg_logged = true;
+			// sun path config the cascade rows are read against
+			Msg("[SUN-CFG] shafts=%u minmax=%u adv=%u smap=%u lean=%d cascades=%.0f/%.0f/%.0f grass=%.0f/%.2f/%.0f on=%d",
+				ps_sunshafts_mode, RImplementation.o.dx10_minmax_sm, RImplementation.o.advancedpp,
+				RImplementation.o.smapsize, ps_r__sun_minmax_lean,
+				ps_ssfx_shadow_cascades.x, ps_ssfx_shadow_cascades.y, ps_ssfx_shadow_cascades.z,
+				ps_ssfx_grass_shadows.x, ps_ssfx_grass_shadows.y, ps_ssfx_grass_shadows.z,
+				psDeviceFlags2.test(rsGrassShadow) ? 1 : 0);
+		}
+
 		double fms = 0.0;
 		if (s_frame_timer_started)
 			fms = s_frame_timer.GetElapsed_sec() * 1000.0;
@@ -388,6 +404,7 @@ namespace svp_stats
 		}
 		s_cur->data.main_lights = s_cur->data.main_shadowed = 0;
 		s_cur->data.svp_blends = s_cur->data.sun_passes = 0;
+		s_cur->data.overflow = false;
 		s_cur->data.frame_ms = fms;
 		// shared cull counters, one frame of accumulation each
 		svp_stats_ssa_culled = 0;
@@ -909,6 +926,13 @@ namespace svp_stats
 					d.moc_ret, d.moc_fill_pct, d.hom_terr_emitted, d.hom_terr_capped, d.hom_terr_cells);
 				foot_emit(ptail, pt, "sun gpu c0 %.2f c1 %.2f c2 %.2f ms",
 					d.sec[SEC_SUN_C0].gpu_ms, d.sec[SEC_SUN_C1].gpu_ms, d.sec[SEC_SUN_C2].gpu_ms);
+				// vol nests inside acc, the c0 c1 c2 remainder is cpu stall and gpu idle
+				foot_emit(ptail, pt, "sun sub now smap %.2f grass %.2f mm %.2f acc %.2f (vol %.2f) svp %.2f ms",
+					d.sec[SEC_SUN_SMAP].gpu_ms, d.sec[SEC_SUN_GRASS].gpu_ms, d.sec[SEC_SUN_MINMAX].gpu_ms,
+					d.sec[SEC_SUN_ACCUM].gpu_ms, d.sec[SEC_SUN_VOL].gpu_ms, d.sec[SEC_SUN_SVP].gpu_ms);
+				foot_emit(ptail, pt, "sun sub avg smap %.2f grass %.2f mm %.2f acc %.2f (vol %.2f) svp %.2f ms",
+					s_sec_avg[SEC_SUN_SMAP], s_sec_avg[SEC_SUN_GRASS], s_sec_avg[SEC_SUN_MINMAX],
+					s_sec_avg[SEC_SUN_ACCUM], s_sec_avg[SEC_SUN_VOL], s_sec_avg[SEC_SUN_SVP]);
 			}
 
 			// the per-category megabytes ride in the label so the row keeps the two data columns
@@ -960,7 +984,9 @@ namespace svp_stats
 			};
 
 			char pb[24], pa[24];
-			prow(c_hdr, "pipe", c_hdr, "NOW", c_hdr, "AVG");
+			// ovf means the frame ran out of timestamp pairs so any gpu row can read low
+			prow(d.overflow ? color_rgba(255, 90, 90, 255) : c_hdr, d.overflow ? "pipe ovf" : "pipe",
+				c_hdr, "NOW", c_hdr, "AVG");
 			xr_sprintf(pb, "%.2f", untracked); xr_sprintf(pa, "%.2f", untracked_avg);
 			prow(c_txt, "untracked", gpu_color(untracked), pb, gpu_color(untracked_avg), pa);
 			xr_sprintf(pb, "%u", d.copies); xr_sprintf(pa, "%.1f", s_pipe_avg[PIPE_COPIES]);
@@ -1009,6 +1035,7 @@ namespace svp_stats
 		if (s_shader) { xr_delete(s_shader); s_shader = nullptr; }
 		s_cur = nullptr;
 		s_created = false;
+		s_sun_cfg_logged = false;
 		s_snap_valid = false;
 		s_frame_timer_started = false;
 	}
@@ -1025,4 +1052,16 @@ void svp_stats_sun_cascade_end(u32 idx)
 {
 	if (idx < 3)
 		svp_stats::section_end(svp_stats::section_e(svp_stats::SEC_SUN_C0 + idx));
+}
+
+void svp_stats_sun_sub_begin(u32 sub)
+{
+	if (ps_r__svp_stats >= 2)
+		svp_stats::section_begin(svp_stats::section_e(svp_stats::SEC_SUN_SMAP + sub));
+}
+
+void svp_stats_sun_sub_end(u32 sub)
+{
+	if (ps_r__svp_stats >= 2)
+		svp_stats::section_end(svp_stats::section_e(svp_stats::SEC_SUN_SMAP + sub));
 }

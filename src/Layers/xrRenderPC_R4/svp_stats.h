@@ -43,6 +43,13 @@ namespace svp_stats
 		SEC_SUN_C0,
 		SEC_SUN_C1,
 		SEC_SUN_C2,
+		// sun sub sections, accumulated across all three cascades, vol nests inside accum
+		SEC_SUN_SMAP,
+		SEC_SUN_GRASS,
+		SEC_SUN_MINMAX,
+		SEC_SUN_ACCUM,
+		SEC_SUN_VOL,
+		SEC_SUN_SVP,
 		SEC_COUNT
 	};
 

@@ -87,6 +87,10 @@ extern ECORE_API u32 svp_stats_cb_flush_map;  // of those, how many actually map
 extern ECORE_API float svp_stats_join_ms;         // secondary task join wait, ms, this frame
 extern ECORE_API float svp_stats_capture_base_ms; // main graph traverse plus capture, cpu ms, this frame
 extern ECORE_API float svp_stats_capture_cascade_ms[3]; // per sun cascade traverse plus capture, cpu ms
+// sun sub timer ids, order matches SEC_SUN_SMAP through SEC_SUN_SVP
+enum { SUN_SUB_SMAP = 0, SUN_SUB_GRASS, SUN_SUB_MINMAX, SUN_SUB_ACCUM, SUN_SUB_VOL, SUN_SUB_SVP };
+extern void svp_stats_sun_sub_begin(u32 sub);
+extern void svp_stats_sun_sub_end(u32 sub);
 extern ECORE_API float svp_stats_present_ms;  // swapchain Present wall clock, ms, this frame
 extern ECORE_API u32 svp_stats_sort_calls;    // render queue sort invocations this frame
 extern ECORE_API u32 svp_stats_sort_packets;  // total packets sorted across those invocations
