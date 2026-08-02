@@ -83,7 +83,6 @@ public:
 	static void svp_set_lod_scale(float s); // pip SVP LOD: scale captured ssa to the SVP's pixel coverage
 	static void svp_set_ssa_cull(float strength, float cov); // pip SVP small-object cull threshold
 	static bool svp_cull_reject(dxRender_Visual* V, Fmatrix* M);
-	static bool svp_cull_reject_sphere(const Fvector& c, float r);
 	static float svp_drain_lod(float ssa, float R); // pip lod for the drained weapon via the inline lod helpers
 	IC void r_dsgraph_render_graph(u32 _priority, bool _clear = true)
 	{

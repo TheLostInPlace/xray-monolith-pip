@@ -319,6 +319,7 @@ void CRender::Render()
 	if (Device.true_pip_on)
 		TargetMain->SetActive();
 	svp_stats::section_begin(svp_stats::SEC_MAIN_GBUFFER);
+	const u32 gbuffer_frame = Device.dwFrame; // grass fills its instance buffer once per frame for both gbuffers
 	renderGBuffer(!svp); // keep the priority-0 graph when an SVP pass follows
 	svp_stats::section_end(svp_stats::SEC_MAIN_GBUFFER);
 	if (svp)
@@ -331,6 +332,7 @@ void CRender::Render()
 		const u32 calls0 = RCache.stat.calls;
 		const u32 verts0 = RCache.stat.verts;
 		TargetSVP->SetActive();
+		R_ASSERT2(Device.dwFrame == gbuffer_frame, "svp gbuffer runs on a new frame, the grass instance ranges are stale");
 		svp_stats::section_begin(svp_stats::SEC_SVP_GBUFFER);
 		renderGBuffer(true);
 		svp_stats::section_end(svp_stats::SEC_SVP_GBUFFER);
@@ -387,8 +389,7 @@ void CRender::renderGBuffer(bool clearGraph)
 	// otherwise resubmit the whole world through a cone that sees a fraction
 	const bool svp_pass = (Target == TargetSVP) && Device.true_pip_on;
 	const bool svp_cull = svp_pass && ps_r__svp_cull;
-	const bool svp_cull_grass = svp_pass && ps_r__svp_cull_grass && !ps_r__svp_skip_grass;
-	if (svp_cull || svp_cull_grass)
+	if (svp_cull)
 	{
 		Fmatrix svp_full;
 		svp_full.mul(Device.matrices[1].mProject, Device.matrices[1].mView);
@@ -572,7 +573,7 @@ void CRender::renderGBuffer(bool clearGraph)
 		Target->phase_scene_end();
 	}
 
-	if (svp_cull || svp_cull_grass)
+	if (svp_cull)
 		CDSGraphManager::svp_cull_end(); // pip end SVP cull, the shared shadow/light passes below are unaffected
 	if (svp_pass)
 	{

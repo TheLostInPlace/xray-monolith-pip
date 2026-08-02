@@ -335,8 +335,6 @@ void CDetailManager::hw_Render_dump(ref_constant x_array, u32 var_id, u32 lod_id
 
 	VERIFY(objects.size()<=list.size());
 
-	// pip grass cull, only on the SVP gbuffer pass with the frustum armed, the main pass pays one bool
-	const bool svp_grass_cull = ps_r__svp_cull_grass && CDSGraphManager::svp_cull_active();
 	// pip the main-pass drain keeps the visible set when the SVP pass draws the scope grass second
 	extern bool g_svp_defer_detail_clear;
 
@@ -365,10 +363,6 @@ void CDetailManager::hw_Render_dump(ref_constant x_array, u32 var_id, u32 lod_id
 				for (; _iI != _iE; _iI++)
 				{
 					SlotItem& Instance = **_iI;
-
-					// pip drop grass instances off the scope cone, radius covers a blade past its root
-					if (svp_grass_cull && CDSGraphManager::svp_cull_reject_sphere(Instance.position, dm_slot_size))
-						continue;
 
 					if (!RImplementation.GMBase.is_sector_visible(RImplementation.pOutdoorSector))
 						continue;

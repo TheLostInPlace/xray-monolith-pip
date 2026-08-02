@@ -25,7 +25,6 @@ extern ECORE_API u32 svp_stats_taa_stamp; // successful raw taa skip mask draws 
 extern ECORE_API u32 svp_stats_nvg_split; // svp nvg tube split fires read by the overlay, incremented in phase_combine
 extern ECORE_API u32 svp_stats_lod_scale; // svp lod scale armed frames read by the overlay, incremented in svp_set_lod_scale
 extern ECORE_API u32 svp_stats_hud_cull_reject; // svp hud drain cone rejects read by the overlay, incremented in svp_hud_latch
-extern ECORE_API u32 svp_stats_grass_cull_reject; // svp grass cone rejects read by the overlay, incremented in the detail manager
 extern ECORE_API u32 svp_stats_reflex_capture; // svp hybrid reflex draws read by the overlay
 extern ECORE_API u32 svp_stats_distort_guard; // svp distort guard stamps read by the overlay, incremented in phase_combine
 extern ECORE_API u32 svp_stats_nvg_sky; // svp nvg sky lum remaps read by the overlay, incremented in phase_combine
@@ -38,7 +37,6 @@ extern ECORE_API u32 svp_ledger_cull_reject_ident;
 extern ECORE_API u32 svp_ledger_lights_mirrored;
 extern ECORE_API u32 svp_ledger_lights_skipped;
 extern ECORE_API u32 svp_ledger_lod_scale;
-extern ECORE_API u32 svp_ledger_grass_cull_reject;
 extern ECORE_API u32 svp_ledger_distort_guard;
 extern ECORE_API u32 svp_ledger_disc_latch;
 extern ECORE_API u32 svp_ledger_fwd_keep;
@@ -48,7 +46,6 @@ extern ECORE_API float ps_r__svp_cull_ssa;
 extern ECORE_API int ps_r__svp_dlss;
 extern ECORE_API int ps_r__svp_adaptive_grow;
 extern ECORE_API int ps_r__svp_cull;
-extern ECORE_API int ps_r__svp_cull_grass;
 extern ECORE_API int ps_r__svp_light_cull;
 extern ECORE_API int ps_r__svp_corner_mask;
 extern ECORE_API int ps_r__svp_skip_motionblur;

@@ -438,8 +438,6 @@ void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave
 	c_ambient.set(desc.ambient.x, desc.ambient.y, desc.ambient.z);
 	c_hemi.set(desc.hemi_color.x, desc.hemi_color.y, desc.hemi_color.z);
 
-	// pip grass cull, only armed on the SVP gbuffer pass, the main pass pays one bool
-	const bool svp_grass_cull = ps_r__svp_cull_grass && CDSGraphManager::svp_cull_active();
 	// pip the main-pass drain keeps the visible set when the SVP pass draws the scope grass second
 	extern bool g_svp_defer_detail_clear;
 
@@ -546,13 +544,6 @@ void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave
 					for (; _iI != _iE; _iI++)
 					{
 						SlotItem& Instance = **_iI;
-
-						if (svp_grass_cull && CDSGraphManager::svp_cull_reject_sphere(Instance.position, dm_slot_size))
-						{
-							if (ps_r__svp_stats) ++svp_stats_grass_cull_reject; // overlay proof the grass cone cull fired
-							if (!svp_ledger_grass_cull_reject) svp_ledger_grass_cull_reject = 1;
-							continue;
-						}
 
 						if (!RImplementation.GMBase.is_sector_visible(RImplementation.pOutdoorSector))
 							continue;

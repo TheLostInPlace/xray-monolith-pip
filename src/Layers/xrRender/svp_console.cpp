@@ -24,7 +24,6 @@ u32 svp_stats_taa_stamp = 0; // successful raw taa skip mask draws read by the o
 u32 svp_stats_nvg_split = 0; // svp nvg tube split fires the overlay reads, incremented in phase_combine
 u32 svp_stats_lod_scale = 0; // svp lod scale armed frames the overlay reads, incremented in svp_set_lod_scale
 u32 svp_stats_hud_cull_reject = 0; // svp hud drain cone rejects the overlay reads, incremented in svp_hud_latch
-u32 svp_stats_grass_cull_reject = 0; // svp grass cone rejects the overlay reads, incremented in the detail manager
 u32 svp_stats_reflex_capture = 0; // svp hybrid reflex draws the overlay reads
 u32 svp_stats_distort_guard = 0; // svp distort guard stamps the overlay reads, incremented in phase_combine
 u32 svp_stats_nvg_sky = 0; // svp nvg sky lum remaps the overlay reads, incremented in phase_combine
@@ -39,7 +38,6 @@ u32 svp_ledger_cull_reject_ident = 0;
 u32 svp_ledger_lights_mirrored = 0;
 u32 svp_ledger_lights_skipped = 0;
 u32 svp_ledger_lod_scale = 0;
-u32 svp_ledger_grass_cull_reject = 0;
 u32 svp_ledger_distort_guard = 0;
 u32 svp_ledger_disc_latch = 0;
 u32 svp_ledger_fwd_keep = 0;
@@ -154,7 +152,6 @@ int ps_r__svp_skip_ssr = 1; // svp scope reflections, 0 reflective water + SSR, 
 int ps_r__svp_skip_volumetric = 0; // svp skip volumetric lights on the scope pass, subtle at magnification (0 = keep)
 int ps_r__svp_skip_grass = 0; // svp skip grass/details on the scope pass, near grass is mostly off a zoomed cone (0 = keep)
 int ps_r__svp_sss_sun = 0; // svp compute the scope SSS pass and keep the sun contact shadow term on the scope, expensive (0 = off)
-int ps_r__svp_cull_grass = 1; // svp cull grass instances to the scope cone instead of replaying the whole main field (1 = on)
 int ps_r__svp_light_cull = 1; // svp cone-cull the mirrored light blends, skip a light whose sphere never meets the scope cone (1 = on, 0 = mirror everything)
 int ps_r__svp_corner_mask = 1; // svp stencil the dead corners outside the eyepiece disc so the lighting + combine passes skip them (1 = on)
 int ps_r__pp_lean = 0; // master gate for the idle post-pass skips in phase_combine (0 = stock, every pass runs)
@@ -360,7 +357,6 @@ void svp_console_init()
 	CMD4(CCC_Integer, "r__svp_skip_volumetric", &ps_r__svp_skip_volumetric, 0, 1); // svp skip volumetric lights on the scope
 	CMD4(CCC_Integer, "r__svp_skip_grass", &ps_r__svp_skip_grass, 0, 1); // svp skip grass/details on the scope
 	CMD4(CCC_Integer, "r__svp_sss_sun", &ps_r__svp_sss_sun, 0, 1); // svp SSS sun contact shadows on the scope
-	CMD4(CCC_Integer, "r__svp_cull_grass", &ps_r__svp_cull_grass, 0, 1); // svp cull grass to the scope cone
 	CMD4(CCC_Integer, "r__svp_light_cull", &ps_r__svp_light_cull, 0, 1); // svp cone-cull the mirrored light blends (1 = on)
 	CMD4(CCC_SvpFixedInteger, "r__svp_corner_mask", &ps_r__svp_corner_mask, 0, 1);
 	CMD4(CCC_Integer, "r__pp_lean", &ps_r__pp_lean, 0, 1); // skip idle post passes (0 = stock)
@@ -388,7 +384,6 @@ namespace
 		{ "lights_mirrored",   &svp_ledger_lights_mirrored,   &ps_r__svp_light_cull,    nullptr,                 0.f },
 		{ "lights_skipped",    &svp_ledger_lights_skipped,    &ps_r__svp_light_cull,    nullptr,                 0.f },
 		{ "lod_scale",         &svp_ledger_lod_scale,         nullptr,                  &ps_r__svp_lod,          0.f },
-		{ "grass_cull_reject", &svp_ledger_grass_cull_reject, &ps_r__svp_cull_grass,    nullptr,                 0.f },
 		{ "distort_guard",     &svp_ledger_distort_guard,     &ps_r__svp_distort_guard, nullptr,                 0.f },
 		{ "disc_latch",        &svp_ledger_disc_latch,        nullptr,                  &ps_r__svp_adaptive_res, 0.f },
 		{ "fwd_keep",          &svp_ledger_fwd_keep,          nullptr,                  nullptr,                 0.f },

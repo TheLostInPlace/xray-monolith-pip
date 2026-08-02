@@ -20,7 +20,6 @@ extern u32 svp_stats_taa_stamp;
 extern u32 svp_stats_nvg_split;
 extern u32 svp_stats_lod_scale;
 extern u32 svp_stats_hud_cull_reject;
-extern u32 svp_stats_grass_cull_reject;
 extern u32 svp_stats_reflex_capture;
 extern u32 svp_stats_distort_guard;
 extern u32 svp_stats_nvg_sky;
@@ -95,7 +94,7 @@ namespace
 		u32 main_lights, main_shadowed, svp_blends, sun_passes, ssa_culled;
 		u32 cull_reject, cull_reject_ident, lights_mirrored, lights_skipped;
 		u32 taa_stamp, nvg_split;
-		u32 lod_scale, hud_cull_reject, grass_cull_reject, reflex_capture;
+		u32 lod_scale, hud_cull_reject, reflex_capture;
 		u32 distort_guard, nvg_sky, disc_latch, fwd_keep;
 		u32 svp_w, svp_h;
 		u32 svp_epoch, optic_resolve;
@@ -361,7 +360,6 @@ namespace svp_stats
 		svp_stats_nvg_split = 0;
 		svp_stats_lod_scale = 0;
 		svp_stats_hud_cull_reject = 0;
-		svp_stats_grass_cull_reject = 0;
 		svp_stats_reflex_capture = 0;
 		svp_stats_distort_guard = 0;
 		svp_stats_nvg_sky = 0;
@@ -469,7 +467,6 @@ namespace svp_stats
 		d.nvg_split = svp_stats_nvg_split;
 		d.lod_scale = svp_stats_lod_scale;
 		d.hud_cull_reject = svp_stats_hud_cull_reject;
-		d.grass_cull_reject = svp_stats_grass_cull_reject;
 		d.reflex_capture = svp_stats_reflex_capture;
 		d.distort_guard = svp_stats_distort_guard;
 		d.nvg_sky = svp_stats_nvg_sky;
@@ -594,7 +591,7 @@ namespace svp_stats
 		xr_sprintf(foot[nf++], "1s min %.2f avg %.2f max %.2f", ft_min, ft_avg, ft_max);
 		xr_sprintf(foot[nf++], "svp %ux%u mag %.1fx epoch %u res %u", d.svp_w, d.svp_h, d.svp_mag, d.svp_epoch, d.optic_resolve);
 		xr_sprintf(foot[nf++], "res learn %.0f apply %.0f side %u grow %s", d.svp_disc_learned, d.svp_disc, d.svp_w, d.svp_grow ? "on" : "off");
-		xr_sprintf(foot[nf++], "cull ssa %u rej %u i%u hud %u grass %u  lights m%u s%u", d.ssa_culled, d.cull_reject, d.cull_reject_ident, d.hud_cull_reject, d.grass_cull_reject, d.lights_mirrored, d.lights_skipped);
+		xr_sprintf(foot[nf++], "cull ssa %u rej %u i%u hud %u  lights m%u s%u", d.ssa_culled, d.cull_reject, d.cull_reject_ident, d.hud_cull_reject, d.lights_mirrored, d.lights_skipped);
 		if (full)
 		{
 			xr_sprintf(foot[nf++], "stamp taa %u nvg %u distort %u nvgsky %u", d.taa_stamp, d.nvg_split, d.distort_guard, d.nvg_sky);
