@@ -114,6 +114,12 @@ extern ECORE_API u32 svp_stats_hom_dis_keep;       // mismatches where legacy cu
 extern ECORE_API u32 svp_stats_moc_ret;            // last masked RenderTriangles result plus one, 0 = never ran
 extern ECORE_API u32 svp_stats_moc_fill_pct;       // masked buffer occupancy percent from the throttled probe
 
+// cform ground fed to the masked buffer, read at level load and once per occlusion frame
+extern ECORE_API int ps_r__hom_terrain;            // 0 skips the load scan and every per frame cost
+extern ECORE_API u32 svp_stats_hom_terr_cells;     // terrain grid cells the frustum kept this frame
+extern ECORE_API u32 svp_stats_hom_terr_emitted;   // terrain tris pushed into the masked buffer
+extern ECORE_API u32 svp_stats_hom_terr_capped;    // 1 when the emit cap stopped the walk
+
 // optics derivation
 extern ECORE_API float ps_r__svp_obj_dist;
 extern ECORE_API float ps_r__svp_obj_size;
