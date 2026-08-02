@@ -220,7 +220,11 @@ namespace R_dsgraph
         }
 	};
 
-	using RenderQueue = xr_vector<RenderPacket, render_allocator::helper<RenderPacket>::result>;
+	// sorted tracks whether the packets are already in sort key order, every append clears it
+	struct RenderQueue : xr_vector<RenderPacket, render_allocator::helper<RenderPacket>::result>
+	{
+		bool sorted = false;
+	};
 	using RenderQueueArray = xr_array<xr_array<RenderQueue, SHADER_PASSES_MAX>, 2>;
 
 	struct DynamicSceneRgraph
@@ -266,6 +270,7 @@ namespace R_dsgraph
 					queue[_priority][iPass].clear_and_free();
 				else
 					queue[_priority][iPass].clear();
+				queue[_priority][iPass].sorted = false;
 			}
 		}
 

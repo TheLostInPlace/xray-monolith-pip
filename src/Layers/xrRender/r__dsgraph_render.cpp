@@ -222,15 +222,20 @@ void CDSGraphManager::r_dsgraph_render_graph(RenderQueueArray& queues, u32 _prio
 			continue;
 
 		// 1. Sort by generated sort key to replicate previous fixed map behaviour
-		if (ps_r__svp_stats)
+		// the memo skips a queue nothing appended to since its last sort, the counters tally real invocations only
+		if (!ps_r__dsgraph_sort_memo || !queue.sorted)
 		{
-			++svp_stats_sort_calls;
-			svp_stats_sort_packets += (u32)queue.size();
+			if (ps_r__svp_stats)
+			{
+				++svp_stats_sort_calls;
+				svp_stats_sort_packets += (u32)queue.size();
+			}
+			if (queue.size() < 4096)
+				std::sort(queue.begin(), queue.end());
+			else
+				xr_parallel_sort(queue.begin(), queue.end());
+			queue.sorted = true;
 		}
-		if (queue.size() < 4096)
-            std::sort(queue.begin(), queue.end());
-		else
-            xr_parallel_sort(queue.begin(), queue.end());
 
 		// 2. Render
 		vs_type pVS = nullptr;
@@ -325,7 +330,10 @@ void CDSGraphManager::r_dsgraph_render_graph(RenderQueueArray& queues, u32 _prio
 		}
 
 		if (_clear)
+		{
 			queue.clear();
+			queue.sorted = false;
+		}
 	}
 }
 

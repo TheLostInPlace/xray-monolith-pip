@@ -512,6 +512,7 @@ void CDSGraphManager::AddToRenderQueue(R_dsgraph::RenderQueue& queue, const R_ds
 		}
 	}
 
+	queue.sorted = false; // the sole insertion path, an append drops the sort memo
 	queue.emplace_back(item, pass);
 }
 
