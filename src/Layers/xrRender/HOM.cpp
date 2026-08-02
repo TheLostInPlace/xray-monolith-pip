@@ -64,6 +64,7 @@ CHOM::CHOM()
 	m_terr_sx = 0.f;
 	m_terr_sz = 0.f;
 	m_terr_ready = false;
+	m_terr_attempted = false;
 #ifdef DEBUG
 	Device.seqRender.Add(this,REG_PRIORITY_LOW-1000);
 #endif
@@ -325,6 +326,7 @@ void CHOM::Load()
 	S->close();
 	FS.r_close(fs);
 
+	m_terr_attempted = false;
 	terrain_load();
 
 	if (ps_r2_ls_flags.test(R2FLAG_EXP_MT_CALC))
@@ -527,7 +529,7 @@ void CHOM::Render_DB(CFrustum& base)
 void CHOM::latch_engine(float near_w)
 {
 	const int mode = (ps_r__hom_engine < 0) ? 0 : ((ps_r__hom_engine > 2) ? 2 : ps_r__hom_engine);
-	const int res = (ps_r__hom_moc_res < 0) ? 0 : ((ps_r__hom_moc_res > 2) ? 2 : ps_r__hom_moc_res);
+	const int res = (ps_r__hom_moc_res < 0) ? 0 : ((ps_r__hom_moc_res > 3) ? 3 : ps_r__hom_moc_res);
 
 	m_occ_mode = mode;
 	m_occ_time_queries = (ps_r__svp_stats >= 2);
@@ -565,6 +567,13 @@ void CHOM::Render(CFrustum& base)
 	const float pz = -Device.mProject._33;
 	const float near_w = (_abs(pz) > EPS) ? (Device.mProject._43 / pz) : 0.f;
 	latch_engine(near_w);
+
+	// the terrain scan latches lazily so a mid session cvar flip works without a reload
+	if (ps_r__hom_terrain && m_occ_masked && !m_terr_ready && !m_terr_attempted)
+	{
+		m_terr_attempted = true;
+		terrain_load();
+	}
 
 	// the occlusion frame starts here on whichever thread renders it, the latch just wrote engine and res
 	// a menu frame never reaches this so the counters keep the last rendered frame

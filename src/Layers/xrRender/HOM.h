@@ -60,6 +60,7 @@ private:
 	Fbox m_terr_bounds;
 	float m_terr_sx, m_terr_sz; // world to cell scale on x and z
 	bool m_terr_ready;          // the grid is built and safe to walk
+	bool m_terr_attempted;      // one lazy scan per level so a mid session cvar flip works
 
 	void latch_engine(float near_w);
 	BOOL query_box(const Fbox& B);
