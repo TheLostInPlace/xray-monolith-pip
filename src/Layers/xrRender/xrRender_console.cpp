@@ -513,6 +513,7 @@ int ps_r__tex_evict_interval   = 600;
 
 int ps_r__swapchain_buffers = 2;
 int ps_r__max_frame_latency = 0;
+int ps_r__sun_minmax_lean = 0;
 
 //AVO: detail draw radius
 Flags32 ps_common_flags = {0}; // r1-only
@@ -1659,6 +1660,7 @@ void xrRender_initconsole()
 	CMD4(CCC_Integer, "r__tex_evict_interval",   &ps_r__tex_evict_interval,   60,  3600 );
 	CMD4(CCC_Integer, "r__swapchain_buffers", &ps_r__swapchain_buffers, 2, 3);
 	CMD4(CCC_Integer, "r__max_frame_latency", &ps_r__max_frame_latency, 0, 4);
+	CMD4(CCC_Integer, "r__sun_minmax_lean", &ps_r__sun_minmax_lean, 0, 1);
 	CMD3(CCC_Mask, "r__use_precompiled_shaders", &psDeviceFlags2, rsPrecompiledShaders); //Alundaio
 	CMD3(CCC_Mask, "r__enable_grass_shadow", &psDeviceFlags2, rsGrassShadow); //Alundaio
 	CMD3(CCC_Mask, "r__no_scale_on_fade", &psDeviceFlags2, rsNoScale); //Alundaio

@@ -398,6 +398,8 @@ extern ECORE_API int ps_r__tex_evict_interval;
 extern ECORE_API int ps_r__swapchain_buffers;
 // IDXGIDevice1::SetMaximumFrameLatency cap, 0 leaves the driver default
 extern ECORE_API int ps_r__max_frame_latency;
+// 0 generates the sun minmax shadow map on every cascade like today, 1 skips the cascades no consumer reads
+extern ECORE_API int ps_r__sun_minmax_lean;
 
 extern void xrRender_initconsole();
 extern BOOL xrRender_test_hw();
