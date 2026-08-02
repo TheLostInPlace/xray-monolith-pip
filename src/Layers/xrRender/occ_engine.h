@@ -19,8 +19,7 @@ public:
 	virtual BOOL test_box(const Fbox& world) = 0;
 	virtual BOOL test_poly(const Fvector* v, u32 n) = 0;
 
-	// legacy clips against the near plane inside emit, a masked rasterizer clips internally
-	virtual bool wants_near_clip() = 0;
+	// true only where per-tri pixel feedback exists to drive the skip stamp
 	virtual bool wants_skip_filter() = 0;
 };
 

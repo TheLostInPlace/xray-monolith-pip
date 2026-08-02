@@ -289,7 +289,11 @@ void CHOM::latch_engine(float near_w)
 	{
 		m_occ_mode_logged = mode;
 		m_occ_res_logged = res;
-		Msg("* [MOC] engine %d res %ux%u near %.3f", mode, rw, rh, near_w);
+		// no masked buffer under engine 0 so there is no resolution to name
+		if (m_occ_masked)
+			Msg("* [MOC] engine %d res %ux%u near %.3f", mode, rw, rh, near_w);
+		else
+			Msg("* [MOC] engine %d res n/a near %.3f", mode, near_w);
 	}
 }
 
@@ -301,6 +305,13 @@ void CHOM::Render(CFrustum& base)
 	const float pz = -Device.mProject._33;
 	const float near_w = (_abs(pz) > EPS) ? (Device.mProject._43 / pz) : 0.f;
 	latch_engine(near_w);
+
+	// the occlusion frame starts here on whichever thread renders it, the latch just wrote engine and res
+	// a menu frame never reaches this so the counters keep the last rendered frame
+	svp_stats_hom_tris_in = 0;
+	svp_stats_hom_tris_emitted = 0;
+	svp_stats_hom_render_us = 0;
+	svp_stats_hom_test_ticks = 0;
 
 	Device.Statistic->RenderCALC_HOM.Begin();
 	const u64 t0 = CPU::QPC();
@@ -353,6 +364,8 @@ BOOL CHOM::visible(Fbox3& B)
 
 BOOL CHOM::visible(Fbox2& B, float depth)
 {
+	// reads the legacy buffer directly, it is frozen under any other engine and has no caller
+	VERIFY(0 == m_occ_mode);
 	if (!bEnabled) return TRUE;
 	return Raster.test(B.min.x, B.min.y, B.max.x, B.max.y, depth);
 }

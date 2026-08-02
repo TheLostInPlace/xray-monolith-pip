@@ -30,7 +30,6 @@ namespace
 		BOOL test_box(const Fbox& world) override;
 		BOOL test_poly(const Fvector* v, u32 n) override;
 
-		bool wants_near_clip() override { return false; }
 		bool wants_skip_filter() override { return false; }
 
 		void reserve(u32 tris);
