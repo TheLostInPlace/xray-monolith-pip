@@ -44,7 +44,8 @@ xr_vector<u32> tree_idx_a, tree_idx_b;
 u32 tree_stat_cache = 0;
 u32 tree_stat_overdraw = 0;
 u32 tree_stat_skipped = 0;
-u32 tree_stat_ms = 0;
+u32 tree_stat_dup = 0;
+u64 tree_stat_ticks = 0;
 u32 tree_acmr_reported = 0;
 
 bool tree_range_by_ib(const tree_ib_range& a, const tree_ib_range& b)
@@ -63,14 +64,16 @@ bool tree_range_by_vb(const u32 a, const u32 b)
 
 void tree_ib_clear()
 {
-	tree_ranges.clear();
-	tree_positions.clear();
-	tree_idx_a.clear();
-	tree_idx_b.clear();
+	// the merged position scratch runs to megabytes so hand the capacity back
+	tree_ranges.clear_and_free();
+	tree_positions.clear_and_free();
+	tree_idx_a.clear_and_free();
+	tree_idx_b.clear_and_free();
 	tree_stat_cache = 0;
 	tree_stat_overdraw = 0;
 	tree_stat_skipped = 0;
-	tree_stat_ms = 0;
+	tree_stat_dup = 0;
+	tree_stat_ticks = 0;
 	tree_acmr_reported = 0;
 }
 
@@ -140,7 +143,7 @@ void tree_ib_prescan(IReader* fs)
 	vis->close();
 
 	std::sort(tree_ranges.begin(), tree_ranges.end(), tree_range_by_ib);
-	tree_stat_ms += t.GetElapsed_ms();
+	tree_stat_ticks += t.GetElapsed_ticks();
 }
 
 // second fsL_VB pass, pulls only the position floats of the windows the tree ranges address
@@ -248,9 +251,29 @@ void tree_ib_reorder(u32 ib_id, u16* data, u32 ib_count, u32& cursor)
 		++cursor;
 	}
 
+	// instances share geometry so the sorted list repeats the same window, only unique ones are worked
+	u32 prev_base = 0, prev_count = 0;
+	bool have_prev = false;
+
 	while (cursor < tree_ranges.size() && tree_ranges[cursor].ib_id == ib_id)
 	{
 		const tree_ib_range& r = tree_ranges[cursor++];
+		if (have_prev && r.i_base == prev_base && r.i_count == prev_count)
+		{
+			++tree_stat_dup;
+			continue;
+		}
+		// a partial overlap would rewrite indices the previous window already reordered
+		if (have_prev && r.i_base < prev_base + prev_count)
+		{
+			Msg("! [TREE-IB] range overlap, skipped");
+			++tree_stat_skipped;
+			continue;
+		}
+		prev_base = r.i_base;
+		prev_count = r.i_count;
+		have_prev = true;
+
 		if (u32(-1) == r.pos_offset || 0 == r.i_count || (r.i_count % 3) || 0 == r.v_count
 			|| r.i_base + r.i_count > ib_count)
 		{
@@ -273,7 +296,9 @@ void tree_ib_reorder(u32 ib_id, u16* data, u32 ib_count, u32& cursor)
 			continue;
 		}
 
-		const float acmr_before = acmr_dbg ? tree_ib_acmr(&tree_idx_a[0], r.i_count) : 0.f;
+		// the model only runs for the windows that get reported, it is o(n) per index
+		const bool acmr_sample = acmr_dbg && tree_acmr_reported < 3;
+		const float acmr_before = acmr_sample ? tree_ib_acmr(&tree_idx_a[0], r.i_count) : 0.f;
 
 		meshopt_optimizeVertexCache(&tree_idx_b[0], &tree_idx_a[0], r.i_count, r.v_count);
 		++tree_stat_cache;
@@ -283,7 +308,8 @@ void tree_ib_reorder(u32 ib_id, u16* data, u32 ib_count, u32& cursor)
 
 		for (u32 k = 0; k < r.i_count; ++k) data[r.i_base + k] = u16(tree_idx_a[k]);
 
-		if (acmr_dbg && tree_acmr_reported < 3)
+		// the dedupe above already advanced past the repeats so every sample is a distinct window
+		if (acmr_sample)
 		{
 			Msg("* [TREE-IB] acmr32 sample %d tris %d before %.3f after %.3f", tree_acmr_reported,
 			    r.i_count / 3, acmr_before, tree_ib_acmr(&tree_idx_a[0], r.i_count));
@@ -549,8 +575,10 @@ void CRender::LoadBuffers(CStreamReader* base_fs, BOOL _alternative)
 	u32 tree_range_cursor = 0;
 	if (tree_reorder)
 	{
+		// the tally covers the position pass and the reorder calls, not the buffer reads around them
 		tree_timer.Start();
 		tree_ib_read_positions(base_fs);
+		tree_stat_ticks += tree_timer.GetElapsed_ticks();
 	}
 
 	// Index buffers
@@ -575,7 +603,12 @@ void CRender::LoadBuffers(CStreamReader* base_fs, BOOL _alternative)
 			//	Check if buffer is less then 2048 kb
 			BYTE* pData = xr_alloc<BYTE>(iCount * 2);
 			fs->r(pData, iCount * 2);
-			if (tree_reorder) tree_ib_reorder(i, (u16*)pData, iCount, tree_range_cursor);
+			if (tree_reorder)
+			{
+				tree_timer.Start();
+				tree_ib_reorder(i, (u16*)pData, iCount, tree_range_cursor);
+				tree_stat_ticks += tree_timer.GetElapsed_ticks();
+			}
 			dx10BufferUtils::CreateIndexBuffer(&_IB[i], pData, iCount * 2);
 			xr_free(pData);
 
@@ -587,9 +620,9 @@ void CRender::LoadBuffers(CStreamReader* base_fs, BOOL _alternative)
 	if (tree_reorder)
 	{
 		tree_stat_skipped += u32(tree_ranges.size()) - tree_range_cursor;
-		const u32 ms = tree_stat_ms + tree_timer.GetElapsed_ms();
-		Msg("* [TREE-IB] ranges %d cache %d overdraw %d skipped %d ms %d", u32(tree_ranges.size()),
-		    tree_stat_cache, tree_stat_overdraw, tree_stat_skipped, ms);
+		const u32 ms = u32(tree_stat_ticks * 1000ull / CPU::qpc_freq);
+		Msg("* [TREE-IB] ranges %d cache %d overdraw %d dup %d skipped %d ms %d", u32(tree_ranges.size()),
+		    tree_stat_cache, tree_stat_overdraw, tree_stat_dup, tree_stat_skipped, ms);
 		if (ms > 100) Msg("! [TREE-IB] reorder over the 100 ms load budget");
 	}
 	if (!_alternative) tree_ib_clear();
