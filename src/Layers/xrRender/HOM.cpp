@@ -496,7 +496,8 @@ void CHOM::Render_DB(CFrustum& base)
 	{
 		// Control skipping
 		occTri& T = m_pTris[it->id];
-		u32 next = _frame + ::Random.randI(3, 10);
+		// the skip cadence is the only reader, a masked frame draws no shared random at all
+		u32 next = skip_filter ? _frame + ::Random.randI(3, 10) : 0;
 
 		// Test for good occluder - should be improved :)
 		if (!(T.flags || (T.plane.classify(COP) > 0)))
