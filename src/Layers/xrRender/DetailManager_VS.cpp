@@ -295,6 +295,7 @@ void CDetailManager::hw_Unload()
 	hw_run_count.clear();
 	hw_run_slots.clear();
 	hw_run_frustum = nullptr;
+	hw_run_site = hw_run_site_none;
 	hw_instance_cap = 0;
 	hw_frame_filled = u32(-1);
 #endif

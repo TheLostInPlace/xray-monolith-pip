@@ -107,6 +107,7 @@ CDetailManager::CDetailManager()
 	hw_instancing = false;
 	hw_overflow_logged = false;
 	hw_run_frustum = nullptr;
+	hw_run_site = hw_run_site_none;
 	hw_run_cascade = 0;
 	hw_run_tested = hw_run_kept = hw_run_runs = hw_run_max = 0;
 #endif
@@ -504,8 +505,7 @@ void CDetailManager::UpdateVisibleM()
 							Item.distance = dist_sq;
 							Item.position = S.vis.sphere.P;
 #ifdef USE_DX11
-							if (ps_r__sun_grass_runs)
-								Item.radius = S.vis.sphere.R;
+							Item.radius = S.vis.sphere.R;
 #endif
 							//2							visible[vis_id][sp.id].push_back(&Item);
 						}

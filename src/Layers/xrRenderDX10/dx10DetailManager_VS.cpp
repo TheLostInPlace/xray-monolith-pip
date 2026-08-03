@@ -274,11 +274,15 @@ void CDetailManager::hw_Fill_Instances()
 			{
 				SlotItemVec* items = *_vI;
 				// every item of a vec belongs to one slot so the head names that slot's sphere
+				u32 slot_entry = u32(-1);
 				if (runs && !items->empty())
 				{
 					SlotSphere sph;
 					sph.center = items->front()->position;
 					sph.radius = items->front()->radius;
+					sph.inst_first = instTotal;
+					sph.inst_count = 0;
+					slot_entry = (u32)hw_run_slots.size();
 					hw_run_slots.push_back(sph);
 				}
 				SlotItemVecIt _iI = items->begin();
@@ -313,6 +317,9 @@ void CDetailManager::hw_Fill_Instances()
 					R.scale = Instance.scale_calculated;
 					instTotal++;
 				}
+				// the item loop can leave early so the range length comes from the packed delta
+				if (slot_entry != u32(-1))
+					hw_run_slots[slot_entry].inst_count = instTotal - hw_run_slots[slot_entry].inst_first;
 				if (instTotal >= hw_instance_cap)
 					break;
 			}
@@ -339,9 +346,10 @@ void CDetailManager::hw_Fill_Instances()
 
 void CDetailManager::hw_Run_Begin(const CFrustum* F, u32 cascade)
 {
-	if (!ps_r__sun_grass_runs || !hw_instancing)
+	if (!hw_instancing)
 		return;
 	hw_run_frustum = F;
+	hw_run_site = hw_run_site_sun;
 	hw_run_cascade = cascade;
 	hw_run_tested = hw_run_kept = hw_run_runs = hw_run_max = 0;
 }
@@ -350,7 +358,12 @@ void CDetailManager::hw_Run_End()
 {
 	if (!hw_run_frustum)
 		return;
+	// the token arms on every cascade, only a walked site has numbers to publish
+	const bool walked = (hw_run_site == hw_run_site_sun) && ps_r__sun_grass_runs;
 	hw_run_frustum = nullptr;
+	hw_run_site = hw_run_site_none;
+	if (!walked)
+		return;
 
 	if (ps_r__svp_stats)
 	{
@@ -426,7 +439,7 @@ void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave
 			return;
 
 		// slot spheres against the cascade frustum, stretches of consecutive keeps only
-		if (hw_run_frustum && var_id != 0)
+		if (hw_run_frustum && hw_run_site == hw_run_site_sun && ps_r__sun_grass_runs && var_id != 0)
 		{
 			for (u32 O = 0; O < nObj; O++)
 			{

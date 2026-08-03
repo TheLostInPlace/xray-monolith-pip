@@ -7,6 +7,7 @@
 #pragma once
 
 #include "../../xrCore/xrpool.h"
+#include "../../xrCDB/Frustum.h"
 #include "detailformat.h"
 #include "detailmodel.h"
 #include "light.h"
@@ -61,8 +62,6 @@ const int		dm_cache_size = dm_cache_line * dm_cache_line;
 const float		dm_fade = float(2 * dm_size) - .5f;
 #endif
 
-
-class CFrustum;
 
 class ECORE_API CDetailManager
 {
@@ -253,6 +252,8 @@ public:
 	{
 		Fvector center;
 		float radius;
+		u32 inst_first; // absolute index of this slot's first packed instance
+		u32 inst_count; // instances this slot packed, zero is legal and keeps runs contiguous
 	};
 	xr_vector<SlotSphere> hw_run_slots;
 	// where each var_id and object range sits in hw_run_slots, indexed like hw_inst_base
@@ -260,6 +261,10 @@ public:
 	xr_vector<u32> hw_run_count;
 	// cascade frustum the grass draw measures against, null everywhere else
 	const CFrustum* hw_run_frustum;
+	// which bracket armed the frustum, the walk reads its own cvar and exclusions from this
+	enum { hw_run_site_none = 0, hw_run_site_sun, hw_run_site_svp };
+	u32 hw_run_site;
+	CFrustum hw_run_frustum_own; // built by the matrix form of Begin, hw_run_frustum points at it
 	u32 hw_run_cascade;
 	u32 hw_run_tested;
 	u32 hw_run_kept;
