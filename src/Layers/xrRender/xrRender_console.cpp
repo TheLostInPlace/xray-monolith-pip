@@ -515,18 +515,18 @@ int ps_r__tex_evict_interval   = 600;
 
 int ps_r__swapchain_buffers = 2;
 int ps_r__max_frame_latency = 0;
-int ps_r__sun_minmax_lean = 0;
+int ps_r__sun_minmax_lean = 1;
 int ps_r__dsgraph_sort_memo = 1;
 int ps_r__dx11_layout_memo = 1;
 int ps_r__light_scissor = 0;
 int ps_r__light_lean = 0;
 int ps_r__device_state_interval = 1;
-int ps_r__smap_null_ps = 0;
-int ps_r__sun_lod_skip = 0;
-int ps_r__sun_grass_runs = 0;
-int ps_r__sun_grass_cull = 0;
-int ps_r__grass_smap_element = 0;
-int ps_r__cb_dirty_list = 0;
+int ps_r__smap_null_ps = 1;
+int ps_r__sun_lod_skip = 1;
+int ps_r__sun_grass_runs = 1;
+int ps_r__sun_grass_cull = 1;
+int ps_r__grass_smap_element = 1;
+int ps_r__cb_dirty_list = 1;
 
 //AVO: detail draw radius
 Flags32 ps_common_flags = {0}; // r1-only

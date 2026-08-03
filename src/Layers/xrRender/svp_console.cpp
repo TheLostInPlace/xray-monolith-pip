@@ -44,7 +44,7 @@ u32 svp_ledger_fwd_keep = 0;
 u32 svp_ledger_grass_cull = 0;
 int ps_r__3db_debug = 0; // 3db ballistics overlay, 1 = bone markers + fire axis + crosshair ray + sight line + mrad log, 2 = adds the zeroed ray, 3 = adds fading shot tracers
 float ps_r__svp_adaptive_res = 1.2f; // adaptive SVP resolution: size the SVP render to the on-screen eyepiece disc * this margin. 0 = off (full svp_height), 1.0 = render exactly at the disc (sharpest, mild pan shimmer), 1.2 = keep ~1.2x SSAA. big oculars clamp to no-op
-float ps_r__svp_lod = 0.0f; // SVP LOD reduction strength [0..1]: scale the scope's LOD selection to its true pixel coverage (coarser at low mag, capped at the main view so zoomed detail is never worse). 0 = off
+float ps_r__svp_lod = 1.0f; // SVP LOD reduction strength [0..1]: scale the scope's LOD selection to its true pixel coverage (coarser at low mag, capped at the main view so zoomed detail is never worse). 0 = off
 float ps_r__svp_cull_ssa = 4.0f; // SVP small-object cull strength: skip scope geometry below this * the LOD-out ssa, scaled by magnification (tiny distant clutter at low mag). 0 = off, higher = more aggressive
 int ps_r__svp_dlss = 0; // SVP DLSS-SR master gate, 0 = stock (render_scale inert), nonzero = scaffolding active
 // svpscope 2 geometric objective (single-lens scopes have no distinct front lens to capture, derive it
@@ -152,14 +152,14 @@ int ps_r__svp_emissive = 1; // svp replay self-illum geometry into the scope ima
 int ps_r__svp_skip_ssr = 1; // svp scope reflections, 0 reflective water + SSR, 1 flat water + SSR (default), 2 flat water + no SSR
 int ps_r__svp_skip_volumetric = 0; // svp skip volumetric lights on the scope pass, subtle at magnification (0 = keep)
 int ps_r__svp_skip_grass = 0; // svp skip grass/details on the scope pass, near grass is mostly off a zoomed cone (0 = keep)
-int ps_r__svp_grass_cull = 0; // svp draw only the grass slot ranges the scope cone keeps (0 = draw the whole main-view set)
+int ps_r__svp_grass_cull = 1; // svp draw only the grass slot ranges the scope cone keeps (0 = draw the whole main-view set)
 int ps_r__svp_sss_sun = 0; // svp compute the scope SSS pass and keep the sun contact shadow term on the scope, expensive (0 = off)
-int ps_r__svp_skip_pos_copy = 0; // svp skip the main position copy into generic2 on the scope path, the lens composite remaps that name to the scope surface (0 = copy)
+int ps_r__svp_skip_pos_copy = 1; // svp skip the main position copy into generic2 on the scope path, the lens composite remaps that name to the scope surface (0 = copy)
 int ps_r__svp_smap_alloc = 1; // svp target allocates its own shadow atlas it never renders into, 0 aliases the main maps and takes effect on the next svp target build
 int ps_r__svp_light_cull = 1; // svp cone-cull the mirrored light blends, skip a light whose sphere never meets the scope cone (1 = on, 0 = mirror everything)
 int ps_r__svp_corner_mask = 1; // svp stencil the dead corners outside the eyepiece disc so the lighting + combine passes skip them (1 = on)
-int ps_r__pp_lean = 0; // master gate for the idle post-pass skips in phase_combine (0 = stock, every pass runs)
-int ps_r__cp_scale_region = 0; // history copies move only the scaled box the pass wrote plus a filter margin (0 = whole surface)
+int ps_r__pp_lean = 1; // master gate for the idle post-pass skips in phase_combine (0 = stock, every pass runs)
+int ps_r__cp_scale_region = 1; // history copies move only the scaled box the pass wrote plus a filter margin (0 = whole surface)
 int ps_r__ssfx_ssr_enable = 1; // ssfx screen space reflections master switch, the shader-presence flag has no off (1 = on)
 int ps_r__ssfx_bloom_hud = 0; // hud sorted glass in the bloom emissive buffer (0 = excluded, 1 = the old double count)
 u32 svp_stats_lean_flags = 0; // bit per lean skip that fired this frame, decoded by the breakdown panel
@@ -222,7 +222,7 @@ u32 svp_stats_hom_tested = 0;
 u32 svp_stats_hom_rejected = 0;
 
 int ps_r__hom_engine = 1; // occlusion engine, 0 legacy raster, 1 masked rasterizer, 2 both with legacy answering
-int ps_r__hom_moc_res = 1; // masked buffer preset, 0 256x144, 1 384x216, 2 512x288, 3 768x432
+int ps_r__hom_moc_res = 3; // masked buffer preset, 0 256x144, 1 384x216, 2 512x288, 3 768x432
 u32 svp_stats_hom_engine = 0;
 u32 svp_stats_hom_res_w = 0;
 u32 svp_stats_hom_res_h = 0;
