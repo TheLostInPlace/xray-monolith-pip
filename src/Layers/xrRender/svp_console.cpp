@@ -167,7 +167,7 @@ u32 svp_stats_copy_kb = 0; // destination kilobytes those tracked copies moved
 u32 svp_stats_tiny = 0; // main-view sorted draws below the lod-out ssa, counted in r__dsgraph_render
 u32 svp_stats_shadow = 0; // sun cascade shadow-map renders this frame, counted in render_sun_cascade
 
-u32 svp_stats_copy_kb_cat[SVP_CP_COUNT] = { 0, 0, 0 }; // tracked copy kilobytes split by category
+u32 svp_stats_copy_kb_cat[SVP_CP_COUNT] = { 0, 0, 0, 0 }; // tracked copy kilobytes split by category
 void (*svp_copy_timer_hook)(u32 cat, bool begin) = nullptr;
 
 void svp_copy_begin(u32 cat, u32 bytes)

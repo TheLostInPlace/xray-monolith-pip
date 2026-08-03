@@ -31,7 +31,7 @@ extern u32 svp_stats_optic_resolve;
 extern u32 svp_stats_lean_flags;
 extern u32 svp_stats_copies;
 extern u32 svp_stats_copy_kb;
-extern u32 svp_stats_copy_kb_cat[3];
+extern u32 svp_stats_copy_kb_cat[4];
 extern void (*svp_copy_timer_hook)(u32 cat, bool begin);
 extern u32 svp_stats_tiny;
 extern u32 svp_stats_shadow;
@@ -129,7 +129,7 @@ namespace
 		u32 lean_flags;
 		bool lean_on;
 		u32 copies, copy_kb, rtsw, shadow, tiny, smap;
-		u32 copy_kb_cat[3];
+		u32 copy_kb_cat[4];
 		u32 state_apply, sampler_set, cb_flush, cb_flush_map;
 		float join_ms, capture_base_ms, capture_cascade_ms[3], present_ms;
 		u32 sort_calls, sort_packets;
@@ -146,7 +146,7 @@ namespace
 
 	// pipe-panel quantities that carry a rolling average, order matches the rows
 	enum { PIPE_COPIES = 0, PIPE_COPY_KB, PIPE_RTSW, PIPE_SHADOW, PIPE_TINY,
-		PIPE_CP_HIST_KB, PIPE_CP_TAIL_KB, PIPE_CP_SCENE_KB, PIPE_COUNT };
+		PIPE_CP_HIST_KB, PIPE_CP_TAIL_KB, PIPE_CP_SCENE_KB, PIPE_CP_PASS_KB, PIPE_COUNT };
 
 	struct frame_slot
 	{
@@ -251,7 +251,7 @@ namespace
 	// hook body for the shared copy sites, maps their category onto our accumulating sections
 	void copy_timer(u32 cat, bool begin)
 	{
-		if (cat >= 3)
+		if (cat >= 4)
 			return;
 		const section_e s = section_e(SEC_CP_HIST + cat);
 		if (begin) section_begin(s); else section_end(s);
@@ -358,7 +358,8 @@ namespace
 		const double pipe_raw[PIPE_COUNT] = {
 			double(s.data.copies), double(s.data.copy_kb), double(s.data.rtsw),
 			double(s.data.shadow), double(s.data.tiny),
-			double(s.data.copy_kb_cat[0]), double(s.data.copy_kb_cat[1]), double(s.data.copy_kb_cat[2])
+			double(s.data.copy_kb_cat[0]), double(s.data.copy_kb_cat[1]), double(s.data.copy_kb_cat[2]),
+			double(s.data.copy_kb_cat[3])
 		};
 		const float dt = Device.fTimeDelta;
 		if (!s_avg_seeded)
@@ -483,7 +484,7 @@ namespace svp_stats
 		svp_stats_lean_flags = 0;
 		svp_stats_copies = 0;
 		svp_stats_copy_kb = 0;
-		svp_stats_copy_kb_cat[0] = svp_stats_copy_kb_cat[1] = svp_stats_copy_kb_cat[2] = 0;
+		svp_stats_copy_kb_cat[0] = svp_stats_copy_kb_cat[1] = svp_stats_copy_kb_cat[2] = svp_stats_copy_kb_cat[3] = 0;
 		svp_stats_tiny = 0;
 		svp_stats_shadow = 0;
 		// fps audit per-frame tallies, the thread-fallback and hom-reject totals are session-lifetime so stay out
@@ -644,7 +645,7 @@ namespace svp_stats
 		d.lean_on = (ps_r__pp_lean != 0);
 		d.copies = svp_stats_copies;
 		d.copy_kb = svp_stats_copy_kb;
-		for (u32 i = 0; i < 3; ++i)
+		for (u32 i = 0; i < 4; ++i)
 			d.copy_kb_cat[i] = svp_stats_copy_kb_cat[i];
 		d.tiny = svp_stats_tiny;
 		d.shadow = svp_stats_shadow;
@@ -1063,18 +1064,18 @@ namespace svp_stats
 			}
 
 			// the per-category megabytes ride in the label so the row keeps the two data columns
-			char cplab[3][32];
-			const section_e cpsec[3] = { SEC_CP_HIST, SEC_CP_TAIL, SEC_CP_SCENE };
-			const u32 cpavg[3] = { PIPE_CP_HIST_KB, PIPE_CP_TAIL_KB, PIPE_CP_SCENE_KB };
-			LPCSTR cpname[3] = { "cp hist", "cp tail", "cp scene" };
+			char cplab[4][32];
+			const section_e cpsec[4] = { SEC_CP_HIST, SEC_CP_TAIL, SEC_CP_SCENE, SEC_CP_PASS };
+			const u32 cpavg[4] = { PIPE_CP_HIST_KB, PIPE_CP_TAIL_KB, PIPE_CP_SCENE_KB, PIPE_CP_PASS_KB };
+			LPCSTR cpname[4] = { "cp hist", "cp tail", "cp scene", "cp pass" };
 			if (!lean)
-				for (u32 i = 0; i < 3; ++i)
+				for (u32 i = 0; i < 4; ++i)
 					xr_sprintf(cplab[i], "%s %.0fmb", cpname[i], s_pipe_avg[cpavg[i]] / 1024.0);
 
-			const u32 prows = lean ? 6u : 9u;
+			const u32 prows = lean ? 6u : 10u;
 			float plabel_w = F.SizeOf_("untracked") + digit;
 			if (!lean)
-				for (u32 i = 0; i < 3; ++i)
+				for (u32 i = 0; i < 4; ++i)
 					plabel_w = _max(plabel_w, F.SizeOf_(cplab[i]) + digit);
 			float pcontent_w = plabel_w + cell + gap + cell;
 			for (u32 i = 0; i < pt; ++i)
@@ -1127,7 +1128,7 @@ namespace svp_stats
 			fmt_count(pb, sizeof(pb), d.tiny); xr_sprintf(pa, "%.0f", s_pipe_avg[PIPE_TINY]);
 			prow(c_txt, "tiny", c_txt, pb, c_txt, pa);
 			if (!lean)
-				for (u32 i = 0; i < 3; ++i)
+				for (u32 i = 0; i < 4; ++i)
 				{
 					const double ms = d.sec[cpsec[i]].gpu_ms;
 					const double avg = s_sec_avg[cpsec[i]];

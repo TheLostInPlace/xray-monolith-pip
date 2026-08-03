@@ -1488,7 +1488,11 @@ void CRenderTarget::phase_3DSSReticle()
 		// the scope shader reads generic2 as the gbuffer position for the holepunch/depth
 		// the scope path repoints that name at the svp position surface below so the copy feeds nothing
 		if (!(svp && ps_r__svp_skip_pos_copy))
+		{
+			svp_copy_begin(SVP_CP_PASS, rt_copy_bytes(rt_Generic_2));
 			HW.pContext->CopyResource(rt_Generic_2->pTexture->surface_get(), RImplementation.Target->rt_Position->pTexture->surface_get());
+			svp_copy_end(SVP_CP_PASS);
+		}
 
 		u_setrt(RImplementation.Target->rt_Generic_0, nullptr, RImplementation.Target->rt_Position, RImplementation.Target->baseZB);
 		RCache.set_CullMode(CULL_CCW);

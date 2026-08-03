@@ -39,6 +39,7 @@ namespace svp_stats
 		SEC_CP_HIST,
 		SEC_CP_TAIL,
 		SEC_CP_SCENE,
+		SEC_CP_PASS,
 		// per sun cascade shadow-map render, gpu only, read by the fps audit overlay
 		SEC_SUN_C0,
 		SEC_SUN_C1,

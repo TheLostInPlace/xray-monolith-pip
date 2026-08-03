@@ -74,8 +74,9 @@ extern ECORE_API u32 svp_stats_copies;
 extern ECORE_API u32 svp_stats_copy_kb;
 extern ECORE_API u32 svp_stats_tiny;
 extern ECORE_API u32 svp_stats_shadow;
-// tracked copy categories, hist is the closed temporal publishes, tail the back-copies, scene the alias publishes
-enum svp_copy_cat_e { SVP_CP_HIST = 0, SVP_CP_TAIL, SVP_CP_SCENE, SVP_CP_COUNT };
+// tracked copy categories, hist is the closed temporal publishes, tail the back-copies, scene the alias
+// publishes, pass the volumetric sss and scope position publishes the other three never counted
+enum svp_copy_cat_e { SVP_CP_HIST = 0, SVP_CP_TAIL, SVP_CP_SCENE, SVP_CP_PASS, SVP_CP_COUNT };
 extern ECORE_API u32 svp_stats_copy_kb_cat[SVP_CP_COUNT];
 // brackets one tracked full-frame copy, self-gated so it costs an int compare when the overlay is off
 extern ECORE_API void svp_copy_begin(u32 cat, u32 bytes);
