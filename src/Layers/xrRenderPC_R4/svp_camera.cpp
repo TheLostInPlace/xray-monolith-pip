@@ -1513,7 +1513,7 @@ static bool svp_offset_is_detected(const Fvector4& off, const Fvector4& det)
 // pip both centres are bind pose model space so the compare needs no runtime pose, authored ltx and
 // typed spec offsets carry different numbers and a different label so neither can be dropped here
 static bool svp_detected_offset_off_frame(CSecondVPParams* p, CSkeletonX* sk,
-	const Fvector& eye_bind, float er, const void* visual)
+	const Fvector& eye_bind, float er, dxRender_Visual* visual)
 {
 	extern int ps_r__svp_lens_reject;
 	if (!ps_r__svp_lens_reject || !sk || er <= EPS)
@@ -1530,16 +1530,24 @@ static bool svp_detected_offset_off_frame(CSecondVPParams* p, CSkeletonX* sk,
 	const bool labelled = src && 0 == xr_strcmp(src, "engine_detection");
 	const bool matches = svp_offset_is_detected(p->svp_opt_offset, d.offset);
 	const bool reject = (labelled || matches) && radii > SVP_DETECT_EYE_TOL_R;
-	// one latched line per optic carrying every gate value so a miss reads straight from the log
+	// one latched line per optic carrying every gate value so a miss reads straight from the log,
+	// the raw centres and the eyepiece texture name identify which mesh each side actually holds
 	static const void* s_gate_last = nullptr;
 	if (visual != s_gate_last)
 	{
 		s_gate_last = visual;
+		auto tx = visual ? visual->GetTexture() : nullptr;
 		PipMsg("[SVP-EYEDIV] %s label=%s match=%d dist_r=%.2f dist_cm=%.2f er_cm=%.2f tol_r=%.2f typed=%d has_off=%d detsrc=%d",
 			reject ? "REJECT detected offset" : "keep offset",
 			(src && src[0]) ? src : "none", matches ? 1 : 0,
 			radii, radii * er * 100.f, er * 100.f, SVP_DETECT_EYE_TOL_R,
 			config.typed_route ? 1 : 0, config.has_objective_offset ? 1 : 0, d.source);
+		PipMsg("[SVP-EYEDIV] operands eye_bind=(%.4f,%.4f,%.4f) det_eye=(%.4f,%.4f,%.4f) det_obj=(%.4f,%.4f,%.4f) det_r=%.4f has_obj=%d eyetex=%s",
+			eye_bind.x, eye_bind.y, eye_bind.z,
+			d.eye_center.x, d.eye_center.y, d.eye_center.z,
+			d.obj_center.x, d.obj_center.y, d.obj_center.z,
+			d.eye_radius, d.has_objective ? 1 : 0,
+			tx ? tx->cName.c_str() : "?");
 	}
 	return reject;
 }
