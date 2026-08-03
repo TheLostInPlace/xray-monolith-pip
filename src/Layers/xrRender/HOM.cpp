@@ -393,10 +393,50 @@ void CHOM::terrain_emit(CFrustum& base, const Fvector& COP)
 
 	const u32 side = u32(TERR_GRID);
 	m_terr_hit.clear();
-	for (u32 gi = 0; gi < side; ++gi)
+
+	// the view hull is the camera apex plus the far rectangle, walk only the cells its xz box reaches
+	u32 gi_lo = 0, gi_hi = side - 1, gj_lo = 0, gj_hi = side - 1;
+	if (cw > EPS_S && ch > EPS_S)
+	{
+		// clip cube corners with d3d z in zero to one, unprojected to world
+		static const Fvector3 clip_corner[8] = {
+			{ -1.f, -1.f, 0.f }, { 1.f, -1.f, 0.f }, { -1.f, 1.f, 0.f }, { 1.f, 1.f, 0.f },
+			{ -1.f, -1.f, 1.f }, { 1.f, -1.f, 1.f }, { -1.f, 1.f, 1.f }, { 1.f, 1.f, 1.f }
+		};
+		Fmatrix inv;
+		inv.identity();
+		const bool inv_ok = (0 != D3DXMatrixInverse((D3DXMATRIX*)&inv, 0, (D3DXMATRIX*)&Device.mFullTransform));
+		if (inv_ok && _valid(inv))
+		{
+			float x_lo = COP.x, x_hi = COP.x, z_lo = COP.z, z_hi = COP.z;
+			for (u32 c = 0; c < 8; ++c)
+			{
+				const Fvector3& q = clip_corner[c];
+				const float qw = q.x * inv._14 + q.y * inv._24 + q.z * inv._34 + inv._44;
+				if (_abs(qw) < EPS_S)
+					continue;
+				const float iw = 1.f / qw;
+				const float wx = (q.x * inv._11 + q.y * inv._21 + q.z * inv._31 + inv._41) * iw;
+				const float wz = (q.x * inv._13 + q.y * inv._23 + q.z * inv._33 + inv._43) * iw;
+				x_lo = _min(x_lo, wx); x_hi = _max(x_hi, wx);
+				z_lo = _min(z_lo, wz); z_hi = _max(z_hi, wz);
+			}
+			// one cell of slack on each side absorbs the grid quantization
+			const int i0 = _max(0, iFloor((x_lo - m_terr_bounds.min.x) / cw) - 1);
+			const int i1 = _min(int(side) - 1, iFloor((x_hi - m_terr_bounds.min.x) / cw) + 1);
+			const int j0 = _max(0, iFloor((z_lo - m_terr_bounds.min.z) / ch) - 1);
+			const int j1 = _min(int(side) - 1, iFloor((z_hi - m_terr_bounds.min.z) / ch) + 1);
+			if (i0 > i1 || j0 > j1)
+				return; // the view box misses the terrain grid outright
+			gi_lo = u32(i0); gi_hi = u32(i1);
+			gj_lo = u32(j0); gj_hi = u32(j1);
+		}
+	}
+
+	for (u32 gi = gi_lo; gi <= gi_hi; ++gi)
 	{
 		const float x0 = m_terr_bounds.min.x + cw * float(gi);
-		for (u32 gj = 0; gj < side; ++gj)
+		for (u32 gj = gj_lo; gj <= gj_hi; ++gj)
 		{
 			const u32 cell = gi * side + gj;
 			const terr_cell& C = m_terr_grid[cell];
