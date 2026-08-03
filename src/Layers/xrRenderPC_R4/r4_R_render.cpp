@@ -389,12 +389,12 @@ void CRender::renderGBuffer(bool clearGraph)
 	// otherwise resubmit the whole world through a cone that sees a fraction
 	const bool svp_pass = (Target == TargetSVP) && Device.true_pip_on;
 	const bool svp_cull = svp_pass && ps_r__svp_cull;
-	if (svp_cull)
-	{
-		Fmatrix svp_full;
+	// the grass bracket below arms off the same matrix so it is built for the whole scope pass
+	Fmatrix svp_full;
+	if (svp_pass)
 		svp_full.mul(Device.matrices[1].mProject, Device.matrices[1].mView);
+	if (svp_cull)
 		CDSGraphManager::svp_cull_begin(svp_full, svp_cull);
-	}
 	// pip SVP coverage = (mag * svp_side / main_height)^2, capped at 1: the fraction of the main view's
 	// pixel area an object covers in the scope. feeds the LOD scale and the small-object cull threshold
 	if (svp_pass && TargetSVP && (ps_r__svp_lod > 0.f || ps_r__svp_cull_ssa > 0.f))
@@ -567,7 +567,12 @@ void CRender::renderGBuffer(bool clearGraph)
 			// keep the grass visible set on the main drain when the SVP pass draws it second
 			extern bool g_svp_defer_detail_clear;
 			g_svp_defer_detail_clear = (!svp_pass && !clearGraph && !ps_r__svp_skip_grass);
+			// the scope grass draws only the slot ranges the scope cone keeps
+			if (svp_pass)
+				Details->hw_Run_Begin_Scope(svp_full);
 			Details->Render();
+			if (svp_pass)
+				Details->hw_Run_End();
 			g_svp_defer_detail_clear = false;
 		}
 		Target->phase_scene_end();

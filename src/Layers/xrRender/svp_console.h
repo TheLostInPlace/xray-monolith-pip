@@ -40,6 +40,7 @@ extern ECORE_API u32 svp_ledger_lod_scale;
 extern ECORE_API u32 svp_ledger_distort_guard;
 extern ECORE_API u32 svp_ledger_disc_latch;
 extern ECORE_API u32 svp_ledger_fwd_keep;
+extern ECORE_API u32 svp_ledger_grass_cull;
 extern ECORE_API float ps_r__svp_adaptive_res;
 extern ECORE_API float ps_r__svp_lod;
 extern ECORE_API float ps_r__svp_cull_ssa;
@@ -57,6 +58,7 @@ extern ECORE_API int ps_r__svp_emissive;
 extern ECORE_API int ps_r__svp_skip_ssr;
 extern ECORE_API int ps_r__svp_skip_volumetric;
 extern ECORE_API int ps_r__svp_skip_grass;
+extern ECORE_API int ps_r__svp_grass_cull;
 extern ECORE_API int ps_r__svp_sss_sun;
 
 // main-view post gate, lossless skips for post passes with nothing to do
@@ -103,6 +105,13 @@ extern ECORE_API u32 svp_stats_grass_runs;    // stretches of consecutive kept s
 extern ECORE_API u32 svp_stats_grass_run_max; // longest single stretch
 extern ECORE_API u32 svp_stats_grass_drop;    // instances the cull left unsubmitted
 extern ECORE_API u32 svp_stats_grass_draws;   // sub range draws the cull issued
+// the same measurements taken on the scope gbuffer pass against the scope cone
+extern ECORE_API u32 svp_stats_grass_svp_slots;
+extern ECORE_API u32 svp_stats_grass_svp_keep;
+extern ECORE_API u32 svp_stats_grass_svp_runs;
+extern ECORE_API u32 svp_stats_grass_svp_run_max;
+extern ECORE_API u32 svp_stats_grass_svp_drop;
+extern ECORE_API u32 svp_stats_grass_svp_draws;
 // session-lifetime running totals, never reset, read by the level-load audit summary
 extern ECORE_API u32 svp_stats_detail_main_thread; // grass MT_CALC runs that fell back to the calling thread
 extern ECORE_API u32 svp_stats_hom_main_thread;    // HOM MT_RENDER runs that fell back to the calling thread

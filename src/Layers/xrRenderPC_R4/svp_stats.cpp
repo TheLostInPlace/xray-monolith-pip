@@ -133,6 +133,7 @@ namespace
 		u32 sort_calls, sort_packets;
 		u32 layout_hit, layout_miss;
 		u32 grass_slots, grass_keep, grass_runs, grass_run_max, grass_drop, grass_draws;
+		u32 grass_svp_slots, grass_svp_keep, grass_svp_runs, grass_svp_run_max, grass_svp_drop, grass_svp_draws;
 		u32 detail_main_thread, hom_main_thread, hom_tested, hom_rejected;
 		u32 hom_engine, hom_res_w, hom_res_h, hom_tris_in, hom_tris_emitted;
 		u32 hom_render_us, hom_test_us, hom_disagree, hom_shadow_queries;
@@ -448,6 +449,12 @@ namespace svp_stats
 		svp_stats_grass_run_max = 0;
 		svp_stats_grass_drop = 0;
 		svp_stats_grass_draws = 0;
+		svp_stats_grass_svp_slots = 0;
+		svp_stats_grass_svp_keep = 0;
+		svp_stats_grass_svp_runs = 0;
+		svp_stats_grass_svp_run_max = 0;
+		svp_stats_grass_svp_drop = 0;
+		svp_stats_grass_svp_draws = 0;
 		// the occlusion counters reset inside CHOM::Render, the worker can beat this call to them
 		// feed the rolling ~1s window for the spike readout, skip the first frame's null delta
 		if (fms > 0.0)
@@ -578,6 +585,12 @@ namespace svp_stats
 		d.grass_run_max = svp_stats_grass_run_max;
 		d.grass_drop = svp_stats_grass_drop;
 		d.grass_draws = svp_stats_grass_draws;
+		d.grass_svp_slots = svp_stats_grass_svp_slots;
+		d.grass_svp_keep = svp_stats_grass_svp_keep;
+		d.grass_svp_runs = svp_stats_grass_svp_runs;
+		d.grass_svp_run_max = svp_stats_grass_svp_run_max;
+		d.grass_svp_drop = svp_stats_grass_svp_drop;
+		d.grass_svp_draws = svp_stats_grass_svp_draws;
 		d.detail_main_thread = svp_stats_detail_main_thread;
 		d.hom_main_thread = svp_stats_hom_main_thread;
 		d.hom_tested = svp_stats_hom_tested;
@@ -951,6 +964,10 @@ namespace svp_stats
 				foot_emit(ptail, pt, "sun runs slots %u keep %u runs %u max %u drop %u draws %u calls %u",
 					d.grass_slots, d.grass_keep, d.grass_runs, d.grass_run_max,
 					d.grass_drop, d.grass_draws, d.sec[SEC_SUN_GRASS].calls);
+				// the scope cone sees a sliver of the main-view set so keep should sit far below the sun row
+				foot_emit(ptail, pt, "svp runs slots %u keep %u runs %u max %u drop %u draws %u calls %u",
+					d.grass_svp_slots, d.grass_svp_keep, d.grass_svp_runs, d.grass_svp_run_max,
+					d.grass_svp_drop, d.grass_svp_draws, d.sec[SEC_SVP_GBUFFER].calls);
 			}
 
 			// the per-category megabytes ride in the label so the row keeps the two data columns

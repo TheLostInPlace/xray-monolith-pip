@@ -41,6 +41,7 @@ u32 svp_ledger_lod_scale = 0;
 u32 svp_ledger_distort_guard = 0;
 u32 svp_ledger_disc_latch = 0;
 u32 svp_ledger_fwd_keep = 0;
+u32 svp_ledger_grass_cull = 0;
 int ps_r__3db_debug = 0; // 3db ballistics overlay, 1 = bone markers + fire axis + crosshair ray + sight line + mrad log, 2 = adds the zeroed ray, 3 = adds fading shot tracers
 float ps_r__svp_adaptive_res = 1.2f; // adaptive SVP resolution: size the SVP render to the on-screen eyepiece disc * this margin. 0 = off (full svp_height), 1.0 = render exactly at the disc (sharpest, mild pan shimmer), 1.2 = keep ~1.2x SSAA. big oculars clamp to no-op
 float ps_r__svp_lod = 0.0f; // SVP LOD reduction strength [0..1]: scale the scope's LOD selection to its true pixel coverage (coarser at low mag, capped at the main view so zoomed detail is never worse). 0 = off
@@ -151,6 +152,7 @@ int ps_r__svp_emissive = 1; // svp replay self-illum geometry into the scope ima
 int ps_r__svp_skip_ssr = 1; // svp scope reflections, 0 reflective water + SSR, 1 flat water + SSR (default), 2 flat water + no SSR
 int ps_r__svp_skip_volumetric = 0; // svp skip volumetric lights on the scope pass, subtle at magnification (0 = keep)
 int ps_r__svp_skip_grass = 0; // svp skip grass/details on the scope pass, near grass is mostly off a zoomed cone (0 = keep)
+int ps_r__svp_grass_cull = 0; // svp draw only the grass slot ranges the scope cone keeps (0 = draw the whole main-view set)
 int ps_r__svp_sss_sun = 0; // svp compute the scope SSS pass and keep the sun contact shadow term on the scope, expensive (0 = off)
 int ps_r__svp_light_cull = 1; // svp cone-cull the mirrored light blends, skip a light whose sphere never meets the scope cone (1 = on, 0 = mirror everything)
 int ps_r__svp_corner_mask = 1; // svp stencil the dead corners outside the eyepiece disc so the lighting + combine passes skip them (1 = on)
@@ -205,6 +207,12 @@ u32 svp_stats_grass_runs = 0;
 u32 svp_stats_grass_run_max = 0;
 u32 svp_stats_grass_drop = 0;
 u32 svp_stats_grass_draws = 0;
+u32 svp_stats_grass_svp_slots = 0;
+u32 svp_stats_grass_svp_keep = 0;
+u32 svp_stats_grass_svp_runs = 0;
+u32 svp_stats_grass_svp_run_max = 0;
+u32 svp_stats_grass_svp_drop = 0;
+u32 svp_stats_grass_svp_draws = 0;
 u32 svp_stats_detail_main_thread = 0;
 u32 svp_stats_hom_main_thread = 0;
 u32 svp_stats_hom_tested = 0;
@@ -385,6 +393,7 @@ void svp_console_init()
 	CMD4(CCC_Integer, "r__svp_skip_ssr", &ps_r__svp_skip_ssr, 0, 2); // svp scope reflections level (0 expensive, 1 regular, 2 cheapest)
 	CMD4(CCC_Integer, "r__svp_skip_volumetric", &ps_r__svp_skip_volumetric, 0, 1); // svp skip volumetric lights on the scope
 	CMD4(CCC_Integer, "r__svp_skip_grass", &ps_r__svp_skip_grass, 0, 1); // svp skip grass/details on the scope
+	CMD4(CCC_Integer, "r__svp_grass_cull", &ps_r__svp_grass_cull, 0, 1); // svp cone-cull the scope grass slot ranges
 	CMD4(CCC_Integer, "r__svp_sss_sun", &ps_r__svp_sss_sun, 0, 1); // svp SSS sun contact shadows on the scope
 	CMD4(CCC_Integer, "r__svp_light_cull", &ps_r__svp_light_cull, 0, 1); // svp cone-cull the mirrored light blends (1 = on)
 	CMD4(CCC_SvpFixedInteger, "r__svp_corner_mask", &ps_r__svp_corner_mask, 0, 1);
@@ -419,6 +428,7 @@ namespace
 		{ "distort_guard",     &svp_ledger_distort_guard,     &ps_r__svp_distort_guard, nullptr,                 0.f },
 		{ "disc_latch",        &svp_ledger_disc_latch,        nullptr,                  &ps_r__svp_adaptive_res, 0.f },
 		{ "fwd_keep",          &svp_ledger_fwd_keep,          nullptr,                  nullptr,                 0.f },
+		{ "grass_cull",        &svp_ledger_grass_cull,        &ps_r__svp_grass_cull,    nullptr,                 0.f },
 	};
 }
 

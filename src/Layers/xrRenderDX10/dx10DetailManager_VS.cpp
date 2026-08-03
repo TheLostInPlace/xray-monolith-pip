@@ -255,7 +255,7 @@ void CDetailManager::hw_Fill_Instances()
 	const u32 nObj = (u32)objects.size();
 	u32 instTotal = 0;
 	BOOL bOverflow = FALSE;
-	const bool runs = (ps_r__sun_grass_runs || ps_r__sun_grass_cull);
+	const bool runs = (ps_r__sun_grass_runs || ps_r__sun_grass_cull || ps_r__svp_grass_cull);
 	if (runs)
 		hw_run_slots.clear();
 	for (u32 vid = 0; vid < 3; vid++)
@@ -348,9 +348,24 @@ void CDetailManager::hw_Run_Begin(const CFrustum* F, u32 cascade)
 {
 	if (!hw_instancing)
 		return;
+	VERIFY(hw_run_frustum == nullptr);
 	hw_run_frustum = F;
 	hw_run_site = hw_run_site_sun;
 	hw_run_cascade = cascade;
+	hw_run_tested = hw_run_kept = hw_run_runs = hw_run_max = 0;
+	hw_run_dropped = hw_run_draws = 0;
+}
+
+void CDetailManager::hw_Run_Begin_Scope(Fmatrix& full_xform)
+{
+	if (!hw_instancing || !ps_r__svp_grass_cull)
+		return;
+	VERIFY(hw_run_frustum == nullptr);
+	// lateral planes and a far plane, no near plane, same build the scope world cull uses
+	hw_run_frustum_own.CreateFromMatrix(full_xform, FRUSTUM_P_LRTB + FRUSTUM_P_FAR);
+	hw_run_frustum = &hw_run_frustum_own;
+	hw_run_site = hw_run_site_svp;
+	hw_run_cascade = 0;
 	hw_run_tested = hw_run_kept = hw_run_runs = hw_run_max = 0;
 	hw_run_dropped = hw_run_draws = 0;
 }
@@ -360,10 +375,27 @@ void CDetailManager::hw_Run_End()
 	if (!hw_run_frustum)
 		return;
 	// the token arms on every cascade, only a walked site has numbers to publish
-	const bool walked = (hw_run_site == hw_run_site_sun) && (ps_r__sun_grass_runs || ps_r__sun_grass_cull);
+	const u32 site = hw_run_site;
+	const bool sun = (site == hw_run_site_sun) && (ps_r__sun_grass_runs || ps_r__sun_grass_cull);
+	const bool svp = (site == hw_run_site_svp) && ps_r__svp_grass_cull;
 	hw_run_frustum = nullptr;
 	hw_run_site = hw_run_site_none;
-	if (!walked)
+
+	if (svp && hw_run_dropped)
+		svp_ledger_grass_cull = 1;
+
+	if (ps_r__svp_stats && svp)
+	{
+		svp_stats_grass_svp_slots += hw_run_tested;
+		svp_stats_grass_svp_keep += hw_run_kept;
+		svp_stats_grass_svp_runs += hw_run_runs;
+		svp_stats_grass_svp_drop += hw_run_dropped;
+		svp_stats_grass_svp_draws += hw_run_draws;
+		if (hw_run_max > svp_stats_grass_svp_run_max)
+			svp_stats_grass_svp_run_max = hw_run_max;
+	}
+
+	if (!sun)
 		return;
 
 	if (ps_r__svp_stats)
@@ -442,10 +474,12 @@ void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave
 		if (total == 0)
 			return;
 
-		// slot spheres against the cascade frustum, stretches of consecutive keeps only
+		// slot spheres against the armed frustum, stretches of consecutive keeps only
+		// the still set casts no cascade shadow so the sun site skips it, the scope gbuffer draws it
 		const bool sun_site = hw_run_frustum && hw_run_site == hw_run_site_sun && var_id != 0;
-		const bool cull = sun_site && ps_r__sun_grass_cull != 0;
-		if (sun_site && (ps_r__sun_grass_runs || ps_r__sun_grass_cull))
+		const bool svp_site = hw_run_frustum && hw_run_site == hw_run_site_svp;
+		const bool cull = (sun_site && ps_r__sun_grass_cull) || (svp_site && ps_r__svp_grass_cull);
+		if (cull || (sun_site && ps_r__sun_grass_runs))
 		{
 			for (u32 O = 0; O < nObj; O++)
 			{
