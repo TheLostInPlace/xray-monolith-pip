@@ -1546,12 +1546,18 @@ static bool svp_detected_offset_off_frame(CSecondVPParams* p, CSkeletonX* sk,
 			lat_r, applied.x, applied.y, applied.z,
 			radii, er * 100.f, SVP_DETECT_EYE_TOL_R,
 			config.typed_route ? 1 : 0, config.has_objective_offset ? 1 : 0, d.source);
+		// det_lat_r is the objective offset perpendicular to the fitted eye normal, the quantity a
+		// coaxiality bound at the objective search would test, logged for every optic used or not
+		const float det_lat_r = sqrtf(d.offset.x * d.offset.x + d.offset.y * d.offset.y);
 		PipMsg("[SVP-EYEDIV] operands eye_bind=(%.4f,%.4f,%.4f) det_eye=(%.4f,%.4f,%.4f) det_obj=(%.4f,%.4f,%.4f) det_r=%.4f has_obj=%d eyetex=%s",
 			eye_bind.x, eye_bind.y, eye_bind.z,
 			d.eye_center.x, d.eye_center.y, d.eye_center.z,
 			d.obj_center.x, d.obj_center.y, d.obj_center.z,
 			d.eye_radius, d.has_objective ? 1 : 0,
 			tx ? tx->cName.c_str() : "?");
+		PipMsg("[SVP-EYEDIV] detected off=(%.2f,%.2f,%.2f,%.2f) det_lat_r=%.2f eye_n=(%.4f,%.4f,%.4f) detsrc=%d",
+			d.offset.x, d.offset.y, d.offset.z, d.offset.w, det_lat_r,
+			d.eye_normal.x, d.eye_normal.y, d.eye_normal.z, d.source);
 	}
 	return reject;
 }
