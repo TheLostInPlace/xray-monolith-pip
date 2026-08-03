@@ -526,6 +526,13 @@ namespace svp_stats
 				if (s_bench_count < BENCH_WIN)
 					++s_bench_count;
 			}
+			else
+			{
+				// a load boundary flushes the window so streaming frames never haunt the lows
+				s_bench_head = 0;
+				s_bench_count = 0;
+				s_bench_avg_fps = s_bench_low1_fps = s_bench_low01_fps = 0.f;
+			}
 			if (Device.dwTimeGlobal - s_bench_calc_ms >= 1000)
 			{
 				s_bench_calc_ms = Device.dwTimeGlobal;
