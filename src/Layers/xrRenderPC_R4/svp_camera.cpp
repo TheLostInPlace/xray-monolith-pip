@@ -1529,6 +1529,9 @@ static bool svp_detected_offset_off_frame(CSecondVPParams* p, CSkeletonX* sk,
 	LPCSTR src = config.source[CSecondVPParams::optic_objective_offset];
 	const bool labelled = src && 0 == xr_strcmp(src, "engine_detection");
 	const bool matches = svp_offset_is_detected(p->svp_opt_offset, d.offset);
+	// lateral magnitude of the applied offset in eyepiece radii, off axis objectives read high here
+	const Fvector4& applied = p->svp_opt_offset;
+	const float lat_r = sqrtf(applied.x * applied.x + applied.y * applied.y);
 	const bool reject = (labelled || matches) && radii > SVP_DETECT_EYE_TOL_R;
 	// one latched line per optic carrying every gate value so a miss reads straight from the log,
 	// the raw centres and the eyepiece texture name identify which mesh each side actually holds
@@ -1537,10 +1540,11 @@ static bool svp_detected_offset_off_frame(CSecondVPParams* p, CSkeletonX* sk,
 	{
 		s_gate_last = visual;
 		auto tx = visual ? visual->GetTexture() : nullptr;
-		PipMsg("[SVP-EYEDIV] %s label=%s match=%d dist_r=%.2f dist_cm=%.2f er_cm=%.2f tol_r=%.2f typed=%d has_off=%d detsrc=%d",
+		PipMsg("[SVP-EYEDIV] %s label=%s match=%d lat_r=%.2f off=(%.2f,%.2f,%.2f) dist_r=%.2f er_cm=%.2f tol_r=%.2f typed=%d has_off=%d detsrc=%d",
 			reject ? "REJECT detected offset" : "keep offset",
 			(src && src[0]) ? src : "none", matches ? 1 : 0,
-			radii, radii * er * 100.f, er * 100.f, SVP_DETECT_EYE_TOL_R,
+			lat_r, applied.x, applied.y, applied.z,
+			radii, er * 100.f, SVP_DETECT_EYE_TOL_R,
 			config.typed_route ? 1 : 0, config.has_objective_offset ? 1 : 0, d.source);
 		PipMsg("[SVP-EYEDIV] operands eye_bind=(%.4f,%.4f,%.4f) det_eye=(%.4f,%.4f,%.4f) det_obj=(%.4f,%.4f,%.4f) det_r=%.4f has_obj=%d eyetex=%s",
 			eye_bind.x, eye_bind.y, eye_bind.z,
