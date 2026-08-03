@@ -53,6 +53,17 @@ namespace svp_stats
 		SEC_COUNT
 	};
 
+	// scoped-only cpu brackets, wall clock only so they spend no timestamp pair
+	enum cpu_e
+	{
+		CPU_REPLAY = 0, // svp target switches around the scope gbuffer
+		CPU_LIGHTS,     // dual-accum target switches plus the shadow atlas re-point
+		CPU_HUD,        // hud pose latch, lens derive, objective weapon drain
+		CPU_LENS,       // main-view 3dss lens composite
+		CPU_MISC,       // svp target alloc, history reset, svp capture tail
+		CPU_COUNT
+	};
+
 	// lean post gate skips, phase_combine ors these into svp_stats_lean_flags per frame
 	enum lean_bit_e
 	{
@@ -68,6 +79,10 @@ namespace svp_stats
 	// timing window, cpu qpc + gpu timestamp pair + rcache deltas, multiple pairs per frame accumulate
 	void section_begin(section_e s);
 	void section_end(section_e s);
+
+	// cpu-only window, no query, multiple pairs per frame accumulate into one bucket
+	void cpu_begin(cpu_e c);
+	void cpu_end(cpu_e c);
 
 	// light and shadow tallies at the accumulation sites
 	void note_main_lights(u32 total, u32 shadowed);

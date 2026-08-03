@@ -694,7 +694,9 @@ void CRenderTarget::phase_combine()
 					|| !RImplementation.GMBase.RGraph.mapReflexHUDSorted.empty()
 					|| !RImplementation.GMBase.RGraph.mapScopeHUDSorted.empty()))))
 	{
+		svp_stats::cpu_begin(svp_stats::CPU_LENS);
 		phase_3DSSReticle(); // Redotix99 3D Shader Based Scopes / pip true-PiP lens composite
+		svp_stats::cpu_end(svp_stats::CPU_LENS);
 	}
 
 	// Compute blur textures for the SVP post effects without changing the DLSS input

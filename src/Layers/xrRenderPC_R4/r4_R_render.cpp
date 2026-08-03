@@ -269,6 +269,7 @@ void CRender::Render()
 	s_prev_svp = svp;
 	// pip allocate the SVP target before the main pass derives the camera into it (lazy, only while a
 	// PiP scope is aimed, never when off)
+	svp_stats::cpu_begin(svp_stats::CPU_MISC);
 	if (Device.true_pip_on && g_pGamePersistent &&
 		g_pGamePersistent->m_pGShaderConstants->hud_params.y > 0.005f)
 		EnsureTargetSVP();
@@ -276,6 +277,7 @@ void CRender::Render()
 	// frame so the stale scene never ghosts through the resolve
 	if (svp_edge)
 		ResetSVPHistory();
+	svp_stats::cpu_end(svp_stats::CPU_MISC);
 	// creation can fail at VRAM exhaustion, fall back to the single stock pass this frame
 	if (svp && !TargetSVP)
 		svp = false;
@@ -323,15 +325,23 @@ void CRender::Render()
 	renderGBuffer(!svp); // keep the priority-0 graph when an SVP pass follows
 	svp_stats::section_end(svp_stats::SEC_MAIN_GBUFFER);
 	if (svp)
+	{
+		svp_stats::cpu_begin(svp_stats::CPU_REPLAY);
 		EnsureTargetSVP();
+		svp_stats::cpu_end(svp_stats::CPU_REPLAY);
+	}
+	svp_stats::cpu_begin(svp_stats::CPU_HUD);
 	TargetMain->svp_objective_hud_prepare(svp);
+	svp_stats::cpu_end(svp_stats::CPU_HUD);
 	if (svp)
 	{
 		// pip CPU-side cost probe for the SVP gbuffer, throttled log while r__svp_diag is on
 		CTimer svp_t; svp_t.Start();
 		const u32 calls0 = RCache.stat.calls;
 		const u32 verts0 = RCache.stat.verts;
+		svp_stats::cpu_begin(svp_stats::CPU_REPLAY);
 		TargetSVP->SetActive();
+		svp_stats::cpu_end(svp_stats::CPU_REPLAY);
 		R_ASSERT2(Device.dwFrame == gbuffer_frame, "svp gbuffer runs on a new frame, the grass instance ranges are stale");
 		svp_stats::section_begin(svp_stats::SEC_SVP_GBUFFER);
 		renderGBuffer(true);
@@ -346,25 +356,33 @@ void CRender::Render()
 					RCache.stat.calls - calls0, (RCache.stat.verts - verts0) / 1000);
 			}
 		}
+		svp_stats::cpu_begin(svp_stats::CPU_HUD);
 		TargetMain->svp_objective_hud_report();
+		svp_stats::cpu_end(svp_stats::CPU_HUD);
+		svp_stats::cpu_begin(svp_stats::CPU_REPLAY);
 		// pip stencil the dead corners after the native scope draw
 		if (ps_r__svp_corner_mask && !RImplementation.o.dx10_msaa && TargetSVP)
 			TargetSVP->stamp_svp_corner_mask();
 		TargetMain->SetActive(); // shadow generation + main accumulation run on the main target
+		svp_stats::cpu_end(svp_stats::CPU_REPLAY);
 
 		// pip install the dual-accumulate hook, each shadow unit builds its map once on the main atlas
 		// then this re-accumulates it into the SVP with no second shadow render
 		Device.m_SecondViewport.dual_accum = [this](const std::function<void()>& accum)
 		{
+			svp_stats::cpu_begin(svp_stats::CPU_LIGHTS);
 			TargetSVP->SetActive();   // SVP gbuffer + accumulator (and, for now, the SVP shadow atlas)
 			share_main_smaps();       // re-point the shadow atlas at the main maps the generation built
 			Device.m_SecondViewport.force_svp_sss = (ps_r__svp_sss_sun != 0); // sun keeps the SSS contact term
 			svp_stats::note_svp_blend();
+			svp_stats::cpu_end(svp_stats::CPU_LIGHTS);
 			svp_stats::section_begin(svp_stats::SEC_SVP_LIGHTS);
 			{ PIX_EVENT(SVP_ACCUM); accum(); } // SVP marginal lighting cost: accumulate this unit into the SVP (shared maps)
 			svp_stats::section_end(svp_stats::SEC_SVP_LIGHTS);
+			svp_stats::cpu_begin(svp_stats::CPU_LIGHTS);
 			Device.m_SecondViewport.force_svp_sss = false;
 			TargetMain->SetActive();  // restore for the next unit's generation on the main atlas
+			svp_stats::cpu_end(svp_stats::CPU_LIGHTS);
 		};
 	}
 
@@ -483,12 +501,14 @@ void CRender::renderGBuffer(bool clearGraph)
 		if (Target == TargetMain) // pip weapon HUD only in the main view, not the scope image
 		{
 			GMBase.r_dsgraph_capture_hud();
+			svp_stats::cpu_begin(svp_stats::CPU_HUD);
 			if (Device.true_pip_on)
 				GMBase.svp_latch_hud_poses();
 			// pip snapshot HUD geometry centers before render_hud clears the lists, so the geomscan (in
 			// deriveScopeLens, after the clear) can auto-derive the objective distance against the optical axis
 			if (scope_svp_enabled || scope_debug >= 2)
 				svp_snapshot_hud_geom();
+			svp_stats::cpu_end(svp_stats::CPU_HUD);
 			// keep the weapon list when an SVP pass follows, the scope image drains it second
 			extern bool g_svp_hud_frozen_pass;
 			extern bool g_svp_hud_history_write;
@@ -504,6 +524,7 @@ void CRender::renderGBuffer(bool clearGraph)
 
 			// pip derive the scope lens then build the SVP camera (matrices[1]) while a PiP scope
 			// is aimed, zoom-0 tube sights have no zoom fov so ADS + a captured lens also qualifies
+			svp_stats::cpu_begin(svp_stats::CPU_HUD);
 			if (scope_svp_enabled && g_pGamePersistent &&
 				(g_pGamePersistent->m_pGShaderConstants->hud_params.y > 0.005f
 					|| (g_pGamePersistent->m_pGShaderConstants->hud_params.x > 0.05f
@@ -523,6 +544,7 @@ void CRender::renderGBuffer(bool clearGraph)
 					&& svpCamera())
 					ResetSVPHistory();
 			}
+			svp_stats::cpu_end(svp_stats::CPU_HUD);
 			// pip [3DB] for aimed sights without a captured lens, reflex and irons keep 3d
 			// ballistics so the sight independent markers draw, the pip overlay owns the rest
 			{
@@ -540,6 +562,7 @@ void CRender::renderGBuffer(bool clearGraph)
 			auto& vp = Device.m_SecondViewport;
 			// the weapon drains through the same scope camera as the world
 			// the near plane hides everything behind the front lens
+			svp_stats::cpu_begin(svp_stats::CPU_HUD);
 			if (scope_svp_enabled >= 2 && vp.eyepiece.radius > EPS
 				&& vp.svp_front_use_m > EPS)
 			{
@@ -559,6 +582,7 @@ void CRender::renderGBuffer(bool clearGraph)
 			}
 			else
 				GMBase.RGraph.mapHUD.clear(); // consume the deferred main-pass clear
+			svp_stats::cpu_end(svp_stats::CPU_HUD);
 		}
 		GMBase.r_dsgraph_render_lods(true, clearGraph);
 		// pip r__svp_skip_grass drops the near-grass field on the scope pass (mostly off a zoomed cone)
@@ -800,6 +824,7 @@ void CRender::renderSceneLighting(BOOL bSUN, bool svp)
 			Target->phase_combine();
 		}
 
+		svp_stats::cpu_begin(svp_stats::CPU_MISC);
 		TargetSVP->phase_svp_capture(); // SVP combined color -> rt_secondVP, ready for the main lens
 
 		// The real reflex mesh draws through the objective after SVP post processing
@@ -817,6 +842,7 @@ void CRender::renderSceneLighting(BOOL bSUN, bool svp)
 					Device.m_SecondViewport.GetSVPSession();
 			}
 		}
+		svp_stats::cpu_end(svp_stats::CPU_MISC);
 
 		TargetMain->SetActive();
 		svp_stats::section_end(svp_stats::SEC_SVP_COMBINE);

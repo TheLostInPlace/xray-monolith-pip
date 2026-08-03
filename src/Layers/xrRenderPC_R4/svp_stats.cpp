@@ -101,7 +101,7 @@ namespace
 	const u32 RING = 4;         // frames of query latency, readback is non-blocking on the oldest
 	const u32 MAX_PAIRS = 128;  // timestamp pairs per frame, past this the frame flags overflow
 	const u32 FOOT_MAX = 14;    // free-form footer lines the panel sizes its width to
-	const u32 PTAIL_MAX = 20;   // free-form pipe-panel footer lines
+	const u32 PTAIL_MAX = 24;   // free-form pipe-panel footer lines
 
 	struct sec_data
 	{
@@ -113,6 +113,7 @@ namespace
 	struct stats_frame
 	{
 		sec_data sec[SEC_COUNT];
+		double svp_cpu[CPU_COUNT]; // scoped-only cpu buckets, zero on an unscoped frame
 		u32 main_lights, main_shadowed, svp_blends, sun_passes, ssa_culled;
 		u32 cull_reject, cull_reject_ident, lights_mirrored, lights_skipped;
 		u32 taa_stamp, nvg_split;
@@ -172,6 +173,9 @@ namespace
 	u32 s_sec_polys0[SEC_COUNT];
 	int s_sec_open_pair[SEC_COUNT];
 
+	// per-bucket transient begin snapshot for the cpu-only brackets
+	CTimer s_cpu_timer[CPU_COUNT];
+
 	// last fully-resolved frame, what the panel draws
 	stats_frame s_snap;
 	bool s_snap_valid = false;
@@ -179,6 +183,7 @@ namespace
 	// per-section rolling gpu average, advanced only on frames that resolved valid timestamps
 	double s_sec_avg[SEC_COUNT];
 	double s_pipe_avg[PIPE_COUNT];
+	double s_cpu_avg[CPU_COUNT];
 	bool s_avg_seeded = false;
 
 	CTimer s_frame_timer;
@@ -313,6 +318,7 @@ namespace
 		s_avg_seeded = false;
 		ZeroMemory(s_sec_avg, sizeof(s_sec_avg)); // no stale averages from a prior session
 		ZeroMemory(s_pipe_avg, sizeof(s_pipe_avg));
+		ZeroMemory(s_cpu_avg, sizeof(s_cpu_avg));
 		svp_copy_timer_hook = &copy_timer; // shared copy sites can reach the query pool now
 		ZeroMemory(s_ft_time, sizeof(s_ft_time)); // drop any stale window samples from a prior session
 		s_bench_head = 0;
@@ -361,6 +367,8 @@ namespace
 				s_sec_avg[i] = s.data.sec[i].gpu_ms;
 			for (u32 i = 0; i < PIPE_COUNT; ++i)
 				s_pipe_avg[i] = pipe_raw[i];
+			for (u32 i = 0; i < CPU_COUNT; ++i)
+				s_cpu_avg[i] = s.data.svp_cpu[i];
 			s_avg_seeded = true;
 		}
 		else if (dt > 0.f)
@@ -370,6 +378,8 @@ namespace
 				s_sec_avg[i] += a * (s.data.sec[i].gpu_ms - s_sec_avg[i]);
 			for (u32 i = 0; i < PIPE_COUNT; ++i)
 				s_pipe_avg[i] += a * (pipe_raw[i] - s_pipe_avg[i]);
+			for (u32 i = 0; i < CPU_COUNT; ++i)
+				s_cpu_avg[i] += a * (s.data.svp_cpu[i] - s_cpu_avg[i]);
 		}
 	}
 
@@ -448,6 +458,8 @@ namespace svp_stats
 			s_cur->data.sec[i].calls = s_cur->data.sec[i].verts = s_cur->data.sec[i].polys = 0;
 			s_sec_open_pair[i] = -1;
 		}
+		for (u32 i = 0; i < CPU_COUNT; ++i)
+			s_cur->data.svp_cpu[i] = 0.0;
 		s_cur->data.main_lights = s_cur->data.main_shadowed = 0;
 		s_cur->data.svp_blends = s_cur->data.sun_passes = 0;
 		s_cur->data.overflow = false;
@@ -558,6 +570,20 @@ namespace svp_stats
 			HW.pContext->End(s_cur->ts[p * 2 + 1]);
 			s_sec_open_pair[s] = -1;
 		}
+	}
+
+	void cpu_begin(cpu_e c)
+	{
+		if (ps_r__svp_stats == 0 || !s_cur)
+			return;
+		s_cpu_timer[c].Start();
+	}
+
+	void cpu_end(cpu_e c)
+	{
+		if (ps_r__svp_stats == 0 || !s_cur)
+			return;
+		s_cur->data.svp_cpu[c] += s_cpu_timer[c].GetElapsed_sec() * 1000.0;
 	}
 
 	void note_main_lights(u32 total, u32 shadowed)
@@ -1027,6 +1053,13 @@ namespace svp_stats
 				foot_emit(ptail, pt, "svp runs slots %u keep %u runs %u max %u drop %u draws %u calls %u",
 					d.grass_svp_slots, d.grass_svp_keep, d.grass_svp_runs, d.grass_svp_run_max,
 					d.grass_svp_drop, d.grass_svp_draws, d.sec[SEC_SVP_GBUFFER].calls);
+				// scoped cpu the section columns never attribute to the scope, all zero unscoped
+				foot_emit(ptail, pt, "svp cpu now replay %.2f lights %.2f hud %.2f lens %.2f misc %.2f ms",
+					d.svp_cpu[CPU_REPLAY], d.svp_cpu[CPU_LIGHTS], d.svp_cpu[CPU_HUD],
+					d.svp_cpu[CPU_LENS], d.svp_cpu[CPU_MISC]);
+				foot_emit(ptail, pt, "svp cpu avg replay %.2f lights %.2f hud %.2f lens %.2f misc %.2f ms",
+					s_cpu_avg[CPU_REPLAY], s_cpu_avg[CPU_LIGHTS], s_cpu_avg[CPU_HUD],
+					s_cpu_avg[CPU_LENS], s_cpu_avg[CPU_MISC]);
 			}
 
 			// the per-category megabytes ride in the label so the row keeps the two data columns
