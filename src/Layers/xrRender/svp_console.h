@@ -64,6 +64,7 @@ extern ECORE_API int ps_r__svp_skip_pos_copy;
 
 // main-view post gate, lossless skips for post passes with nothing to do
 extern ECORE_API int ps_r__pp_lean;
+extern ECORE_API int ps_r__cp_scale_region;
 extern ECORE_API int ps_r__ssfx_ssr_enable;
 extern ECORE_API int ps_r__ssfx_bloom_hud;
 extern ECORE_API u32 svp_stats_lean_flags; // bit per lean skip that fired this frame, decoded by the breakdown panel
