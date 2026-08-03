@@ -154,6 +154,7 @@ int ps_r__svp_skip_volumetric = 0; // svp skip volumetric lights on the scope pa
 int ps_r__svp_skip_grass = 0; // svp skip grass/details on the scope pass, near grass is mostly off a zoomed cone (0 = keep)
 int ps_r__svp_grass_cull = 0; // svp draw only the grass slot ranges the scope cone keeps (0 = draw the whole main-view set)
 int ps_r__svp_sss_sun = 0; // svp compute the scope SSS pass and keep the sun contact shadow term on the scope, expensive (0 = off)
+int ps_r__svp_skip_pos_copy = 0; // svp skip the main position copy into generic2 on the scope path, the lens composite remaps that name to the scope surface (0 = copy)
 int ps_r__svp_light_cull = 1; // svp cone-cull the mirrored light blends, skip a light whose sphere never meets the scope cone (1 = on, 0 = mirror everything)
 int ps_r__svp_corner_mask = 1; // svp stencil the dead corners outside the eyepiece disc so the lighting + combine passes skip them (1 = on)
 int ps_r__pp_lean = 0; // master gate for the idle post-pass skips in phase_combine (0 = stock, every pass runs)
@@ -395,6 +396,7 @@ void svp_console_init()
 	CMD4(CCC_Integer, "r__svp_skip_grass", &ps_r__svp_skip_grass, 0, 1); // svp skip grass/details on the scope
 	CMD4(CCC_Integer, "r__svp_grass_cull", &ps_r__svp_grass_cull, 0, 1); // svp cone-cull the scope grass slot ranges
 	CMD4(CCC_Integer, "r__svp_sss_sun", &ps_r__svp_sss_sun, 0, 1); // svp SSS sun contact shadows on the scope
+	CMD4(CCC_Integer, "r__svp_skip_pos_copy", &ps_r__svp_skip_pos_copy, 0, 1); // svp skip the dead position copy on the scope lens composite (0 = copy)
 	CMD4(CCC_Integer, "r__svp_light_cull", &ps_r__svp_light_cull, 0, 1); // svp cone-cull the mirrored light blends (1 = on)
 	CMD4(CCC_SvpFixedInteger, "r__svp_corner_mask", &ps_r__svp_corner_mask, 0, 1);
 	CMD4(CCC_Integer, "r__pp_lean", &ps_r__pp_lean, 0, 1); // skip idle post passes (0 = stock)

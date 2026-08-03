@@ -1486,7 +1486,9 @@ void CRenderTarget::phase_3DSSReticle()
 				== Device.m_SecondViewport.GetSVPSession();
 
 		// the scope shader reads generic2 as the gbuffer position for the holepunch/depth
-		HW.pContext->CopyResource(rt_Generic_2->pTexture->surface_get(), RImplementation.Target->rt_Position->pTexture->surface_get());
+		// the scope path repoints that name at the svp position surface below so the copy feeds nothing
+		if (!(svp && ps_r__svp_skip_pos_copy))
+			HW.pContext->CopyResource(rt_Generic_2->pTexture->surface_get(), RImplementation.Target->rt_Position->pTexture->surface_get());
 
 		u_setrt(RImplementation.Target->rt_Generic_0, nullptr, RImplementation.Target->rt_Position, RImplementation.Target->baseZB);
 		RCache.set_CullMode(CULL_CCW);
