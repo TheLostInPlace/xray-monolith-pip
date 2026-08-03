@@ -1082,12 +1082,9 @@ namespace svp_stats
 				pcontent_w = _max(pcontent_w, F.SizeOf_(ptail[i]));
 			const float ppanel_w = pcontent_w + 2.f * pad;
 			const float ppanel_h = (1u + prows + pt) * step + 2.f * pad;
-			const float side_gap = step * 0.4f;
-			const float left_edge = W * 0.012f;
-			// beside the combine box when it fits, otherwise stacked under it on the same right edge
-			const bool beside = (brk_l - side_gap - ppanel_w) >= left_edge;
-			const float ppanel_l = beside ? (brk_l - side_gap - ppanel_w) : (right - ppanel_w);
-			const float ptop = beside ? brk_top : (brk_top + brk_h + side_gap);
+			// top left so the tall pipe list never runs off the bottom
+			const float ppanel_l = W * 0.012f;
+			const float ptop = H * 0.02f;
 			const float plabel_l = ppanel_l + pad;
 			const float pval_r = plabel_l + plabel_w + cell;
 			const float pavg_r = pval_r + gap + cell;
