@@ -101,6 +101,8 @@ extern ECORE_API u32 svp_stats_grass_slots;   // slots tested
 extern ECORE_API u32 svp_stats_grass_keep;    // of those, the ones the frustum keeps
 extern ECORE_API u32 svp_stats_grass_runs;    // stretches of consecutive kept slots
 extern ECORE_API u32 svp_stats_grass_run_max; // longest single stretch
+extern ECORE_API u32 svp_stats_grass_drop;    // instances the cull left unsubmitted
+extern ECORE_API u32 svp_stats_grass_draws;   // sub range draws the cull issued
 // session-lifetime running totals, never reset, read by the level-load audit summary
 extern ECORE_API u32 svp_stats_detail_main_thread; // grass MT_CALC runs that fell back to the calling thread
 extern ECORE_API u32 svp_stats_hom_main_thread;    // HOM MT_RENDER runs that fell back to the calling thread

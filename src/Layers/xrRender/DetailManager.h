@@ -270,6 +270,8 @@ public:
 	u32 hw_run_kept;
 	u32 hw_run_runs;
 	u32 hw_run_max;
+	u32 hw_run_dropped; // instances the emitter left unsubmitted
+	u32 hw_run_draws;   // sub range draws the emitter issued
 	void hw_Run_Begin(const CFrustum* F, u32 cascade);
 	void hw_Run_End();
 #endif

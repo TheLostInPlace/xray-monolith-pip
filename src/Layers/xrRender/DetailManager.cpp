@@ -110,6 +110,7 @@ CDetailManager::CDetailManager()
 	hw_run_site = hw_run_site_none;
 	hw_run_cascade = 0;
 	hw_run_tested = hw_run_kept = hw_run_runs = hw_run_max = 0;
+	hw_run_dropped = hw_run_draws = 0;
 #endif
 	m_time_rot_1 = 0;
 	m_time_rot_2 = 0;

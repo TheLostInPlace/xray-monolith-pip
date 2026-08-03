@@ -255,7 +255,7 @@ void CDetailManager::hw_Fill_Instances()
 	const u32 nObj = (u32)objects.size();
 	u32 instTotal = 0;
 	BOOL bOverflow = FALSE;
-	const bool runs = (ps_r__sun_grass_runs != 0);
+	const bool runs = (ps_r__sun_grass_runs || ps_r__sun_grass_cull);
 	if (runs)
 		hw_run_slots.clear();
 	for (u32 vid = 0; vid < 3; vid++)
@@ -352,6 +352,7 @@ void CDetailManager::hw_Run_Begin(const CFrustum* F, u32 cascade)
 	hw_run_site = hw_run_site_sun;
 	hw_run_cascade = cascade;
 	hw_run_tested = hw_run_kept = hw_run_runs = hw_run_max = 0;
+	hw_run_dropped = hw_run_draws = 0;
 }
 
 void CDetailManager::hw_Run_End()
@@ -359,7 +360,7 @@ void CDetailManager::hw_Run_End()
 	if (!hw_run_frustum)
 		return;
 	// the token arms on every cascade, only a walked site has numbers to publish
-	const bool walked = (hw_run_site == hw_run_site_sun) && ps_r__sun_grass_runs;
+	const bool walked = (hw_run_site == hw_run_site_sun) && (ps_r__sun_grass_runs || ps_r__sun_grass_cull);
 	hw_run_frustum = nullptr;
 	hw_run_site = hw_run_site_none;
 	if (!walked)
@@ -370,13 +371,16 @@ void CDetailManager::hw_Run_End()
 		svp_stats_grass_slots += hw_run_tested;
 		svp_stats_grass_keep += hw_run_kept;
 		svp_stats_grass_runs += hw_run_runs;
+		svp_stats_grass_drop += hw_run_dropped;
+		svp_stats_grass_draws += hw_run_draws;
 		if (hw_run_max > svp_stats_grass_run_max)
 			svp_stats_grass_run_max = hw_run_max;
 	}
 
-	if ((Device.dwFrame & 255) == 0)
-		Msg("[SUN-RUNS] c%u slots %u keep %u runs %u max %u",
-		    hw_run_cascade, hw_run_tested, hw_run_kept, hw_run_runs, hw_run_max);
+	if (ps_r__sun_grass_runs && (Device.dwFrame & 255) == 0)
+		Msg("[SUN-RUNS] c%u slots %u keep %u runs %u max %u drop %u draws %u",
+		    hw_run_cascade, hw_run_tested, hw_run_kept, hw_run_runs, hw_run_max,
+		    hw_run_dropped, hw_run_draws);
 }
 #endif
 
@@ -439,7 +443,9 @@ void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave
 			return;
 
 		// slot spheres against the cascade frustum, stretches of consecutive keeps only
-		if (hw_run_frustum && hw_run_site == hw_run_site_sun && ps_r__sun_grass_runs && var_id != 0)
+		const bool sun_site = hw_run_frustum && hw_run_site == hw_run_site_sun && var_id != 0;
+		const bool cull = sun_site && ps_r__sun_grass_cull != 0;
+		if (sun_site && (ps_r__sun_grass_runs || ps_r__sun_grass_cull))
 		{
 			for (u32 O = 0; O < nObj; O++)
 			{
@@ -551,13 +557,53 @@ void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave
 
 					// SV_InstanceID restarts at zero every draw so the range base travels as a constant
 					Fvector4 inst_base;
-					inst_base.set(float(hw_inst_base[rbase + O]), 0.f, 0.f, 0.f);
-					RCache.set_c(strInstBase, inst_base);
+					if (cull)
+					{
+						// one draw per stretch of kept slots, the rejected stretches are never submitted
+						const u32 first = hw_run_base[rbase + O];
+						const u32 last = first + hw_run_count[rbase + O];
+						u32 run_base = 0, run_end = 0, sent = 0;
+						bool in_run = false;
+						for (u32 s = first; s <= last; s++)
+						{
+							SlotSphere* sph = (s < last) ? &hw_run_slots[s] : nullptr;
+							if (sph && hw_run_frustum->testSphere_dirty(sph->center, sph->radius))
+							{
+								if (!in_run)
+								{
+									in_run = true;
+									run_base = sph->inst_first;
+								}
+								run_end = sph->inst_first + sph->inst_count;
+								continue;
+							}
+							if (!in_run)
+								continue;
+							in_run = false;
+							const u32 n = run_end - run_base;
+							if (!n)
+								continue;
+							inst_base.set(float(run_base), 0.f, 0.f, 0.f);
+							RCache.set_c(strInstBase, inst_base);
+							RCache.RenderInstanced(D3DPT_TRIANGLELIST, n, vOffset, 0, Object.number_vertices,
+							                       iOffset, Object.number_indices / 3);
+							Device.Statistic->RenderDUMP_DT_Count += n;
+							RCache.stat.r.s_details.add(n * Object.number_vertices);
+							sent += n;
+							++hw_run_draws;
+						}
+						hw_run_dropped += count - sent;
+					}
+					else
+					{
+						inst_base.set(float(hw_inst_base[rbase + O]), 0.f, 0.f, 0.f);
+						RCache.set_c(strInstBase, inst_base);
 
-					RCache.RenderInstanced(D3DPT_TRIANGLELIST, count, vOffset, 0, Object.number_vertices,
-					                       iOffset, Object.number_indices / 3);
-					Device.Statistic->RenderDUMP_DT_Count += count;
-					RCache.stat.r.s_details.add(count * Object.number_vertices);
+						RCache.RenderInstanced(D3DPT_TRIANGLELIST, count, vOffset, 0, Object.number_vertices,
+						                       iOffset, Object.number_indices / 3);
+						Device.Statistic->RenderDUMP_DT_Count += count;
+						RCache.stat.r.s_details.add(count * Object.number_vertices);
+					}
 				}
 				vOffset += Object.number_vertices;
 				iOffset += Object.number_indices;
