@@ -702,6 +702,9 @@ void CRender::renderGBuffer(bool clearGraph)
 // shadow maps with no second shadow render (SetActive(SVP) had pointed them at the SVP's empty atlas)
 void CRender::share_main_smaps()
 {
+	// an svp target with no atlas of its own leaves the stock name on the main maps already
+	if (TargetSVP && !TargetSVP->rt_smap_depth)
+		return;
 	for (auto& r : TargetMain->RenderTargetRemaps)
 		if (r.second == TargetMain->rt_smap_depth ||
 			(TargetMain->rt_smap_depth_minmax && r.second == TargetMain->rt_smap_depth_minmax))

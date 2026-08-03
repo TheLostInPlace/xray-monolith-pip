@@ -844,11 +844,15 @@ CRenderTarget::CRenderTarget(LPCSTR name, u32 width, u32 height)
 		if (RImplementation.o.nullrt) nullrt = (D3DFORMAT)MAKEFOURCC('N', 'U', 'L', 'L');
 
 		u32 size = RImplementation.o.smapsize;
-		rt_smap_depth = createUnique(r2_RT_smap_depth, size, size, depth_format);
+		// the svp never rasterizes a shadow map, it reads the main atlas through the stock texture name
+		const bool smap_alloc = isMain || ps_r__svp_smap_alloc != 0;
+		if (smap_alloc)
+			rt_smap_depth = createUnique(r2_RT_smap_depth, size, size, depth_format);
 
 		if (RImplementation.o.dx10_minmax_sm)
 		{
-			rt_smap_depth_minmax = createUnique(r2_RT_smap_depth_minmax, size / 4, size / 4, D3DFMT_R32F);
+			if (smap_alloc)
+				rt_smap_depth_minmax = createUnique(r2_RT_smap_depth_minmax, size / 4, size / 4, D3DFMT_R32F);
 			CBlender_createminmax TempBlender;
 			s_create_minmax_sm.create(&TempBlender, "null");
 		}

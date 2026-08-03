@@ -61,6 +61,7 @@ extern ECORE_API int ps_r__svp_skip_grass;
 extern ECORE_API int ps_r__svp_grass_cull;
 extern ECORE_API int ps_r__svp_sss_sun;
 extern ECORE_API int ps_r__svp_skip_pos_copy;
+extern ECORE_API int ps_r__svp_smap_alloc;
 
 // main-view post gate, lossless skips for post passes with nothing to do
 extern ECORE_API int ps_r__pp_lean;
