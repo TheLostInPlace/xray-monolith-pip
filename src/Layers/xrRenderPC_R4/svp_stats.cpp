@@ -2,6 +2,7 @@
 #include "r4.h"
 #include "svp_stats.h"
 #include <cstdarg>
+#include <algorithm>
 
 #include "../../xrEngine/igame_persistent.h"
 #include "../../xrEngine/environment.h"
@@ -189,6 +190,17 @@ namespace
 	u32 s_ft_time[FT_WIN];
 	u32 s_ft_head = 0;
 
+	// benchmark ring of recent frame times, wraps so it flushes itself
+	const u32 BENCH_WIN = 3000;
+	const double BENCH_DROP_MS = 1000.0; // a load-screen frame never enters the ring
+	float s_bench_ms[BENCH_WIN];
+	u32 s_bench_head = 0;
+	u32 s_bench_count = 0;
+	u32 s_bench_calc_ms = 0;
+	float s_bench_avg_fps = 0.f;
+	float s_bench_low1_fps = 0.f;
+	float s_bench_low01_fps = 0.f;
+
 	CGameFont* s_font = nullptr;
 	FactoryPtr<IUIShader>* s_shader = nullptr;
 
@@ -240,6 +252,34 @@ namespace
 		if (begin) section_begin(s); else section_end(s);
 	}
 
+	// mean of the worst k frame times as fps, the scratch is partitioned in place
+	float bench_low_fps(float* a, u32 n, u32 k)
+	{
+		if (k < 1) k = 1;
+		if (k > n) k = n;
+		std::nth_element(a, a + (n - k), a + n);
+		double sum = 0.0;
+		for (u32 i = n - k; i < n; ++i)
+			sum += a[i];
+		return (sum > 0.0) ? float(1000.0 * double(k) / sum) : 0.f;
+	}
+
+	// average fps plus the 1% and 0.1% lows over the whole ring, once a second off a scratch copy
+	void bench_update()
+	{
+		const u32 n = s_bench_count;
+		if (!n)
+			return;
+		static float scratch[BENCH_WIN];
+		CopyMemory(scratch, s_bench_ms, n * sizeof(float));
+		double sum = 0.0;
+		for (u32 i = 0; i < n; ++i)
+			sum += scratch[i];
+		s_bench_avg_fps = (sum > 0.0) ? float(1000.0 * double(n) / sum) : 0.f;
+		s_bench_low1_fps = bench_low_fps(scratch, n, n / 100);
+		s_bench_low01_fps = bench_low_fps(scratch, n, n / 1000);
+	}
+
 	bool ensure_created()
 	{
 		if (s_created)
@@ -275,6 +315,10 @@ namespace
 		ZeroMemory(s_pipe_avg, sizeof(s_pipe_avg));
 		svp_copy_timer_hook = &copy_timer; // shared copy sites can reach the query pool now
 		ZeroMemory(s_ft_time, sizeof(s_ft_time)); // drop any stale window samples from a prior session
+		s_bench_head = 0;
+		s_bench_count = 0;
+		s_bench_calc_ms = 0;
+		s_bench_avg_fps = s_bench_low1_fps = s_bench_low01_fps = 0.f;
 		return true;
 	}
 
@@ -462,6 +506,18 @@ namespace svp_stats
 			s_ft_ms[s_ft_head] = (float)fms;
 			s_ft_time[s_ft_head] = Device.dwTimeGlobal;
 			s_ft_head = (s_ft_head + 1) % FT_WIN;
+			if (fms <= BENCH_DROP_MS)
+			{
+				s_bench_ms[s_bench_head] = (float)fms;
+				s_bench_head = (s_bench_head + 1) % BENCH_WIN;
+				if (s_bench_count < BENCH_WIN)
+					++s_bench_count;
+			}
+			if (Device.dwTimeGlobal - s_bench_calc_ms >= 1000)
+			{
+				s_bench_calc_ms = Device.dwTimeGlobal;
+				bench_update();
+			}
 		}
 		HW.pContext->Begin(s_cur->disjoint);
 	}
@@ -690,6 +746,9 @@ namespace svp_stats
 		char foot[FOOT_MAX][96];
 		u32 nf = 0;
 		foot_emit(foot, nf, "frame %.2f ms  %.0f fps", d.frame_ms, d.frame_ms > 0.01 ? 1000.0 / d.frame_ms : 0.0);
+		// benchmark numbers off the ring, each low is the mean of that worst slice of the window
+		foot_emit(foot, nf, "avg %.0f  1%% low %.0f  0.1%% low %.0f fps",
+			s_bench_avg_fps, s_bench_low1_fps, s_bench_low01_fps);
 		foot_emit(foot, nf, "cpu %.2f  gpu %.2f ms", fcpu, fgpu);
 		// bound verdict on its own row so it stays legible against the moving numbers
 		foot_emit(foot, nf, "%s", bound);
