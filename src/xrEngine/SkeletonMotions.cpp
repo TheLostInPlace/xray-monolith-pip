@@ -95,6 +95,8 @@ BOOL motions_value::load(LPCSTR N, IReader* data, vecBones* bones)
 	xr_vector<bool> bone_covered;
 	bone_covered.resize(bones->size(), false);
 	u32 missing_named = 0;
+	u32 bound_entries = 0;
+	u32 skipped_entries = 0;
 	IReader* MP = data->open_chunk(OGF_S_SMPARAMS);
 
 	if (MP)
@@ -122,10 +124,10 @@ BOOL motions_value::load(LPCSTR N, IReader* data, vecBones* bones)
 				*b_it = find_bone_id(bones, buf);
 				if (*b_it == BI_NONE)
 				{
-					bRes = false;
+					++skipped_entries;
 					string256 line;
 					xr_sprintf(line, "motions bone '%s' is not in the model", buf);
-					Msg("! [MODEL-FATAL] %s (%s)", line, N);
+					Msg("! [MODEL-BIND] %s (%s)", line, N);
 					if (++missing_named <= 6) bind_fail_note(line);
 					else if (missing_named == 7) bind_fail_note("more missing bones, see the log");
 				}
@@ -134,16 +136,39 @@ BOOL motions_value::load(LPCSTR N, IReader* data, vecBones* bones)
 
 				if (rm_bones.size() <= m_idx)
 				{
-					bRes = false;
+					++skipped_entries;
 					string256 line;
 					xr_sprintf(line, "motions bone index %u exceeds the model bone count %u", u32(m_idx), u32(rm_bones.size()));
-					Msg("! [MODEL-FATAL] %s (%s)", line, N);
+					Msg("! [MODEL-BIND] %s (%s)", line, N);
 					bind_fail_note(line);
 				}
 
-				if (bRes) rm_bones[m_idx] = u16(*b_it);
+				if (*b_it != BI_NONE && m_idx < rm_bones.size())
+				{
+					rm_bones[m_idx] = u16(*b_it);
+					++bound_entries;
+				}
 			}
 			part_bone_cnt = u16(part_bone_cnt + (u16)PART->bones.size());
+		}
+
+		// a superset motion file binds the tracks that fit, zero overlap is real corruption
+		if (skipped_entries)
+		{
+			string256 line;
+			if (bound_entries)
+			{
+				xr_sprintf(line, "partial bind %u of %u bone tracks", bound_entries, bound_entries + skipped_entries);
+				Msg("! [MODEL-BIND] %s (%s)", line, N);
+				bind_fail_note(line);
+			}
+			else
+			{
+				bRes = false;
+				xr_sprintf(line, "no motion bone matches the model");
+				Msg("! [MODEL-FATAL] %s (%s)", line, N);
+				bind_fail_note(line);
+			}
 		}
 
 		// names the model bones no partition covers so authors can fix the export
@@ -151,14 +176,14 @@ BOOL motions_value::load(LPCSTR N, IReader* data, vecBones* bones)
 		{
 			string256 line;
 			xr_sprintf(line, "motions cover %u bones, the model has %u", u32(part_bone_cnt), u32(bones->size()));
-			Msg("! [MODEL-FATAL] %s (%s)", line, N);
+			Msg("! [MODEL-BIND] %s (%s)", line, N);
 			bind_fail_note(line);
 			u32 uncovered = 0;
 			for (u32 bi = 0; bi < bone_covered.size(); ++bi)
 			{
 				if (bone_covered[bi]) continue;
 				xr_sprintf(line, "model bone '%s' is not in the motions", bones->at(bi)->name.c_str());
-				Msg("! [MODEL-FATAL] %s (%s)", line, N);
+				Msg("! [MODEL-BIND] %s (%s)", line, N);
 				if (++uncovered <= 6) bind_fail_note(line);
 			}
 			if (uncovered > 6)

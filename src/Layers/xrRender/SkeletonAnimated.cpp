@@ -912,16 +912,16 @@ void CKinematicsAnimated::Load(const char* N, IReader* data, u32 dwFlags)
 		m_Motions.back().motions.create(nm, data, bones);
 	}
 
-	// pip a model whose motions never bound cannot animate, hand the session to the exit
-	// prompt, main menu or quit only, the stock fatal stays when no prompt can show
+	// pip a model whose motions never bound cannot animate, the exit prompt shows when
+	// possible and the model stands down inert either way
 	if (m_Motions.empty())
 	{
-		auto detail = make_string("section '%s'\nmodel '%s'", current_player_hud_sect.c_str(), N);
+		auto detail = make_string("last hud section '%s'\nmodel '%s'", current_player_hud_sect.c_str(), N);
 		if (g_motions_bind_fail_reason[0])
 			detail += make_string("\n\n%s", g_motions_bind_fail_reason);
 		Msg("! [MODEL-FATAL] no motions bound, %s", detail.c_str());
 		if (!g_pGamePersistent || !g_pGamePersistent->OnModelLoadFatal(detail.c_str()))
-			R_ASSERT2(false, detail.c_str());
+			Msg("! [MODEL-FATAL] no exit prompt available, the model stands down");
 		// an empty partition keeps every animation consumer a no-op until the teardown
 		static CPartition s_fatal_partition;
 		m_Partition = &s_fatal_partition;
