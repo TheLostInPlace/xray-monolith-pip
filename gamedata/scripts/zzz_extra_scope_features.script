@@ -426,6 +426,21 @@ local function parse_offset(value)
     return numbers
 end
 
+local offset_ini
+local function read_offset_table(scope_sec, weap_sec, scope_hint)
+    offset_ini = offset_ini or ini_file("pip_objective_offsets.ltx")
+    local sections = {weap_sec, scope_sec, scope_hint}
+    for index = 1, 3 do
+        local section = sections[index]
+        if section then
+            local value = offset_ini:r_string_ex(section, "scope_objective_lens_offset")
+            if value then
+                return value, "table:pip_objective_offsets.ltx:" .. section
+            end
+        end
+    end
+end
+
 local function resolve_lens(scope_sec, weap_sec, scope_hint)
     local offset, section, source, kind =
         read_str_info(scope_sec, weap_sec, "scope_objective_lens_offset", scope_hint)
@@ -433,6 +448,9 @@ local function resolve_lens(scope_sec, weap_sec, scope_hint)
     if offset then
         offset_source = source_text(kind, section, source, "scope_objective_lens_offset")
     else
+        offset, offset_source = read_offset_table(scope_sec, weap_sec, scope_hint)
+    end
+    if not offset then
         local detected = rawget(_G, "svp_detected_offset")
         offset = type(detected) == "function" and detected() or nil
         if offset == "" then
