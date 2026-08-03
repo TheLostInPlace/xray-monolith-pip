@@ -1502,35 +1502,46 @@ static void svp_optics_resolve(CSecondVPParams* p, float er)
 // when the detected eye disc sits further than this many eyepiece radii from the runtime eyepiece
 static const float SVP_DETECT_EYE_TOL_R = 1.0f;
 
+// pip the applied offset is the detector's own when all four components match, identifies the
+// detection lane by value so no source label or push route has to be trusted
+static bool svp_offset_is_detected(const Fvector4& off, const Fvector4& det)
+{
+	return _abs(off.x - det.x) < 0.01f && _abs(off.y - det.y) < 0.01f
+		&& _abs(off.z - det.z) < 0.01f && _abs(off.w - det.w) < 0.01f;
+}
+
 // pip both centres are bind pose model space so the compare needs no runtime pose, authored ltx and
-// typed spec offsets never reach here because only detection stamps the engine_detection source
+// typed spec offsets carry different numbers and a different label so neither can be dropped here
 static bool svp_detected_offset_off_frame(CSecondVPParams* p, CSkeletonX* sk,
 	const Fvector& eye_bind, float er, const void* visual)
 {
 	extern int ps_r__svp_lens_reject;
 	if (!ps_r__svp_lens_reject || !sk || er <= EPS)
 		return false;
-	const auto& config = p->RenderOpticConfig();
-	if (!config.typed_route || !config.has_objective_offset)
-		return false;
-	LPCSTR src = config.source[CSecondVPParams::optic_objective_offset];
-	if (!src || !src[0] || 0 != xr_strcmp(src, "engine_detection"))
-		return false;
 	SLensDetection d;
 	if (!sk->SVP_GetLensDetection(d) || !d.ok)
 		return false;
 	const float radii = d.eye_center.distance_to(eye_bind) / er;
 	// a transition frame can hand over garbage geometry, skip the verdict and retry next frame
-	if (!_valid(radii) || radii <= SVP_DETECT_EYE_TOL_R)
+	if (!_valid(radii))
 		return false;
-	static const void* s_reject_last = nullptr;
-	if (visual != s_reject_last)
+	const auto& config = p->RenderOpticConfig();
+	LPCSTR src = config.source[CSecondVPParams::optic_objective_offset];
+	const bool labelled = src && 0 == xr_strcmp(src, "engine_detection");
+	const bool matches = svp_offset_is_detected(p->svp_opt_offset, d.offset);
+	const bool reject = (labelled || matches) && radii > SVP_DETECT_EYE_TOL_R;
+	// one latched line per optic carrying every gate value so a miss reads straight from the log
+	static const void* s_gate_last = nullptr;
+	if (visual != s_gate_last)
 	{
-		s_reject_last = visual;
-		PipMsg("[SVP-EYEDIV] REJECT detected offset dist_r=%.2f dist_cm=%.2f er_cm=%.2f tol_r=%.2f src=%d",
-			radii, radii * er * 100.f, er * 100.f, SVP_DETECT_EYE_TOL_R, d.source);
+		s_gate_last = visual;
+		PipMsg("[SVP-EYEDIV] %s label=%s match=%d dist_r=%.2f dist_cm=%.2f er_cm=%.2f tol_r=%.2f typed=%d has_off=%d detsrc=%d",
+			reject ? "REJECT detected offset" : "keep offset",
+			(src && src[0]) ? src : "none", matches ? 1 : 0,
+			radii, radii * er * 100.f, er * 100.f, SVP_DETECT_EYE_TOL_R,
+			config.typed_route ? 1 : 0, config.has_objective_offset ? 1 : 0, d.source);
 	}
-	return true;
+	return reject;
 }
 
 void CRender::deriveScopeLens()
