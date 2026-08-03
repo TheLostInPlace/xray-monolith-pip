@@ -525,6 +525,7 @@ int ps_r__smap_null_ps = 0;
 int ps_r__sun_lod_skip = 0;
 int ps_r__sun_grass_runs = 0;
 int ps_r__sun_grass_cull = 0;
+int ps_r__grass_smap_element = 0;
 int ps_r__cb_dirty_list = 0;
 
 //AVO: detail draw radius
@@ -1683,6 +1684,7 @@ void xrRender_initconsole()
 	CMD4(CCC_Integer, "r__sun_lod_skip", &ps_r__sun_lod_skip, 0, 1);
 	CMD4(CCC_Integer, "r__sun_grass_runs", &ps_r__sun_grass_runs, 0, 1);
 	CMD4(CCC_Integer, "r__sun_grass_cull", &ps_r__sun_grass_cull, 0, 1);
+	CMD4(CCC_Integer, "r__grass_smap_element", &ps_r__grass_smap_element, 0, 1);
 	CMD4(CCC_Integer, "r__cb_dirty_list", &ps_r__cb_dirty_list, 0, 2);
 	CMD3(CCC_Mask, "r__use_precompiled_shaders", &psDeviceFlags2, rsPrecompiledShaders); //Alundaio
 	CMD3(CCC_Mask, "r__enable_grass_shadow", &psDeviceFlags2, rsGrassShadow); //Alundaio

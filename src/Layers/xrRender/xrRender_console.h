@@ -410,6 +410,8 @@ extern ECORE_API int ps_r__sun_lod_skip;
 extern ECORE_API int ps_r__sun_grass_runs;
 // 0 draws every cascade grass instance like today, 1 draws only the slot ranges the cascade frustum keeps
 extern ECORE_API int ps_r__sun_grass_cull;
+// 0 draws cascade grass with the gbuffer element like today, 1 prefers the shadow element when the shader carries one
+extern ECORE_API int ps_r__grass_smap_element;
 // 0 sorts every render queue on every pass like today, 1 skips a queue that nothing appended to since its last sort
 extern ECORE_API int ps_r__dsgraph_sort_memo;
 // 0 walks the declaration layout map on every draw like today, 1 reuses the layout while the decl and signature hold

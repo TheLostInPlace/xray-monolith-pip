@@ -510,12 +510,29 @@ void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave
 		else
 			fade_params.set(1.f, fade_distance, 0.f, 0.f);
 
+		// the cascade grass draw prefers the shadow element, both resolutions must agree or the
+		// pass counts diverge and the draw binds the wrong program
+		const bool smap_element = sun_site && ps_r__grass_smap_element;
+		auto pick_element = [&](u32 O) -> ShaderElement*
+		{
+			Shader* S = objects[O]->shader._get();
+			if (!S)
+				return nullptr;
+			if (smap_element)
+			{
+				ShaderElement* Esm = S->E[2]._get();
+				if (Esm)
+					return Esm;
+			}
+			return S->E[lod_id]._get();
+		};
+
 		u32 maxPasses = 1;
 		for (u32 O = 0; O < nObj; O++)
 		{
 			if (!hw_inst_count[rbase + O])
 				continue;
-			ShaderElement* E = objects[O]->shader->E[lod_id]._get();
+			ShaderElement* E = pick_element(O);
 			if (E)
 				maxPasses = _max(maxPasses, (u32)E->passes.size());
 		}
@@ -530,7 +547,7 @@ void CDetailManager::hw_Render_dump(const Fvector4& consts, const Fvector4& wave
 			{
 				CDetail& Object = *objects[O];
 				u32 count = hw_inst_count[rbase + O];
-				ShaderElement* E = Object.shader->E[lod_id]._get();
+				ShaderElement* E = pick_element(O);
 				if (count && E && iPass < E->passes.size())
 				{
 					if (E != curE)

@@ -112,6 +112,16 @@ void CDetailManager::hw_Load_Geom()
 			Msg("! [DETAILS] instance record mismatch, legacy path");
 		}
 	}
+	// which shader elements each detail object carries, element 2 is the depth only shadow one
+	for (u32 o = 0; o < objects.size(); o++)
+	{
+		Shader* S = objects[o]->shader._get();
+		if (!S)
+			continue;
+		Msg("* [DETAILS] %s e0 %u e1 %u e2 %u e3 %u e4 %u", objects[o]->shader_name.c_str(),
+		    S->E[0]._get() ? 1u : 0u, S->E[1]._get() ? 1u : 0u, S->E[2]._get() ? 1u : 0u,
+		    S->E[3]._get() ? 1u : 0u, S->E[4]._get() ? 1u : 0u);
+	}
 	hw_overflow_logged = false;
 	const u32 dwCopies = hw_instancing ? 1 : hw_BatchSize;
 #else
