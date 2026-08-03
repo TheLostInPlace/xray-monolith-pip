@@ -61,7 +61,6 @@ int ps_r__svp_adaptive_grow = 0;     // 1 sizes the SVP up to the disc past the 
 static int s_svp_compat_drain_anchor = 1;
 static int s_svp_compat_settle_derive = 1;
 static int s_svp_compat_ratio_derive = 1;
-static int s_svp_compat_lens_reject = 0;
 static int s_svp_compat_recoil_hold = 1;
 int ps_r__svp_roll_stabilize = 0; // svp scope tilt stabilize reserve, the world image is always level (real optics never roll the image with mount cant)
 int ps_r__svp_clean_optics = 1; // svp strip the 3DSS fake cosmetics (parallax shadow, chromatism, nvg blur, fisheye) for a clean scope (1 = stripped, default; 0 = full 3DSS look)
@@ -83,6 +82,7 @@ int ps_r__svp_nearblur_scatter = 0; // svp near-blur composite, 0 = gather defau
 float ps_r__svp_focus_m = 100.0f; // svp parallax focus distance in meters, objects off this plane defocus by the thin lens law
 int ps_r__svp_authored_optics = 1; // svp use the authored per-scope scope_objective_lens_offset for the front plane + defocus aperture (0 = measured geometry only)
 int ps_r__svp_measured_optics = 1; // svp fill the objective offset + mm from mesh detection when authored ltx is absent
+int ps_r__svp_lens_reject = 1; // svp drop a detected objective offset whose eye disc sits off the runtime eyepiece (0 = apply every detected offset)
 float ps_r__svp_eyebox = 1.0f; // svp eyebox strength, console unregistered, 1.0 keeps the anchor bound publish alive
 int ps_r__svp_reflex_capture = 1; // svp hybrid reflex through the objective camera, 0 keeps the 1x fallback
 float ps_s3ds_objective_mm = 0.f; // per-scope objective clear aperture mm from spec sheets, pushed by zzz_extra_scope_features (0 = mesh-relative fallback)
@@ -304,7 +304,7 @@ void svp_console_init()
 	CMD4(CCC_SvpFixedInteger, "r__svp_drain_anchor", &s_svp_compat_drain_anchor, 0, 1);
 	CMD4(CCC_SvpFixedInteger, "r__svp_settle_derive", &s_svp_compat_settle_derive, 0, 1);
 	CMD4(CCC_SvpFixedInteger, "r__svp_ratio_derive", &s_svp_compat_ratio_derive, 0, 1);
-	CMD4(CCC_SvpFixedInteger, "r__svp_lens_reject", &s_svp_compat_lens_reject, 0, 1);
+	CMD4(CCC_Integer, "r__svp_lens_reject", &ps_r__svp_lens_reject, 0, 1); // svp drop off-frame detected objective offsets
 	CMD4(CCC_SvpFixedInteger, "r__svp_recoil_hold", &s_svp_compat_recoil_hold, 0, 1);
 	CMD4(CCC_Integer, "r__svp_roll_stabilize", &ps_r__svp_roll_stabilize, 0, 1); // svp keep the scope world level on lean/cant (0 = realistic image-tilts-with-cant)
 	CMD4(CCC_SvpFixedInteger, "r__svp_clean_optics", &ps_r__svp_clean_optics, 0, 1);

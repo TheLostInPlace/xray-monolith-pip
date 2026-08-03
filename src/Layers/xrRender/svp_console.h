@@ -170,6 +170,7 @@ extern ECORE_API int ps_r__svp_authored_optics;
 extern ECORE_API float ps_r__svp_eyebox;
 extern ECORE_API int ps_r__svp_reflex_capture;
 extern ECORE_API int ps_r__svp_measured_optics; // measured lens geometry fills unauthored optics, registered in svp_console.cpp
+extern ECORE_API int ps_r__svp_lens_reject; // detected objective offsets measured off the runtime eyepiece are dropped
 
 // per-scope overrides pushed by zzz_extra_scope_features.script
 extern ECORE_API float ps_s3ds_objective_mm;

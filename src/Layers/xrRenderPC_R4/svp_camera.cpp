@@ -1498,6 +1498,41 @@ static void svp_optics_resolve(CSecondVPParams* p, float er)
 	}
 }
 
+// pip a detected objective offset only means anything around the lens it was measured on, drop it
+// when the detected eye disc sits further than this many eyepiece radii from the runtime eyepiece
+static const float SVP_DETECT_EYE_TOL_R = 1.0f;
+
+// pip both centres are bind pose model space so the compare needs no runtime pose, authored ltx and
+// typed spec offsets never reach here because only detection stamps the engine_detection source
+static bool svp_detected_offset_off_frame(CSecondVPParams* p, CSkeletonX* sk,
+	const Fvector& eye_bind, float er, const void* visual)
+{
+	extern int ps_r__svp_lens_reject;
+	if (!ps_r__svp_lens_reject || !sk || er <= EPS)
+		return false;
+	const auto& config = p->RenderOpticConfig();
+	if (!config.typed_route || !config.has_objective_offset)
+		return false;
+	LPCSTR src = config.source[CSecondVPParams::optic_objective_offset];
+	if (!src || !src[0] || 0 != xr_strcmp(src, "engine_detection"))
+		return false;
+	SLensDetection d;
+	if (!sk->SVP_GetLensDetection(d) || !d.ok)
+		return false;
+	const float radii = d.eye_center.distance_to(eye_bind) / er;
+	// a transition frame can hand over garbage geometry, skip the verdict and retry next frame
+	if (!_valid(radii) || radii <= SVP_DETECT_EYE_TOL_R)
+		return false;
+	static const void* s_reject_last = nullptr;
+	if (visual != s_reject_last)
+	{
+		s_reject_last = visual;
+		PipMsg("[SVP-EYEDIV] REJECT detected offset dist_r=%.2f dist_cm=%.2f er_cm=%.2f tol_r=%.2f src=%d",
+			radii, radii * er * 100.f, er * 100.f, SVP_DETECT_EYE_TOL_R, d.source);
+	}
+	return true;
+}
+
 void CRender::deriveScopeLens()
 {
 	auto& viewport = Device.m_SecondViewport;
@@ -1775,7 +1810,10 @@ void CRender::deriveScopeLens()
 			// authored objective wins, place the front lens at the resolved z along the optical axis
 			// with the lateral x/y offset and w radius, all in eyepiece radii
 			const Fvector4& off = p->svp_opt_offset;
-			if (off.z > EPS)
+			// an offset measured around some other lens falls through to the mesh then geometric objective
+			const bool off_off_frame = (off.z > EPS)
+				&& svp_detected_offset_off_frame(p, sk, c, p->eyepiece.radius, N.pVisual);
+			if (off.z > EPS && !off_off_frame)
 			{
 				const float er = p->eyepiece.radius;
 				Fvector fwd; fwd.set(p->eyepiece.m_W.k); fwd.normalize();
